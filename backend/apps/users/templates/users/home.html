@@ -15,16 +15,9 @@
       <hr class="my-4" />
       <p class="lead">
         {% if user.is_authenticated %}
-        <a
-          class="btn btn-primary btn-lg"
-          href="{% url 'logout' %}"
-          role="button"
-          >Logout</a
-        >
+        <a class="btn btn-primary btn-lg" href="{% url 'logout' %}" role="button">Logout</a>
         {% else %}
-        <a class="btn btn-primary btn-lg" href="{% url 'login' %}" role="button"
-          >Sign in</a
-        >
+        <a class="btn btn-primary btn-lg" href="{% url 'login' %}" role="button">Sign in</a>
         {% endif %}
       </p>
     </div>
