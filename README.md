@@ -1,5 +1,5 @@
 # PERPETUAL-SMS PROJECT
-_A sponsorship management web application developed in Django and React Js_
+_A sponsorship management web application developed in Django_
 
 ## Requirements
 Make sure you have python and Node js installed on your system:
@@ -28,7 +28,7 @@ cd backend
 ## Setup Backend
 - Nvaigate to cloned project directory
   ```bash
-    cd perpetual-sms/backend
+    cd perpetualx/backend
     ```
 - Create a python virtual environment for backend
   ```bash
@@ -51,18 +51,3 @@ cd backend
    python manage.py runserver
     ```
 - Django backend server will start on http://localhost:8000/
-
-## Setup Frontend
-- Open a new terminal and navigate to frontend directory
-  ```bash
-   cd perpetual-sms/frontend
-    ```
-- Install frontend libraries using npm
-  ```bash
-   npm install
-    ```
-- Start Node server
-  ```bash
-   npm start
-    ```
-- Once node is started you can access the application on http://localhost:3000/
