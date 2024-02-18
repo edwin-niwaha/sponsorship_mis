@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  {% load bootstrap5 %} {% load static %}
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- MDB -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/3.6.0/mdb.min.css"
+      rel="stylesheet"
+    />
+    <!-- MDB -->
+    <title></title>
+  </head>
+
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg bg-dark navbar-dark fixed-top">
+      <!-- Container wrapper -->
+      <div class="container-fluid">
+        <!-- Toggle button -->
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-mdb-toggle="collapse"
+          data-mdb-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <i class="fas fa-bars"></i>
+        </button>
+
+        <!-- Collapsible wrapper -->
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <!-- Navbar brand -->
+          <a class="mt-2 navbar-brand mt-lg-0" href="/">
+            <img
+              src="{% static 'assets/logo.png' %}"
+              height="30"
+              width="30"
+              alt=""
+              loading="lazy"
+            />
+            <h5 style="font-family: 'Times New Roman', Times, serif">
+              PERPETUAL - SMS
+            </h5>
+          </a>
+          <!-- Left links -->
+          <ul class="mb-2 navbar-nav me-auto mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link" href="/">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/">About Us</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/">Contact Us</a>
+            </li>
+
+            {% if user.is_authenticated %}
+            <li class="nav-item">
+              <a class="nav-link" href="#">Dashboard</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">##</a>
+            </li>
+            {% endif %}
+          </ul>
+          <!-- Left links -->
+
+          <ul class="mb-2 navbar-nav ms-auto mb-lg-0">
+            {% if user.is_authenticated %}
+            <li>
+              <a href="{% url 'users-profile' %}" class="nav-item nav-link"
+                >Profile</a
+              >
+            </li>
+            <li>
+              <a href="{% url 'logout' %}" class="nav-item nav-link">Logout</a>
+            </li>
+
+            {% else %}
+            <li class="nav-item me-2">
+              <b>
+                <a href="{% url 'login' %}" class="nav-item nav-link"
+                  >Sign in</a
+                ></b
+              >
+            </li>
+            <li class="nav-item">
+              <b>
+                <a class="nav-link" href="{% url 'users-register' %}"
+                  >Signup</a
+                ></b
+              >
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+        <!-- Collapsible wrapper -->
+      </div>
+      <!-- Container wrapper -->
+    </nav>
+    <!-- Navbar -->
+    <script
+      type="text/javascript"
+      src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/3.6.0/mdb.min.js"
+    ></script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+<!--Any flash messages pop up in any page because this is the base template-->
+{% if messages %}
+<div class="alert alert-dismissible" role="alert">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+{% endif %}
