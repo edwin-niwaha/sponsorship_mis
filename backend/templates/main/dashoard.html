@@ -1,58 +1,10 @@
 {% extends 'main/base.html' %}
 {% load static %}
-{% block css_block %}
-<style></style>
-{% endblock %}
-
 
 {% block content %}
 
-<div class="container-fluid">
-    <div class="row">
-
-        <div class="col-md-4 ">
-            <div class="status" style="background-color:#95CEFF">
-                <h3> ########## </h3>
-                <h1><span id="digit">#</span></h1>
-            </div>
-        </div>
-
-        <div class="col-md-4 ">
-            <div class="status" style="background-color:#95CEFF">
-                <h3> ########## </h3>
-                <h1><span id="digit">#</span></h1>
-            </div>
-        </div>
-
-        <div class="col-md-4 ">
-            <div class="status" style="background-color:#95CEFF">
-                <h3> ########## </h3>
-                <h1><span id="digit">#</span></h1>
-            </div>
-        </div>
-
-        <div class="col-md-4 ">
-            <div class="status" style="background-color:#95CEFF">
-                <h3> ########## </h3>
-                <h1><span id="digit">#</span></h1>
-            </div>
-        </div>
-
-        <div class="col-md-4 ">
-            <div class="status" style="background-color:#95CEFF">
-                <h3> ########## </h3>
-                <h1><span id="digit">#</span></h1>
-            </div>
-        </div>
-
-        <div class="col-md-4 ">
-            <div class="status" style="background-color:#95CEFF">
-                <h3> ########## </h3>
-                <h1><span id="digit">#</span></h1>
-            </div>
-        </div>
-
-    </div>
-</div>
+<!-- ============== dash ===================== -->
+{% include 'main/partials/dash.html' %}
+<!-- ============================================= -->
 
 {% endblock content %}
