@@ -31,6 +31,9 @@
                                             class="btn btn-link btn-lg active btn-block">Sign in with GitHub</a>
                                         <a href="{% url 'social:begin' 'google-oauth2' %}"
                                             class="btn btn-link btn-lg active btn-block">Sign in with Google</a>
+                                        <a href="{% url 'social:begin' backend='linkedin-oauth2' %}"
+                                            class="btn btn-link btn-lg active btn-block">Sign in with Linkedin</a>
+                                        <div class="g-signin2" data-longtitle="true" data-onsuccess="onSignIn"></div>
                                         <hr>
                                         <p class="text-center"><strong>OR</strong></p>
                                         <hr>

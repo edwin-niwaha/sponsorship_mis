@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = str(os.getenv("SECRET_KEY"))
+SECRET_KEY = os.environ.get("SECRET_KEY", False)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     "social_django",
     # Others
     "bootstrap5",
-    # local apps
+    # Project apps
     "apps.users",
     "apps.main",
 ]
@@ -59,6 +59,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "social_django.middleware.SocialAuthExceptionMiddleware",
 ]
 
 ROOT_URLCONF = "core.urls"
@@ -116,6 +117,7 @@ AUTH_PASSWORD_VALIDATORS = [
 AUTHENTICATION_BACKENDS = (
     "social_core.backends.github.GithubOAuth2",
     "social_core.backends.google.GoogleOAuth2",
+    "social_core.backends.linkedin.LinkedinOAuth2",
     "django.contrib.auth.backends.ModelBackend",
 )
 
@@ -156,13 +158,17 @@ SOCIAL_AUTH_GITHUB_SECRET = str(os.getenv("GITHUB_SECRET"))
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = str(os.getenv("GOOGLE_KEY"))
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = str(os.getenv("GOOGLE_SECRET"))
 
+# social auth configs for linkedin
+SOCIAL_AUTH_LINKEDIN_OAUTH2_KEY = str(os.getenv("LINKEDIN_KEY"))
+SOCIAL_AUTH_LINKEDIN_OAUTH2_SECRET = str(os.getenv("LINKEDIN_SECRET"))
+
 # email configs
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = str(os.getenv("EMAIL_USER"))
-EMAIL_HOST_PASSWORD = str(os.getenv("EMAIL_PASSWORD"))
+EMAIL_HOST_PASSWORD = str(os.getenv("EMAIL_PASS"))
 
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 30
 
