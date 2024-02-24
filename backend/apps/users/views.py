@@ -6,7 +6,11 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.views import View
 from django.contrib.auth.decorators import login_required
 
-from .forms import RegisterForm, LoginForm, UpdateUserForm, UpdateProfileForm
+from .forms import (
+    RegisterForm,
+    LoginForm,
+    UpdateUserForm,
+    UpdateProfileForm,)
 
 
 def home(request):
@@ -103,3 +107,4 @@ def profile(request):
         "users/profile.html",
         {"user_form": user_form, "profile_form": profile_form},
     )
+

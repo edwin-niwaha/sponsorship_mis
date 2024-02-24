@@ -5,16 +5,26 @@
 <head>
     <!-- Required meta tags -->
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <link rel="stylesheet" href="{% static 'assets/vendors/mdi/css/materialdesignicons.min.css' %}" />
     <link rel="stylesheet" href="{% static 'assets/vendors/flag-icon-css/css/flag-icon.min.css' %}" />
     <link rel="stylesheet" href="{% static 'assets/vendors/css/vendor.bundle.base.css' %}" />
+    {% comment %}
     <link rel="stylesheet" href="{% static 'assets/vendors/font-awesome/css/font-awesome.min.css' %} %}" />
+    {% endcomment %}
     <link rel="stylesheet" href="{% static 'assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css' %}" />
     <link rel="stylesheet" href="{% static 'assets/css/style.css' %}" />
     <link rel="shortcut icon" href="{% static 'images/logo.png' %}" />
+
+    <!--Data tables CSS-->
+    <link rel="stylesheet" href="{% static 'css/htmx_table.css' %}" />
+
+    <!--Htmx Form-->
+    <link rel="stylesheet" href="{% static 'css/htmx_frm.css' %}" />
+
+    <!--Icons-->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
 
     <title>{% block title %} Perpetual - SMS | Dashboard {% endblock %}</title>
 </head>
@@ -23,31 +33,17 @@
     <div class="container-scroller">
 
         <!-- ========== Sidebar Start ========== -->
-        {% include 'main/partials/sidebar.html' %}
+        {% include 'main/_partials/sidebar.html' %}
         <!-- ========== sidebar End ========== -->
 
         <div class="container-fluid page-body-wrapper">
-            <div id="theme-settings" class="settings-panel">
-                <i class="settings-close mdi mdi-close"></i>
-                <p class="settings-heading">SIDEBAR SKINS</p>
-                <div class="sidebar-bg-options selected" id="sidebar-default-theme">
-                    <div class="img-ss rounded-circle bg-light border mr-3"></div> Default
-                </div>
-                <div class="sidebar-bg-options" id="sidebar-dark-theme">
-                    <div class="img-ss rounded-circle bg-dark border mr-3"></div> Dark
-                </div>
-                <p class="settings-heading mt-2">HEADER SKINS</p>
-                <div class="color-tiles mx-0 px-4">
-                    <div class="tiles light"></div>
-                    <div class="tiles dark"></div>
-                </div>
-            </div>
 
             <!-- ========== Topbar Start ========== -->
-            {% include 'main/partials/navbar.html' %}
+            {% include 'main/_partials/navbar.html' %}
             <!-- ========== Topbar End ========== -->
+
             <!-- =============== Messages Start ================= -->
-            {% include 'partials/messages.html' %}
+            {% include '_partials/messages.html' %}
             <!-- =============== Messages End ================= -->
             <div class="main-panel">
                 <div class="content-wrapper pb-0">
@@ -56,12 +52,13 @@
 
                 </div>
                 <!-- ============== Footer ===================== -->
-                {% include 'main/partials/footer.html' %}
+                {% include 'main/_partials/footer.html' %}
                 <!-- ============================================= -->
             </div>
         </div>
     </div>
 </body>
+
 <!-- container-scroller -->
 <!-- plugins:js -->
 <script src="{% static 'assets/vendors/js/vendor.bundle.base.js' %}"></script>
@@ -84,5 +81,10 @@
 <!-- Custom js for this page -->
 <script src="{% static 'assets/js/dashboard.js' %}"></script>
 <!-- End custom js for this page -->
+
+<!-- Scripts: Bootstraps, HTMX, and custom JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+<script src="https://unpkg.com/htmx.org@1.6.1/dist/htmx.min.js"></script>
+<script src="{% static 'js/htmx.js' %}"></script>
 
 </html>
