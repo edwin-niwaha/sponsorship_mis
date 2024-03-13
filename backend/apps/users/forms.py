@@ -133,7 +133,7 @@ class UpdateProfileForm(forms.ModelForm):
         widget=forms.FileInput(attrs={"class": "form-control-file"})
     )
     bio = forms.CharField(
-        widget=forms.Textarea(attrs={"class": "form-control", "rows": 5})
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3})
     )
 
     class Meta:

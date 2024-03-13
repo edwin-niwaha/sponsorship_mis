@@ -1,39 +1,40 @@
 from django import forms
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Row, Column
+from .models import *
 
-# class ChildForm(forms.Form):
 
-#     full_names = forms.CharField(label = "Full Names", widget = forms.TextInput( attrs={'class': 'form-control'} ))
-#     author = forms.CharField(label = "Author", widget = forms.TextInput( attrs={'class': 'form-control'} ))
-#     description = forms.CharField(label = "Description", widget = forms.Textarea( attrs={'class': 'form-control', 'rows': '5'} ))
-#     year = forms.CharField(label = "Year", widget = forms.NumberInput( attrs={'class': 'form-control'} ))
 
-#     #validation
-#     def clean(self):
-#         super(ChildForm, self).clean()
+class ChildDetailsForm(forms.ModelForm):
+    # is_child_in_school = forms.BooleanField(required=False, label="Check this if the child has started school")
+    class Meta:
 
-#         full_names = self.cleaned_data.get('full_names')
-
-#         if len(full_names)<5:
-#             self.add_error('full_names','Can not save full_names less than 5 characters long')
-#             self.fields['full_names'].widget.attrs.update({'class': 'form-control  is-invalid'})
-
-#         return self.cleaned_data
-
-class BookForm(forms.Form):
-
-    title = forms.CharField(label = "Title", widget = forms.TextInput( attrs={'class': 'form-control'} ))
-    author = forms.CharField(label = "Author", widget = forms.TextInput( attrs={'class': 'form-control'} ))
-    description = forms.CharField(label = "Description", widget = forms.Textarea( attrs={'class': 'form-control', 'rows': '2'} ))
-    year = forms.CharField(label = "Year", widget = forms.NumberInput( attrs={'class': 'form-control'} ))
+        model = ChildBioData
+        fields = "__all__"
+        widgets={'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
+                 'siblings': forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+                 'responsibility': forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+                 'mother_description': forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+                 'staff_comment': forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+                 'father_description': forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+                 }
 
     #validation
     def clean(self):
-        super(BookForm, self).clean()
+        super(ChildDetailsForm, self).clean()
 
-        title = self.cleaned_data.get('title')
+        first_name = self.cleaned_data.get('first_name')
+        last_name = self.cleaned_data.get('last_name')
 
-        if len(title)<5:
-            self.add_error('title','Can not save title less than 5 characters long')
-            self.fields['title'].widget.attrs.update({'class': 'form-control  is-invalid'})
+        if len(first_name)<3:
+            self.add_error('first_name','Can not save first name less than 3 characters long')
+            self.fields['first_name'].widget.attrs.update({'class': 'form-control  is-invalid'})
+
+        if len(last_name)<3:
+            self.add_error('last_name','Can not save last name less than 3 characters long')
+            self.fields['last_name'].widget.attrs.update({'class': 'form-control  is-invalid'})
 
         return self.cleaned_data
+    
+
+

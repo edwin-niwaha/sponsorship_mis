@@ -1,14 +1,19 @@
 import json
-from django.http import HttpResponse
+# from formtools.wizard.views import SessionWizardView
+from django.http import HttpResponse, HttpResponseRedirect
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib.auth.decorators import login_required
-from django.views import View
-from .models import Book
-from .forms import BookForm
+from django.utils.decorators import method_decorator
+from django.views.generic import CreateView
+from django.db.models import Prefetch
+from django.db import transaction
+
+from .models import *
+from .forms import *
 
 def home(request):
     return render(request, "users/home.html")
@@ -16,105 +21,73 @@ def home(request):
 
 @login_required
 def dashboard(request):
-    return render(request, "main/dashoard.html")
+    c_records = ChildBioData.objects.all()
+    total_records = c_records.count()
+
+    context = {
+        "kids_registered": total_records,
+        "total_no_of_kids": total_records,
+    }
+    return render(request, "main/dashboard.html", context)
+
+
+@login_required
+def child_list(request):
+    c_records = ChildBioData.objects.all()
+    return render(request, 'main/child/manage_child.html', {'c_records': c_records})
+
+@login_required
+@transaction.atomic
+def register_child(request):
+  if request.method == 'POST':
+    form = ChildDetailsForm(request.POST, request.FILES)
+
+    if form.is_valid(): 
+      form.save()
+      messages.info(request, "Record saved successfully!", extra_tags="bg-success")
+
+    else:
+      # Display form errors
+      return render(request, 'main/child/child_frm.html', {'form': form})
+  else:
+    form = ChildDetailsForm()
+  return render(request, 'main/child/child_frm.html', {'form': form})
 
 
 # @login_required
-# def child_list(request):
-#     return render(request, "main/child/manage_child.html")
-@login_required
-def child_list(request):
-    return render(request, 'main/child/manage_child.html', {})
-@login_required
-def book_list(request):
-    books = Book.objects.all()
-    return render(request, 'main/child/child_list.html', {'books': books})
-@login_required
-def add_book(request):
-    if request.method == "POST":
-        form = BookForm(request.POST)
-        if form.is_valid():
-            book = Book.objects.create(
-                title = form.cleaned_data.get('title'),
-                author = form.cleaned_data.get('author'),
-                description = form.cleaned_data.get('description'),
-                year = form.cleaned_data.get('year')
-            )
-            return HttpResponse(
-                status=204,
-                headers={
-                    'HX-Trigger': json.dumps({
-                        "bookListChanged": None,
-                        "showMessage": f"{book.title} added."
-                    })
-                })
-        else:
-            return render(request, 'main/child/child_form.html', {
-                'form': form,
-            })
-    else:
-        form = BookForm()
-    return render(request, 'main/child/child_form.html', {
-        'form': form,
-    })
-@login_required
-def edit_book(request, pk):
-    book = get_object_or_404(Book, pk=pk)
-    if request.method == "POST":
-        form = BookForm(request.POST, initial={
-            'title' : book.title,
-            'author' : book.author,
-            'description' : book.description,
-            'year': book.year
-        })
-        if form.is_valid():
-            book.title = form.cleaned_data.get('title')
-            book.author = form.cleaned_data.get('author')
-            book.description = form.cleaned_data.get('description')
-            book.year = form.cleaned_data.get('year')
+# def update_child(request, pk, template_name="main/child/child_frm.html"):
+#     c_record = get_object_or_404(ChildBioData, id=pk)
+#     form = ChildDetailsForm(request.POST or None, instance=c_record)
+#     if form.is_valid():
+#         form.save()
+#         messages.info(request, "Record updated successfully!", extra_tags="bg-success")
+#         return redirect("child_list")
+#     return render(request, template_name, {"form": form})
 
-            book.save()
-            return HttpResponse(
-                status=204,
-                headers={
-                    'HX-Trigger': json.dumps({
-                        "bookListChanged": None,
-                        "showMessage": f"{book.title} updated."
-                    })
-                }
-            )
-        else:
-            return render(request, 'main/child/child_form.html', {
-                'form': form,
-                'book': book,
-            })
-    else:
-        form = BookForm(initial={
-            'title' : book.title,
-            'author' : book.author,
-            'description' : book.description,
-            'year': book.year
-            })
-    return render(request, 'main/child/child_form.html', {
-        'form': form,
-        'book': book,
-    })
 @login_required
-def remove_book_confirmation(request, pk):
-    book = get_object_or_404(Book, pk=pk)
-    return render(request, 'main/child/child_delete_confirmation.html', {
-        'book': book,
-    })
+def update_child(request, pk, template_name="main/child/child_frm.html"):
+    try:
+        c_record = ChildBioData.objects.get(pk=pk)
+    except ChildBioData.DoesNotExist:
+        messages.error(request, "Child record not found!", extra_tags="bg-danger")
+        return redirect("child_list")  # Or a relevant error page
+
+    # Update the form to handle pictures (assuming ChildDetailsForm)
+    form = ChildDetailsForm(request.POST or None, request.FILES or None, instance=c_record)
+
+    if form.is_valid():
+        form.save()  # This will save the updated picture if uploaded
+        messages.info(request, "Record updated successfully!", extra_tags="bg-success")
+        return redirect("child_list")  # Replace with the appropriate redirect URL
+
+    context = {'form': form, 'child': c_record}  # Include child record for display (optional)
+    return render(request, template_name, context)
+
 @login_required
-@ require_POST
-def remove_book(request, pk):
-    book = get_object_or_404(Book, pk=pk)
-    book.delete()
-    return HttpResponse(
-        status=204,
-        headers={
-            'HX-Trigger': json.dumps({
-                "bookListChanged": None,
-                "showMessage": f"{book.title} deleted."
-            })
-        })
+@transaction.atomic
+def delete_child(request, pk):
+    c_records = ChildBioData.objects.get(id=pk)
+    c_records.delete()
+    messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
+
+    return HttpResponseRedirect(reverse("child_list"))

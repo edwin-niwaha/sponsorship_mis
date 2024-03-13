@@ -5,25 +5,21 @@
 
 <div class="container">
     <div class="page-header flex-wrap">
-        <h3 class="mb-0"> Lits of Children <span class="pl-0 h6 pl-sm-2 text-muted d-inline-block">
+        <h3 class="mb-0"> List of Children <span class="pl-0 h6 pl-sm-2 text-muted d-inline-block">
                 <div class="d-flex">
                     <button type="button" class="btn btn-sm bg-white btn-icon-text border">
                         <i class="mdi mdi-email btn-icon-prepend"></i> Email </button>
                     <button type="button" class="btn btn-sm bg-white btn-icon-text border ml-3">
                         <i class="mdi mdi-printer btn-icon-prepend"></i> Print </button>
-                    <button type="button" hx-get="{% url 'add_book' %}" hx-target="#dialog"
-                        class="btn btn-sm ml-3 btn-success"> Add Child </button>
-                </div>
-                <!-- Empty toast to show the message -->
-                <div class="toast-container position-fixed top-0 end-0 p-3">
-                    <div id="toast" class="toast align-items-center text-white bg-success border-0" role="alert"
-                        aria-live="assertive" aria-atomic="true">
-                        <div class="d-flex">
-                            <div id="toast-body" class="toast-body"></div>
-                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
-                                aria-label="Close">X</button>
-                        </div>
-                    </div>
+                    <a title="Register Child" class="btn btn-sm ml-3 btn-success" href="{% url 'manage_child' %}"><i
+                            class="mdi mdi-account-plus btn-icon-prepend"></i>
+                    </a>
+                    <a title="Upload Picture" class="btn btn-sm ml-3 btn-success" href=""><i
+                            class="mdi mdi-upload btn-icon-prepend"></i>
+                    </a>
+                    <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'child_list' %}"><i
+                            class="mdi mdi-chart-line btn-icon-prepend"></i>
+                    </a>
                 </div>
     </div>
     <hr>
@@ -31,30 +27,44 @@
     <table class="my-table">
         <thead>
             <tr>
-                <th>#</th>
-                <th>Title</th>
-                <th>Author</th>
-                <th>Description</th>
-                <th>Year</th>
-                <th>Action</th>
+                <th scope="col">#</th>
+                <th scope="col">ID</th>
+                <th scope="col">Avatar</th>
+                <th scope="col">First Name</th>
+                <th scope="col">Last Name</th>
+                <th scope="col">Gender</th>
+                <th scope="col">D.O.B</th>
+                <th scope="col">Mother's name</th>
+                <th scope="col" colspan="2">Action</th>
+
             </tr>
         </thead>
-
-        <!-- load booklist with HTMX -->
-        <tbody hx-trigger="load, bookListChanged from:body" hx-get="{% url 'book_list' %}" hx-target="this">
+        <tbody class="table-group-divider">
+            {%for c in c_records%}
             <tr>
-                <td class="spinner-border" role="status">
-                    <span class="visually-hidden">Loading...</span>
+                <th scope="row">{{forloop.counter}}.</th>
+                <td>{{c.prefixed_id}}</td>
+                <td>
+                    {% if c.avatar == ""  %}
+                    No avatar!
+                    {% else %}
+                    <img class="rounded-circle account-img" height="50" width="50" src="{{c.avatar.url}}" alt="">
+                    {% endif %}
                 </td>
+                <td>{{c.first_name}}</td>
+                <td>{{c.last_name}}</td>
+                <td>{{c.gender}}</td>
+                <td>{{c.date_of_birth}}</td>
+                <td>{{c.mother_name}}</td>
+                <td><a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_child' c.id %}"><i
+                            class="bi bi-pencil"></i></a></td>
+                <td><a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_child' c.id %}"
+                        onclick="return confirm('Are you sure about this?, this record will be deleted permanently');"><i
+                            class="bi bi-trash"></a></td>
             </tr>
+            {%endfor%}
         </tbody>
     </table>
-
-</div>
-
-<!-- Placeholder for the modal -->
-<div id="modal" class="modal fade">
-    <div id="dialog" class="modal-dialog" hx-target="this"></div>
 </div>
 
 

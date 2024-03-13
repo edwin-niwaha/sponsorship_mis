@@ -23,13 +23,9 @@
             </a>
         </li>
         <li>
-            <hr>
+            <hr />
         </li>
-        <li class="nav-item">
-            <span class="nav-link" href="#">
-                <span class="menu-title">Main</span>
-            </span>
-        </li>
+
         <li class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#ui-basic" aria-expanded="false" aria-controls="ui-basic">
                 <i class="mdi mdi-account menu-icon"></i>
@@ -39,7 +35,7 @@
             <div class="collapse" id="ui-basic">
                 <ul class="nav flex-column sub-menu">
                     <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'manage-child' %}" target="_self">Child Details</a>
+                        <a class="nav-link active" href="{% url 'child_list' %}" target="_self">Child Details</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="#" target="_self">Child Progress</a>
@@ -51,13 +47,10 @@
                         <a class="nav-link active" href="#" target="_self">Child Incidence</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="#" target="_self">Child Class Update</a>
+                        <a class="nav-link active" href="#" target="_self">Update Class</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="#" target="_self">Child Photo Update</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#" target="_self">Highly Vulnerable Child</a>
+                        <a class="nav-link active" href="#" target="_self">Highly Vulnerable</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="#" target="_self">Child Depature</a>
@@ -80,9 +73,6 @@
                         <a class="nav-link active" href="#" target="_self">Staff Correspondence</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="#" target="_self">Staf Photo Update</a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link active" href="#" target="_self">Staff Depature</a>
                     </li>
                 </ul>
@@ -91,7 +81,7 @@
         <li class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#ui-basic2" aria-expanded="false" aria-controls="ui-basic">
                 <i class="mdi mdi-cached menu-icon"></i>
-                <span class="menu-title">Manage Sponsorship</span>
+                <span class="menu-title">Sponsorship</span>
                 <i class="menu-arrow"></i>
             </a>
             <div class="collapse" id="ui-basic2">
@@ -123,11 +113,14 @@
                 <span class="menu-title">Reports</span>
             </a>
         </li>
-
+        <li>
+            <hr />
+        </li>
         <li class="nav-item">
-            <span class="nav-link" href="#">
-                <span class="menu-title">Others</span>
-            </span>
+            <a class="nav-link" href="#">
+                <i class="mdi mdi-attachment menu-icon"></i>
+                <span class="menu-title">Policies & Procedures</span>
+            </a>
         </li>
         <li class="nav-item">
             <a class="nav-link" href="#">
@@ -139,12 +132,6 @@
             <a class="nav-link" href="#">
                 <i class="mdi mdi-file-document-box menu-icon"></i>
                 <span class="menu-title">Documentation</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="mdi mdi-attachment menu-icon"></i>
-                <span class="menu-title">Policies & Procedures</span>
             </a>
         </li>
         <li>

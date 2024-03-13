@@ -1,64 +1,86 @@
-{% extends "users/base.html" %} {% block title %} Profile Page {% endblock title%}
+{% extends "users/base.html" %}
+{% block title %} Profile Page {% endblock title%}
 {% block content %}
-{% load static %}
 <div class="form-content my-3 p-3">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-7">
-                <div class="card shadow-lg border-0 rounded-lg mt-0 mb-5">
-                    <div class="card-header justify-content-center">
-                        <h3 class="font-weight-light my-4 text-center">Profile</h3>
-                    </div>
-                    <div class="media">
-                      <img class="rounded-circle account-img" src="{{ user.profile.avatar.url }}" style="cursor: pointer" />
-                    </div>
-                    <div class="row justify-content-center">
-                      {% if user_form.errors %}
-                      <div class="alert alert-danger alert-dismissible" role="alert">
-                        <div id="form_errors">
-                          {% for key, value in user_form.errors.items %}
-                          <strong>{{ value }}</strong>
-                          {% endfor %}
-                        </div>
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                          <span aria-hidden="true">&times;</span>
-                        </button>
-                      </div>
-                      {% endif %}
-                    
-                      <div class="card-body">
-                        <form method="post" enctype="multipart/form-data">
-                          {% csrf_token %}
-                          <div class="form-row">
-                            <div class="col-md-12">
-                              <div class="form-group">
-                                <label class="small mb-1">Username:</label>
-                                {{ user_form.username }}
-                                <label class="small mb-1">Email:</label>
-                                {{ user_form.email }}
-                              </div>
-                              <div class="form-group">
-                                <a href="{% url 'password_change' %}">Change Password</a>
-                                <hr />
-                                <label class="small mb-1">Change Avatar:</label>
-                                {{ profile_form.avatar }}
-                              </div>
-                              <label class="small mb-1">Bio:</label> {{ profile_form.bio }}
-                            </div>
-                          </div>
-                          <br /><br />
-                          <button type="submit" class="btn btn-dark btn-lg">Save Changes</button>
-                        </form>
-                      </div>
-                    </div>                
-                    <div class="card-footer text-center">
-                        <div class="small">
-                            <a href="{% url 'login' %}">Have an account? Go to Sign in</a>
-                        </div>
-                    </div>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-7">
+        <div class="card shadow-lg border-0 rounded-lg mt-0 mb-5">
+          <div class="card-header justify-content-center">
+            <h3 class="font-weight-light my-4 text-center">Profile</h3>
+          </div>
+          <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              {% if form.errors %}
+              <div class="alert alert-danger alert-dismissible" role="alert">
+                <div id="form_errors">
+                  {% for key, value in form.errors.items %}
+                  <strong>{{ value }}</strong>
+                  {% endfor %}
                 </div>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              {% endif %}
+
+              <div class="form-row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <img class="rounded-circle account-img" src="{{ user.profile.avatar.url }}"
+                      style="cursor: pointer" />
+                    {{user.first_name}} {{user.last_name}}
+                    <hr />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="small mb-1">User Name</label>
+                    {{ user_form.username }}
+                    <br />
+                    <a class="col-md-12 btn btn-primary" href="{% url 'password_change' %}">Change Password</a>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="small mb-1">Change Avatar:</label>
+                    {{ profile_form.avatar }}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="small mb-1">Email</label>
+                    {{ user_form.email }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="small mb-1">Bio:</label>
+                    {{ profile_form.bio }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group mt-4 mb-0">
+                <button type="submit" class="col-md-12 btn btn-dark">Save Changes</button><br><br>
+              </div>
+            </form>
+          </div>
+          <div class="card-footer text-center">
+            <div class="small">
+              <a href="{% url 'login' %}">Have an account? Go to Sign in</a>
             </div>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock content %}

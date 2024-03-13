@@ -38,6 +38,7 @@ cd backend
   ```bash
   # For winodws
     source .venv/Scripts/activate
+    
   # For linux
     source .venv/bin/activate
     ```

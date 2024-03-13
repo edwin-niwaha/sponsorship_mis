@@ -46,6 +46,10 @@ INSTALLED_APPS = [
     "social_django",
     # Others
     "bootstrap5",
+    'formtools',
+    "crispy_forms",
+    "crispy_bootstrap5",
+
     # Project apps
     "apps.users",
     "apps.main",
@@ -117,7 +121,8 @@ AUTH_PASSWORD_VALIDATORS = [
 AUTHENTICATION_BACKENDS = (
     "social_core.backends.github.GithubOAuth2",
     "social_core.backends.google.GoogleOAuth2",
-    "social_core.backends.linkedin.LinkedinOAuth2",
+    # 'social_core.backends.twitter.TwitterOAuth',
+    # "social_core.backends.linkedin.LinkedinOAuth2",
     "django.contrib.auth.backends.ModelBackend",
 )
 
@@ -158,9 +163,13 @@ SOCIAL_AUTH_GITHUB_SECRET = str(os.getenv("GITHUB_SECRET"))
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = str(os.getenv("GOOGLE_KEY"))
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = str(os.getenv("GOOGLE_SECRET"))
 
-# social auth configs for linkedin
-SOCIAL_AUTH_LINKEDIN_OAUTH2_KEY = str(os.getenv("LINKEDIN_KEY"))
-SOCIAL_AUTH_LINKEDIN_OAUTH2_SECRET = str(os.getenv("LINKEDIN_SECRET"))
+# # social auth configs for linkedin
+# SOCIAL_AUTH_LINKEDIN_OAUTH2_KEY = str(os.getenv("LINKEDIN_KEY"))
+# SOCIAL_AUTH_LINKEDIN_OAUTH2_SECRET = str(os.getenv("LINKEDIN_SECRET"))
+
+# # social auth configs for linkedin
+# SOCIAL_AUTH_TWITTER_KEY = str(os.getenv("TWITTER_KEY"))
+# SOCIAL_AUTH_TWITTER_SECRET  = str(os.getenv("TWITTER_SECRET"))
 
 # email configs
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -177,3 +186,7 @@ SESSION_COOKIE_AGE = 60 * 60 * 24 * 30
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+
+CRISPY_TEMPLATE_PACK = "bootstrap5"
