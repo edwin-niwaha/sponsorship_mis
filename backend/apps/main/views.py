@@ -35,6 +35,11 @@ def dashboard(request):
 def child_list(request):
     c_records = ChildBioData.objects.all()
     return render(request, 'main/child/manage_child.html', {'c_records': c_records})
+@login_required
+def child_details(request, pk):
+    record = ChildBioData.objects.get(pk=pk)
+    context = {'record': record}
+    return render(request, 'main/child/child_profile_rpt.html', context)
 
 @login_required
 @transaction.atomic
