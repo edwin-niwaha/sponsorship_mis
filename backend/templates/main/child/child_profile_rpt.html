@@ -8,32 +8,37 @@
 
 <div class="container">
     <div class="page-header flex-wrap">
-        <h3 class="mb-0"> Child Profile <span class="pl-0 h6 pl-sm-2 text-muted d-inline-block">
-                <div class="d-flex">
-                    <button type="button" class="btn btn-sm bg-white btn-icon-text border">
-                        <i class="mdi mdi-email btn-icon-prepend"></i> Email </button>
-                    <button type="button" class="btn btn-sm bg-white btn-icon-text border ml-3">
-                        <i class="mdi mdi-printer btn-icon-prepend"></i> Print </button>
-                    <a title="Register Child" class="btn btn-sm ml-3 btn-success" href="{% url 'manage_child' %}"><i
-                            class="mdi mdi-account-plus btn-icon-prepend"></i>
-                    </a>
-                    <a title="Upload Picture" class="btn btn-sm ml-3 btn-success" href=""><i
-                            class="mdi mdi-upload btn-icon-prepend"></i>
-                    </a>
-                    <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'child_list' %}"><i
-                            class="mdi mdi-chart-line btn-icon-prepend"></i>
-                    </a>
-                </div>
+        <div class="d-flex">
+            <button title="Email" type="button" class="btn btn-sm ml-3 btn-success">
+                <i class="mdi mdi-email btn-icon-prepend"></i> </button>
+
+            <button title="Print PDF" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
+                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
+
+            <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success"
+                onclick="ExportToExcel('xlsx')">
+                <i class="mdi mdi-file-excel btn-icon-prepend"></i> </button>
+
+            <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success"
+                onclick="Export2Doc('printMe');">
+                <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
+
+            <a title="Register Child" class="btn btn-sm ml-3 btn-success" href="{% url 'manage_child' %}"><i
+                    class="mdi mdi-account-plus btn-icon-prepend"></i>
+            </a>
+            <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'child_list' %}"><i
+                    class="mdi mdi-chart-line btn-icon-prepend"></i>
+            </a>
+        </div>
     </div>
     <hr>
-    <div>
+    <div id="printMe" class="tab-pane show active">
         <header style="text-align: center;">
-            <h1 class="text-primary">Child Profile</h1>
+            <h1 class="text-primary">{{record.last_name}} {{record.first_name}} - Profile</h1>
         </header>
-
         <table class="my-table">
             <tr>
-                <td class="text-primary" colspan="4"><b>Basic Info</b>
+                <td class="text-white bg-info" colspan="4"><b>Basic Info</b>
                 </td>
             </tr>
             <tr>
@@ -64,12 +69,16 @@
             </tr>
             <tr>
                 <td colspan="2"><i class="text-info">Tribe:</i> {{record.c_tribe}}</i>
-                    <i class="text-info">Background information:</i> ➡️</td>
+                    <i class="text-info">Background information:</i> &rarr; </td>
                 <td colspan="2">{{record.background_info}}</td>
             </tr>
             <tr>
-                <td colspan="2"><i class="text-info">Sponsored? ➡️ </i> {{record.is_sponsored}}
-                    <i class="text-info">Type: ➡️
+                <td class="text-white bg-info" colspan="4"><b>More Info...</b>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2"><i class="text-info">Sponsored? &rarr; </i> {{record.is_sponsored}}
+                    <i class="text-info">Type: &rarr;
                     </i>{{record.sponsorship_type}}</td>
                 <td class="text-info">Relationsip with Christ</td>
                 <td>{{record.relationsip_with_christ}}</td>
@@ -99,7 +108,7 @@
                 <td>{{record.aspiration}}</td>
             </tr>
             <tr>
-                <td class="text-primary" colspan="4"><b>Education Details </b>
+                <td class="text-white bg-info" colspan="4"><b>Education Details </b>
                 </td>
             </tr>
 
@@ -117,7 +126,7 @@
             </tr>
 
             <tr>
-                <td class="text-primary" colspan="4"><b>Family Background </b>
+                <td class="text-white bg-info" colspan="4"><b>Family Background </b>
                 </td>
             </tr>
             <tr>
@@ -132,8 +141,43 @@
                 <td class="text-info">Relationsip? </td>
                 <td>{{record.relationship_with_guardian}}</td>
             </tr>
+            <tr>
+                <td colspan="2">
+                    <i class="text-info">Father Alive?: </i>{{record.is_father_alive}}
+                    <i class="text-info">Father's Name: </i>{{record.father_name}}
+                </td>
+                <td colspan="2">
+                    <i class="text-info">Death Year?: </i>{{record.father_death_year}}
+                    <i class="text-info">Death Cause: </i>{{record.father_death_cause}}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="4"><i class="text-info">More description about the Father:
+                    </i>{{record.father_description}}</td>
 
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <i class="text-info">Mother alive?: </i>{{record.is_mother_alive}}
+                    <i class="text-info">Mother's name: </i>{{record.mother_name}}
+                </td>
+                <td colspan="2">
+                    <i class="text-info">Death Year?: </i>{{record.mother_death_year}}
+                    <i class="text-info">Death Cause: </i>{{record.mother_death_cause}}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="4"><i class="text-info">More description about the Mother:
+                    </i>{{record.mother_description}}</td>
+            </tr>
+            <tr>
+                <td colspan="2"> <i class="text-info">Compiled by: </i> {{record.compiled_by}}</td>
+
+                <td class="text-info">Comment:</td>
+                <td>{{record.staff_comment}}</td>
+            </tr>
         </table>
+        <hr class="bg-info" style="height: 5px;" />
     </div>
 </div>
 

@@ -5,69 +5,79 @@
 
 <div class="container">
     <div class="page-header flex-wrap">
-        <h3 class="mb-0"> List of Children <span class="pl-0 h6 pl-sm-2 text-muted d-inline-block">
-                <div class="d-flex">
-                    <button type="button" class="btn btn-sm bg-white btn-icon-text border">
-                        <i class="mdi mdi-email btn-icon-prepend"></i> Email </button>
-                    <button type="button" class="btn btn-sm bg-white btn-icon-text border ml-3">
-                        <i class="mdi mdi-printer btn-icon-prepend"></i> Print </button>
-                    <a title="Register Child" class="btn btn-sm ml-3 btn-success" href="{% url 'manage_child' %}"><i
-                            class="mdi mdi-account-plus btn-icon-prepend"></i>
-                    </a>
-                    <a title="Upload Picture" class="btn btn-sm ml-3 btn-success" href=""><i
-                            class="mdi mdi-upload btn-icon-prepend"></i>
-                    </a>
-                    <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'child_list' %}"><i
-                            class="mdi mdi-chart-line btn-icon-prepend"></i>
-                    </a>
-                </div>
+        <div class="d-flex">
+            <button title="Email" type="button" class="btn btn-sm ml-3 btn-success">
+                <i class="mdi mdi-email btn-icon-prepend"></i> </button>
+
+            <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
+                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
+
+            <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success"
+                onclick="ExportToExcel('xlsx')">
+                <i class="mdi mdi-file-excel btn-icon-prepend"></i> </button>
+
+            <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success"
+                onclick="Export2Doc('printMe');">
+                <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
+
+            <a title="Register Child" class="btn btn-sm ml-3 btn-success" href="{% url 'manage_child' %}"><i
+                    class="mdi mdi-account-plus btn-icon-prepend"></i>
+            </a>
+            <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'child_list' %}"><i
+                    class="mdi mdi-chart-line btn-icon-prepend"></i>
+            </a>
+        </div>
     </div>
     <hr>
+    <div id="printMe" class="tab-pane show active">
+        <header style="text-align: center;">
+            <h1 class="text-primary">Children MasterList</h1>
+            <hr class="bg-info" style="height: 5px;" />
+        </header>
+        <table class="my-table">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">ID</th>
+                    <th scope="col">Avatar</th>
+                    <th scope="col">First Name</th>
+                    <th scope="col">Last Name</th>
+                    <th scope="col">Gender</th>
+                    <th scope="col">D.O.B</th>
+                    <th scope="col">Mother's name</th>
+                    <th scope="col" colspan="2">Action</th>
 
-    <table class="my-table">
-        <thead>
-            <tr>
-                <th scope="col">#</th>
-                <th scope="col">ID</th>
-                <th scope="col">Avatar</th>
-                <th scope="col">First Name</th>
-                <th scope="col">Last Name</th>
-                <th scope="col">Gender</th>
-                <th scope="col">D.O.B</th>
-                <th scope="col">Mother's name</th>
-                <th scope="col" colspan="2">Action</th>
-
-            </tr>
-        </thead>
-        <tbody class="table-group-divider">
-            {%for c in c_records%}
-            <tr>
-                <th scope="row">{{forloop.counter}}.</th>
-                <td>{{c.prefixed_id}}</td>
-                <td>
-                    {% if c.avatar == ""  %}
-                    No avatar!
-                    {% else %}
-                    <img class="rounded-circle account-img" height="50" width="50" src="{{c.avatar.url}}" alt="">
-                    {% endif %}
-                </td>
-                <td>{{c.first_name}}</td>
-                <td>{{c.last_name}}</td>
-                <td>{{c.gender}}</td>
-                <td>{{c.date_of_birth}}</td>
-                <td>{{c.mother_name}}</td>
-                <td><a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_child' c.id %}"><i
-                            class="bi bi-pencil"></i></a></td>
-                <td><a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_child' c.id %}"
-                        onclick="return confirm('Are you sure about this? this record will be deleted permanently');"><i
-                            class="bi bi-trash"></a></td>
-                <td><a class="btn btn-info btn-sm" title="View Details" href="{% url 'child_details' c.id %}"><i
-                            class="bi bi-eye"></a></td>
-            </tr>
-            {%endfor%}
-        </tbody>
-    </table>
-
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {%for c in c_records%}
+                <tr>
+                    <th scope="row">{{forloop.counter}}.</th>
+                    <td>{{c.prefixed_id}}</td>
+                    <td>
+                        {% if c.avatar == ""  %}
+                        No avatar!
+                        {% else %}
+                        <img class="rounded-circle account-img" height="50" width="50" src="{{c.avatar.url}}" alt="">
+                        {% endif %}
+                    </td>
+                    <td>{{c.first_name}}</td>
+                    <td>{{c.last_name}}</td>
+                    <td>{{c.gender}}</td>
+                    <td>{{c.date_of_birth}}</td>
+                    <td>{{c.mother_name}}</td>
+                    <td><a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_child' c.id %}"><i
+                                class="bi bi-pencil"></i></a></td>
+                    <td><a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_child' c.id %}"
+                            onclick="return confirm('Are you sure about this? this record will be deleted permanently');"><i
+                                class="bi bi-trash"></a></td>
+                    <td><a class="btn btn-info btn-sm" title="View Details" href="{% url 'child_details' c.id %}"><i
+                                class="bi bi-eye"></a></td>
+                </tr>
+                {%endfor%}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 {% endblock content %}
