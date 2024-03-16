@@ -34,9 +34,10 @@
     <hr>
     <div id="printMe" class="tab-pane show active">
         <header style="text-align: center;">
-            <h1 class="text-primary">{{record.last_name}} {{record.first_name}} - Profile</h1>
+            <i style="font-size: 2em;" class="text-primary">{{record.last_name}} {{record.first_name}}</i> -
+            <i style="font-size: 2em;">Profile</i>
         </header>
-        <table class="my-table">
+        <table class=" my-table">
             <tr>
                 <td class="text-white bg-info" colspan="4"><b>Basic Info</b>
                 </td>
@@ -60,16 +61,19 @@
             </tr>
 
             <tr>
-                <td><i class="text-info">Gender: </i><i>{{record.gender}}</i> </td>
-                <td><i class="text-info">Weight:
-                    </i><i>{{record.c_weight}}Kgs</i> <i class="text-info">Height:</i>
-                    <i>{{record.c_height}}"</i></td>
+                <td colspan="2">
+                    <i class="text-info">Gender: </i>{{record.gender}}
+                    <i class="text-info">Weight:
+                    </i><i>{{record.weight}}Kgs</i> <i class="text-info">Height:</i>
+                    <i>{{record.height}}"</i></td>
                 <td class="text-info">Date of Birth:</td>
                 <td>{{record.date_of_birth}}</td>
             </tr>
             <tr>
-                <td colspan="2"><i class="text-info">Tribe:</i> {{record.c_tribe}}</i>
-                    <i class="text-info">Background information:</i> &rarr; </td>
+                <td><i class="text-info">Tribe:</i>
+                </td>
+                <td> {{record.tribe}}
+                    &nbsp; | &nbsp;<i class="text-info">Background information:</i> &rarr; &rarr; </td>
                 <td colspan="2">{{record.background_info}}</td>
             </tr>
             <tr>
@@ -77,11 +81,20 @@
                 </td>
             </tr>
             <tr>
-                <td colspan="2"><i class="text-info">Sponsored? &rarr; </i> {{record.is_sponsored}}
-                    <i class="text-info">Type: &rarr;
-                    </i>{{record.sponsorship_type}}</td>
-                <td class="text-info">Relationsip with Christ</td>
-                <td>{{record.relationsip_with_christ}}</td>
+                <td colspan="2"><i class="text-info">Is the child sponsored? &rarr; </i> {{record.is_sponsored}}
+                </td>
+                <td colspan="2">
+                    {% if record.is_sponsored == "Yes"  %}
+                    <i class="text-info">Type of ponsorship: &rarr;
+                    </i>{{record.sponsorship_type}}
+                    {% else %}
+                    <i class="text-info"> Type: </i> ................
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" class="text-info">Relationship with Christ &rarr;&rarr;</td>
+                <td colspan="2">{{record.relationship_with_christ}}</td>
             </tr>
             <tr>
                 <td class="text-info">Health Status: </td>
@@ -97,7 +110,7 @@
             </tr>
             <tr>
                 <td class="text-info">Interests: </td>
-                <td>{{record.c_intrest}}</td>
+                <td>{{record.c_interest}}</td>
                 <td class="text-info">Responsibilities: </td>
                 <td>{{record.responsibility}}</td>
             </tr>
@@ -111,7 +124,12 @@
                 <td class="text-white bg-info" colspan="4"><b>Education Details </b>
                 </td>
             </tr>
-
+            <tr>
+                <td colspan="4">
+                    <i class="text-info">Is the child in school? &rarr; </i> {{record.is_child_in_school}}
+                </td>
+            </tr>
+            {% if record.is_child_in_school == "Yes"  %}
             <tr>
                 <td class="text-info">School: </td>
                 <td>{{record.name_of_the_school}}</td>
@@ -124,6 +142,11 @@
                 <td class="text-info">Best subject: </td>
                 <td>{{record.best_subject}}</td>
             </tr>
+            {% else %}
+            <tr>
+                <td colspan="4">................</td>
+            </tr>
+            {% endif %}
 
             <tr>
                 <td class="text-white bg-info" colspan="4"><b>Family Background </b>
@@ -137,19 +160,25 @@
             </tr>
             <tr>
                 <td class="text-info">Gurdian Contact: </td>
-                <td>{{record.gurdian_tel}}</td>
+                <td>{{record.guardian_contact_number}}</td>
                 <td class="text-info">Relationsip? </td>
                 <td>{{record.relationship_with_guardian}}</td>
             </tr>
             <tr>
                 <td colspan="2">
-                    <i class="text-info">Father Alive?: </i>{{record.is_father_alive}}
+                    <i class="text-info">Father alive? &rarr; </i>{{record.is_father_alive}}
                     <i class="text-info">Father's Name: </i>{{record.father_name}}
                 </td>
+                {% if record.is_father_alive == "Yes"  %}
+                <td colspan="2">
+                    ................
+                </td>
+                {% else %}
                 <td colspan="2">
                     <i class="text-info">Death Year?: </i>{{record.father_death_year}}
                     <i class="text-info">Death Cause: </i>{{record.father_death_cause}}
                 </td>
+                {% endif %}
             </tr>
             <tr>
                 <td colspan="4"><i class="text-info">More description about the Father:
@@ -158,13 +187,19 @@
             </tr>
             <tr>
                 <td colspan="2">
-                    <i class="text-info">Mother alive?: </i>{{record.is_mother_alive}}
+                    <i class="text-info">Mother alive? &rarr; </i>{{record.is_mother_alive}}
                     <i class="text-info">Mother's name: </i>{{record.mother_name}}
                 </td>
+                {% if record.is_mother_alive == "Yes"  %}
+                <td colspan="2">
+                    ................
+                </td>
+                {% else %}
                 <td colspan="2">
                     <i class="text-info">Death Year?: </i>{{record.mother_death_year}}
                     <i class="text-info">Death Cause: </i>{{record.mother_death_cause}}
                 </td>
+                {% endif %}
             </tr>
             <tr>
                 <td colspan="4"><i class="text-info">More description about the Mother:

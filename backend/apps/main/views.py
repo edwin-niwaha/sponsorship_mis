@@ -21,7 +21,7 @@ def home(request):
 
 @login_required
 def dashboard(request):
-    c_records = ChildBioData.objects.all()
+    c_records = ChildProfile.objects.all()
     total_records = c_records.count()
 
     context = {
@@ -33,11 +33,11 @@ def dashboard(request):
 
 @login_required
 def child_list(request):
-    c_records = ChildBioData.objects.all()
+    c_records = ChildProfile.objects.all()
     return render(request, 'main/child/manage_child.html', {'c_records': c_records})
 @login_required
 def child_details(request, pk):
-    record = ChildBioData.objects.get(pk=pk)
+    record = ChildProfile.objects.get(pk=pk)
     context = {'record': record}
     return render(request, 'main/child/child_profile_rpt.html', context)
 
@@ -61,7 +61,7 @@ def register_child(request):
 
 # @login_required
 # def update_child(request, pk, template_name="main/child/child_frm.html"):
-#     c_record = get_object_or_404(ChildBioData, id=pk)
+#     c_record = get_object_or_404(ChildProfile, id=pk)
 #     form = ChildDetailsForm(request.POST or None, instance=c_record)
 #     if form.is_valid():
 #         form.save()
@@ -72,8 +72,8 @@ def register_child(request):
 @login_required
 def update_child(request, pk, template_name="main/child/child_frm.html"):
     try:
-        c_record = ChildBioData.objects.get(pk=pk)
-    except ChildBioData.DoesNotExist:
+        c_record = ChildProfile.objects.get(pk=pk)
+    except ChildProfile.DoesNotExist:
         messages.error(request, "Child record not found!", extra_tags="bg-danger")
         return redirect("child_list")  # Or a relevant error page
 
@@ -91,7 +91,7 @@ def update_child(request, pk, template_name="main/child/child_frm.html"):
 @login_required
 @transaction.atomic
 def delete_child(request, pk):
-    c_records = ChildBioData.objects.get(id=pk)
+    c_records = ChildProfile.objects.get(id=pk)
     c_records.delete()
     messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
 

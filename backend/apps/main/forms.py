@@ -4,15 +4,20 @@ from crispy_forms.layout import Layout, Row, Column
 from .models import *
 
 
+# custom widget to display "Yes/No" options in the form.
+YES_NO_CHOICES = (
+    (True, 'Yes'),
+    (False, 'No'),
+)
 
 class ChildDetailsForm(forms.ModelForm):
-    # is_child_in_school = forms.BooleanField(required=False, label="Check this if the child has started school")
     class Meta:
 
-        model = ChildBioData
+        model = ChildProfile
         fields = "__all__"
         widgets={'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
                  'siblings': forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+                 'background_info': forms.Textarea(attrs={"class": "form-control", "rows": 3}),
                  'responsibility': forms.Textarea(attrs={"class": "form-control", "rows": 3}),
                  'mother_description': forms.Textarea(attrs={"class": "form-control", "rows": 3}),
                  'staff_comment': forms.Textarea(attrs={"class": "form-control", "rows": 3}),
