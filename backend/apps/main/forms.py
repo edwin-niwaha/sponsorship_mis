@@ -4,13 +4,13 @@ from crispy_forms.layout import Layout, Row, Column
 from .models import *
 
 
-# custom widget to display "Yes/No" options in the form.
-YES_NO_CHOICES = (
-    (True, 'Yes'),
-    (False, 'No'),
-)
+class UploadForm(forms.Form):
+    excel_file = forms.FileField()
+    excel_file.widget.attrs['class'] = 'form-control-file'
+
 
 class ChildDetailsForm(forms.ModelForm):
+
     class Meta:
 
         model = ChildProfile
@@ -22,24 +22,27 @@ class ChildDetailsForm(forms.ModelForm):
                  'mother_description': forms.Textarea(attrs={"class": "form-control", "rows": 3}),
                  'staff_comment': forms.Textarea(attrs={"class": "form-control", "rows": 3}),
                  'father_description': forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+                 'c_interest': forms.Textarea(attrs={'class': "form-control", "rows":3}),
                  }
-
-    #validation
+        
+    #Form validation
     def clean(self):
         super(ChildDetailsForm, self).clean()
 
-        first_name = self.cleaned_data.get('first_name')
-        last_name = self.cleaned_data.get('last_name')
+        full_name = self.cleaned_data.get('full_name')
+        preferred_name = self.cleaned_data.get('preferred_name')
 
-        if len(first_name)<3:
-            self.add_error('first_name','Can not save first name less than 3 characters long')
-            self.fields['first_name'].widget.attrs.update({'class': 'form-control  is-invalid'})
+        if len(full_name)<3:
+            self.add_error('full_name','Can not save first name less than 3 characters long')
+            self.fields['full_name'].widget.attrs.update({'class': 'form-control  is-invalid'})
 
-        if len(last_name)<3:
-            self.add_error('last_name','Can not save last name less than 3 characters long')
-            self.fields['last_name'].widget.attrs.update({'class': 'form-control  is-invalid'})
+        if len(preferred_name)<3:
+            self.add_error('preferred_name','Can not save last name less than 3 characters long')
+            self.fields['preferred_name'].widget.attrs.update({'class': 'form-control  is-invalid'})
 
         return self.cleaned_data
     
-
+    def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.fields['avatar'].widget = forms.FileInput(attrs={'accept': 'image/*'})
 

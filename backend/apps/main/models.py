@@ -58,80 +58,106 @@ class ChildProfile(models.Model):
 
 )
     # Basic info
-    first_name = models.CharField(max_length=50, validators=[
+    full_name = models.CharField(max_length=50, 
+                                 verbose_name="Full Name", 
+                                 validators=[
         RegexValidator(r'^[A-Za-z]+(?:\s[A-Za-z]+)*$', 'Only letters and spaces are allowed')
     ])
-    last_name = models.CharField(max_length=50, validators=[
+    preferred_name = models.CharField(max_length=50, 
+                                      verbose_name="Preferred Name", 
+                                      validators=[
         RegexValidator(r'^[A-Za-z]+(?:\s[A-Za-z]+)*$', 'Only letters and spaces are allowed')
     ])
-    gender = models.CharField(max_length=6, choices=GENDER_CHOICES)
-    date_of_birth = models.DateField(null=True, blank=True, validators=[
+    residence = models.CharField(max_length=50, blank=False, 
+                                verbose_name="Current Residence")
+    district = models.CharField(max_length=50, blank=False, 
+                                verbose_name="Home District")
+    tribe = models.CharField(max_length=20)
+    gender = models.CharField(max_length=6, choices=GENDER_CHOICES, 
+                                verbose_name="Gender",)
+    date_of_birth = models.DateField(null=True, blank=True, 
+                                verbose_name="Date of Birth", 
+                                validators=[
     MinValueValidator(limit_value=datetime.date(year=1900, month=1, day=1)),
     MaxValueValidator(limit_value=datetime.date.today())])
-    weight = models.DecimalField(max_digits=5, decimal_places=2) 
+    weight = models.DecimalField(max_digits=5, decimal_places=2, 
+                                 verbose_name="Weight in kilograms") 
     height = models.PositiveIntegerField(validators=[MinValueValidator(1),
-                                       MaxValueValidator(100)])
-    avatar = models.ImageField(upload_to='child_profiles/', blank=True,
+                                       MaxValueValidator(100)], 
+                                       verbose_name="Height in centimeters")
+    # Foreign table for avatar images
+    avatar = models.ImageField(upload_to='child_profiles/', blank=True, 
+                               verbose_name="Upload Image(jpg, jpeg, png)",
     validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png'])])
-    tribe = models.CharField(max_length=20)
-    background_info = models.TextField(blank=True, null=True)
+    aspiration = models.CharField(max_length=50, blank=True, 
+                                  verbose_name='Aspiration')
+    c_interest = models.TextField(max_length=100, blank=True, 
+                                  verbose_name="Interest and abilities ")
 
-    # More info
-    is_sponsored = models.CharField(
-        max_length=3, choices=SPONSORSHIP_CHOICES, default='No')
-    sponsorship_type = models.CharField(
-        max_length=20, choices=SPONSORSHIP_TYPE_CHOICES, blank=True)
-    relationship_with_christ = models.CharField(max_length=100, blank=False)
-    health_status = models.CharField(max_length=50, blank=False)
-    religion = models.CharField(max_length=50, choices=RELIGION_CHOICES, blank=False)
-    residence = models.CharField(max_length=50, blank=False)
-    district = models.CharField(max_length=50, blank=False)
-    c_interest = models.CharField(max_length=50, blank=True)
-    responsibility = models.TextField(max_length=50, blank=False)
-    prayer_request = models.CharField(max_length=50, blank=False)
-    aspiration = models.CharField(max_length=50, blank=True)
-
-
-    # Education details
+    # Education details - Foreign table for education details
     is_child_in_school = models.CharField(
-        max_length=3, choices=SPONSORSHIP_CHOICES, default='No'
-    )
-    name_of_the_school = models.CharField(max_length=50, blank=False)
+        max_length=3, choices=SPONSORSHIP_CHOICES, default='No')
+    name_of_the_school = models.CharField(max_length=50, blank=False, 
+                                          verbose_name='Name of the school')
     education_level = models.CharField(
-        max_length=20, choices=EDUC_LEVEL_CHOICES, default='Pre-School'
-    )
+        max_length=20, choices=EDUC_LEVEL_CHOICES, default='Pre-School', 
+        verbose_name='Level of Education')
     child_class = models.CharField(
-        max_length=20, choices=CLASS_LEVEL_CHOICES, blank=True
-    )
+        max_length=20, choices=CLASS_LEVEL_CHOICES, blank=True)
     best_subject = models.CharField(max_length=50, blank=False)
     
-    # Family background
-    siblings = models.TextField(max_length=100, blank=True)
-
-    # Guardian
-    guardian = models.CharField(max_length=50, blank=True)
-    guardian_contact_number = PhoneNumberField(blank=True, default="+256999999999")
-    relationship_with_guardian = models.CharField(max_length=20, blank=True)
-
-    # Parents
-    father_name = models.CharField(max_length=100, blank=False)
-    is_father_alive = models.CharField(choices=(('Yes','Yes'),('No','No')), max_length=3) 
-    father_death_year = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(1900)]) 
-    father_death_cause = models.CharField(max_length=100, blank=True)
-    father_description = models.TextField(max_length=100, blank=True)
-
-    mother_name = models.CharField(max_length=100, blank=False)
-    is_mother_alive = models.CharField(choices=(('Yes','Yes'),('No','No')), max_length=3)
-    mother_death_year = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(1900)])
-    mother_death_cause = models.CharField(max_length=100, blank=True)
-    mother_description = models.TextField(max_length=100, blank=True)
-
-    # Other fields
-    YEAR_MAX = current_year()
-    year_enrolled = models.IntegerField(validators=[MinValueValidator(2013), MaxValueValidator(YEAR_MAX)])    
+    # Sponsorship info - Foreign table for sponsorship
+    is_sponsored = models.CharField(
+        max_length=3, choices=SPONSORSHIP_CHOICES, default='No', verbose_name="Is the child sponsored?")
+    sponsorship_type = models.CharField(
+        max_length=20, choices=SPONSORSHIP_TYPE_CHOICES, blank=True, verbose_name="Type of sponsorship")
     
-    staff_comment = models.TextField(max_length=50, blank=True)
-    compiled_by = models.CharField(max_length=10, blank=True)
+    # Family background
+    # Parents
+    father_name = models.CharField(max_length=100, blank=False, 
+                                   verbose_name="Father’s Name")
+    is_father_alive = models.CharField(choices=(('Yes','Yes'),('No','No')), max_length=3, 
+                                       verbose_name="Is the father alive?") 
+    father_description = models.TextField(max_length=100, blank=True, 
+                                          verbose_name="if not what happened/if alive what is happening?")
+    mother_name = models.CharField(max_length=100, blank=False, 
+                                   verbose_name="Mother’s name")
+    is_mother_alive = models.CharField(choices=(('Yes','Yes'),('No','No')), max_length=3, 
+                                       verbose_name="is the mother alive?")
+    mother_description = models.TextField(max_length=100, blank=True, 
+                                          verbose_name="if not what happened/if alive what is happening?")
+    # Guardian
+    guardian = models.CharField(max_length=50, blank=True, 
+                                verbose_name="Current guardian")
+    guardian_contact = PhoneNumberField(blank=True, default="+256999999999", 
+                                        verbose_name="Guardian Contact")
+    relationship_with_guardian = models.CharField(max_length=20, blank=True, 
+                                                  verbose_name="Relationship with the Guardian")
+    # Foreign table for siblings relations
+    siblings = models.TextField(max_length=100, blank=True, 
+                                verbose_name="List names and age of the siblings")
+    
+    background_info = models.TextField(blank=True, null=True,
+                                       verbose_name="Other family back ground information")
+    health_status = models.CharField(max_length=50, blank=False, 
+                                     verbose_name="General health status")
+    responsibility = models.TextField(max_length=50, blank=False, 
+                                      verbose_name="Child’s responsibilities")
+    relationship_with_christ = models.CharField(max_length=100, blank=False, 
+                                                verbose_name="Relationship with Christ")
+    religion = models.CharField(max_length=50, choices=RELIGION_CHOICES, blank=False, 
+                                verbose_name="Religion of the Child")
+    prayer_request = models.CharField(max_length=50, blank=False, 
+                                      verbose_name="Prayer needs/request")
+    YEAR_MAX = current_year()
+    year_enrolled = models.IntegerField(validators=[MinValueValidator(2013), MaxValueValidator(YEAR_MAX)], 
+                                        verbose_name="The year when the child was enrolled on the program?")    
+   
+    # Other fields
+    staff_comment = models.TextField(max_length=50, blank=True, 
+                                     verbose_name="Staff Comment ")
+    compiled_by = models.CharField(max_length=10, blank=True, 
+                                   verbose_name="Compiled by")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)  
 
@@ -141,8 +167,11 @@ class ChildProfile(models.Model):
         verbose_name_plural = 'Children Bio Data'
 
     def __str__(self):
-        return self.first_name + ' ' + self.last_name
+        return self.full_name + ' ' + self.preferred_name
     @property
     def prefixed_id(self):
         return f"P-00{self.pk}"
     
+class ExcelImport(models.Model):
+    name = models.CharField(max_length=100, verbose_name="Full Name")
+    # Other fields...

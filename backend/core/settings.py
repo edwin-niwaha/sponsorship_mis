@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "social_django",
-    # Others
+
+    # Other apps
     "bootstrap5",
     'formtools',
     "crispy_forms",
