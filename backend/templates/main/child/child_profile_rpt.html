@@ -34,7 +34,7 @@
     <hr>
     <div id="printMe" class="tab-pane show active">
         <header style="text-align: center;">
-            <i style="font-size: 2em;" class="text-primary">{{record.preferred_name}} {{record.full_name}}</i> -
+            <i style="font-size: 2em;" class="text-success">{{record.full_name}}</i> -
             <i style="font-size: 2em;">Profile</i>
         </header>
         <table class=" my-table">
@@ -66,17 +66,20 @@
                 <td>{{record.district}}</td>
             </tr>
             <tr>
-                <td colspan="4">
+                <td colspan="3">
                     <i class="text-info">Tribe: &rarr;</i>{{record.tribe}} |
                     <i class="text-info">Gender: &rarr;</i>{{record.gender}} |
-                    <i class="text-info">Date of Birth: &rarr;</i>{{record.date_of_birth}} |
-                    <i class="text-info">Weight: &rarr;</i><i>{{record.weight}}Kgs</i> |
-                    <i class="text-info">Height: &rarr;</i><i>{{record.height}}cms</i></td>
+                    <i class="text-info">Date of Birth: &rarr;</i>{{record.date_of_birth}}
+                </td>
+                <td class="text-success">{{ age }} year(s) old</td>
             </tr>
-
             <tr>
-                <td colspan="2" class="text-info">Aspiration: </td>
-                <td colspan="2">{{record.aspiration}}</td>
+                <td colspan="2"><i class="text-info">Weight: &rarr;</i><i>{{record.weight}} Kgs</i>
+                    <i class="text-info">Height: &rarr;</i><i>{{record.height}} cms</i>
+                </td>
+                <td colspan="2"><i class="text-info">Aspiration: &rarr;</i>
+                    <i>{{record.aspiration}}</i>
+                </td>
             </tr>
             <tr>
                 <td colspan="2" class="text-info">Interest and abilities: </td>

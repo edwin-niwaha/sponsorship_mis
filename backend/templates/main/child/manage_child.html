@@ -43,8 +43,7 @@
                     <th scope="col">#</th>
                     <th scope="col">Reg.No</th>
                     <th scope="col">Avatar</th>
-                    <th scope="col">First Name</th>
-                    <th scope="col">Last Name</th>
+                    <th scope="col">Full Name</th>
                     <th scope="col">Gender</th>
                     <th scope="col">D.O.B</th>
                     <th scope="col" colspan="3">Action</th>
@@ -64,7 +63,6 @@
                         {% endif %}
                     </td>
                     <td>{{c.full_name}}</td>
-                    <td>{{c.preferred_name}}</td>
                     <td>{{c.gender}}</td>
                     <td>{{c.date_of_birth}}</td>
                     <td><a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_child' c.id %}"><i

@@ -34,7 +34,9 @@ def child_list(request):
 @login_required
 def child_details(request, pk):
     record = ChildProfile.objects.get(pk=pk)
-    context = {'record': record}
+    age = record.calculate_age()
+    
+    context = {'record': record, 'age': age}
     return render(request, 'main/child/child_profile_rpt.html', context)
 
 @login_required
@@ -110,9 +112,54 @@ def process_and_import_data(excel_file):
         sheet = wb.active
         for row in sheet.iter_rows(min_row=2):
             fname = row[0].value
-
+            preferred_name = row[1].value
+            residence = row[2].value
+            tribe = row[3].value
+            gender = row[4].value
+            date_of_birth = row[5].value
+            weight = row[6].value
+            height = row[7].value
+            avatar = row[8].value
+            c_interest = row[9].value
+            is_child_in_school = row[10].value
+            name_of_the_school = row[11].value
+            education_level = row[12].value
+            child_class = row[13].value
+            best_subject = row[14].value
+            is_sponsored = row[15].value
+            sponsorship_type = row[16].value
+            father_name = row[17].value
+            is_father_alive = row[18].value
+            father_description = row[19].value
+            mother_name = row[20].value
+            is_mother_alive = row[21].value
+            mother_description = row[22].value
+            guardian = row[23].value
+            guardian_contact = row[24].value
+            relationship_with_guardian = row[25].value
+            siblings = row[26].value
+            background_info = row[27].value
+            health_status = row[28].value
+            responsibility = row[29].value
+            relationship_with_christ = row[30].value
+            religion = row[31].value
+            prayer_request = row[32].value
+            year_enrolled = row[33].value
+            staff_comment = row[34].value
+            compiled_by = row[35].value
             if fname is not None:
-                obj = ExcelImport.objects.create(name=fname)
+                obj = ChildProfile.objects.create(full_name=fname, preferred_name=preferred_name, residence=residence,
+                                                 tribe=tribe, gender=gender, date_of_birth=date_of_birth, weight=weight,
+                                                 height=height, avatar=avatar, c_interest=c_interest, is_child_in_school=is_child_in_school,
+                                                 name_of_the_school=name_of_the_school, education_level=education_level,
+                                                 child_class=child_class, best_subject=best_subject, is_sponsored=is_sponsored,
+                                                 sponsorship_type=sponsorship_type, father_name=father_name, is_father_alive=is_father_alive,
+                                                 father_description=father_description, mother_name=mother_name, is_mother_alive=is_mother_alive,
+                                                 mother_description=mother_description, guardian=guardian, guardian_contact=guardian_contact, 
+                                                 relationship_with_guardian=relationship_with_guardian, siblings=siblings, background_info=background_info,
+                                                 health_status=health_status, responsibility=responsibility, relationship_with_christ=relationship_with_christ,
+                                                 religion=religion, prayer_request= prayer_request, year_enrolled=year_enrolled, staff_comment=staff_comment,
+                                                 compiled_by=compiled_by)
                 obj.save()
     except Exception as e:
         raise e  # Reraise the exception for better error handling at the view level
@@ -120,14 +167,14 @@ def process_and_import_data(excel_file):
 # view imported data
 @login_required
 def import_details(request):
-    records = ExcelImport.objects.all()
+    records = ChildProfile.objects.all()
     return render(request, 'main/child/data_list.html', {'records': records})
 
 # delete individual one record at a time
 @login_required
 @transaction.atomic
 def delete_excel_data(request, pk):
-    record_imported = ExcelImport.objects.get(id=pk)
+    record_imported = ChildProfile.objects.get(id=pk)
     record_imported.delete()
     messages.info(request, "Record deleted!", extra_tags="bg-danger")
     return HttpResponseRedirect(reverse("data_list"))
@@ -137,7 +184,7 @@ def delete_excel_data(request, pk):
 @transaction.atomic
 def delete_confirmation(request):
     if request.method == 'POST':
-        ExcelImport.objects.all().delete()
+        ChildProfile.objects.all().delete()
         messages.info(request, "All records deleted!", extra_tags="bg-danger")
         return redirect('data_list')  
     return render(request, 'delete_confirmation.html')
