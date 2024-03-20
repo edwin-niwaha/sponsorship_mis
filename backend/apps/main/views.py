@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from openpyxl import load_workbook
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 
 from .models import *
@@ -26,11 +27,28 @@ def dashboard(request):
     }
     return render(request, "main/dashboard.html", context)
 
-
-@login_required
 def child_list(request):
-    c_records = ChildProfile.objects.all()
-    return render(request, 'main/child/manage_child.html', {'c_records': c_records})
+    queryset = ChildProfile.objects.all()
+
+    # Search functionality
+    search_query = request.GET.get('search')
+    if search_query:
+        queryset = queryset.filter(full_name__icontains=search_query)
+
+    paginator = Paginator(queryset, 10)  # Show 10 records per page
+    page = request.GET.get('page')
+
+    try:
+        c_records = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        c_records = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        c_records = paginator.page(paginator.num_pages)
+
+    return render(request, 'main/child/manage_child.html', {'c_records': c_records, 'table_title': 'Children MasterList'})
+
 @login_required
 def child_details(request, pk):
     record = ChildProfile.objects.get(pk=pk)
