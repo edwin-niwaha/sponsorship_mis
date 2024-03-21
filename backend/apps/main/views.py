@@ -15,10 +15,10 @@ from .forms import *
 def home(request):
     return render(request, "users/home.html")
 
-
+# =================================== The dashboard ===================================
 @login_required
 def dashboard(request):
-    c_records = ChildProfile.objects.all()
+    c_records = Child.objects.all()
     total_records = c_records.count()
 
     context = {
@@ -27,8 +27,9 @@ def dashboard(request):
     }
     return render(request, "main/dashboard.html", context)
 
+# =================================== Fetch and display all children details ===================================
 def child_list(request):
-    queryset = ChildProfile.objects.all()
+    queryset = Child.objects.all()
 
     # Search functionality
     search_query = request.GET.get('search')
@@ -49,19 +50,21 @@ def child_list(request):
 
     return render(request, 'main/child/manage_child.html', {'c_records': c_records, 'table_title': 'Children MasterList'})
 
+# =================================== Fetch and display selected child details ===================================
 @login_required
 def child_details(request, pk):
-    record = ChildProfile.objects.get(pk=pk)
+    record = Child.objects.get(pk=pk)
     age = record.calculate_age()
     
-    context = {'record': record, 'age': age}
+    context = {'table_title': 'Child Profile Report', 'record': record, 'age': age}
     return render(request, 'main/child/child_profile_rpt.html', context)
 
+# =================================== Register Child ===================================
 @login_required
 @transaction.atomic
 def register_child(request):
   if request.method == 'POST':
-    form = ChildDetailsForm(request.POST, request.FILES)
+    form = ChildForm(request.POST, request.FILES)
 
     if form.is_valid(): 
       form.save()
@@ -71,38 +74,57 @@ def register_child(request):
       # Display form errors
       return render(request, 'main/child/child_frm.html', {'form': form})
   else:
-    form = ChildDetailsForm()
+    form = ChildForm()
   return render(request, 'main/child/child_frm.html', {'form_name':'Child Registration', 'form': form})
 
+# =================================== Upload Profile Picture ===================================
+def upload_profile_picture(request):
+    # Retrieve the child object
 
+    if request.method == 'POST':
+        form = ChildProfilePictureForm(request.POST, request.FILES)
+        if form.is_valid():
+            # Create a new child profile picture
+            child_picture = form.save(commit=False)
+            child_picture.save()
+            return redirect('child_list')
+    else:
+        form = ChildProfilePictureForm()
+
+    context = {'form_name':'Upload Profile Pictures','form': form,}
+    return render(request, 'main/child/profile_picture.html', context)
+
+# =================================== Update Child data ===================================
 @login_required
 @transaction.atomic
 def update_child(request, pk, template_name="main/child/child_frm.html"):
     try:
-        c_record = ChildProfile.objects.get(pk=pk)
-    except ChildProfile.DoesNotExist:
+        c_record = Child.objects.get(pk=pk)
+    except Child.DoesNotExist:
         messages.error(request, "Child record not found!", extra_tags="bg-danger")
         return redirect("child_list")  # Or a relevant error page
 
-    # Update the form to handle pictures (assuming ChildDetailsForm)
-    form = ChildDetailsForm(request.POST or None, request.FILES or None, instance=c_record)
+    # Update the form to handle pictures (assuming ChildForm)
+    form = ChildForm(request.POST or None, request.FILES or None, instance=c_record)
 
     if form.is_valid():
-        form.save()  # This will save the updated picture if uploaded
+        form.save()  # This will save the updated avatar if uploaded
         messages.info(request, "Record updated successfully!", extra_tags="bg-success")
         return redirect("child_list")  # Replace with the appropriate redirect URL
     
     context = {'form_name':'Child Registration', 'form': form, 'child': c_record}  # Include child record for display (optional)
     return render(request, template_name, context)
 
+# =================================== Deleted selected child ===================================
 @login_required
 @transaction.atomic
 def delete_child(request, pk):
-    c_records = ChildProfile.objects.get(id=pk)
+    c_records = Child.objects.get(id=pk)
     c_records.delete()
     messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
     return HttpResponseRedirect(reverse("child_list"))
 
+# =================================== Process and Import Excel data ===================================
 @login_required
 @transaction.atomic
 # debug and refactor this code
@@ -163,10 +185,11 @@ def process_and_import_data(excel_file):
             religion = row[31].value
             prayer_request = row[32].value
             year_enrolled = row[33].value
-            staff_comment = row[34].value
-            compiled_by = row[35].value
+            is_departed = row[34].value
+            staff_comment = row[35].value
+            compiled_by = row[36].value
             if fname is not None:
-                obj = ChildProfile.objects.create(full_name=fname, preferred_name=preferred_name, residence=residence,
+                obj = Child.objects.create(full_name=fname, preferred_name=preferred_name, residence=residence,
                                                  tribe=tribe, gender=gender, date_of_birth=date_of_birth, weight=weight,
                                                  height=height, avatar=avatar, c_interest=c_interest, is_child_in_school=is_child_in_school,
                                                  name_of_the_school=name_of_the_school, education_level=education_level,
@@ -176,33 +199,35 @@ def process_and_import_data(excel_file):
                                                  mother_description=mother_description, guardian=guardian, guardian_contact=guardian_contact, 
                                                  relationship_with_guardian=relationship_with_guardian, siblings=siblings, background_info=background_info,
                                                  health_status=health_status, responsibility=responsibility, relationship_with_christ=relationship_with_christ,
-                                                 religion=religion, prayer_request= prayer_request, year_enrolled=year_enrolled, staff_comment=staff_comment,
+                                                 religion=religion, prayer_request= prayer_request, year_enrolled=year_enrolled, is_departed=is_departed, staff_comment=staff_comment,
                                                  compiled_by=compiled_by)
                 obj.save()
     except Exception as e:
         raise e  # Reraise the exception for better error handling at the view level
 
-# view imported data
+
+# =================================== Fetch and display imported data ===================================
 @login_required
 def import_details(request):
-    records = ChildProfile.objects.all()
-    return render(request, 'main/child/data_list.html', {'records': records})
+    records = Child.objects.all()
+    return render(request, 'main/child/data_list.html', {'table_title': 'Imported Excel Data', 'records': records})
 
-# delete individual one record at a time
+# =================================== Delete selected individual ===================================
 @login_required
 @transaction.atomic
 def delete_excel_data(request, pk):
-    record_imported = ChildProfile.objects.get(id=pk)
+    record_imported = Child.objects.get(id=pk)
     record_imported.delete()
     messages.info(request, "Record deleted!", extra_tags="bg-danger")
     return HttpResponseRedirect(reverse("data_list"))
 
-# delete all records at once
+# =================================== Delete all records at once ===================================
 @login_required
 @transaction.atomic
 def delete_confirmation(request):
     if request.method == 'POST':
-        ChildProfile.objects.all().delete()
+        Child.objects.all().delete()
         messages.info(request, "All records deleted!", extra_tags="bg-danger")
-        return redirect('data_list')  
-    return render(request, 'delete_confirmation.html')
+        return HttpResponseRedirect(reverse("data_list"))
+    
+# =================================== More ===================================

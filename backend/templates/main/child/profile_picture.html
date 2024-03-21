@@ -12,8 +12,8 @@
         <div class="d-flex">
             <a title="Register Child" class="btn btn-sm ml-3 btn-success" href="{% url 'manage_child' %}"><i
                     class="mdi mdi-account-plus btn-icon-prepend"></i></a>
-            <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'child_list' %}"><i
-                    class="mdi mdi-chart-line btn-icon-prepend"></i>
+            <a title="View Uploads..." class="btn btn-sm ml-3 btn-success" href=""><i
+                    class="mdi mdi-cloud-upload btn-icon-prepend"></i>
             </a>
         </div>
     </div>
@@ -29,7 +29,7 @@
                             <!--  -->
                             {{ form|crispy }}
                             <div class="form-group mt-4 mb-0">
-                                <button type="submit" class="col-md-12 btn btn-dark">Register Child</button><br>
+                                <button type="submit" class="col-md-12 btn btn-dark">Upload Picture</button><br>
                             </div>
                         </form>
                     </div>

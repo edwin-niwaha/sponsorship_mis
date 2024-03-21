@@ -8,10 +8,9 @@
 
 <div class="container">
     <div class="page-header flex-wrap">
-        <div class="d-flex">
-            <button title="Email" type="button" class="btn btn-sm ml-3 btn-success">
-                <i class="mdi mdi-email btn-icon-prepend"></i> </button>
+        <h3 class="mb-0"> {{table_title|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
 
+        <div class="d-flex">
             <button title="Print PDF" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
                 <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
 
@@ -223,7 +222,7 @@
                 <td> <i class="text-info">Compiled by: </i> {{record.compiled_by}}</td>
             </tr>
         </table>
-        <hr class="bg-info" style="height: 5px;" />
+        <hr class="bg-info" style="height: 3px;" />
     </div>
 </div>
 

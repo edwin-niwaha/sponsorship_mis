@@ -5,39 +5,32 @@
 
 <div class="container">
     <div class="page-header flex-wrap">
-        <h3 class="mb-0"> Imported Data <span class="pl-0 h6 pl-sm-2 text-muted d-inline-block">
-                <div class="d-flex">
-                    <button title="Email" type="button" class="btn btn-sm ml-3 btn-success">
-                        <i class="mdi mdi-email btn-icon-prepend"></i> </button>
+        <h3 class="mb-0"> {{table_title|upper}} <span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
+        <div class="d-flex">
+            <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
+                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
 
-                    <button title="Print" type="button" class="btn btn-sm ml-3 btn-success"
-                        onclick=" printDiv('printMe')">
-                        <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
+            <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success"
+                onclick="ExportToExcel('xlsx')">
+                <i class="mdi mdi-file-excel btn-icon-prepend"></i> </button>
 
-                    <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success"
-                        onclick="ExportToExcel('xlsx')">
-                        <i class="mdi mdi-file-excel btn-icon-prepend"></i> </button>
+            <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success"
+                onclick="Export2Doc('printMe');">
+                <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
 
-                    <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success"
-                        onclick="Export2Doc('printMe');">
-                        <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
+            <a title="Bulk Import" class="btn btn-sm ml-3 btn-success" href="{% url 'import' %}"><i
+                    class="mdi mdi-import btn-icon-prepend"></i></a>
 
-                    <a title="Register Child" class="btn btn-sm ml-3 btn-success" href="{% url 'manage_child' %}"><i
-                            class="mdi mdi-account-plus btn-icon-prepend"></i>
-                    </a>
-                    <a title="Bulk Import" class="btn btn-sm ml-3 btn-success" href="{% url 'import' %}"><i
-                            class="mdi mdi-upload btn-icon-prepend"></i></a>
-                    <a title="View imported data" class="btn btn-sm ml-3 btn-success" href="{% url 'data_list' %}"><i
-                            class="mdi mdi-format-align-bottom btn-icon-prepend"></i></a>
-                    <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'child_list' %}"><i
-                            class="mdi mdi-chart-line btn-icon-prepend"></i>
-                    </a> &nbsp;
-                    <form action="{% url 'delete_confirmation' %}" method="post">
-                        {% csrf_token %}
-                        <button title="Delete All" class="btn btn-danger btn-sm" type="submit"
-                            onclick="return confirm('Are you sure about this? all records will be deleted permanently');">X</button>
-                    </form>
-                </div>
+            <a title="View imported data" class="btn btn-sm ml-3 btn-success" href="{% url 'data_list' %}"><i
+                    class="mdi mdi-chart-line btn-icon-prepend"></i></a>
+
+            <form action="{% url 'delete_confirmation' %}" method="post">
+                {% csrf_token %}
+                <button title="Delete All" class="btn btn-sm ml-3 btn-danger btn-sm" type="submit"
+                    onclick="return confirm('Are you sure about this? all records will be deleted permanently');"><i
+                        class="mdi mdi-cancel btn-icon-prepend"></i></button>
+            </form>
+        </div>
     </div>
     <hr>
     <div id="printMe" class="tab-pane show active">
