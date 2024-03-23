@@ -44,3 +44,9 @@
     background-color: #ddd;
   }
 }
+
+.search-input,
+.search-dropdown {
+  flex-grow: 1;
+  margin-right: 10px;
+}

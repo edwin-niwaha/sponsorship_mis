@@ -7,11 +7,11 @@ urlpatterns = [
 
 # The child paths
     path('child/add/', views.register_child, name="manage_child"),
-    path('child/profile/', views.upload_profile_picture, name="profile_picture"), 
+    path('child/profile/update_picture/', views.update_picture, name='update_picture'),    
     path('child/list/', views.child_list, name="child_list"),    
     path('child/list/details/<int:pk>', views.child_details, name="child_details"),    
-    path('up/<int:pk>', views.update_child, name= 'update_child'),
-    path('del/<int:pk>', views.delete_child, name= 'delete_child'),
+    path('child/update/<int:pk>', views.update_child, name= 'update_child'),
+    path('child/delete/<int:pk>', views.delete_child, name= 'delete_child'),
 
 # Excel import paths
     path('child/import/', views.import_data, name="import"),

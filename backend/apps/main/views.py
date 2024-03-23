@@ -29,9 +29,9 @@ def dashboard(request):
 
 # =================================== Fetch and display all children details ===================================
 def child_list(request):
-    queryset = Child.objects.all()
+    # queryset = Child.objects.all().order_by('-created_at')
+    queryset = Child.objects.all().order_by('id').select_related('profile_picture')    
 
-    # Search functionality
     search_query = request.GET.get('search')
     if search_query:
         queryset = queryset.filter(full_name__icontains=search_query)
@@ -78,41 +78,63 @@ def register_child(request):
   return render(request, 'main/child/child_frm.html', {'form_name':'Child Registration', 'form': form})
 
 # =================================== Upload Profile Picture ===================================
-def upload_profile_picture(request):
-    # Retrieve the child object
-
+@login_required
+@transaction.atomic
+def update_picture(request):
     if request.method == 'POST':
         form = ChildProfilePictureForm(request.POST, request.FILES)
         if form.is_valid():
-            # Create a new child profile picture
-            child_picture = form.save(commit=False)
-            child_picture.save()
-            return redirect('child_list')
+            child_id = request.POST.get('id')
+            try:
+                child_profile = Child.objects.get(pk=child_id)
+            except Child.DoesNotExist:
+                messages.error(request, "Child with ID {} does not exist.".format(child_id))
+                return redirect("update_picture")
+
+            # child_picture = form.save(commit=False)  # Avoid unnecessary save
+            # child_picture.child = child_profile  # Set the child relationship
+            # child_picture.save()
+
+            # Set the new picture as current and deactivate previous current picture
+            new_picture = form.save(commit=False)
+            new_picture.child = child_profile
+            new_picture.is_current = True
+            new_picture.save()
+
+            messages.success(request, "Profile picture updated successfully!")
+            return redirect("update_picture") 
+        else:
+            messages.error(request, "Form is invalid.")
     else:
         form = ChildProfilePictureForm()
 
-    context = {'form_name':'Upload Profile Pictures','form': form,}
-    return render(request, 'main/child/profile_picture.html', context)
+    # Retrieve all child objects
+        children = Child.objects.all().order_by('-created_at')
+
+    return render(request, 'main/child/profile_picture.html', {'form': form, 'form_name': 'Upload Profile Picture', 'children': children})
 
 # =================================== Update Child data ===================================
 @login_required
 @transaction.atomic
 def update_child(request, pk, template_name="main/child/child_frm.html"):
     try:
-        c_record = Child.objects.get(pk=pk)
+        child_record = Child.objects.get(pk=pk)
     except Child.DoesNotExist:
-        messages.error(request, "Child record not found!", extra_tags="bg-danger")
+        messages.error(request, "Child record not found!")
         return redirect("child_list")  # Or a relevant error page
 
-    # Update the form to handle pictures (assuming ChildForm)
-    form = ChildForm(request.POST or None, request.FILES or None, instance=c_record)
+    if request.method == "POST":
+        form = ChildForm(request.POST, request.FILES, instance=child_record)
+        if form.is_valid():
+            form.save()
 
-    if form.is_valid():
-        form.save()  # This will save the updated avatar if uploaded
-        messages.info(request, "Record updated successfully!", extra_tags="bg-success")
-        return redirect("child_list")  # Replace with the appropriate redirect URL
-    
-    context = {'form_name':'Child Registration', 'form': form, 'child': c_record}  # Include child record for display (optional)
+            messages.success(request, "Child record updated successfully!")
+            return redirect("child_list")  # Replace with the appropriate redirect URL
+    else:
+        # Pre-populate the form with existing data
+        form = ChildForm(instance=child_record)
+
+    context = {'form_name': 'Child Registration', 'form': form}
     return render(request, template_name, context)
 
 # =================================== Deleted selected child ===================================
@@ -159,39 +181,39 @@ def process_and_import_data(excel_file):
             date_of_birth = row[5].value
             weight = row[6].value
             height = row[7].value
-            avatar = row[8].value
-            c_interest = row[9].value
-            is_child_in_school = row[10].value
-            name_of_the_school = row[11].value
-            education_level = row[12].value
-            child_class = row[13].value
-            best_subject = row[14].value
-            is_sponsored = row[15].value
-            sponsorship_type = row[16].value
-            father_name = row[17].value
-            is_father_alive = row[18].value
-            father_description = row[19].value
-            mother_name = row[20].value
-            is_mother_alive = row[21].value
-            mother_description = row[22].value
-            guardian = row[23].value
-            guardian_contact = row[24].value
-            relationship_with_guardian = row[25].value
-            siblings = row[26].value
-            background_info = row[27].value
-            health_status = row[28].value
-            responsibility = row[29].value
-            relationship_with_christ = row[30].value
-            religion = row[31].value
-            prayer_request = row[32].value
-            year_enrolled = row[33].value
-            is_departed = row[34].value
-            staff_comment = row[35].value
-            compiled_by = row[36].value
+            # avatar = row[8].value
+            c_interest = row[8].value
+            is_child_in_school = row[9].value
+            name_of_the_school = row[10].value
+            education_level = row[11].value
+            child_class = row[12].value
+            best_subject = row[13].value
+            is_sponsored = row[14].value
+            sponsorship_type = row[15].value
+            father_name = row[16].value
+            is_father_alive = row[17].value
+            father_description = row[18].value
+            mother_name = row[19].value
+            is_mother_alive = row[20].value
+            mother_description = row[21].value
+            guardian = row[22].value
+            guardian_contact = row[23].value
+            relationship_with_guardian = row[24].value
+            siblings = row[25].value
+            background_info = row[26].value
+            health_status = row[27].value
+            responsibility = row[28].value
+            relationship_with_christ = row[29].value
+            religion = row[30].value
+            prayer_request = row[31].value
+            year_enrolled = row[32].value
+            is_departed = row[33].value
+            staff_comment = row[34].value
+            compiled_by = row[35].value
             if fname is not None:
                 obj = Child.objects.create(full_name=fname, preferred_name=preferred_name, residence=residence,
                                                  tribe=tribe, gender=gender, date_of_birth=date_of_birth, weight=weight,
-                                                 height=height, avatar=avatar, c_interest=c_interest, is_child_in_school=is_child_in_school,
+                                                 height=height, c_interest=c_interest, is_child_in_school=is_child_in_school,
                                                  name_of_the_school=name_of_the_school, education_level=education_level,
                                                  child_class=child_class, best_subject=best_subject, is_sponsored=is_sponsored,
                                                  sponsorship_type=sponsorship_type, father_name=father_name, is_father_alive=is_father_alive,

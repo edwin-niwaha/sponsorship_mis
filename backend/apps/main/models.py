@@ -88,9 +88,10 @@ class Child(models.Model):
                                        MaxValueValidator(100)], null=True, blank=True,
                                        verbose_name="Height in centimeters")
     # Foreign table for avatar images
-    avatar = models.ImageField(upload_to='child_profiles/', null=True, blank=True, 
-                               verbose_name="Upload Image(jpg, jpeg, png)",
-    validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png'])])
+    # avatar = models.ImageField(upload_to='child_profiles/', null=True, blank=True, 
+    #                            verbose_name="Upload Image(jpg, jpeg, png)",
+    # validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png'])])
+    
     aspiration = models.CharField(max_length=50, null=True, blank=True, 
                                   verbose_name='Aspiration')
     c_interest = models.TextField(max_length=100, null=True, blank=True, 
@@ -183,9 +184,10 @@ class Child(models.Model):
 # =================================== CHILD PROFILE PICTURES MODEL ===================================
     
 class ChildProfilePicture(models.Model):
-    child = models.ForeignKey(Child, on_delete=models.CASCADE, related_name='profile_pictures')
-    picture = models.ImageField(upload_to='child_profile_pictures/')
+    child = models.OneToOneField(Child, on_delete=models.CASCADE, related_name='profile_picture')
+    picture = models.ImageField(upload_to='child_profiles/', verbose_name="Choose a picture")
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    is_current = models.BooleanField(default=False, verbose_name="Is Current Picture")
 
     class Meta:
         db_table = 'child_profile_pictures'

@@ -43,7 +43,7 @@
                 <tr>
                     <!-- <th scope="col">#</th> -->
                     <th scope="col">Reg.No</th>
-                    <th scope="col">Avatar</th>
+                    <th scope="col">Picture</th>
                     <th scope="col">Full Name</th>
                     <th scope="col">Gender</th>
                     <th scope="col">D.O.B</th>
@@ -52,26 +52,35 @@
                 </tr>
             </thead>
             <tbody class="table-group-divider">
-                {%for c in c_records%}
+                {%for child in c_records%}
                 <tr>
                     <!-- <th scope="row">{{forloop.counter}}.</th> -->
-                    <td>{{c.prefixed_id}}</td>
-                    <td>
-                        {% if c.avatar == ""  %}
+                    <td>{{child.prefixed_id}}</td>
+                    <!-- <td>
+                        {% if child.avatar == ""  %}
                         No avatar!
                         {% else %}
-                        <img class="rounded-circle account-img" height="50" width="50" src="{{c.avatar.url}}" alt="">
+                        <img class="rounded-circle account-img" height="50" width="50" src="{{ child.avatar.url }}"
+                            alt="">
+                        {% endif %}
+                    </td> -->
+                    <td>
+                        {% if child.profile_picture.picture == ""  %}
+                        No Picture!
+                        {% else %}
+                        <img class="rounded-circle account-img" height="50" width="50"
+                            src="{{ child.profile_picture.picture.url }}" alt="">
                         {% endif %}
                     </td>
-                    <td>{{c.full_name}}</td>
-                    <td>{{c.gender}}</td>
-                    <td>{{c.date_of_birth}}</td>
-                    <td><a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_child' c.id %}"><i
+                    <td>{{child.full_name}}</td>
+                    <td>{{child.gender}}</td>
+                    <td>{{child.date_of_birth}}</td>
+                    <td><a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_child' child.id %}"><i
                                 class="bi bi-pencil"></i></a></td>
-                    <td><a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_child' c.id %}"
+                    <td><a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_child' child.id %}"
                             onclick="return confirm('Are you sure about this? this record will be deleted permanently');"><i
                                 class="bi bi-trash"></a></td>
-                    <td><a class="btn btn-info btn-sm" title="View Details" href="{% url 'child_details' c.id %}"><i
+                    <td><a class="btn btn-info btn-sm" title="View Details" href="{% url 'child_details' child.id %}"><i
                                 class="bi bi-eye"></a></td>
                 </tr>
                 {%endfor%}

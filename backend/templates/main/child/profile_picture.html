@@ -10,10 +10,11 @@
     <div class="page-header flex-wrap">
         <h3 class="mb-0"> {{form_name|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
         <div class="d-flex">
-            <a title="Register Child" class="btn btn-sm ml-3 btn-success" href="{% url 'manage_child' %}"><i
-                    class="mdi mdi-account-plus btn-icon-prepend"></i></a>
-            <a title="View Uploads..." class="btn btn-sm ml-3 btn-success" href=""><i
+            <a title="View Uploads..." class="btn btn-sm ml-3 btn-success" href="{% url 'update_picture' %}"><i
                     class="mdi mdi-cloud-upload btn-icon-prepend"></i>
+            </a>
+            <a title="Download Picture..." class="btn btn-sm ml-3 btn-success" href="{% url 'child_list' %}"><i
+                    class="mdi mdi-cloud-download btn-icon-prepend"></i>
             </a>
         </div>
     </div>
@@ -26,10 +27,18 @@
                     <div class="card-body">
                         <form method="post" enctype="multipart/form-data">
                             {% csrf_token %}
+                            <label for="id">Select Child:</label>
+                            <select name="id" id="dropdown" class="form-control">
+                                {% for child in children %}
+                                <option value="{{ child.id }}">{{ child.full_name }} &rarr; {{ child.prefixed_id }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <br /><br />
                             <!--  -->
                             {{ form|crispy }}
                             <div class="form-group mt-4 mb-0">
-                                <button type="submit" class="col-md-12 btn btn-dark">Upload Picture</button><br>
+                                <button type="submit" class="col-md-12 btn btn-dark">Update Picture</button><br>
                             </div>
                         </form>
                     </div>
@@ -38,6 +47,5 @@
         </div>
     </div>
 </div>
-
 
 {% endblock content %}
