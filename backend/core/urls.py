@@ -1,14 +1,11 @@
-from django.contrib import admin
-
-from django.urls import path, include, re_path
-
 from django.conf import settings
 from django.conf.urls.static import static
-
+from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from apps.users.views import CustomLoginView, ResetPasswordView, ChangePasswordView
+from django.urls import include, path, re_path
 
 from apps.users.forms import LoginForm
+from apps.users.views import ChangePasswordView, CustomLoginView, ResetPasswordView
 
 urlpatterns = [
     path("admin/", admin.site.urls),

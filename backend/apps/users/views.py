@@ -1,16 +1,17 @@
-from django.shortcuts import render, redirect
-from django.urls import reverse_lazy
-from django.contrib.auth.views import LoginView, PasswordResetView, PasswordChangeView
 from django.contrib import messages
-from django.contrib.messages.views import SuccessMessageMixin
-from django.views import View
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordResetView
+from django.contrib.messages.views import SuccessMessageMixin
+from django.shortcuts import redirect, render
+from django.urls import reverse_lazy
+from django.views import View
 
 from .forms import (
-    RegisterForm,
     LoginForm,
+    RegisterForm,
+    UpdateProfileForm,
     UpdateUserForm,
-    UpdateProfileForm,)
+)
 
 
 def home(request):
@@ -107,4 +108,3 @@ def profile(request):
         "users/profile.html",
         {"user_form": user_form, "profile_form": profile_form},
     )
-

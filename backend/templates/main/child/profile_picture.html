@@ -27,7 +27,6 @@
                     <div class="card-body">
                         <form method="post" enctype="multipart/form-data">
                             {% csrf_token %}
-                            <label for="id">Select Child:</label>
                             <select name="id" id="dropdown" class="chzn-select" required>
                                 <option value="" selected disabled>Search child...</option>
                                 {% for child in children %}
@@ -39,7 +38,7 @@
                             <!--  -->
                             {{ form|crispy }}
                             <div class="form-group mt-4 mb-0">
-                                <button type="submit" class="col-md-12 btn btn-dark">Update Picture</button><br>
+                                <button type="submit" class="col-md-12 btn btn-dark">UPLOAD PICTURE</button><br>
                             </div>
                         </form>
                     </div>

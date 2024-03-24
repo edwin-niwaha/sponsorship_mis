@@ -68,7 +68,7 @@
                         {% if child.profile_picture.picture == ""  %}
                         No Picture!
                         {% else %}
-                        <a href="{% url 'update_picture' %}">
+                        <a title="Click to update picture" href="{% url 'update_picture' %}">
                             <img class="rounded-circle account-img" height="50" width="50"
                                 src="{{ child.profile_picture.picture.url }}" alt="">
                         </a>

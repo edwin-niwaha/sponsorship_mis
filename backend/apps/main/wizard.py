@@ -5,7 +5,8 @@
 # @method_decorator(login_required, name='dispatch')
 # class ChildWizardView(SessionWizardView):
 #     template_name = "main/child/manage_child_wizard.html"
-#     # form_list = [ChildDetailForm, EducatonDetailForm, Step3Form, Step4Form, Step5Form, Step6Form, Step7Form, Step8Form]
+#     # form_list = [ChildDetailForm, EducatonDetailForm, Step3Form, Step4Form, 
+#       Step5Form, Step6Form, Step7Form, Step8Form]
 #     form_list = [ChildDetailForm, EducationDetailForm, Step3Form]
 
 #     condition_dict = {"1": show_education_form}

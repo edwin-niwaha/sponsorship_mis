@@ -15,6 +15,7 @@ from pathlib import Path
 
 # To keep secret keys in environment variables
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -42,16 +43,12 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "social_django",
-
-
-# =================================== OTHER APPLICATION ===================================
+    # =================================== OTHER APPLICATION ===================================
     "bootstrap5",
-    'formtools',
+    "formtools",
     "crispy_forms",
     "crispy_bootstrap5",
-
-
-# =================================== PROJECT APPLICATIONS ===================================
+    # =================================== PROJECT APPLICATIONS ===================================
     "apps.users",
     "apps.main",
 ]
@@ -212,28 +209,30 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 
 # =================================== USE THE LOGGER ===================================
-LOGS_DIR = BASE_DIR / 'logs'
-LOGS_DIR.mkdir(parents=True, exist_ok=True)  # Create a 'logs' directory inside your project folder if it doesn't exist
+LOGS_DIR = BASE_DIR / "logs"
+LOGS_DIR.mkdir(
+    parents=True, exist_ok=True
+)  # Create a 'logs' directory inside your project folder if it doesn't exist
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
         },
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': LOGS_DIR / 'app.log',  # Path to your log file
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": LOGS_DIR / "app.log",  # Path to your log file
         },
     },
-    'loggers': {
-        '': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': True,
+    "loggers": {
+        "": {
+            "handlers": ["console", "file"],
+            "level": "DEBUG",
+            "propagate": True,
         },
     },
 }
