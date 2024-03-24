@@ -1,4 +1,5 @@
 # from formtools.wizard.views import SessionWizardView
+import logging
 from django.http import  HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -11,6 +12,12 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from .models import *
 from .forms import *
+
+#The getLogger() function is used to get a logger instance with the specified name (__name__ in this case). This logger can be
+# used to log messages at various levels of severity for debugging and monitoring purposes.
+logger = logging.getLogger(__name__)
+# logger.info("Child ID received: %s", child_id)  # Log the child_id value
+
 
 def home(request):
     return render(request, "users/home.html")
@@ -36,7 +43,7 @@ def child_list(request):
     if search_query:
         queryset = queryset.filter(full_name__icontains=search_query)
 
-    paginator = Paginator(queryset, 10)  # Show 10 records per page
+    paginator = Paginator(queryset, 20)  # Show 10 records per page
     page = request.GET.get('page')
 
     try:
@@ -50,7 +57,7 @@ def child_list(request):
 
     return render(request, 'main/child/manage_child.html', {'c_records': c_records, 'table_title': 'Children MasterList'})
 
-# =================================== Fetch and display selected child details ===================================
+# =================================== Fetch and display selected child's details ===================================
 @login_required
 def child_details(request, pk):
     record = Child.objects.get(pk=pk)
@@ -85,33 +92,38 @@ def update_picture(request):
         form = ChildProfilePictureForm(request.POST, request.FILES)
         if form.is_valid():
             child_id = request.POST.get('id')
+
             try:
                 child_profile = Child.objects.get(pk=child_id)
             except Child.DoesNotExist:
                 messages.error(request, "Child with ID {} does not exist.".format(child_id))
                 return redirect("update_picture")
 
-            # child_picture = form.save(commit=False)  # Avoid unnecessary save
-            # child_picture.child = child_profile  # Set the child relationship
-            # child_picture.save()
+            # Check if a profile picture already exists for the child
+            try:
+                existing_picture = ChildProfilePicture.objects.get(child=child_profile)
+                # Update the existing profile picture
+                existing_picture.picture = form.cleaned_data['picture']
+                existing_picture.save()
+                messages.success(request, "Profile picture updated successfully!")
+            except ChildProfilePicture.DoesNotExist:
+                # Save the new picture
+                new_picture = form.save(commit=False)
+                new_picture.child = child_profile
+                new_picture.save()
+                messages.success(request, "Profile picture uploaded successfully!")
 
-            # Set the new picture as current and deactivate previous current picture
-            new_picture = form.save(commit=False)
-            new_picture.child = child_profile
-            new_picture.is_current = True
-            new_picture.save()
-
-            messages.success(request, "Profile picture updated successfully!")
-            return redirect("update_picture") 
+            return redirect("update_picture")
         else:
             messages.error(request, "Form is invalid.")
     else:
         form = ChildProfilePictureForm()
 
     # Retrieve all child objects
-        children = Child.objects.all().order_by('-created_at')
+    children = Child.objects.all().order_by('id')
 
     return render(request, 'main/child/profile_picture.html', {'form': form, 'form_name': 'Upload Profile Picture', 'children': children})
+
 
 # =================================== Update Child data ===================================
 @login_required
@@ -149,7 +161,6 @@ def delete_child(request, pk):
 # =================================== Process and Import Excel data ===================================
 @login_required
 @transaction.atomic
-# debug and refactor this code
 def import_data(request):
     if request.method == 'POST':
         form = UploadForm(request.POST, request.FILES)
@@ -165,7 +176,6 @@ def import_data(request):
     else:
         form = UploadForm()
     return render(request, 'main/child/import_frm.html', {'form_name': 'Import Excel Data', 'form': form})
-
 
 # Function to import Excel data
 def process_and_import_data(excel_file):
@@ -226,7 +236,6 @@ def process_and_import_data(excel_file):
                 obj.save()
     except Exception as e:
         raise e  # Reraise the exception for better error handling at the view level
-
 
 # =================================== Fetch and display imported data ===================================
 @login_required

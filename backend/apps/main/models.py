@@ -180,12 +180,15 @@ class Child(models.Model):
         today = date.today()
         age = today.year - self.date_of_birth.year - ((today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day))
         return age
-
+    
 # =================================== CHILD PROFILE PICTURES MODEL ===================================
     
 class ChildProfilePicture(models.Model):
     child = models.OneToOneField(Child, on_delete=models.CASCADE, related_name='profile_picture')
-    picture = models.ImageField(upload_to='child_profiles/', verbose_name="Choose a picture")
+    # picture = models.ImageField(upload_to='child_profiles/', verbose_name="Choose a picture")
+    picture = models.ImageField(upload_to='child_profiles/', verbose_name="Upload Image(jpg, jpeg, png)",
+    validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png'])])
+    
     uploaded_at = models.DateTimeField(auto_now_add=True)
     is_current = models.BooleanField(default=False, verbose_name="Is Current Picture")
 
@@ -198,6 +201,7 @@ class ChildProfilePicture(models.Model):
 
     def __str__(self):
         return f"Profile picture of {self.child.name} uploaded at {self.uploaded_at}"
+    
 
 # =================================== SPONSOR MODEL ===================================
 # class Sponsor(models.Model):

@@ -15,7 +15,6 @@ from pathlib import Path
 
 # To keep secret keys in environment variables
 from dotenv import load_dotenv
-
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -34,8 +33,7 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
-# Application definition
-
+# =================================== APPLICATION DEFINITION ===================================
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -45,13 +43,15 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "social_django",
 
-    # Other apps
+
+# =================================== OTHER APPLICATION ===================================
     "bootstrap5",
     'formtools',
     "crispy_forms",
     "crispy_bootstrap5",
 
-    # Project apps
+
+# =================================== PROJECT APPLICATIONS ===================================
     "apps.users",
     "apps.main",
 ]
@@ -90,18 +90,28 @@ TEMPLATES = [
 WSGI_APPLICATION = "core.wsgi.application"
 
 
-# Database
+# =================================== DATABASE CONFIGURATIONS ===================================
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
+
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#     }
+# }
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("DB_NAME"),
+        "USER": os.environ.get("DB_USER"),
+        "PASSWORD": os.environ.get("DB_PASSWORD"),
+        "HOST": os.environ.get("DB_HOST"),
+        "PORT": os.environ.get("DB_PORT"),
     }
 }
 
-
-# Password validation
+# =================================== PASSWORD VALIDATION ===================================
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -119,6 +129,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# A tuple of authentication backends that Django will use for authentication.
 AUTHENTICATION_BACKENDS = (
     "social_core.backends.github.GithubOAuth2",
     "social_core.backends.google.GoogleOAuth2",
@@ -142,20 +153,25 @@ USE_L10N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
+# Static files like CSS, JavaScript, or images will be served under the `/static/` URL path.
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
-
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static/"]
 
+
+# `MEDIA_ROOT` and `MEDIA_URL` are settings in a Django project related to handling media files such
+# as user-uploaded images, files, etc.
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
 
 
+# The `LOGIN_REDIRECT_URL` setting in Django specifies the URL where the user will be redirected to
+# after a successful login. In this case, it is set to `"/"` which means that after a user
+# successfully logs in, they will be redirected to the root URL of the website.
 LOGIN_REDIRECT_URL = "/"
 LOGIN_URL = "login"
 
-
+# =================================== SOCIIAL AUTH CONFIGURATIONS ===================================
 # social auth configs for github
 SOCIAL_AUTH_GITHUB_KEY = str(os.getenv("GITHUB_KEY"))
 SOCIAL_AUTH_GITHUB_SECRET = str(os.getenv("GITHUB_SECRET"))
@@ -172,7 +188,8 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = str(os.getenv("GOOGLE_SECRET"))
 # SOCIAL_AUTH_TWITTER_KEY = str(os.getenv("TWITTER_KEY"))
 # SOCIAL_AUTH_TWITTER_SECRET  = str(os.getenv("TWITTER_SECRET"))
 
-# email configs
+
+# =================================== EMAIL CONFIGURATIONS ===================================
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_USE_TLS = True
@@ -180,14 +197,43 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = str(os.getenv("EMAIL_USER"))
 EMAIL_HOST_PASSWORD = str(os.getenv("EMAIL_PASS"))
 
+# `SESSION_COOKIE_AGE = 60 * 60 * 24 * 30` is setting the age of the session cookie in seconds.
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 30
 
 
-# Default primary key field type
+# Specifying default primary key field type for models that don't define a primary key field explicitly.
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 
+# =================================== SETTINGS TO DJANGO CRISPY FORMS PACKAGE ===================================
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+
+# =================================== USE THE LOGGER ===================================
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(parents=True, exist_ok=True)  # Create a 'logs' directory inside your project folder if it doesn't exist
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': LOGS_DIR / 'app.log',  # Path to your log file
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}

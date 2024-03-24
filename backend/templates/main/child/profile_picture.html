@@ -28,7 +28,8 @@
                         <form method="post" enctype="multipart/form-data">
                             {% csrf_token %}
                             <label for="id">Select Child:</label>
-                            <select name="id" id="dropdown" class="form-control">
+                            <select name="id" id="dropdown" class="chzn-select" required>
+                                <option value="" selected disabled>Search child...</option>
                                 {% for child in children %}
                                 <option value="{{ child.id }}">{{ child.full_name }} &rarr; {{ child.prefixed_id }}
                                 </option>
@@ -47,5 +48,4 @@
         </div>
     </div>
 </div>
-
 {% endblock content %}

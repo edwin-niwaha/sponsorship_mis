@@ -17,10 +17,13 @@
     <!--HTMX Data tables CSS-->
     <link rel="stylesheet" href="{% static 'css/htmx_table.css' %}" />
 
+    <!-- CSS for Searchable dropdown-->
+    <link rel="stylesheet" href="{% static 'css/chosen.css' %}" />
+
     <!--Icons-->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
 
-    <title>{% block title %} Perpetual - SMS {% endblock %}</title>
+    <title>{% block title %} SPONSORSHIP - MIS {% endblock %}</title>
 </head>
 
 <body>
@@ -90,13 +93,18 @@
 <!-- JS Lib to covert html to excel -->
 <script type="text/javascript" src="https://unpkg.com/xlsx@0.15.1/dist/xlsx.full.min.js"></script>
 
-<!--search table-->
+<!--Search table-->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script type="text/javascript" src="{% static 'js/search_tbl.js' %}"></script>
 
-<!--search box-->
-<script type="text/javascript" src="{% static 'js/search_box.js' %}"></script>
-{% comment %} <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.6.0/js/bootstrap.min.js"></script> {% endcomment %}
+
+<!-- JS for Searchable dropdown-->
+<script type="text/javascript" src="{% static 'js/chosen.jquery.js' %}"></script>
+<script type="text/javascript">
+    $(".chzn-select").chosen();
+    $(".chzn-select-deselect").chosen({
+        allow_single_deselect: true
+    });
+</script>
 
 </html>

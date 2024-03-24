@@ -68,8 +68,10 @@
                         {% if child.profile_picture.picture == ""  %}
                         No Picture!
                         {% else %}
-                        <img class="rounded-circle account-img" height="50" width="50"
-                            src="{{ child.profile_picture.picture.url }}" alt="">
+                        <a href="{% url 'update_picture' %}">
+                            <img class="rounded-circle account-img" height="50" width="50"
+                                src="{{ child.profile_picture.picture.url }}" alt="">
+                        </a>
                         {% endif %}
                     </td>
                     <td>{{child.full_name}}</td>
