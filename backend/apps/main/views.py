@@ -6,12 +6,12 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
 from django.http import HttpResponseRedirect
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
 from django.urls import reverse
 from openpyxl import load_workbook
 
-from .forms import ChildForm, ChildProfilePictureForm, UploadForm
-from .models import Child, ChildProfilePicture
+from .forms import ChildForm, ChildProfilePictureForm, UploadForm, ChildProgressForm
+from .models import Child, ChildProfilePicture, ChildProgress
 
 # The getLogger() function is used to get a logger instance
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ def child_list(request):
     if search_query:
         queryset = queryset.filter(full_name__icontains=search_query)
 
-    paginator = Paginator(queryset, 20)  # Show 10 records per page
+    paginator = Paginator(queryset, 25)  # Show 10 records per page
     page = request.GET.get("page")
 
     try:
@@ -148,6 +148,46 @@ def update_picture(request):
         },
     )
 
+# =================================== Update Child Progress ===================================
+@login_required
+@transaction.atomic
+def child_progress(request):
+    if request.method == "POST":
+        form = ChildProgressForm(request.POST)
+        if form.is_valid():
+            child_id = request.POST.get("id")
+            child_instance = get_object_or_404(Child, pk=child_id)
+
+            # Always create a new progress record explicitly
+            child_progress = ChildProgress.objects.create(child=child_instance)
+
+            # Populate progress data
+            child_progress.name_of_school = form.cleaned_data["name_of_school"]
+            child_progress.previous_schools = form.cleaned_data["previous_schools"]
+            child_progress.education_level = form.cleaned_data["education_level"]
+            child_progress.child_class = form.cleaned_data["child_class"]
+            child_progress.best_subject = form.cleaned_data["best_subject"]
+            child_progress.score = form.cleaned_data["score"]
+            child_progress.co_curricular_activity = form.cleaned_data["co_curricular_activity"]
+            child_progress.responsibility_at_school = form.cleaned_data["responsibility_at_school"]
+            child_progress.future_plans = form.cleaned_data["future_plans"]
+            child_progress.responsibility_at_home = form.cleaned_data["responsibility_at_home"]
+            child_progress.notes = form.cleaned_data["notes"]
+            child_progress.save()
+
+            messages.success(request, "Child progress recorded successfully!")
+            return redirect("child_progress")
+        else:
+            messages.error(request, "Form is invalid.")
+    else:
+        form = ChildProgressForm()
+
+    children = Child.objects.all().order_by("id")
+    return render(
+        request,
+        "main/child/child_progress.html",
+        {"form": form, "form_name": "Child Progress Form", "children": children},
+    )
 
 # =================================== Update Child data ===================================
 @login_required

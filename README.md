@@ -28,7 +28,7 @@ cd backend
 ## Setup Backend
 - Nvaigate to cloned project directory
   ```bash
-    cd perpetualx/backend
+    cd spsonsorship-mis/backend
     ```
 - Create a python virtual environment for backend
   ```bash

@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Child, ChildProfilePicture
+from .models import Child, ChildProfilePicture, ChildProgress
 
 
 class UploadForm(forms.Form):
@@ -69,3 +69,22 @@ class ChildProfilePictureForm(forms.ModelForm):
     def clean_picture(self):
         picture = self.cleaned_data.get("picture")
         return picture
+
+class ChildProgressForm(forms.ModelForm):
+    class Meta:
+        model = ChildProgress
+        exclude = ("child", )
+        widgets = {
+            "previous_schools": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+            "future_plans": forms.Textarea(
+                attrs={"class": "form-control", "rows": 2}
+            ),
+            "responsibility_at_home": forms.Textarea(
+                attrs={"class": "form-control", "rows": 2}
+            ),
+            "notes": forms.Textarea(
+                attrs={"class": "form-control", "rows": 2}
+            ),
+            "education_level": forms.Select(attrs={'class': 'form-select'}),
+            "child_class": forms.Select(attrs={'class': 'form-select'}),
+        }

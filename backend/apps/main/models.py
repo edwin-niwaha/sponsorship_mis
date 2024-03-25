@@ -101,13 +101,6 @@ class Child(models.Model):
         verbose_name="Is the child sponsored?",
     )
 
-    # SPONSORSHIP_TYPE_CHOICES = (
-    #     ('Full', 'Full Sponsorship'),
-    #     ('Co', 'Co-Sponsorship'),
-    # )
-    # sponsorship_type = models.CharField(
-    #     max_length=20, choices=SPONSORSHIP_TYPE_CHOICES, null=True, blank=True, verbose_name="Type of sponsorship")
-
     # Family background
     # Parents
     father_name = models.CharField(
@@ -220,7 +213,7 @@ class Child(models.Model):
         verbose_name_plural = "Children Bio Data"
 
     def __str__(self):
-        return self.full_name + " " + self.preferred_name
+        return self.full_name
 
     @property
     def prefixed_id(self):
@@ -360,6 +353,15 @@ class ChildProgress(models.Model):
 #     ('Female', 'Female'),
 #     )
 #     sponsor_id = models.AutoField(primary_key=True, verbose_name="Sponsor ID")
+    
+    # SPONSORSHIP_TYPE_CHOICES = (
+    #     ('Full', 'Full Sponsorship'),
+    #     ('Co', 'Co-Sponsorship'),
+    # )
+    # sponsorship_type_at_signup = models.CharField(
+    #     max_length=20, choices=SPONSORSHIP_TYPE_CHOICES, null=True, blank=True, 
+    #     verbose_name="Type of sponsorship interest in")
+
 #     first_name = models.CharField(max_length=100, null=True, verbose_name="First Name")
 #     last_name = models.CharField(max_length=100, null=True, verbose_name="Last Name")
 #     gender = models.CharField(max_length=6, choices=GENDER_CHOICES, blank=False,
@@ -396,25 +398,19 @@ class ChildProgress(models.Model):
 #     def __str__(self):
 #         return f"{self.first_name} {self.last_name}"
 
-# # =================================== SPONSORSHIP TYPE MODEL ===================================
-# class SponsorshipType(models.Model):
-#     name = models.CharField(max_length=100)
-#     amount_to_donate = models.DecimalField(max_digits=10, decimal_places=2)
-#     description = models.TextField()
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-
-#     class Meta:
-#         managed = True
-#         db_table = 'sponsorship_types'
-#     def __str__(self):
-#         return f"{self.name}"
 
 # # =================================== SPONSORSHIP MODEL ===================================
 # class Sponsorship(models.Model):
 #     sponsor = models.ForeignKey(Sponsor, on_delete=models.CASCADE, related_name='sponsorships')
 #     child = models.ForeignKey(Child, on_delete=models.CASCADE, related_name='sponsored_by')
-#     sponsorship_type = models.ForeignKey(SponsorshipType, on_delete=models.CASCADE)
+    
+    # SPONSORSHIP_TYPE_CHOICES = (
+    #     ('Full', 'Full Sponsorship'),
+    #     ('Co', 'Co-Sponsorship'),
+    # )
+    # sponsorship_type = models.CharField(
+    #     max_length=20, choices=SPONSORSHIP_TYPE_CHOICES, null=True, blank=True, verbose_name="Type of sponsorship")
+
 #     start_date = models.DateField()
 #     end_date = models.DateField(blank=True, null=True)
 #     is_active = models.BooleanField(default=True)
