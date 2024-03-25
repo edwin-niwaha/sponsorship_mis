@@ -1,5 +1,5 @@
-# PERPETUAL-SMS PROJECT
-_A sponsorship management web application developed in Django_
+# SPSONSORSHIP MIS PROJECT
+_A sponsorship Management Information System developed in Django_
 
 ## Requirements
 Make sure you have python and Node js installed on your system:
