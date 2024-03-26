@@ -332,6 +332,8 @@ class ChildProgress(models.Model):
         verbose_name="Responsibility at Home (Optional)", blank=True, null=True
     )
     notes = models.TextField(max_length=50, verbose_name="Notes", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "child_progress"

@@ -189,6 +189,25 @@ def child_progress(request):
         {"form": form, "form_name": "Child Progress Form", "children": children},
     )
 
+# =================================== View Child Progress Report ===================================
+def child_progress_report(request):
+    if request.method == "POST":
+        child_id = request.POST.get("id")
+        if child_id:
+            child_progress = ChildProgress.objects.filter(child_id=child_id)
+            children = Child.objects.all().order_by("id")
+            return render(request, 'main/child/child_progress_report.html', 
+                      {"table_title": "Child Progress Report", "children": children, 'child_progress': child_progress})
+        else:
+            # If no child_id is provided, handle the error
+            # return render(request, 'error_page.html', {"error_message": "No child selected."})
+            messages.danger(request, "No child selected.")
+    else:
+        # Handle the GET request, show the form without results
+        children = Child.objects.all().order_by("id")
+        return render(request, 'main/child/child_progress_report.html', 
+                      {"table_title": "Child Progress Report", "children": children})
+
 # =================================== Update Child data ===================================
 @login_required
 @transaction.atomic
