@@ -17,6 +17,8 @@ urlpatterns = [
     path("child/profile-picture/", views.update_picture, name="update_picture"),
     path('child/progress/', views.child_progress, name='child_progress'),
     path('child/progress/report/', views.child_progress_report, name='child_progress_report'),
+    path("child/progress/delete/<int:pk>", views.delete_progress, name="delete_progress"),
+
 
     # Excel import paths
     path("child/import/", views.import_data, name="import"),

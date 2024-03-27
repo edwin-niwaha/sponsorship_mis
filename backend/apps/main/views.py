@@ -6,11 +6,11 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
 from django.http import HttpResponseRedirect
-from django.shortcuts import redirect, render, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from openpyxl import load_workbook
 
-from .forms import ChildForm, ChildProfilePictureForm, UploadForm, ChildProgressForm
+from .forms import ChildForm, ChildProfilePictureForm, ChildProgressForm, UploadForm
 from .models import Child, ChildProfilePicture, ChildProgress
 
 # The getLogger() function is used to get a logger instance
@@ -96,6 +96,40 @@ def register_child(request):
         "main/child/child_frm.html",
         {"form_name": "Child Registration", "form": form},
     )
+
+# =================================== Update Child data ===================================
+@login_required
+@transaction.atomic
+def update_child(request, pk, template_name="main/child/child_frm.html"):
+    try:
+        child_record = Child.objects.get(pk=pk)
+    except Child.DoesNotExist:
+        messages.error(request, "Child record not found!")
+        return redirect("child_list")  # Or a relevant error page
+
+    if request.method == "POST":
+        form = ChildForm(request.POST, request.FILES, instance=child_record)
+        if form.is_valid():
+            form.save()
+
+            messages.success(request, "Child record updated successfully!")
+            return redirect("child_list")  # Replace with the appropriate redirect URL
+    else:
+        # Pre-populate the form with existing data
+        form = ChildForm(instance=child_record)
+
+    context = {"form_name": "Child Registration", "form": form}
+    return render(request, template_name, context)
+
+
+# =================================== Deleted selected child ===================================
+@login_required
+@transaction.atomic
+def delete_child(request, pk):
+    c_records = Child.objects.get(id=pk)
+    c_records.delete()
+    messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
+    return HttpResponseRedirect(reverse("child_list"))
 
 
 # =================================== Upload Profile Picture ===================================
@@ -190,57 +224,36 @@ def child_progress(request):
     )
 
 # =================================== View Child Progress Report ===================================
+@login_required
 def child_progress_report(request):
     if request.method == "POST":
         child_id = request.POST.get("id")
         if child_id:
+            selected_child = get_object_or_404(Child, id=child_id)
             child_progress = ChildProgress.objects.filter(child_id=child_id)
             children = Child.objects.all().order_by("id")
             return render(request, 'main/child/child_progress_report.html', 
-                      {"table_title": "Child Progress Report", "children": children, 'child_progress': child_progress})
+                          {"table_title": "Progress Report", "children": children, 
+                           "child_name": selected_child.full_name, "prefix_id":selected_child.prefixed_id, 
+                           'child_progress': child_progress})
         else:
-            # If no child_id is provided, handle the error
-            # return render(request, 'error_page.html', {"error_message": "No child selected."})
-            messages.danger(request, "No child selected.")
+            messages.error(request, "No child selected.")
     else:
         # Handle the GET request, show the form without results
         children = Child.objects.all().order_by("id")
-        return render(request, 'main/child/child_progress_report.html', 
-                      {"table_title": "Child Progress Report", "children": children})
+    return render(request, 'main/child/child_progress_report.html', 
+                    {"table_title": "Progress Report", "children": children})
 
-# =================================== Update Child data ===================================
+
+ # =================================== Delete Progress Data ===================================   
+
 @login_required
 @transaction.atomic
-def update_child(request, pk, template_name="main/child/child_frm.html"):
-    try:
-        child_record = Child.objects.get(pk=pk)
-    except Child.DoesNotExist:
-        messages.error(request, "Child record not found!")
-        return redirect("child_list")  # Or a relevant error page
-
-    if request.method == "POST":
-        form = ChildForm(request.POST, request.FILES, instance=child_record)
-        if form.is_valid():
-            form.save()
-
-            messages.success(request, "Child record updated successfully!")
-            return redirect("child_list")  # Replace with the appropriate redirect URL
-    else:
-        # Pre-populate the form with existing data
-        form = ChildForm(instance=child_record)
-
-    context = {"form_name": "Child Registration", "form": form}
-    return render(request, template_name, context)
-
-
-# =================================== Deleted selected child ===================================
-@login_required
-@transaction.atomic
-def delete_child(request, pk):
-    c_records = Child.objects.get(id=pk)
+def delete_progress(request, pk):
+    c_records = ChildProgress.objects.get(id=pk)
     c_records.delete()
     messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
-    return HttpResponseRedirect(reverse("child_list"))
+    return HttpResponseRedirect(reverse("child_progress_report"))
 
 
 # =================================== Process and Import Excel data ===================================
@@ -272,6 +285,8 @@ def import_data(request):
 
 
 # Function to import Excel data
+@login_required
+@transaction.atomic
 def process_and_import_data(excel_file):
     try:
         wb = load_workbook(excel_file)
@@ -349,6 +364,7 @@ def process_and_import_data(excel_file):
 
 # =================================== Fetch and display imported data ===================================
 @login_required
+@transaction.atomic
 def import_details(request):
     records = Child.objects.all()
     return render(

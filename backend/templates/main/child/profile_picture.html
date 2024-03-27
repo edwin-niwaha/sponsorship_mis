@@ -30,7 +30,7 @@
                             <select name="id" id="dropdown" class="chzn-select" required>
                                 <option value="" selected disabled>Search child...</option>
                                 {% for child in children %}
-                                <option value="{{ child.id }}">{{ child.full_name }} &rarr; {{ child.prefixed_id }}
+                                <option value="{{ child.id }}">{{ child.full_name }} - {{ child.prefixed_id }}
                                 </option>
                                 {% endfor %}
                             </select>
