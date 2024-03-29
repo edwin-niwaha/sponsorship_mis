@@ -1,0 +1,113 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="stylesheet" href="{% static 'assets/vendors/mdi/css/materialdesignicons.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'assets/vendors/flag-icon-css/css/flag-icon.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'assets/vendors/css/vendor.bundle.base.css' %}" />
+    <link rel="stylesheet" href="{% static 'assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'assets/css/style.css' %}" />
+    <link rel="shortcut icon" href="{% static 'images/logo.png' %}" />
+
+    <!--HTMX Data tables CSS-->
+    <link rel="stylesheet" href="{% static 'css/htmx_table.css' %}" />
+
+    <!-- CSS for Searchable dropdown-->
+    <link rel="stylesheet" href="{% static 'css/chosen.css' %}" />
+
+    <!--Icons-->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+
+    <title>{% block title %} SPONSORSHIP - MIS {% endblock %}</title>
+</head>
+
+<body>
+    <div class="container-scroller">
+
+        <!-- ========== Sidebar Start ========== -->
+        {% include 'main/_partials/sidebar.html' %}
+        <!-- ========== sidebar End ========== -->
+
+        <div class="container-fluid page-body-wrapper">
+
+            <!-- ========== Topbar Start ========== -->
+            {% include 'main/_partials/navbar.html' %}
+            <!-- ========== Topbar End ========== -->
+
+            <div class="main-panel">
+                <!-- =============== Messages Start ================= -->
+                {% include '_partials/messages.html' %}
+                <!-- =============== Messages End ================= -->
+
+                <div class="content-wrapper pb-0">
+                    {% block content %}
+                    {% endblock %}
+
+                </div>
+                <!-- ============== Footer ===================== -->
+                {% include 'main/_partials/footer.html' %}
+                <!-- ============================================= -->
+            </div>
+        </div>
+    </div>
+</body>
+
+<!-- container-scroller -->
+<!-- plugins:js -->
+<script src="{% static 'assets/vendors/js/vendor.bundle.base.js' %}"></script>
+<!-- endinject -->
+<!-- Plugin js for this page -->
+<script src="{% static 'assets/vendors/chart.js/Chart.min.js' %}"></script>
+<script src="{% static 'assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.js' %}"></script>
+<script src="{% static 'assets/vendors/flot/jquery.flot.js' %}"></script>
+<script src="{% static 'assets/vendors/flot/jquery.flot.resize.js' %}"></script>
+<script src="{% static 'assets/vendors/flot/jquery.flot.categories.js' %}"></script>
+<script src="{% static 'assets/vendors/flot/jquery.flot.fillbetween.js' %}"></script>
+<script src="{% static 'assets/vendors/flot/jquery.flot.stack.js' %}"></script>
+<script src="{% static 'assets/vendors/flot/jquery.flot.pie.js' %}"></script>
+<!-- End plugin js for this page -->
+<!-- inject:js -->
+<script src="{% static 'assets/js/off-canvas.js' %}"></script>
+<script src="{% static 'assets/js/hoverable-collapse.js' %}"></script>
+<script src="{% static 'assets/js/misc.js' %}"></script>
+<!-- endinject -->
+
+<!-- Custom js for this page -->
+<script src="{% static 'assets/js/dashboard.js' %}"></script>
+<!-- End custom js for this page -->
+
+<!-- Scripts: Bootstraps, HTMX, and custom JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+<script src="https://unpkg.com/htmx.org@1.6.1/dist/htmx.min.js"></script>
+<script src="{% static 'js/htmx.js' %}"></script>
+
+
+<!-- Print js-->
+<script type="text/javascript" src="{% static 'js/print.js' %}"></script>
+
+<!-- JS Lib to covert html to excel -->
+<script type="text/javascript" src="https://unpkg.com/xlsx@0.15.1/dist/xlsx.full.min.js"></script>
+
+<!--Search table-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script type="text/javascript" src="{% static 'js/search_tbl.js' %}"></script>
+
+
+<!-- JS for Searchable dropdown-->
+<script type="text/javascript" src="{% static 'js/chosen.jquery.js' %}"></script>
+<script type="text/javascript">
+    $(".chzn-select").chosen();
+    $(".chzn-select-deselect").chosen({
+        allow_single_deselect: true
+    });
+</script>
+
+<!--btn click event-->
+<script type="text/javascript" src="{% static 'js/btn_click.js' %}"></script>
+
+</html>
