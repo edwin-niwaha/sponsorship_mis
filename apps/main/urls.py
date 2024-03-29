@@ -22,7 +22,7 @@ urlpatterns = [
 
     # Excel import paths
     path("child/import/", views.import_data, name="import"),
-    path("excel/list/", views.import_details, name="data_list"),
+    path("excel/list/", views.import_details, name="imported_data"),
     path("del/excel-data/<int:pk>", views.delete_excel_data, name="delete_excel"),
     path("delete_confirmation/", views.delete_confirmation, name="delete_confirmation"),
 ]

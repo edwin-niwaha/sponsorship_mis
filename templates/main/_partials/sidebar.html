@@ -41,8 +41,8 @@
                         <a class="nav-link active" href="{% url 'child_list' %}" target="_self">Child Details</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'update_picture' %}" target="_self">Child
-                            Profile</a>
+                        <a class="nav-link active" href="{% url 'update_picture' %}" target="_self">
+                            Profile Picture</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="{% url 'child_progress' %}" target="_self">Child Progress</a>
@@ -54,10 +54,10 @@
                         <a class="nav-link active" href="#" target="_self">Child Incidence</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="#" target="_self">Highly Vulnerable</a>
+                        <a class="nav-link active" href="#" target="_self">Child Depature</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="#" target="_self">Child Depature</a>
+                        <a class="nav-link active" href="#" target="_self">Highly Vulnerable</a>
                     </li>
                 </ul>
             </div>
@@ -71,10 +71,10 @@
             <div class="collapse" id="ui-basic1">
                 <ul class="nav flex-column sub-menu">
                     <li class="nav-item">
-                        <a class="nav-link active" href="#" target="_self">Staff Details</a>
+                        <a class="nav-link active" href="#" target="_self">Register Staff</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="#" target="_self">Staff Correspondence</a>
+                        <a class="nav-link active" href="#" target="_self">Staff Details</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="#" target="_self">Staff Depature</a>
@@ -82,35 +82,65 @@
                 </ul>
             </div>
         </li>
+
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#ui-basic-sp" aria-expanded="false"
+                aria-controls="ui-basic">
+                <i class="mdi mdi-account-convert menu-icon"></i>
+                <span class="menu-title">Manage Sponsor</span>
+                <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="ui-basic-sp">
+                <ul class="nav flex-column sub-menu">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" target="_self">Register Sponsor</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" target="_self">Sponsor Details</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" target="_self">Sponsor Depature</a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
         <li class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#ui-basic2" aria-expanded="false" aria-controls="ui-basic">
-                <i class="mdi mdi-cached menu-icon"></i>
+                <i class="mdi mdi-gift menu-icon"></i>
                 <span class="menu-title">Sponsorship</span>
                 <i class="menu-arrow"></i>
             </a>
             <div class="collapse" id="ui-basic2">
                 <ul class="nav flex-column sub-menu">
                     <li class="nav-item">
-                        <a class="nav-link active" href="#" target="_self">Sponsor Details</a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link active" href="#" target="_self">Child Sponsorship</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="#" target="_self">Staff Sponsorship</a>
                     </li>
+                </ul>
+            </div>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#ui-basic3" aria-expanded="false" aria-controls="ui-basic">
+                <i class="mdi mdi-square-inc-cash  menu-icon"></i>
+                <span class="menu-title">Finance</span>
+                <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="ui-basic3">
+                <ul class="nav flex-column sub-menu">
                     <li class="nav-item">
-                        <a class="nav-link active" href="#" target="_self">Family Sponsorship</a>
+                        <a class="nav-link active" href="#" target="_self">Child Contributions</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" target="_self">Staff Contributions</a>
                     </li>
                 </ul>
             </div>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="mdi mdi-square-inc-cash menu-icon"></i>
-                <span class="menu-title">Contributions</span>
-            </a>
-        </li>
+
         <li class="nav-item">
             <a class="nav-link" href="#">
                 <i class="mdi mdi-chart-bar menu-icon"></i>
@@ -143,13 +173,16 @@
         </li>
 
         <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#ui-basic3" aria-expanded="false" aria-controls="ui-basic">
+            <a class="nav-link" data-toggle="collapse" href="#ui-basic4" aria-expanded="false" aria-controls="ui-basic">
                 <i class="mdi mdi-settings menu-icon"></i>
                 <span class="menu-title">Settings</span>
                 <i class="menu-arrow"></i>
             </a>
-            <div class="collapse" id="ui-basic3">
+            <div class="collapse" id="ui-basic4">
                 <ul class="nav flex-column sub-menu">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" target="_self">Manage Accounts</a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="{% url 'import' %}" target="_self">Bulk Import</a>
                     </li>

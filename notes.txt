@@ -5,4 +5,4 @@ git branch -d sms-local-dev
 git push origin --delete sms-local-dev
 
 //change the remote URL to reflect the new repository name:
-git remote set-url origin https://github.com/edwin-niwaha/sponsorship-mis
+git remote set-url origin https://github.com/edwin-niwaha/sponsorship_mis

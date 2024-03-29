@@ -89,27 +89,17 @@
                 </td>
             </tr>
             <tr>
-                <td colspan="4">
+                <td colspan="2">
                     <i class="text-info">Is the child in school? &rarr; </i> {{record.is_child_in_school}}
                 </td>
-            </tr>
-            {% if record.is_child_in_school == "Yes"  %}
-            <tr>
-                <td class="text-info">School: </td>
-                <td>{{record.name_of_the_school}}</td>
-                <td class="text-info">Education level: </td>
-                <td>{{record.education_level}}</td>
-            </tr>
-            <tr>
-                <td class="text-info">Class: </td>
-                <td>{{record.child_class}}</td>
-                <td class="text-info">Best subject: </td>
-                <td>{{record.best_subject}}</td>
-            </tr>
-            {% else %}
-            <tr>
-                <td class="text-warning" colspan="4">
-                    Education details not available...
+                <td colspan="2">
+                    {% if record.is_child_in_school == "Yes"  %}
+                    <a href="#"
+                        class="link-info link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">
+                        <i class="text-success">View education details...</i>
+                    </a>
+                    {% else %}
+                    <i class="text-warning">Education details not available...</i>
                 </td>
             </tr>
             {% endif %}
@@ -123,11 +113,9 @@
                 </td>
                 <td colspan="2">
                     {% if record.is_sponsored == "Yes"  %}
-                    <i class="text-info">Sonsorship type: &rarr;
-                    </i>{{record.sponsorship_type}}
                     <a href="#"
                         class="link-info link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">
-                        &rarr;&rarr; view sponsorship details...
+                        <i class="text-success">View sponsorship details...</i>
                     </a>
                     {% else %}
                     <i class="text-warning">Sponsorship details not available...</i>

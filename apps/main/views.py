@@ -88,19 +88,19 @@ def register_child(request):
 
         else:
             # Display form errors
-            return render(request, "main/child/child_frm.html", {"form": form})
+            return render(request, "main/child/register_child.html", {"form": form})
     else:
         form = ChildForm()
     return render(
         request,
-        "main/child/child_frm.html",
+        "main/child/register_child.html",
         {"form_name": "Child Registration", "form": form},
     )
 
 # =================================== Update Child data ===================================
 @login_required
 @transaction.atomic
-def update_child(request, pk, template_name="main/child/child_frm.html"):
+def update_child(request, pk, template_name="main/child/register_child.html"):
     try:
         child_record = Child.objects.get(pk=pk)
     except Child.DoesNotExist:
@@ -232,7 +232,7 @@ def child_progress_report(request):
             selected_child = get_object_or_404(Child, id=child_id)
             child_progress = ChildProgress.objects.filter(child_id=child_id)
             children = Child.objects.all().order_by("id")
-            return render(request, 'main/child/child_progress_report.html', 
+            return render(request, 'main/child/progress_rpt.html', 
                           {"table_title": "Progress Report", "children": children, 
                            "child_name": selected_child.full_name, "prefix_id":selected_child.prefixed_id, 
                            'child_progress': child_progress})
@@ -241,7 +241,7 @@ def child_progress_report(request):
     else:
         # Handle the GET request, show the form without results
         children = Child.objects.all().order_by("id")
-    return render(request, 'main/child/child_progress_report.html', 
+    return render(request, 'main/child/progress_rpt.html', 
                     {"table_title": "Progress Report", "children": children})
 
 
@@ -274,12 +274,12 @@ def import_data(request):
                 messages.error(
                     request, f"Error importing data: {e}", extra_tags="bg-danger"
                 )  # Handle unexpected errors
-            return redirect("data_list")  # Replace with your redirect URL
+            return redirect("imported_data")  # Replace with your redirect URL
     else:
         form = UploadForm()
     return render(
         request,
-        "main/child/import_frm.html",
+        "main/child/bulk_import.html",
         {"form_name": "Import Excel Data", "form": form},
     )
 
@@ -369,7 +369,7 @@ def import_details(request):
     records = Child.objects.all()
     return render(
         request,
-        "main/child/data_list.html",
+        "main/child/imported_data.html",
         {"table_title": "Imported Excel Data", "records": records},
     )
 
@@ -381,7 +381,7 @@ def delete_excel_data(request, pk):
     record_imported = Child.objects.get(id=pk)
     record_imported.delete()
     messages.info(request, "Record deleted!", extra_tags="bg-danger")
-    return HttpResponseRedirect(reverse("data_list"))
+    return HttpResponseRedirect(reverse("imported_data"))
 
 
 # =================================== Delete all records at once ===================================
@@ -391,7 +391,7 @@ def delete_confirmation(request):
     if request.method == "POST":
         Child.objects.all().delete()
         messages.info(request, "All records deleted!", extra_tags="bg-danger")
-        return HttpResponseRedirect(reverse("data_list"))
+        return HttpResponseRedirect(reverse("imported_data"))
 
 
 # =================================== More ===================================

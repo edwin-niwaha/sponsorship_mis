@@ -266,10 +266,12 @@ class ChildProgress(models.Model):
         "Child", on_delete=models.CASCADE, related_name="progresses"
     )
     name_of_school = models.CharField(
-        max_length=50, verbose_name="Name of the School", null=True
+        max_length=50, 
+        verbose_name="Name of the School"
     )
     previous_schools = models.TextField(
-        max_length=50, blank=True, verbose_name="Previous Schools Attended"
+        max_length=200, 
+        verbose_name="Previous Schools Attended"
     )
     EDUC_LEVEL_CHOICES = [
         ("Pre-School", "Pre-School"),
@@ -283,6 +285,7 @@ class ChildProgress(models.Model):
         choices=EDUC_LEVEL_CHOICES,
         default="Pre-School",
         verbose_name="Level of Education",
+        max_length=20
     )
     CLASS_LEVEL_CHOICES = [
         ("", "Select Class"),  # Default option
@@ -309,29 +312,41 @@ class ChildProgress(models.Model):
         max_length=30,
         choices=CLASS_LEVEL_CHOICES,
         verbose_name="Class",
-        blank=True,
-        null=True,
     )
     best_subject = models.CharField(
-        max_length=30, verbose_name="Best Subject", blank=True, null=True
+        max_length=30, 
+        verbose_name="Best Subject"
     )
-    score = models.IntegerField(verbose_name="Score (Optional)", blank=True, null=True)
+    score = models.IntegerField(
+        verbose_name="Score",
+    )
     co_curricular_activity = models.CharField(
-        max_length=50, verbose_name="Co-curricular Activity", blank=True, null=True
+        max_length=50, 
+        verbose_name="Co-curricular Activity (Optional)",
+        null=True,
+        blank=True
     )
     responsibility_at_school = models.CharField(
         max_length=50,
         verbose_name="Responsibility at School (Optional)",
-        blank=True,
         null=True,
+        blank=True
     )
     future_plans = models.TextField(
-        max_length=50, verbose_name="Future Plans (Optional)", blank=True, null=True
+        max_length=200, 
+        verbose_name="Future Plans",
     )
     responsibility_at_home = models.TextField(
-        verbose_name="Responsibility at Home (Optional)", blank=True, null=True
+        verbose_name="Responsibility at Home (Optional)",
+        null=True,
+        blank=True
     )
-    notes = models.TextField(max_length=50, verbose_name="Notes", blank=True, null=True)
+    notes = models.TextField(
+        max_length=200, 
+        verbose_name="Notes (Optional)",
+        null=True,
+        blank=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
