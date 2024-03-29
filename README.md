@@ -1,4 +1,4 @@
-# SPSONSORSHIP MIS PROJECT
+# SPONSORSHIP MIS PROJECT
 _A sponsorship Management Information System developed in Django_
 
 ## Requirements
