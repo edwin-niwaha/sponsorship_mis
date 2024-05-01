@@ -3,15 +3,21 @@
 
 <div class="jumbotron jumbotron-fluid">
   <div class="container">
-    <h1 class="display-4">
-      Welcome, {{user.first_name.title|default:'Guest'}}
+    <h1 class="display-4"
+      style="color:#F79420; text-align:center; font-family: 'Lucida Calligraphy', 'Lucida Sans Unicode', sans-serif;">
+      <b>Sponsorship Management System</b>
     </h1>
-    <p class="lead">
-      <b>Perpetual-X</b><i> is a simple yet powerfull tool,</i> built with
-      django which is a Python-based free and open-source web framework that
-      follows the model–template–views architectural pattern.
+    <hr class="my-4" style="height: 5px; background-color: #008080;" />
+
+    <p class="lead" style="font-size:24px;">
+      Dear <b
+        style="color:#F79420; font-family: 'Lucida Calligraphy', 'Lucida Sans Unicode', sans-serif;">{{user.first_name.title|default:'Guest'}},
+      </b><br />
+      <i style="color:#127D61">Welcome to Perpetual-SMS!
+        It is a simple yet powerfull tool. You must be a registered user to use this tool.</i>
     </p>
-    <hr class="my-4" />
+
+    <hr class="my-4" style="height: 5px; background-color: #008080;" />
     <p class="lead">
       {% if user.is_authenticated %}
       <a class="btn btn-primary btn-lg" href="{% url 'logout' %}" role="button">Logout</a>
