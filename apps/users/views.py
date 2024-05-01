@@ -3,8 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordResetView
 from django.contrib.messages.views import SuccessMessageMixin
 from django.shortcuts import redirect, render
+from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse_lazy
 from django.views import View
+from .models import Profile
 
 from .forms import (
     LoginForm,
@@ -85,13 +87,18 @@ class ChangePasswordView(SuccessMessageMixin, PasswordChangeView):
     success_message = "Successfully Changed Your Password"
     success_url = reverse_lazy("users-home")
 
-
 @login_required
 def profile(request):
+    try:
+        profile_instance = request.user.profile
+    except ObjectDoesNotExist:
+        # If the user doesn't have a profile, create one
+        profile_instance = Profile.objects.create(user=request.user, bio='', avatar='default.jpg')
+
     if request.method == "POST":
         user_form = UpdateUserForm(request.POST, instance=request.user)
         profile_form = UpdateProfileForm(
-            request.POST, request.FILES, instance=request.user.profile
+            request.POST, request.FILES, instance=profile_instance
         )
 
         if user_form.is_valid() and profile_form.is_valid():
@@ -101,7 +108,7 @@ def profile(request):
             return redirect(to="users-profile")
     else:
         user_form = UpdateUserForm(instance=request.user)
-        profile_form = UpdateProfileForm(instance=request.user.profile)
+        profile_form = UpdateProfileForm(instance=profile_instance)
 
     return render(
         request,
