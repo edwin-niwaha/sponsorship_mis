@@ -10,8 +10,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from openpyxl import load_workbook
 
-from .forms import ChildForm, ChildProfilePictureForm, ChildProgressForm, UploadForm
-from .models import Child, ChildProfilePicture, ChildProgress
+from .forms import ChildForm, ChildProfilePictureForm, ChildProgressForm, UploadForm, ChildCorrespondenceForm
+from .models import Child, ChildProfilePicture, ChildProgress, ChildCorrespondence
 
 # The getLogger() function is used to get a logger instance
 logger = logging.getLogger(__name__)
@@ -255,6 +255,73 @@ def delete_progress(request, pk):
     messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
     return HttpResponseRedirect(reverse("child_progress_report"))
 
+
+# =================================== Update Child Correspondence ===================================
+
+@login_required
+@transaction.atomic
+def child_correspondence(request):
+    if request.method == "POST":
+        form = ChildCorrespondenceForm(request.POST, request.FILES)
+        if form.is_valid():
+            child_id = request.POST.get("id")
+            child_instance = get_object_or_404(Child, pk=child_id)
+
+            # Always create a new correspondence record explicitly
+            child_correspondence = ChildCorrespondence.objects.create(child=child_instance)
+
+            # Populate correspondence data
+            child_correspondence.correspondence_type = form.cleaned_data["correspondence_type"]
+            child_correspondence.source = form.cleaned_data["source"]
+            child_correspondence.attachment = form.cleaned_data["attachment"]
+            child_correspondence.comment = form.cleaned_data["comment"]
+            child_correspondence.save()
+
+            messages.success(request, "Child correspondence recorded successfully!")
+            return redirect("child_correspondence")
+        else:
+            messages.error(request, "Form is invalid.")
+    else:
+        form = ChildCorrespondenceForm()
+
+    children = Child.objects.all().order_by("id")
+    return render(
+        request,
+        "main/child/child_correspondence.html",
+        {"form": form, "form_name": "Child Correspondence Form", "children": children},
+    )
+
+# =================================== View Child Correspondence Report ===================================
+@login_required
+def child_correspondence_report(request):
+    if request.method == "POST":
+        child_id = request.POST.get("id")
+        if child_id:
+            selected_child = get_object_or_404(Child, id=child_id)
+            child_correspondence = ChildCorrespondence.objects.filter(child_id=child_id)
+            children = Child.objects.all().order_by("id")
+            return render(request, 'main/child/correspondence_rpt.html', 
+                          {"table_title": "Correspondence Report", "children": children, 
+                           "child_name": selected_child.full_name, "prefix_id":selected_child.prefixed_id, 
+                           'child_correspondence': child_correspondence})
+        else:
+            messages.error(request, "No child selected.")
+    else:
+        # Handle the GET request, show the form without results
+        children = Child.objects.all().order_by("id")
+    return render(request, 'main/child/correspondence_rpt.html', 
+                    {"table_title": "Correspondence Report", "children": children})
+
+
+# =================================== Delete Correspondence Data ===================================
+
+@login_required
+@transaction.atomic
+def delete_correspondence(request, pk):
+    c_records = ChildCorrespondence.objects.get(id=pk)
+    c_records.delete()
+    messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
+    return HttpResponseRedirect(reverse("child_correspondence_report"))
 
 # =================================== Process and Import Excel data ===================================
 @login_required

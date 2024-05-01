@@ -21,16 +21,16 @@
                 onclick="Export2Doc('printMe');">
                 <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
 
-            <a class="btn btn-sm ml-3 btn-success" href="{% url 'child_progress' %}"><i
+            <a class="btn btn-sm ml-3 btn-success" href="{% url 'child_correspondence' %}"><i
                     class="mdi mdi-folder-plus btn-icon-prepend"></i>
             </a>
-            <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'child_progress_report' %}"><i
+            <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'child_correspondence_report' %}"><i
                     class="mdi mdi-chart-line btn-icon-prepend"></i>
             </a>
         </div>
     </div>
     <hr class="bg-info" style="height: 3px;" />
-    <form method="POST" action="{% url 'child_progress_report' %}">
+    <form method="POST" action="{% url 'child_correspondence_report' %}">
         {% csrf_token %}
         <select name="id" id="dropdown" class="chzn-select" required>
             <option value="" selected disabled>Search child...</option>
@@ -46,7 +46,7 @@
     <div id="printMe" class="tab-pane show active">
         <hr class="bg-info" style="height: 3px;" />
 
-        {% if child_progress %}
+        {% if child_correspondence %}
         <header style="text-align: center;">
             <h3 class="text-primary" style="font-family: 'Lucida Calligraphy', 'Lucida Sans Unicode', sans-serif;">
                 {{ child_name|upper}} ({{ prefix_id }})
@@ -55,49 +55,44 @@
         <hr class="bg-info" style="height: 3px;" />
 
         <div class="table-responsive">
-            <table class="my-table" id="progress_table">
+            <table class="my-table">
                 <thead>
                     <tr>
                         <th scope="col">#</th>
-                        <th scope="col">School</th>
-                        <th scope="col">Prev_Schools</th>
-                        <th scope="col">Educ_Level</th>
-                        <th scope="col">Class</th>
-                        <th scope="col">Best_Subject</th>
-                        <th scope="col">Score</th>
-                        <th scope="col">Co_curricular</th>
-                        <!-- <th scope="col">Schol_Resp.</th>
-                        <th scope="col">Future plans</th>
-                        <th scope="col">Home_Resp.</th> -->
-                        <th scope="col">Action</th>
+                        <th scope="col">Type</th>
+                        <th scope="col">Source</th>
+                        <th scope="col">Comment</th>
+                        <th colspan="2" scope="col">Action</th>
 
                     </tr>
                 </thead>
                 <tbody class="table-group-divider">
-                    {% for progress in child_progress %}
+                    {% for correspondence in child_correspondence %}
                     <tr>
                         <th scope="row">{{forloop.counter}}.</th>
-                        <td>{{progress.name_of_school}}</td>
-                        <td>{{progress.previous_schools}}</td>
-                        <td>{{progress.education_level}}</td>
-                        <td>{{progress.child_class}}</td>
-                        <td>{{progress.best_subject}}</td>
-                        <td>{{progress.score}}</td>
-                        <td>{{progress.co_curricular_activity}}</td>
-                        <!-- <td>{{progress.responsibility_at_school}}</td>
-                        <td>{{progress.future_plans}}</td>
-                        <td>{{progress.responsibility_at_home}}</td> -->
-                        <td><a class="btn btn-danger btn-sm" title="Erase"
-                                href="{% url 'delete_progress' progress.id %}"
+                        <td>{{correspondence.correspondence_type}}</td>
+                        <td>{{correspondence.source}}</td>
+                        <td>{{correspondence.comment}}</td>
+                        <td>
+                            {% if correspondence.attachment %}
+                            <a title="View/donload" href="{{ correspondence.attachment.url }}" target="_blank">
+                                <i class="bi bi-download"></i>
+                            </a>
+                            {% else %}
+                            No Attachment
+                            {% endif %}
+                        </td>
+                        <td><a class="btn-danger btn-sm" title="Erase"
+                                href="{% url 'delete_correspondence' correspondence.id %}"
                                 onclick="return confirm('Are you sure about this? this record will be deleted permanently');"><i
-                                    class="bi bi-trash"></a></td>
+                                    class="bi bi-trash"></i></a></td>
                     </tr>
                     {%endfor%}
                 </tbody>
             </table>
         </div>
         {% else %}
-        <p>No progress records found for the selected child.</p>
+        <p>No correspondence records found for the selected child.</p>
         {% endif %}
     </div>
 </div>

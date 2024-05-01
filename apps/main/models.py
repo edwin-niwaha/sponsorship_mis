@@ -1,5 +1,6 @@
 import datetime
 from datetime import date
+from django.core.exceptions import ValidationError
 
 from django.core.validators import (
     FileExtensionValidator,
@@ -319,6 +320,7 @@ class ChildProgress(models.Model):
     )
     score = models.IntegerField(
         verbose_name="Score",
+        default=0,
     )
     co_curricular_activity = models.CharField(
         max_length=50, 
@@ -357,7 +359,50 @@ class ChildProgress(models.Model):
 
     def __str__(self):
         return f"{self.child.full_name} - {self.name_of_school}"
+    
 
+# =================================== CHILD CORRESPONDENCE MODEL ===================================
+
+class ChildCorrespondence(models.Model):
+    SOURCE_CHOICES = (
+        ("", "Select correspondence source"),  # Default option
+        ('CHILD', 'Child'),
+        ('SPONSOR', 'Sponsor'),
+    )
+
+    CORRESPONDENCE_CHOICES = (
+        ("", "Select correspondence type"),  # Default option
+        ('Christmas Gift', 'Christmas Gift'),
+        ('Birthday Gift', 'Birthday Gift'),
+        ('Letter', 'Letter'),
+        ('Package', 'Package'),
+        ('Money', 'Money'),
+        ('Photo', 'Photo'),
+
+    )
+    child = models.ForeignKey(
+        "Child", on_delete=models.CASCADE, related_name="correspondences",
+        verbose_name="Child"
+    )
+    correspondence_type = models.CharField(max_length=20, choices=CORRESPONDENCE_CHOICES, verbose_name="Select the type of correspondence")
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, verbose_name="Select the source of correspondence")
+    attachment = models.FileField(upload_to='correspondence_attachments/', blank=True, null=True, verbose_name="Attachment")
+    comment = models.CharField(max_length=100, null=True, verbose_name="Any comment?")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    # sponsor = models.ForeignKey(
+    #     "Sponsor", on_delete=models.CASCADE, related_name="correspondences",
+    #     verbose_name="Sponsor"
+    # )
+    
+    class Meta:
+        verbose_name = "Child Correspondence"
+        verbose_name_plural = "Child Correspondences"
+        db_table = 'child_correspondence'
+		
+    def __str__(self):
+        return self.subject
+    
 
 # =================================== SPONSOR MODEL ===================================
 # class Sponsor(models.Model):

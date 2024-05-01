@@ -1,6 +1,7 @@
 from django import forms
+from django.core.exceptions import ValidationError
 
-from .models import Child, ChildProfilePicture, ChildProgress
+from .models import Child, ChildProfilePicture, ChildProgress, ChildCorrespondence
 
 
 class UploadForm(forms.Form):
@@ -88,3 +89,27 @@ class ChildProgressForm(forms.ModelForm):
             "education_level": forms.Select(attrs={'class': 'form-select'}),
             "child_class": forms.Select(attrs={'class': 'form-select'}),
         }
+
+class ChildCorrespondenceForm(forms.ModelForm):
+    class Meta:
+        model = ChildCorrespondence
+        exclude = ("child", )
+        widgets = {
+            'child': forms.Select(attrs={'class': 'form-control'}),
+            'correspondence_type': forms.Select(attrs={'class': 'form-control'}),
+            'source': forms.Select(attrs={'class': 'form-control'}),
+            'attachment': forms.FileInput(attrs={'class': 'form-control-file'}),
+            'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            # 'sponsor': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def clean_attachment(self):
+        attachment = self.cleaned_data.get('attachment')
+        if not attachment:
+            raise ValidationError("Attachment is required for all correspondence.")
+        
+        # Check if the attachment is a PDF file
+        if not attachment.name.endswith('.pdf'):
+            raise ValidationError("Only PDF attachments are allowed.")
+        
+        return attachment
