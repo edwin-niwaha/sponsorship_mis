@@ -403,6 +403,43 @@ class ChildCorrespondence(models.Model):
     def __str__(self):
         return self.subject
     
+# =================================== CHILD INCIDENT MODEL ===================================
+class ChildIncident(models.Model):
+    child = models.ForeignKey(
+        Child, 
+        on_delete=models.CASCADE, 
+        related_name="incidents",
+        verbose_name="Child"
+    )
+    incident_date = models.DateField(verbose_name="Incident Date",
+                                             null=True,
+                                             blank=True,
+                                             validators=[
+            MinValueValidator(limit_value=datetime.date(year=1900, month=1, day=1)),
+            MaxValueValidator(limit_value=datetime.date.today()),
+        ],)
+    description = models.TextField(max_length=100, verbose_name="Description of the Incident")
+    action_taken = models.CharField(max_length=100, verbose_name="Action Taken")
+    results = models.CharField(max_length=100, verbose_name="Results after Action Taken")
+    reported_by = models.CharField(max_length=25, verbose_name="Reported By")
+    followed_up_by = models.CharField(max_length=25, verbose_name="Followed Up By")
+    attachment = models.FileField(
+        upload_to='incident_attachments/', 
+        blank=True, 
+        null=True, 
+        verbose_name="Attachment"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Child Incident"
+        verbose_name_plural = "Child Incidents"
+        db_table = 'child_incident'
+		
+    def __str__(self):
+        return f"Incident of {self.child.full_name} on {self.incident_date}"
+
 
 # =================================== SPONSOR MODEL ===================================
 # class Sponsor(models.Model):

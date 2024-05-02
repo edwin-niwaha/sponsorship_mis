@@ -21,6 +21,10 @@ urlpatterns = [
     path("child/correspondence/", views.child_correspondence, name="child_correspondence"),
     path('child/correspondence/report/', views.child_correspondence_report, name='child_correspondence_report'),
     path("child/correspondence/delete/<int:pk>", views.delete_correspondence, name="delete_correspondence"),
+    path("child/incident/", views.child_incident, name="child_incident"),
+    path('child/incident/report/', views.child_incident_report, name='child_incident_report'),
+    path("child/incident/delete/<int:pk>", views.delete_incident, name="delete_incident"),
+
 
     # Excel import paths
     path("child/import/", views.import_data, name="import"),

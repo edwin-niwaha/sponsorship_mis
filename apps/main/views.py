@@ -10,8 +10,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from openpyxl import load_workbook
 
-from .forms import ChildForm, ChildProfilePictureForm, ChildProgressForm, UploadForm, ChildCorrespondenceForm
-from .models import Child, ChildProfilePicture, ChildProgress, ChildCorrespondence
+from .forms import ChildForm, ChildProfilePictureForm, ChildProgressForm, UploadForm, ChildCorrespondenceForm, ChildIncidentForm
+from .models import Child, ChildProfilePicture, ChildProgress, ChildCorrespondence, ChildIncident
 
 # The getLogger() function is used to get a logger instance
 logger = logging.getLogger(__name__)
@@ -322,6 +322,77 @@ def delete_correspondence(request, pk):
     c_records.delete()
     messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
     return HttpResponseRedirect(reverse("child_correspondence_report"))
+
+
+# =================================== Update Child Incident ===================================
+@login_required
+@transaction.atomic
+def child_incident(request):
+    if request.method == "POST":
+        form = ChildIncidentForm(request.POST, request.FILES)
+        if form.is_valid():
+            child_id = request.POST.get("id")
+            child_instance = get_object_or_404(Child, pk=child_id)
+
+            # Always create a new incidence record explicitly
+            child_incident = ChildIncident.objects.create(child=child_instance)
+
+            # Populate incidence data
+            child_incident.incident_date = form.cleaned_data["incident_date"]
+            child_incident.description = form.cleaned_data["description"]
+            child_incident.action_taken = form.cleaned_data["action_taken"]
+            child_incident.results = form.cleaned_data["results"]
+            child_incident.reported_by = form.cleaned_data["reported_by"]
+            child_incident.followed_up_by = form.cleaned_data["followed_up_by"]
+            child_incident.attachment = form.cleaned_data["attachment"]
+            child_incident.save()
+
+            messages.success(request, "Child incident recorded successfully!")
+            return redirect("child_incident")
+        else:
+            messages.error(request, "Form is invalid.")
+    else:
+        form = ChildIncidentForm()
+
+    children = Child.objects.all().order_by("id")
+    return render(
+        request,
+        "main/child/child_incident.html",
+        {"form": form, "form_name": "Child Incident Form", "children": children},
+    )
+
+
+# =================================== Update Child Incident ===================================
+@login_required
+def child_incident_report(request):
+    if request.method == "POST":
+        child_id = request.POST.get("id")
+        if child_id:
+            selected_child = get_object_or_404(Child, id=child_id)
+            child_incident = ChildIncident.objects.filter(child_id=child_id)
+            children = Child.objects.all().order_by("id")
+            return render(request, 'main/child/child_incident_rpt.html', 
+                          {"table_title": "Incident Report", "children": children, 
+                           "child_name": selected_child.full_name, "prefix_id":selected_child.prefixed_id, 
+                           'child_incident': child_incident})
+        else:
+            messages.error(request, "No child selected.")
+    else:
+        # Handle the GET request, show the form without results
+        children = Child.objects.all().order_by("id")
+    return render(request, 'main/child/child_incident_rpt.html', 
+                    {"table_title": "Incident Report", "children": children})
+
+# =================================== Delete Incident Data ===================================
+
+@login_required
+@transaction.atomic
+def delete_incident(request, pk):
+    c_records = ChildIncident.objects.get(id=pk)
+    c_records.delete()
+    messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
+    return HttpResponseRedirect(reverse("child_incident_report"))
+
 
 # =================================== Process and Import Excel data ===================================
 @login_required
