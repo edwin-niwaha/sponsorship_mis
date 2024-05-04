@@ -33,18 +33,19 @@
         <a class="mt-2 navbar-brand mt-lg-0" href="/">
           <img src="{% static 'images/logo.png' %}" height="30" width="30" alt="" loading="lazy" />
           <h5 style="font-family: 'Times New Roman', Times, serif">
-            PERPETUAL - SMS
+            Pendeza - S-MIS
           </h5>
         </a>
         <!-- Left links -->
         <ul class="mb-2 navbar-nav me-auto mb-lg-0">
           <li class="nav-item">
-            <a class="nav-link" href="/">Home</a>
-          </li>
+            <a class="nav-link" href="/">HOME</a></li>
+          <li class="nav-item"><a class="nav-link" target="_blank" href="https://pendeza.org/">ABOUT US</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'contact_us' %}">CONTACT US</a></li>
 
           {% if user.is_authenticated %}
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'main-dashboard' %}">Dashboard</a>
+            <a class="nav-link" href="{% url 'main-dashboard' %}">DASHBOARD</a>
           </li>
           {% endif %}
         </ul>
@@ -62,11 +63,11 @@
           {% else %}
           <li class="nav-item me-2">
             <b>
-              <a href="{% url 'login' %}" class="nav-item nav-link">Sign in</a></b>
+              <a href="{% url 'login' %}" class="nav-item nav-link">SIGN IN</a></b>
           </li>
           <li class="nav-item">
             <b>
-              <a class="nav-link" href="{% url 'users-register' %}">Signup</a></b>
+              <a class="nav-link" href="{% url 'users-register' %}">SIGN UP</a></b>
           </li>
           {% endif %}
         </ul>

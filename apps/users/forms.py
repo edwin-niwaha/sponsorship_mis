@@ -140,3 +140,32 @@ class UpdateProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
         fields = ["avatar", "bio"]
+
+from django import forms
+from .models import Contact
+
+class ContactForm(forms.ModelForm):
+    class Meta:
+        model = Contact
+        fields = "__all__"
+        widgets = {
+            "message": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+        }   
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if not email:
+            raise forms.ValidationError("Email field is required")
+        return email
+
+    def clean_subject(self):
+        subject = self.cleaned_data.get('subject')
+        if not subject:
+            raise forms.ValidationError("Subject field is required")
+        return subject
+
+    def clean_message(self):
+        message = self.cleaned_data.get('message')
+        if not message:
+            raise forms.ValidationError("Message field is required")
+        return message

@@ -40,11 +40,13 @@
             <!-- ========== Topbar End ========== -->
 
             <div class="main-panel">
-                <!-- =============== Messages Start ================= -->
-                {% include '_partials/messages.html' %}
-                <!-- =============== Messages End ================= -->
 
                 <div class="content-wrapper pb-0">
+
+                    <!-- =============== Messages Start ================= -->
+                    {% include '_partials/messages_main.html' %}
+                    <!-- =============== Messages End ================= -->
+
                     {% block content %}
                     {% endblock %}
 

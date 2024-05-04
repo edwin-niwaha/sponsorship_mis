@@ -6,13 +6,14 @@ from django.shortcuts import redirect, render
 from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse_lazy
 from django.views import View
-from .models import Profile
+from .models import Profile, Contact
 
 from .forms import (
     LoginForm,
     RegisterForm,
     UpdateProfileForm,
     UpdateUserForm,
+    ContactForm,    
 )
 
 
@@ -115,3 +116,16 @@ def profile(request):
         "users/profile.html",
         {"user_form": user_form, "profile_form": profile_form},
     )
+
+def contact_us(request):
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your message has been sent successfully. We will get back to you soon!")
+            return redirect('contact_us')  # Redirect to the user profile page after successful form submission
+    else:
+        form = ContactForm()  # Create a new form instance if the request method is not POST
+
+    return render(request, 'users/contact_us.html', {'form': form})
+
