@@ -1,20 +1,23 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordResetView
 from django.contrib.messages.views import SuccessMessageMixin
-from django.shortcuts import redirect, render
 from django.core.exceptions import ObjectDoesNotExist
-from django.urls import reverse_lazy
+from django.core.mail import send_mail
+from django.http import HttpResponseRedirect
+from django.shortcuts import redirect, render
+from django.urls import reverse, reverse_lazy
 from django.views import View
-from .models import Profile, Contact
 
 from .forms import (
+    ContactForm,
     LoginForm,
     RegisterForm,
     UpdateProfileForm,
     UpdateUserForm,
-    ContactForm,    
 )
+from .models import Profile
 
 
 def home(request):
@@ -83,7 +86,7 @@ class ResetPasswordView(SuccessMessageMixin, PasswordResetView):
     success_url = reverse_lazy("users-home")
 
 
-class ChangePasswordView(SuccessMessageMixin, PasswordChangeView):
+class ChangePasswordView(PasswordChangeView):
     template_name = "users/change_password.html"
     success_message = "Successfully Changed Your Password"
     success_url = reverse_lazy("users-home")
@@ -117,15 +120,34 @@ def profile(request):
         {"user_form": user_form, "profile_form": profile_form},
     )
 
+
 def contact_us(request):
     if request.method == 'POST':
         form = ContactForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Your message has been sent successfully. We will get back to you soon!")
-            return redirect('contact_us')  # Redirect to the user profile page after successful form submission
+            instance = form.save()
+
+            try:
+                # Send email to the user
+                subject = 'Your message has been received'
+                message = f"Hello {instance.name},\n\nYour message has been received. \
+We will get back to you soon!\n\nThanks,\nPerpetual - SDMS\nManagement"
+                from_email = settings.EMAIL_HOST_USER  # Use default from email from settings
+                to = [instance.email]  # Access email entered in the form
+                send_mail(subject, message, from_email, to)
+
+                # Set success message
+                messages.success(request, "Your message has been sent successfully. \
+We will get back to you soon!")
+            except Exception as e:
+                # Handle exceptions such as email address not found or internet being off
+                print("An error occurred while sending email:", str(e))
+                messages.error(request, "Sorry, an error occurred while sending your \
+message. Please try again later.")
+
+            # Redirect to the contact page
+            return HttpResponseRedirect(reverse('contact_us'))
     else:
-        form = ContactForm()  # Create a new form instance if the request method is not POST
+        form = ContactForm()
 
     return render(request, 'users/contact_us.html', {'form': form})
-

@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="{% static 'assets/vendors/css/vendor.bundle.base.css' %}" />
     <link rel="stylesheet" href="{% static 'assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css' %}" />
     <link rel="stylesheet" href="{% static 'assets/css/style.css' %}" />
-    <link rel="shortcut icon" href="{% static 'images/logo.png' %}" />
+    <link rel="shortcut icon" href="{% static 'images/file.png' %}" />
 
     <!--HTMX Data tables CSS-->
     <link rel="stylesheet" href="{% static 'css/htmx_table.css' %}" />
@@ -23,7 +23,8 @@
     <!--Icons-->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
 
-    <title>{% block title %} SPONSORSHIP - MIS {% endblock %}</title>
+    <title>{% block title %}Child Sponsorship Software{% endblock title %}</title>
+
 </head>
 
 <body>
@@ -44,7 +45,7 @@
                 <div class="content-wrapper pb-0">
 
                     <!-- =============== Messages Start ================= -->
-                    {% include '_partials/messages_main.html' %}
+                    {% include '_partials/messages.html' %}
                     <!-- =============== Messages End ================= -->
 
                     {% block content %}

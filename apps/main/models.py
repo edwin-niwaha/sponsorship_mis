@@ -1,6 +1,5 @@
 import datetime
 from datetime import date
-from django.core.exceptions import ValidationError
 
 from django.core.validators import (
     FileExtensionValidator,
@@ -384,9 +383,12 @@ class ChildCorrespondence(models.Model):
         "Child", on_delete=models.CASCADE, related_name="correspondences",
         verbose_name="Child"
     )
-    correspondence_type = models.CharField(max_length=20, choices=CORRESPONDENCE_CHOICES, verbose_name="Select the type of correspondence")
-    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, verbose_name="Select the source of correspondence")
-    attachment = models.FileField(upload_to='correspondence_attachments/', blank=True, null=True, verbose_name="Attachment")
+    correspondence_type = models.CharField(max_length=20, choices=CORRESPONDENCE_CHOICES, 
+                                           verbose_name="Select the type of correspondence")
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, 
+                              verbose_name="Select the source of correspondence")
+    attachment = models.FileField(upload_to='correspondence_attachments/', blank=True, null=True, 
+                                  verbose_name="Attachment")
     comment = models.CharField(max_length=100, null=True, verbose_name="Any comment?")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

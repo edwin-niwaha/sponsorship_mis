@@ -25,10 +25,13 @@ urlpatterns = [
     path('child/incident/report/', views.child_incident_report, name='child_incident_report'),
     path("child/incident/delete/<int:pk>", views.delete_incident, name="delete_incident"),
 
+    # User Feedback
+    path("user/feedback/", views.user_feedback, name="users-feedback"),
+    path("user/feedback/delete/<int:pk>", views.delete_feedback, name="delete_feedback"),
 
     # Excel import paths
     path("child/import/", views.import_data, name="import"),
     path("excel/list/", views.import_details, name="imported_data"),
-    path("del/excel-data/<int:pk>", views.delete_excel_data, name="delete_excel"),
+    path("excel-data/delete/<int:pk>", views.delete_excel_data, name="delete_excel"),
     path("delete_confirmation/", views.delete_confirmation, name="delete_confirmation"),
 ]

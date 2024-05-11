@@ -1,18 +1,21 @@
 {% load static %}
 <div>
     <div class="page-header flex-wrap">
-        <h3 class="mb-0">Welcome, <i>{{user.first_name.title}} {{user.last_name.title}} !</i> <span
-                class="pl-0 h6 pl-sm-2 text-muted d-inline-block">Enjoy your analytics dashboard...</span>
+        <h3 class="mb-0">Welcome, <i style="color:#F79420">{{user.first_name.title}} {{user.last_name.title}} !</i>
+            <span class="pl-0 h6 pl-sm-2 text-muted d-inline-block">
+                <i
+                    style="color:#127D61; font-size: 24px; font-family: 'Lucida Calligraphy', 'Lucida Sans Unicode', sans-serif;">Enjoy
+                    your analytics dashboard...</i>
+            </span>
         </h3>
         <div class="d-flex">
-            <button type="button" class="btn btn-sm bg-white btn-icon-text border">
-                <i class="mdi mdi-email btn-icon-prepend"></i> Email </button>
-            <button type="button" class="btn btn-sm bg-white btn-icon-text border ml-3">
-                <i class="mdi mdi-printer btn-icon-prepend"></i> Print </button>
-            <button type="button" class="btn btn-sm ml-3 btn-success"> Add User </button>
+            <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
+                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
         </div>
     </div>
-    <div class="row">
+    <hr class="bg-info" style="height: 3px;" />
+
+    <div id="printMe" class="row">
         <div class="col-xl-3 col-lg-12 stretch-card grid-margin">
             <div class="row">
                 <div class="col-xl-12 col-md-6 stretch-card grid-margin grid-margin-sm-0 pb-sm-3">
@@ -46,7 +49,7 @@
                     </div>
                 </div>
                 <div class="col-xl-12 col-md-6 stretch-card grid-margin grid-margin-sm-0 pb-sm-3 pb-lg-0 pb-xl-3">
-                    <div class="card bg-primary">
+                    <div class="card bg-success">
                         <div class="card-body px-3 py-4">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div class="color-card">
@@ -61,7 +64,7 @@
                     </div>
                 </div>
                 <div class="col-xl-12 col-md-6 stretch-card pb-sm-3 pb-lg-0">
-                    <div class="card bg-success">
+                    <div class="card bg-warning">
                         <div class="card-body px-3 py-4">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div class="color-card">
@@ -76,24 +79,28 @@
                 </div>
             </div>
         </div>
-        <div class="col-xl-9 stretch-card grid-margin">
+        <div id="printSurvey" class="col-xl-9 stretch-card grid-margin">
             <div class="card">
                 <div class="card-body">
                     <div class="row">
                         <div class="col-sm-7">
-                            <h5>Business Survey</h5>
-                            <p class="text-muted"> Show overview jan 2018 - Dec 2019 <a
-                                    class="text-muted font-weight-medium pl-2" href="#"><u>See
+                            <h5 style="color: #F79420;">Sponsorship Survey</h5>
+                            <p class="text-muted"> Show overview Jan 2017 -
+                                <script>
+                                    document.write(new Date().getFullYear());
+                                </script> <a class="text-muted font-weight-medium pl-2" href="#"><u>See
                                         Details</u></a>
                             </p>
                         </div>
                         <div class="col-sm-5 text-md-right">
-                            <button type="button"
+                            <button type="button" onclick=" printDiv('printSurvey')"
                                 class="btn btn-icon-text mb-3 mb-sm-0 btn-inverse-primary font-weight-normal">
                                 <i class="mdi mdi-email btn-icon-prepend"></i>Download Report
                             </button>
                         </div>
                     </div>
+                    <hr class="bg-info" style="height: 3px;" />
+
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="card mb-3 mb-sm-0">

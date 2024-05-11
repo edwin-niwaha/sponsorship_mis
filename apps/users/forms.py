@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
 
-from .models import Profile
+from .models import Contact, Profile
 
 
 class RegisterForm(UserCreationForm):
@@ -141,8 +141,6 @@ class UpdateProfileForm(forms.ModelForm):
         model = Profile
         fields = ["avatar", "bio"]
 
-from django import forms
-from .models import Contact
 
 class ContactForm(forms.ModelForm):
     class Meta:
@@ -157,12 +155,6 @@ class ContactForm(forms.ModelForm):
         if not email:
             raise forms.ValidationError("Email field is required")
         return email
-
-    def clean_subject(self):
-        subject = self.cleaned_data.get('subject')
-        if not subject:
-            raise forms.ValidationError("Subject field is required")
-        return subject
 
     def clean_message(self):
         message = self.cleaned_data.get('message')

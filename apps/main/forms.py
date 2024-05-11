@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
-from .models import Child, ChildProfilePicture, ChildProgress, ChildCorrespondence, ChildIncident
+from .models import Child, ChildCorrespondence, ChildIncident, ChildProfilePicture, ChildProgress
 
 
 class UploadForm(forms.Form):

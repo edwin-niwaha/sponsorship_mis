@@ -1,0 +1,55 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="container">
+    <div class="page-header flex-wrap">
+        <h3 class="mb-0"> {{table_title|upper}} <span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
+        <div class="d-flex">
+            <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
+                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
+
+            <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success"
+                onclick="ExportToExcel('xlsx')">
+                <i class="mdi mdi-file-excel btn-icon-prepend"></i> </button>
+
+            <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success"
+                onclick="Export2Doc('printMe');">
+                <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
+        </div>
+    </div>
+    <hr>
+    <div id="printMe" class="tab-pane show active">
+        <header style="text-align: center;">
+            <hr class="bg-info" style="height: 5px;" />
+        </header>
+        <table class="my-table">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Message</th>
+                    <th scope="col">Submitted on</th>
+                    <th scope="col">Action</th>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {%for f in feedback%}
+                <tr>
+                    <th scope="row">{{forloop.counter}}.</th>
+                    <td>{{f.name}}</td>
+                    <td>{{f.email}}</td>
+                    <td>{{f.message}}</td>
+                    <td>{{f.created_at}}</td>
+                    <td><a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_feedback' f.id %}"
+                            onclick="return confirm('Are you sure about this? this record will be deleted permanently');"><i
+                                class="bi bi-trash"></a></td>
+                    {%endfor%}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock content %}

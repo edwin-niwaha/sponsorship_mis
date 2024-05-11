@@ -10,8 +10,17 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from openpyxl import load_workbook
 
-from .forms import ChildForm, ChildProfilePictureForm, ChildProgressForm, UploadForm, ChildCorrespondenceForm, ChildIncidentForm
-from .models import Child, ChildProfilePicture, ChildProgress, ChildCorrespondence, ChildIncident
+from apps.users.models import Contact
+
+from .forms import (
+    ChildCorrespondenceForm,
+    ChildForm,
+    ChildIncidentForm,
+    ChildProfilePictureForm,
+    ChildProgressForm,
+    UploadForm,
+)
+from .models import Child, ChildCorrespondence, ChildIncident, ChildProfilePicture, ChildProgress
 
 # The getLogger() function is used to get a logger instance
 logger = logging.getLogger(__name__)
@@ -393,6 +402,26 @@ def delete_incident(request, pk):
     messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
     return HttpResponseRedirect(reverse("child_incident_report"))
 
+
+# =================================== Display User Feedback ===================================
+@login_required
+@transaction.atomic
+def user_feedback(request):
+    feedback = Contact.objects.all()
+    return render(
+        request,
+        "users/user_feedback.html",
+        {"table_title": "User Feedback", "feedback": feedback},
+    )
+
+# =================================== Delete User Feedback ===================================
+@login_required
+@transaction.atomic
+def delete_feedback(request, pk):
+    feedback = Contact.objects.get(id=pk)
+    feedback.delete()
+    messages.info(request, "Record deleted!", extra_tags="bg-danger")
+    return HttpResponseRedirect(reverse("users-feedback"))
 
 # =================================== Process and Import Excel data ===================================
 @login_required
