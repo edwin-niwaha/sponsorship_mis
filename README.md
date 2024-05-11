@@ -1,4 +1,4 @@
-# SPONSORSHIP MIS PROJECT
+# Sponsorship & Donor Management Software (SDMS)
 _A sponsorship Management Information System developed in Django_
 <br />
 Perpetual-X is a simple yet powerfull tool, built with django which is a Python-based free and open-source web framework that follows the model–template–views architectural pattern.
