@@ -1,51 +1,44 @@
 {% extends "users/base.html" %}
+{% load static %}
 
 {% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-6 m-auto">
+      <div class="p-4">
+        <img src="{% static 'images/hero.png' %}" class="img-fluid mx-auto" alt="Background Image">
+      </div>
+    </div>
+    <div class="col-md-6 m-auto">
+      <div class="p-4">
+        <div class="d-flex justify-content-center align-items-center">
+          <div class="text-center">
+            <h3>Sponsorship & Donor Management Software (SDMS)</h3>
+            <hr class="my-4" style="height: 5px; background-color: #008080;" />
+            {% if user.is_authenticated %}
+            <a class="btn btn-warning btn-lg" href="{% url 'logout' %}" role="button"
+              onclick="return confirm('Are you sure you want to logout?');">Logout</a>
+            {% else %}
+            <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Sign In</a>
+            <span class="mx-2">OR</span>
+            <a href="{% url 'users-register' %}" class="btn btn-primary btn-lg">Register</a>
+            {% endif %}
+            <hr class="my-4" style="height: 5px; background-color: #008080;" />
 
-<div class="container-fluid">
+            <!-- Welcome Message -->
+            <div class="welcome-message">
+              <p>Dear <span style="color:#F79420;">{{user.first_name.title|default:'Guest'}}</span>,
+                Welcome to Perpetual - SDMS{% if not user.is_authenticated %} | You must be a registered user to use
+                this tool.{% endif %}
+              </p>
+            </div>
 
-  <div
-    style="background-color: #127D61; border-radius: 10px; display: flex; justify-content: center; align-items: center; height: 150px;">
-    <h3 class="display-4"
-      style="color:#FFFFFF; text-align:center; font-family: 'Lucida Calligraphy', 'Lucida Sans Unicode', sans-serif;">
-      <b>Sponsorship & Donor Management Software (SDMS)</b>
-    </h3>
+          </div>
+
+        </div>
+      </div>
+    </div>
   </div>
-
-  <hr class="my-4" style="height: 5px; background-color: #008080;" />
-  <div
-    style="background-color: #F79420; border-radius: 10px; display: flex; justify-content: center; align-items: center; height: 70px;">
-    <h3 style="color:#FFFFFF; font-family: 'Times Newroman', 'Lucida Sans Unicode', sans-serif;">
-      FOR NONPROFITS
-    </h3>
-  </div>
-
-  <hr class="my-4" style="height: 5px; background-color: #008080;" />
-
-  <div class="lead"
-    style="background-color: #127D61; border-radius: 10px; display: flex; justify-content: center; align-items: center; height: 150px;">
-    {% if user.is_authenticated %}
-    <i style="color:#FFFFFF">Dear <i
-        style="color:#F79420; font-family: 'Lucida Calligraphy', 'Lucida Sans Unicode', sans-serif;">{{user.first_name.title|default:'Guest'}}</i>,
-      Welcome to Perpetual - SDMS</i>
-    {% else %}
-    <i style="color:#FFFFFF">Dear <i
-        style="color:#F79420; font-family: 'Lucida Calligraphy', 'Lucida Sans Unicode', sans-serif;">{{user.first_name.title|default:'Guest'}}</i>,
-      Welcome to Perpetual - SDMS -
-      You must be a registered user to use this tool.</i>
-    {% endif %}
-
-  </div>
-
-  <hr class="my-4" style="height: 5px; background-color: #008080;" />
-  <p class="lead">
-    {% if user.is_authenticated %}
-    <a class="btn btn-primary btn-lg" href="{% url 'logout' %}" role="button"
-      onclick="return confirm('Are you sure you want to logout?');">Logout</a>
-    {% else %}
-    <a class="btn btn-primary btn-lg" href="{% url 'login' %}" role="button">Sign in</a>
-    {% endif %}
-  </p>
 </div>
 
-{% endblock content %}
+{% endblock %}
