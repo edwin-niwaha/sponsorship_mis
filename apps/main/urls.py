@@ -24,7 +24,10 @@ urlpatterns = [
     path("child/incident/", views.child_incident, name="child_incident"),
     path('child/incident/report/', views.child_incident_report, name='child_incident_report'),
     path("child/incident/delete/<int:pk>", views.delete_incident, name="delete_incident"),
-
+    path('child/departure/', views.child_departure, name='child_departure'),
+    path("child/departure/list/", views.depature_list, name="depature_list"),
+    path("child/reinstate/<int:pk>", views.reinstate_child, name="reinstate_child"),
+    
     # User Feedback
     path("user/feedback/", views.user_feedback, name="users-feedback"),
     path("user/feedback/delete/<int:pk>", views.delete_feedback, name="delete_feedback"),

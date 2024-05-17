@@ -47,8 +47,8 @@
                     {% if record.avatar == ""  %}
                     No avatar!
                     {% else %}
-                    <img class="rounded-circle account-img" height="100" width="100"
-                        src="{{ record.profile_picture.picture.url }}" style="cursor: pointer" />
+                    <img class="rounded-circle account-img" height="100" width="100" src="{{ record.picture.url }}"
+                        style="cursor: pointer" />
                     {% endif %}
                     <i class="text-info">Reg. No:</i> {{ record.prefixed_id}}
                 </td>

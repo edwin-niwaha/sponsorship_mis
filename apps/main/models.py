@@ -59,6 +59,11 @@ class Child(models.Model):
             MaxValueValidator(limit_value=datetime.date.today()),
         ],
     )
+    picture = models.ImageField(
+        upload_to="current_child_profiles/",
+        verbose_name="Upload Image(jpg, jpeg, png)",
+        validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
+    )
     weight = models.DecimalField(
         max_digits=5,
         decimal_places=2,
@@ -204,6 +209,7 @@ class Child(models.Model):
     compiled_by = models.CharField(
         max_length=10, null=True, blank=True, verbose_name="Compiled by"
     )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -236,8 +242,12 @@ class Child(models.Model):
 
 
 class ChildProfilePicture(models.Model):
-    child = models.OneToOneField(
-        Child, on_delete=models.CASCADE, related_name="profile_picture"
+    # child = models.OneToOneField(
+    #     Child, on_delete=models.CASCADE, related_name="profile_picture"
+    # )
+
+    child = models.ForeignKey(
+        "Child", on_delete=models.CASCADE, related_name="profile_picture"
     )
     picture = models.ImageField(
         upload_to="child_profiles/",
@@ -442,6 +452,24 @@ class ChildIncident(models.Model):
     def __str__(self):
         return f"Incident of {self.child.full_name} on {self.incident_date}"
 
+
+# =================================== CHILD DEPATURE MODEL ===================================
+class ChildDepart(models.Model):
+    child = models.ForeignKey(
+        'Child',
+        on_delete=models.CASCADE,
+        verbose_name='Child Information', 
+        related_name='departures'
+    )
+    depart_date = models.DateField(verbose_name='Departure Date', null=True,
+                                             blank=True,)
+    depart_reason = models.TextField(verbose_name='Reason for Departure')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created At')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated At')
+
+    class Meta:
+        verbose_name = 'Child Departure'
+        verbose_name_plural = 'Child Departures'
 
 # =================================== SPONSOR MODEL ===================================
 # class Sponsor(models.Model):

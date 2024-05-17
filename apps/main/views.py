@@ -19,9 +19,17 @@ from .forms import (
     ChildProfilePictureForm,
     ChildProgressForm,
     UploadForm,
+    ChildDepartForm,
 )
-from .models import Child, ChildCorrespondence, ChildIncident, ChildProfilePicture, ChildProgress
+from .models import (
+    Child, 
+    ChildCorrespondence, 
+    ChildIncident,
+    ChildProfilePicture, 
+    ChildProgress, 
+    ChildDepart
 
+)
 # The getLogger() function is used to get a logger instance
 logger = logging.getLogger(__name__)
 # logger.info("Child ID received: %s", child_id)  # Log the child_id value
@@ -46,8 +54,8 @@ def dashboard(request):
 
 # =================================== Fetch and display all children details ===================================
 def child_list(request):
-    # queryset = Child.objects.all().order_by('-created_at')
-    queryset = Child.objects.all().order_by("id").select_related("profile_picture")
+    # queryset = Child.objects.all().filter(is_departed="No").order_by("id").select_related("profile_picture")
+    queryset = Child.objects.all().filter(is_departed="No").order_by("id")
 
     search_query = request.GET.get("search")
     if search_query:
@@ -142,6 +150,7 @@ def delete_child(request, pk):
 
 
 # =================================== Upload Profile Picture ===================================
+
 @login_required
 @transaction.atomic
 def update_picture(request):
@@ -149,29 +158,24 @@ def update_picture(request):
         form = ChildProfilePictureForm(request.POST, request.FILES)
         if form.is_valid():
             child_id = request.POST.get("id")
-
             try:
-                child_profile = Child.objects.get(pk=child_id)
+                # Attempt to retrieve the child profile
+                child_profile = Child.objects.get(id=child_id)
             except Child.DoesNotExist:
-                messages.error(
-                    request, "Child with ID {} does not exist.".format(child_id)
-                )
+                # Handle the case where the child doesn't exist
+                messages.error(request, "Child profile not found.")
                 return redirect("update_picture")
 
-            # Check if a profile picture already exists for the child
-            try:
-                existing_picture = ChildProfilePicture.objects.get(child=child_profile)
-                # Update the existing profile picture
-                existing_picture.picture = form.cleaned_data["picture"]
-                existing_picture.save()
-                messages.success(request, "Profile picture updated successfully!")
-            except ChildProfilePicture.DoesNotExist:
-                # Save the new picture
-                new_picture = form.save(commit=False)
-                new_picture.child = child_profile
-                new_picture.save()
-                messages.success(request, "Profile picture uploaded successfully!")
+            # Create a ChildProfilePicture instance
+            new_picture = form.save(commit=False)
+            new_picture.child = child_profile
+            new_picture.is_current = True
+            new_picture.save()
 
+            # Update Child
+            child_profile.picture = new_picture.picture
+            child_profile.save()
+            messages.success(request, "Profile picture updated successfully!")
             return redirect("update_picture")
         else:
             messages.error(request, "Form is invalid.")
@@ -190,6 +194,9 @@ def update_picture(request):
             "children": children,
         },
     )
+
+# =================================== View Profile Picture ===================================
+
 
 # =================================== Update Child Progress ===================================
 @login_required
@@ -422,6 +429,84 @@ def delete_feedback(request, pk):
     feedback.delete()
     messages.info(request, "Record deleted!", extra_tags="bg-danger")
     return HttpResponseRedirect(reverse("users-feedback"))
+
+
+# =================================== Add Child Depature ===================================
+@login_required
+@transaction.atomic
+def child_departure(request):
+    if request.method == "POST":
+        form = ChildDepartForm(request.POST, request.FILES)
+        if form.is_valid():
+            child_id = request.POST.get("id")
+            child_instance = get_object_or_404(Child, pk=child_id)
+
+             # Create a ChildDepart instance
+            child_depart = ChildDepart.objects.create(child=child_instance)
+            child_depart.depart_date = form.cleaned_data["depart_date"]
+            child_depart.depart_reason = form.cleaned_data["depart_reason"]
+            child_depart.save()
+
+            # Update Child status to "departed"
+            child_instance.is_departed = "Yes"
+            child_instance.save()
+
+            messages.success(request, "Child departed successfully!")
+            return redirect("child_departure")
+        else:
+            messages.error(request, "Form is invalid.")
+    else:
+        form = ChildDepartForm()
+
+    # children = Child.objects.all().order_by("id")
+    children = Child.objects.filter(is_departed="No").order_by("id") 
+    return render(
+        request,
+        "main/child/depart.html",
+        {"form": form, "form_name": "Child Depature Form", "children": children},
+    )
+
+# =================================== Child Depature Report ===================================
+def depature_list(request):
+    queryset = Child.objects.all().filter(is_departed="Yes").order_by("id").select_related("profile_picture").prefetch_related("departures")
+
+    search_query = request.GET.get("search")
+    if search_query:
+        queryset = queryset.filter(full_name__icontains=search_query)
+
+    paginator = Paginator(queryset, 25)  # Show 10 records per page
+    page = request.GET.get("page")
+
+    try:
+        c_records = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        c_records = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        c_records = paginator.page(paginator.num_pages)
+
+    return render(
+        request,
+        "main/child/depature_list.html",
+        {"c_records": c_records, "table_title": "Departed Children"},
+    )
+
+# =================================== Reinstate departed child ===================================
+@login_required
+@transaction.atomic
+def reinstate_child(request, pk):
+    child = get_object_or_404(Child, id=pk)
+    
+    if request.method == 'POST':
+        child.is_departed = "No"
+        child.save()
+        messages.success(request, "Child reinstated successfully!")
+
+        return redirect("depature_list")
+    
+    return render(request, 'main/child/depature_list.html', {'child': child})
+
 
 # =================================== Process and Import Excel data ===================================
 @login_required

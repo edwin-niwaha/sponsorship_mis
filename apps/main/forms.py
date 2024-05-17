@@ -1,13 +1,21 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
-from .models import Child, ChildCorrespondence, ChildIncident, ChildProfilePicture, ChildProgress
+from .models import (
+Child, 
+ChildCorrespondence, 
+ChildIncident, 
+ChildProfilePicture, 
+ChildProgress, 
+ChildDepart,
+)
 
 
 class UploadForm(forms.Form):
     excel_file = forms.FileField()
     excel_file.widget.attrs["class"] = "form-control-file"
 
+# =================================== CHILD FORM===================================
 
 class ChildForm(forms.ModelForm):
     class Meta:
@@ -56,8 +64,9 @@ class ChildForm(forms.ModelForm):
             )
 
         return self.cleaned_data
+    
 
-
+# =================================== CHILD PROFILE ===================================
 class ChildProfilePictureForm(forms.ModelForm):
     class Meta:
         model = ChildProfilePicture
@@ -70,7 +79,9 @@ class ChildProfilePictureForm(forms.ModelForm):
     def clean_picture(self):
         picture = self.cleaned_data.get("picture")
         return picture
+    
 
+# =================================== CHILD  PROGRESS===================================
 class ChildProgressForm(forms.ModelForm):
     class Meta:
         model = ChildProgress
@@ -90,6 +101,8 @@ class ChildProgressForm(forms.ModelForm):
             "child_class": forms.Select(attrs={'class': 'form-select'}),
         }
 
+
+# =================================== CHILD CORRESSPONDENCE ===================================
 class ChildCorrespondenceForm(forms.ModelForm):
     class Meta:
         model = ChildCorrespondence
@@ -113,7 +126,7 @@ class ChildCorrespondenceForm(forms.ModelForm):
         
         return attachment
 
-
+# =================================== CHILD INCIDENT ===================================
 class ChildIncidentForm(forms.ModelForm):
     class Meta:
         model = ChildIncident
@@ -134,3 +147,14 @@ class ChildIncidentForm(forms.ModelForm):
             raise ValidationError("Only PDF attachments are allowed.")
         
         return attachment
+    
+
+# =================================== CHILD DEPATURE ===================================
+class ChildDepartForm(forms.ModelForm):
+    class Meta:
+        model = ChildDepart
+        exclude = ("child", )
+        widgets ={
+             "depart_date": forms.DateInput(attrs={"type": "date"}),
+            'depart_reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
