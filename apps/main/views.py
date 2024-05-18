@@ -42,7 +42,7 @@ def home(request):
 # =================================== The dashboard ===================================
 @login_required
 def dashboard(request):
-    c_records = Child.objects.all()
+    c_records = Child.objects.all().filter(is_departed="No")
     total_records = c_records.count()
 
     context = {
@@ -61,7 +61,7 @@ def child_list(request):
     if search_query:
         queryset = queryset.filter(full_name__icontains=search_query)
 
-    paginator = Paginator(queryset, 25)  # Show 10 records per page
+    paginator = Paginator(queryset, 25)  # Show 25 records per page
     page = request.GET.get("page")
 
     try:
@@ -183,7 +183,7 @@ def update_picture(request):
         form = ChildProfilePictureForm()
 
     # Retrieve all child objects
-    children = Child.objects.all().order_by("id")
+    children = Child.objects.all().filter(is_departed="No").order_by("id")
 
     return render(
         request,
@@ -195,8 +195,35 @@ def update_picture(request):
         },
     )
 
-# =================================== View Profile Picture ===================================
+# =================================== View Profile Pictures ===================================
+@login_required
+def profile_pictures(request):
+    if request.method == "POST":
+        child_id = request.POST.get("id")
+        if child_id:
+            selected_child = get_object_or_404(Child, id=child_id)
+            profile_picture = ChildProfilePicture.objects.filter(child_id=child_id)
+            children = Child.objects.all().filter(is_departed="No").order_by("id")
+            return render(request, 'main/child/profile_picture_list.html', 
+                          {"table_title": "Profile Pictures", "children": children, 
+                           "child_name": selected_child.full_name, "prefix_id":selected_child.prefixed_id, 
+                           'profile_picture': profile_picture})
+        else:
+            messages.error(request, "No child selected.")
+    else:
+        # Handle the GET request, show the form without results
+        children = Child.objects.all().filter(is_departed="No").order_by("id")
+    return render(request, 'main/child/profile_picture_list.html', 
+                    {"table_title": "Profile Pictures", "children": children})
 
+# =================================== Delete Profile Pictures ===================================
+@login_required
+@transaction.atomic
+def delete_profile_picture(request, pk):
+    c_records = ChildProfilePicture.objects.get(id=pk)
+    c_records.delete()
+    messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
+    return HttpResponseRedirect(reverse("profile_pictures"))
 
 # =================================== Update Child Progress ===================================
 @login_required
@@ -232,7 +259,7 @@ def child_progress(request):
     else:
         form = ChildProgressForm()
 
-    children = Child.objects.all().order_by("id")
+    children = Child.objects.all().filter(is_departed="No").order_by("id")
     return render(
         request,
         "main/child/child_progress.html",
@@ -247,7 +274,7 @@ def child_progress_report(request):
         if child_id:
             selected_child = get_object_or_404(Child, id=child_id)
             child_progress = ChildProgress.objects.filter(child_id=child_id)
-            children = Child.objects.all().order_by("id")
+            children = Child.objects.all().filter(is_departed="No").order_by("id")
             return render(request, 'main/child/progress_rpt.html', 
                           {"table_title": "Progress Report", "children": children, 
                            "child_name": selected_child.full_name, "prefix_id":selected_child.prefixed_id, 
@@ -256,7 +283,7 @@ def child_progress_report(request):
             messages.error(request, "No child selected.")
     else:
         # Handle the GET request, show the form without results
-        children = Child.objects.all().order_by("id")
+        children = Child.objects.all().filter(is_departed="No").order_by("id")
     return render(request, 'main/child/progress_rpt.html', 
                     {"table_title": "Progress Report", "children": children})
 
@@ -300,7 +327,7 @@ def child_correspondence(request):
     else:
         form = ChildCorrespondenceForm()
 
-    children = Child.objects.all().order_by("id")
+    children = Child.objects.all().filter(is_departed="No").order_by("id")
     return render(
         request,
         "main/child/child_correspondence.html",
@@ -315,7 +342,7 @@ def child_correspondence_report(request):
         if child_id:
             selected_child = get_object_or_404(Child, id=child_id)
             child_correspondence = ChildCorrespondence.objects.filter(child_id=child_id)
-            children = Child.objects.all().order_by("id")
+            children = Child.objects.all().filter(is_departed="No").order_by("id")
             return render(request, 'main/child/correspondence_rpt.html', 
                           {"table_title": "Correspondence Report", "children": children, 
                            "child_name": selected_child.full_name, "prefix_id":selected_child.prefixed_id, 
@@ -324,7 +351,7 @@ def child_correspondence_report(request):
             messages.error(request, "No child selected.")
     else:
         # Handle the GET request, show the form without results
-        children = Child.objects.all().order_by("id")
+        children = Child.objects.all().filter(is_departed="No").order_by("id")
     return render(request, 'main/child/correspondence_rpt.html', 
                     {"table_title": "Correspondence Report", "children": children})
 
@@ -370,7 +397,7 @@ def child_incident(request):
     else:
         form = ChildIncidentForm()
 
-    children = Child.objects.all().order_by("id")
+    children = Child.objects.all().filter(is_departed="No").order_by("id")
     return render(
         request,
         "main/child/child_incident.html",
@@ -386,7 +413,7 @@ def child_incident_report(request):
         if child_id:
             selected_child = get_object_or_404(Child, id=child_id)
             child_incident = ChildIncident.objects.filter(child_id=child_id)
-            children = Child.objects.all().order_by("id")
+            children = Child.objects.all().filter(is_departed="No").order_by("id")
             return render(request, 'main/child/child_incident_rpt.html', 
                           {"table_title": "Incident Report", "children": children, 
                            "child_name": selected_child.full_name, "prefix_id":selected_child.prefixed_id, 
@@ -395,7 +422,7 @@ def child_incident_report(request):
             messages.error(request, "No child selected.")
     else:
         # Handle the GET request, show the form without results
-        children = Child.objects.all().order_by("id")
+        children = Child.objects.all().filter(is_departed="No").order_by("id")
     return render(request, 'main/child/child_incident_rpt.html', 
                     {"table_title": "Incident Report", "children": children})
 
@@ -458,7 +485,6 @@ def child_departure(request):
     else:
         form = ChildDepartForm()
 
-    # children = Child.objects.all().order_by("id")
     children = Child.objects.filter(is_departed="No").order_by("id") 
     return render(
         request,
@@ -468,7 +494,7 @@ def child_departure(request):
 
 # =================================== Child Depature Report ===================================
 def depature_list(request):
-    queryset = Child.objects.all().filter(is_departed="Yes").order_by("id").select_related("profile_picture").prefetch_related("departures")
+    queryset = Child.objects.all().filter(is_departed="Yes").order_by("id").prefetch_related("departures")
 
     search_query = request.GET.get("search")
     if search_query:
@@ -618,7 +644,7 @@ def process_and_import_data(excel_file):
 @login_required
 @transaction.atomic
 def import_details(request):
-    records = Child.objects.all()
+    records = Child.objects.all().filter(is_departed="No")
     return render(
         request,
         "main/child/imported_data.html",

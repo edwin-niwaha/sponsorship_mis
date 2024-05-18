@@ -58,13 +58,13 @@
                     <tr>
                         <td>{{ child.prefixed_id }}</td>
                         <td>
-                            {% if child.profile_picture.picture == ""  %}
+                            {% if child.picture == ""  %}
                             No Picture!
                             {% else %}
                             <a title="Click to update picture" href="{% url 'update_picture' %}"
                                 onclick="return confirm('Are you sure you want to update child picture? ');">
                                 <img class="rounded-circle account-img" height="50" width="50"
-                                    src="{{ child.profile_picture.picture.url }}" alt="">
+                                    src="{{ child.picture.url }}" alt="">
                             </a>
                             {% endif %}
                         </td>

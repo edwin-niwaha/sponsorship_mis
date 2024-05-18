@@ -242,10 +242,6 @@ class Child(models.Model):
 
 
 class ChildProfilePicture(models.Model):
-    # child = models.OneToOneField(
-    #     Child, on_delete=models.CASCADE, related_name="profile_picture"
-    # )
-
     child = models.ForeignKey(
         "Child", on_delete=models.CASCADE, related_name="profile_picture"
     )
