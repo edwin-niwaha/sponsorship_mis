@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     "crispy_bootstrap5",
     # =================================== PROJECT APPLICATIONS ===================================
     "apps.users",
-    "apps.main",
+    "apps.child",
 ]
 
 MIDDLEWARE = [

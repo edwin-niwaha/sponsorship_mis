@@ -36,7 +36,7 @@ urlpatterns = [
 
     # Excel import paths
     path("child/import/", views.import_data, name="import"),
-    path("excel/list/", views.import_details, name="imported_data"),
-    path("excel-data/delete/<int:pk>", views.delete_excel_data, name="delete_excel"),
-    path("delete_confirmation/", views.delete_confirmation, name="delete_confirmation"),
+    path("child/excel/list/", views.import_details, name="imported_data"),
+    path("child/excel-data/delete/<int:pk>", views.delete_excel_data, name="delete_excel"),
+    path("child/delete_confirmation/", views.delete_confirmation, name="delete_confirmation"),
 ]
