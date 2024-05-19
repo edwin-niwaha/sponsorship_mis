@@ -1,15 +1,14 @@
 import datetime
 from datetime import date
-
+from django.db import models
+from django.utils import timezone
+from phonenumber_field.modelfields import PhoneNumberField
 from django.core.validators import (
     FileExtensionValidator,
     MaxValueValidator,
     MinValueValidator,
     RegexValidator,
 )
-from django.db import models
-from django.utils import timezone
-from phonenumber_field.modelfields import PhoneNumberField
 
 
 # =================================== CHILD MODEL ===================================
@@ -94,7 +93,6 @@ class Child(models.Model):
         max_length=3, choices=SCHOOL_CHOICES, default="No"
     )
 
-    # Sponsorship info - Foreign table for sponsorship apart from is_sponsored field
     SPONSORSHIP_CHOICES = (
         ("Yes", "Yes"),
         ("No", "No"),
@@ -223,7 +221,7 @@ class Child(models.Model):
 
     @property
     def prefixed_id(self):
-        return f"P-0{self.pk}"
+        return f"PC-0{self.pk}"
 
     def calculate_age(self):
         today = date.today()
@@ -466,85 +464,3 @@ class ChildDepart(models.Model):
     class Meta:
         verbose_name = 'Child Departure'
         verbose_name_plural = 'Child Departures'
-
-# =================================== SPONSOR MODEL ===================================
-# class Sponsor(models.Model):
-#     DEPATURE_CHOICES = (
-#         ('Yes', 'Yes'),
-#         ('No', 'No'),
-#     )
-#     GENDER_CHOICES = (
-#     ('Male', 'Male'),
-#     ('Female', 'Female'),
-#     )
-#     sponsor_id = models.AutoField(primary_key=True, verbose_name="Sponsor ID")
-    
-    # SPONSORSHIP_TYPE_CHOICES = (
-    #     ('Full', 'Full Sponsorship'),
-    #     ('Co', 'Co-Sponsorship'),
-    # )
-    # sponsorship_type_at_signup = models.CharField(
-    #     max_length=20, choices=SPONSORSHIP_TYPE_CHOICES, null=True, blank=True, 
-    #     verbose_name="Type of sponsorship interest in")
-
-#     first_name = models.CharField(max_length=100, null=True, verbose_name="First Name")
-#     last_name = models.CharField(max_length=100, null=True, verbose_name="Last Name")
-#     gender = models.CharField(max_length=6, choices=GENDER_CHOICES, blank=False,
-#                                 verbose_name="Gender")
-#     email = models.EmailField(verbose_name="Email")
-#     job_title = models.CharField(max_length=100, null=True, verbose_name="Job Title")
-#     region = models.CharField(max_length=100, null=True, verbose_name="Region")
-#     town = models.CharField(max_length=100, null=True, verbose_name="Town")
-#     origin = models.CharField(max_length=100, null=True, verbose_name="Origin")
-#     business_telephone = PhoneNumberField(null=True, blank=True, default="+256999999999",
-#                                     verbose_name="Business Telephone")
-#     mobile_telephone = PhoneNumberField(null=True, blank=True, default="+256999999999",
-#                                     verbose_name="Mobile Telephone")
-
-#     city = models.CharField(max_length=100, null=True, verbose_name="City")
-#     start_date = models.DateField( null=True, blank=True,
-#                                 verbose_name="Start Date",
-#                                 validators=[
-#     MinValueValidator(limit_value=datetime.date(year=2013, month=1, day=1)),
-#     MaxValueValidator(limit_value=datetime.date.today())])
-#     comment = models.CharField(max_length=100, null=True, verbose_name="Comment")
-#     first_street_address = models.CharField(max_length=100, null=True, verbose_name="First Street Address")
-#     second_street_address = models.CharField(max_length=100, null=True, verbose_name="Second Street Address")
-#     zip_code = models.CharField(max_length=100, null=True, verbose_name="ZIP Code")
-#     is_departed = models.CharField(
-#         max_length=3, choices=DEPATURE_CHOICES, default='No', verbose_name="Is the sponsor departed?")
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-
-
-#     class Meta:
-#         managed = True
-#         db_table = 'sponsor_details'
-#     def __str__(self):
-#         return f"{self.first_name} {self.last_name}"
-
-
-# # =================================== SPONSORSHIP MODEL ===================================
-# class Sponsorship(models.Model):
-#     sponsor = models.ForeignKey(Sponsor, on_delete=models.CASCADE, related_name='sponsorships')
-#     child = models.ForeignKey(Child, on_delete=models.CASCADE, related_name='sponsored_by')
-    
-    # SPONSORSHIP_TYPE_CHOICES = (
-    #     ('Full', 'Full Sponsorship'),
-    #     ('Co', 'Co-Sponsorship'),
-    # )
-    # sponsorship_type = models.CharField(
-    #     max_length=20, choices=SPONSORSHIP_TYPE_CHOICES, null=True, blank=True, verbose_name="Type of sponsorship")
-
-#     start_date = models.DateField()
-#     end_date = models.DateField(blank=True, null=True)
-#     is_active = models.BooleanField(default=True)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-
-#     class Meta:
-#         db_table = 'sponsorship_details'
-#         unique_together = (('child', 'sponsor'),)
-
-#     def __str__(self):
-#         return f"{self.child} sponsored by {self.sponsor}"

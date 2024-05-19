@@ -1,6 +1,5 @@
 # from formtools.wizard.views import SessionWizardView
 import logging
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
@@ -42,8 +41,8 @@ def home(request):
 # =================================== The dashboard ===================================
 @login_required
 def dashboard(request):
-    c_records = Child.objects.all().filter(is_departed="No")
-    total_records = c_records.count()
+    records = Child.objects.all().filter(is_departed="No")
+    total_records = records.count()
 
     context = {
         "kids_registered": total_records,
@@ -53,6 +52,7 @@ def dashboard(request):
 
 
 # =================================== Fetch and display all children details ===================================
+@login_required
 def child_list(request):
     # queryset = Child.objects.all().filter(is_departed="No").order_by("id").select_related("profile_picture")
     queryset = Child.objects.all().filter(is_departed="No").order_by("id")
@@ -65,18 +65,18 @@ def child_list(request):
     page = request.GET.get("page")
 
     try:
-        c_records = paginator.page(page)
+        records = paginator.page(page)
     except PageNotAnInteger:
         # If page is not an integer, deliver first page.
-        c_records = paginator.page(1)
+        records = paginator.page(1)
     except EmptyPage:
         # If page is out of range (e.g. 9999), deliver last page of results.
-        c_records = paginator.page(paginator.num_pages)
+        records = paginator.page(paginator.num_pages)
 
     return render(
         request,
         "main/child/child_details.html",
-        {"c_records": c_records, "table_title": "Children MasterList"},
+        {"records": records, "table_title": "Children MasterList"},
     )
 
 
@@ -143,8 +143,8 @@ def update_child(request, pk, template_name="main/child/child_register.html"):
 @login_required
 @transaction.atomic
 def delete_child(request, pk):
-    c_records = Child.objects.get(id=pk)
-    c_records.delete()
+    records = Child.objects.get(id=pk)
+    records.delete()
     messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
     return HttpResponseRedirect(reverse("child_list"))
 
@@ -220,8 +220,8 @@ def profile_pictures(request):
 @login_required
 @transaction.atomic
 def delete_profile_picture(request, pk):
-    c_records = ChildProfilePicture.objects.get(id=pk)
-    c_records.delete()
+    records = ChildProfilePicture.objects.get(id=pk)
+    records.delete()
     messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
     return HttpResponseRedirect(reverse("profile_pictures"))
 
@@ -293,8 +293,8 @@ def child_progress_report(request):
 @login_required
 @transaction.atomic
 def delete_progress(request, pk):
-    c_records = ChildProgress.objects.get(id=pk)
-    c_records.delete()
+    records = ChildProgress.objects.get(id=pk)
+    records.delete()
     messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
     return HttpResponseRedirect(reverse("child_progress_report"))
 
@@ -361,8 +361,8 @@ def child_correspondence_report(request):
 @login_required
 @transaction.atomic
 def delete_correspondence(request, pk):
-    c_records = ChildCorrespondence.objects.get(id=pk)
-    c_records.delete()
+    records = ChildCorrespondence.objects.get(id=pk)
+    records.delete()
     messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
     return HttpResponseRedirect(reverse("child_correspondence_report"))
 
@@ -431,8 +431,8 @@ def child_incident_report(request):
 @login_required
 @transaction.atomic
 def delete_incident(request, pk):
-    c_records = ChildIncident.objects.get(id=pk)
-    c_records.delete()
+    records = ChildIncident.objects.get(id=pk)
+    records.delete()
     messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
     return HttpResponseRedirect(reverse("child_incident_report"))
 
@@ -504,18 +504,18 @@ def depature_list(request):
     page = request.GET.get("page")
 
     try:
-        c_records = paginator.page(page)
+        records = paginator.page(page)
     except PageNotAnInteger:
         # If page is not an integer, deliver first page.
-        c_records = paginator.page(1)
+        records = paginator.page(1)
     except EmptyPage:
         # If page is out of range (e.g. 9999), deliver last page of results.
-        c_records = paginator.page(paginator.num_pages)
+        records = paginator.page(paginator.num_pages)
 
     return render(
         request,
         "main/child/depature_list.html",
-        {"c_records": c_records, "table_title": "Departed Children"},
+        {"records": records, "table_title": "Departed Children"},
     )
 
 # =================================== Reinstate departed child ===================================

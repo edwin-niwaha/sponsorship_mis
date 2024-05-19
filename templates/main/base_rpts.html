@@ -1,0 +1,69 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="stylesheet" href="{% static 'assets/vendors/mdi/css/materialdesignicons.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'assets/css/style.css' %}" />
+    <link rel="shortcut icon" href="{% static 'images/file.png' %}" />
+
+    <!--HTMX Data tables CSS-->
+    <link rel="stylesheet" href="{% static 'css/htmx_table.css' %}" />
+
+    <!-- CSS for Searchable dropdown-->
+    <link rel="stylesheet" href="{% static 'css/chosen.css' %}" />
+
+    <!--Icons-->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+
+    <!--Css for base_rpts-->
+    <link rel="stylesheet" type="text/css" href="{% static 'css/base_rpts.css' %}">
+
+    <!-- CSS for Searchable dropdown-->
+    <link rel="stylesheet" href="{% static 'css/chosen.css' %}" />
+
+    <title>{% block title %}Child Sponsorship Software{% endblock %}</title>
+
+</head>
+
+<body>
+
+    <!-- =============== Messages Start ================= -->
+    {% include '_partials/messages.html' %}
+    <!-- =============== Messages End ================= -->
+
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <!-- Your existing content here -->
+    </div>
+
+    {% block content %}{% endblock %}
+
+    <!-- Print js-->
+    <script type="text/javascript" src="{% static 'js/print.js' %}"></script>
+
+    <!-- JS Lib to covert html to excel -->
+    <script type="text/javascript" src="https://unpkg.com/xlsx@0.15.1/dist/xlsx.full.min.js"></script>
+
+    <!--Search table-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script type="text/javascript" src="{% static 'js/search_tbl.js' %}"></script>
+
+    <!-- JS for Searchable dropdown-->
+    <script type="text/javascript" src="{% static 'js/chosen.jquery.js' %}"></script>
+    <script type="text/javascript">
+        $(".chzn-select").chosen();
+        $(".chzn-select-deselect").chosen({
+            allow_single_deselect: true
+        });
+    </script>
+
+    <!--btn click event-->
+    <script type="text/javascript" src="{% static 'js/btn_click.js' %}"></script>
+
+</body>
+
+</html>
