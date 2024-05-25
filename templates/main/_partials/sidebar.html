@@ -38,10 +38,10 @@
             <div class="collapse" id="ui-basic">
                 <ul class="nav flex-column sub-menu">
                     <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'manage_child' %}" target="_self">Register Child</a>
+                        <a class="nav-link active" href="{% url 'register_child' %}" target="_self">Register Child</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'child_list' %}" target="_self">Child Details</a>
+                        <a class="nav-link active" href="{% url 'child_master_list' %}" target="_self">Child Details</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="{% url 'update_picture' %}" target="_self">
@@ -101,7 +101,8 @@
                         <a class="nav-link active" href="{% url 'sponsor_list' %}" target="_self">Sponsor Details</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="#" target="_self">Sponsor Depature</a>
+                        <a class="nav-link active" href="{% url 'sponsor_departure' %}" target="_self">Sponsor
+                            Depature</a>
                     </li>
                 </ul>
             </div>

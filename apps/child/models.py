@@ -1,14 +1,15 @@
 import datetime
 from datetime import date
-from django.db import models
-from django.utils import timezone
-from phonenumber_field.modelfields import PhoneNumberField
+
 from django.core.validators import (
     FileExtensionValidator,
     MaxValueValidator,
     MinValueValidator,
     RegexValidator,
 )
+from django.db import models
+from django.utils import timezone
+from phonenumber_field.modelfields import PhoneNumberField
 
 
 # =================================== CHILD MODEL ===================================

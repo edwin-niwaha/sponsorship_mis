@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="page-header flex-wrap p-2">
         <h3 class="mb-0">{{table_title|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-        <form method="GET" action="{% url 'sponsor_list' %}">
+        <form method="GET" action="{% url 'child_master_list_detailed' %}">
             <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..."
                 style="border-radius: 5px; height: 35px;">
             <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
@@ -33,16 +33,15 @@
             </button>
             <script>
                 document.getElementById("registerChildBtn").addEventListener("click", function () {
-                    window.location.href = "{% url 'register_sponsor' %}";
+                    window.location.href = "{% url 'register_child' %}";
                 });
 
                 document.getElementById("viewListBtn").addEventListener("click", function () {
-                    window.location.href = "{% url 'sponsor_list' %}";
+                    window.location.href = "{% url 'child_master_list_detailed' %}";
                 });
             </script>
         </div>
     </div>
-
     <div id="printMe" class="tab-pane show active">
         <hr class="bg-info" style="height: 3px;" />
         <!--Start table-->
@@ -52,56 +51,64 @@
                     <tr>
                         <th scope="col">#</th>
                         <th scope="col">Reg.No</th>
-                        <th scope="col">First_Name</th>
-                        <th scope="col">Last_Name</th>
+                        <th scope="col">Full_Name</th>
+                        <th scope="col">Preferred</th>
+                        <th scope="col">Residence</th>
+                        <th scope="col">District</th>
+                        <th scope="col">Tribe</th>
                         <th scope="col">Gender</th>
-                        <th scope="col">Email</th>
-                        <th scope="col">Sponsorship_Type</th>
-                        <th scope="col">Job_Title</th>
-                        <th scope="col">Region</th>
-                        <th scope="col">Town</th>
-                        <th scope="col">Origin</th>
-                        <th scope="col">Business_Telephone</th>
-                        <th scope="col">Mobile_Telephone</th>
-                        <th scope="col">City</th>
-                        <th scope="col">Start_Date</th>
-                        <th scope="col">Street_Address_1</th>
-                        <th scope="col">Street_Address_2</th>
-                        <th scope="col">Zip_Code</th>
-                        <th scope="col" colspan="2">Action</th>
-
+                        <th scope="col">D.O.B</th>
+                        <th scope="col">Weight</th>
+                        <th scope="col">Height</th>
+                        <th scope="col">Aspiration</th>
+                        <th scope="col">Interest</th>
+                        <th scope="col">In_School?</th>
+                        <th scope="col">Sponsored?</th>
+                        <th scope="col">Father_Alive?</th>
+                        <th scope="col">Father's_Name</th>
+                        <th scope="col">Mother_Alive?</th>
+                        <th scope="col">Mother's_Name</th>
+                        <th scope="col">Guardian</th>
+                        <th scope="col">Guardian_Contact</th>
+                        <th scope="col">Relationship</th>
+                        <th scope="col">Siblings</th>
+                        <th scope="col">Health_Status</th>
+                        <th scope="col">Religion</th>
                     </tr>
                 </thead>
                 <tbody class="table-group-divider">
-                    {%for sponsor in records%}
+                    {%for child in records%}
                     <tr>
                         <th scope="row">{{forloop.counter}}.</th>
-                        <td>{{sponsor.prefixed_id}}</td>
-                        <td>{{sponsor.first_name}}</td>
-                        <td>{{sponsor.last_name}}</td>
-                        <td>{{sponsor.gender}}</td>
-                        <td>{{sponsor.email}}</td>
-                        <td>{{sponsor.sponsorship_type_at_signup}}</td>
-                        <td>{{sponsor.job_title}}</td>
-                        <td>{{sponsor.region}}</td>
-                        <td>{{sponsor.town}}</td>
-                        <td>{{sponsor.origin}}</td>
-                        <td>{{sponsor.business_telephone}}</td>
-                        <td>{{sponsor.mobile_telephone}}</td>
-                        <td>{{sponsor.city}}</td>
-                        <td>{{sponsor.start_date}}</td>
-                        <td>{{sponsor.first_street_address}}</td>
-                        <td>{{sponsor.second_street_address}}</td>
-                        <td>{{sponsor.zip_code}}</td>
-                        <td><a class="btn btn-primary btn-sm" title="Edit"
-                                href="{% url 'update_sponsor' sponsor.id %}"><i class="bi bi-pencil"></i></a></td>
-                        <td><a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_sponsor' sponsor.id %}"
-                                onclick="return confirm('Are you sure about this? this record will be deleted permanently');"><i
-                                    class="bi bi-trash"></a></td>
+                        <td>{{child.prefixed_id}}</td>
+                        <td>{{child.full_name}}</td>
+                        <td>{{child.preferred_name}}</td>
+                        <td>{{child.residence}}</td>
+                        <td>{{child.district}}</td>
+                        <td>{{child.tribe}}</td>
+                        <td>{{child.gender}}</td>
+                        <td>{{child.date_of_birth}}</td>
+                        <td>{{child.weight}}</td>
+                        <td>{{child.height}}</td>
+                        <td>{{child.aspiration}}</td>
+                        <td>{{child.c_interest}}</td>
+                        <td>{{child.is_child_in_school}}</td>
+                        <td>{{child.is_sponsored}}</td>
+                        <td>{{child.is_father_alive}}</td>
+                        <td>{{child.father_name}}</td>
+                        <td>{{child.is_mother_alive}}</td>
+                        <td>{{child.mother_name}}</td>
+                        <td>{{child.guardian}}</td>
+                        <td>{{child.guardian_contact}}</td>
+                        <td>{{child.relationship_with_guardian}}</td>
+                        <td>{{child.siblings}}</td>
+                        <td>{{child.health_status}}</td>
+                        <td>{{child.religion}}</td>
                     </tr>
                     {%endfor%}
                 </tbody>
             </table>
+
         </div>
         <!--End Table-->
 

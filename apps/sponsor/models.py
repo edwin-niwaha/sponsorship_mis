@@ -1,14 +1,12 @@
 import datetime
-from datetime import date
-from django.db import models
-from django.utils import timezone
-from phonenumber_field.modelfields import PhoneNumberField
+
 from django.core.validators import (
-    FileExtensionValidator,
     MaxValueValidator,
     MinValueValidator,
-    RegexValidator,
 )
+from django.db import models
+from phonenumber_field.modelfields import PhoneNumberField
+
 
 # =================================== SPONSOR MODEL ===================================
 class Sponsor(models.Model):
@@ -69,6 +67,24 @@ class Sponsor(models.Model):
     @property
     def prefixed_id(self):
         return f"PS-0{self.pk}"
+    
+# =================================== SPONSOR DEPARTURE MODEL ===================================
+
+class SponsorDeparture(models.Model):
+    sponsor = models.ForeignKey(
+        'Sponsor',
+        on_delete=models.CASCADE,
+        verbose_name='Sponsor Information', 
+        related_name='departures'
+    )
+    departure_date = models.DateField(verbose_name='Departure Date', null=True, blank=True)
+    departure_reason = models.TextField(verbose_name='Reason for Departure')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created At')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated At')
+
+    class Meta:
+        verbose_name = 'Sponsor Departure'
+        verbose_name_plural = 'Sponsor Departures'
 
 # # =================================== SPONSORSHIP MODEL ===================================
 # class Sponsorship(models.Model):

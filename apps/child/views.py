@@ -1,5 +1,6 @@
 # from formtools.wizard.views import SessionWizardView
 import logging
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
@@ -13,22 +14,15 @@ from apps.users.models import Contact
 
 from .forms import (
     ChildCorrespondenceForm,
+    ChildDepartForm,
     ChildForm,
     ChildIncidentForm,
     ChildProfilePictureForm,
     ChildProgressForm,
     UploadForm,
-    ChildDepartForm,
 )
-from .models import (
-    Child, 
-    ChildCorrespondence, 
-    ChildIncident,
-    ChildProfilePicture, 
-    ChildProgress, 
-    ChildDepart
+from .models import Child, ChildCorrespondence, ChildDepart, ChildIncident, ChildProfilePicture, ChildProgress
 
-)
 # The getLogger() function is used to get a logger instance
 logger = logging.getLogger(__name__)
 # logger.info("Child ID received: %s", child_id)  # Log the child_id value
@@ -53,7 +47,7 @@ def dashboard(request):
 
 # =================================== Fetch and display all children details ===================================
 @login_required
-def child_list(request):
+def child_master_list(request):
     # queryset = Child.objects.all().filter(is_departed="No").order_by("id").select_related("profile_picture")
     queryset = Child.objects.all().filter(is_departed="No").order_by("id")
 
@@ -75,10 +69,36 @@ def child_list(request):
 
     return render(
         request,
-        "main/child/child_details.html",
+        "main/child/child_master_list.html",
         {"records": records, "table_title": "Children MasterList"},
     )
 
+@login_required
+def child_master_list_detailed(request):
+    # queryset = Child.objects.all().filter(is_departed="No").order_by("id").select_related("profile_picture")
+    queryset = Child.objects.all().filter(is_departed="No").order_by("id")
+
+    search_query = request.GET.get("search")
+    if search_query:
+        queryset = queryset.filter(full_name__icontains=search_query)
+
+    paginator = Paginator(queryset, 25)  # Show 25 records per page
+    page = request.GET.get("page")
+
+    try:
+        records = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        records = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        records = paginator.page(paginator.num_pages)
+
+    return render(
+        request,
+        "main/child/child_master_list_detailed.html",
+        {"records": records, "table_title": "Children MasterList"},
+    )
 
 # =================================== Fetch and display selected child's details ===================================
 @login_required
@@ -91,6 +111,7 @@ def child_details(request, pk):
 
 
 # =================================== Register Child ===================================
+
 @login_required
 @transaction.atomic
 def register_child(request):
@@ -99,21 +120,17 @@ def register_child(request):
 
         if form.is_valid():
             form.save()
-            messages.info(
-                request, "Record saved successfully!", extra_tags="bg-success"
-            )
+            messages.success(request, "Record saved successfully!")
+            return redirect('register_child')  
 
-        else:
-            # Display form errors
-            return render(request, "main/child/child_register.html", {"form": form})
     else:
         form = ChildForm()
+
     return render(
         request,
         "main/child/child_register.html",
         {"form_name": "Child Registration", "form": form},
     )
-
 # =================================== Update Child data ===================================
 @login_required
 @transaction.atomic
@@ -122,7 +139,7 @@ def update_child(request, pk, template_name="main/child/child_register.html"):
         child_record = Child.objects.get(pk=pk)
     except Child.DoesNotExist:
         messages.error(request, "Child record not found!")
-        return redirect("child_list")  # Or a relevant error page
+        return redirect("child_master_list")  # Or a relevant error page
 
     if request.method == "POST":
         form = ChildForm(request.POST, request.FILES, instance=child_record)
@@ -130,7 +147,7 @@ def update_child(request, pk, template_name="main/child/child_register.html"):
             form.save()
 
             messages.success(request, "Child record updated successfully!")
-            return redirect("child_list")  # Replace with the appropriate redirect URL
+            return redirect("child_master_list")  
     else:
         # Pre-populate the form with existing data
         form = ChildForm(instance=child_record)
@@ -146,7 +163,7 @@ def delete_child(request, pk):
     records = Child.objects.get(id=pk)
     records.delete()
     messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
-    return HttpResponseRedirect(reverse("child_list"))
+    return HttpResponseRedirect(reverse("child_master_list"))
 
 
 # =================================== Upload Profile Picture ===================================
@@ -488,7 +505,7 @@ def child_departure(request):
     children = Child.objects.filter(is_departed="No").order_by("id") 
     return render(
         request,
-        "main/child/depart.html",
+        "main/child/child_depature.html",
         {"form": form, "form_name": "Child Depature Form", "children": children},
     )
 
@@ -514,7 +531,7 @@ def depature_list(request):
 
     return render(
         request,
-        "main/child/depature_list.html",
+        "main/child/child_depature_list.html",
         {"records": records, "table_title": "Departed Children"},
     )
 
@@ -531,7 +548,7 @@ def reinstate_child(request, pk):
 
         return redirect("depature_list")
     
-    return render(request, 'main/child/depature_list.html', {'child': child})
+    return render(request, 'main/child/child_depature_list.html', {'child': child})
 
 
 # =================================== Process and Import Excel data ===================================

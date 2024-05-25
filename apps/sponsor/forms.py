@@ -1,7 +1,6 @@
 from django import forms
-from django.core.exceptions import ValidationError
-from .models import Sponsor
-from apps.child.models import (Child, )
+
+from .models import Sponsor, SponsorDeparture
 
 # =================================== SPONSOR FORM ===================================
 
@@ -45,3 +44,13 @@ class SponsorForm(forms.ModelForm):
             )
 
         return self.cleaned_data
+    
+# =================================== SPONSOR DEPATURE ===================================
+class SponsorDepartForm(forms.ModelForm):
+    class Meta:
+        model = SponsorDeparture
+        exclude = ("sponsor", )
+        widgets ={
+             "departure_date": forms.DateInput(attrs={"type": "date"}),
+            'departure_reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }

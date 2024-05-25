@@ -2,12 +2,12 @@ from django import forms
 from django.core.exceptions import ValidationError
 
 from .models import (
-Child, 
-ChildCorrespondence, 
-ChildIncident, 
-ChildProfilePicture, 
-ChildProgress, 
-ChildDepart,
+    Child,
+    ChildCorrespondence,
+    ChildDepart,
+    ChildIncident,
+    ChildProfilePicture,
+    ChildProgress,
 )
 
 
@@ -20,7 +20,7 @@ class UploadForm(forms.Form):
 class ChildForm(forms.ModelForm):
     class Meta:
         model = Child
-        fields = "__all__"
+        exclude = ("is_departed", "is_sponsored" )
         widgets = {
             "date_of_birth": forms.DateInput(attrs={"type": "date"}),
             "siblings": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
