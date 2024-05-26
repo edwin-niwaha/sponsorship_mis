@@ -10,10 +10,10 @@
     <div class="page-header flex-wrap">
         <h3 class="mb-0"> {{form_name|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
         <div class="d-flex">
-            <a class="btn btn-sm ml-3 btn-success" href="{% url 'child_departure' %}"><i
+            <a class="btn btn-sm ml-3 btn-success" href="{% url 'register_staff' %}"><i
                     class="mdi mdi-folder-plus btn-icon-prepend"></i>
             </a>
-            <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'child_depature_list' %}"><i
+            <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'staff_depature_list' %}"><i
                     class="mdi mdi-chart-line btn-icon-prepend"></i>
             </a>
         </div>
@@ -28,9 +28,10 @@
                         <form method="post" enctype="multipart/form-data">
                             {% csrf_token %}
                             <select name="id" id="dropdown" class="chzn-select" required>
-                                <option value="" selected disabled>Search child...</option>
-                                {% for child in children %}
-                                <option value="{{ child.id }}">{{ child.full_name }} &rarr; {{ child.prefixed_id }}
+                                <option value="" selected disabled>Search staff...</option>
+                                {% for staff in records %}
+                                <option value="{{ staff.id }}">{{ staff.last_name }} {{ staff.first_name }} &rarr;
+                                    {{ staff.prefixed_id }}
                                 </option>
                                 {% endfor %}
                             </select>
@@ -39,7 +40,7 @@
                             {{ form|crispy }}
                             <div class="form-group mt-4 mb-0">
                                 <button type="submit" class="col-md-12 btn btn-dark"
-                                    onclick="return confirm('Are you sure you want to depart a child? ');"
+                                    onclick="return confirm('Are you sure you want to depart a staff? ');"
                                     onclick="return validateForm()">SUBMIT</button><br>
                             </div>
                         </form>

@@ -9,6 +9,9 @@ __pycache__/
 # Development db
 db.sqlite3
 
+# Ignore media files
+/media/*
+
 # C extensions
 *.so
 

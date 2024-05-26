@@ -55,7 +55,7 @@ def register_sponsor(request):
             messages.info(
                 request, "Record saved successfully!", extra_tags="bg-success"
             )
-
+            return redirect("sponsor_list") 
         else:
             # Display form errors
             return render(request, "main/sponsor/sponsor_register.html", {"form": form})
@@ -83,7 +83,7 @@ def update_sponsor(request, pk, template_name="main/sponsor/sponsor_register.htm
             form.save()
 
             messages.success(request, "Record updated successfully!")
-            return redirect("sponsor_list")  # Replace with the appropriate redirect URL
+            return redirect("sponsor_list") 
     else:
         # Pre-populate the form with existing data
         form = SponsorForm(instance=sponsor_record)
@@ -173,6 +173,6 @@ def reinstate_sponsor(request, pk):
         sponsor.save()
         messages.success(request, "Sponsor reinstated successfully!")
 
-        return redirect("depature_list")
+        return redirect("sponsor_depature_list")
     
     return render(request, 'main/sponsor/sponsor_depature_list.html', {'sponsor': sponsor})

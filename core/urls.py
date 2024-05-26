@@ -43,4 +43,5 @@ urlpatterns = [
     re_path(r"^oauth/", include("social_django.urls", namespace="social")),
     path("child/", include("apps.child.urls")),
     path("sponsor/", include("apps.sponsor.urls")),
+    path("staff/", include("apps.staff.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

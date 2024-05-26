@@ -18,16 +18,16 @@
                 onclick="Export2Doc('printMe');">
                 <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
 
-            <a title="Register Child" class="btn btn-sm ml-3 btn-success" href="{% url 'child_departure' %}"><i
+            <a title="Register Child" class="btn btn-sm ml-3 btn-success" href="{% url 'staff_departure' %}"><i
                     class="mdi mdi-account-plus btn-icon-prepend"></i>
             </a>
 
-            <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'child_depature_list' %}"><i
+            <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'staff_depature_list' %}"><i
                     class="mdi mdi-chart-line btn-icon-prepend"></i>
             </a>
         </div>
     </div>
-    <form method="GET" action="{% url 'child_depature_list' %}">
+    <form method="GET" action="{% url 'staff_depature_list' %}">
         <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..."
             style="border-radius: 5px; height: 35px;">
         <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
@@ -45,8 +45,8 @@
                     <tr>
                         <!-- <th scope="col">#</th> -->
                         <th scope="col">Reg.No</th>
-                        <th scope="col">Picture</th>
-                        <th scope="col">Full Name</th>
+                        <th scope="col">First_Name</th>
+                        <th scope="col">Last_Name</th>
                         <th scope="col">Gender</th>
                         <th scope="col">Departure Date</th>
                         <th scope="col">Departure Reason</th>
@@ -54,45 +54,33 @@
                     </tr>
                 </thead>
                 <tbody class="table-group-divider">
-                    {% for child in records %}
+                    {% for staff in records %}
                     <tr>
-                        <td>{{ child.prefixed_id }}</td>
-                        <td>
-                            {% if child.picture == ""  %}
-                            No Picture!
-                            {% else %}
-                            <a title="Click to update picture" href="{% url 'update_picture' %}"
-                                onclick="return confirm('Are you sure you want to update child picture? ');">
-                                <img class="rounded-circle account-img" height="50" width="50"
-                                    src="{{ child.picture.url }}" alt="">
-                            </a>
-                            {% endif %}
-                        </td>
-                        <td>{{ child.full_name }}</td>
-                        <td>{{ child.gender }}</td>
+                        <td>{{ staff.prefixed_id }}</td>
+                        <td>{{ staff.first_name }}</td>
+                        <td>{{ staff.last_name }}</td>
+                        <td>{{ staff.gender }}</td>
                         <td>
                             <ul>
-                                {% for departure in child.departures.all %}
-                                <li>{{ departure.depart_date }}</li>
+                                {% for departure in staff.departures.all %}
+                                <li>{{ departure.departure_date }}</li>
                                 {% endfor %}
                             </ul>
                         </td>
                         <td>
                             <ul>
-                                {% for departure in child.departures.all %}
-                                <li>{{ departure.depart_reason }}</li>
+                                {% for departure in staff.departures.all %}
+                                <li>{{ departure.departure_reason }}</li>
                                 {% endfor %}
                             </ul>
                         </td>
                         <td>
-                            <form action="{% url 'reinstate_child' child.id %}" method="post">
+                            <form action="{% url 'reinstate_staff' staff.id %}" method="post">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-warning btn-sm"
-                                    onclick="return confirm('Are you sure you want to reinstate this child? ');">REINSTATE</button>
+                                    onclick="return confirm('Are you sure you want to reinstate this staff? ');">REINSTATE</button>
                             </form>
                         </td>
-                        <td><a class="btn btn-info btn-sm" title="View Details"
-                                href="{% url 'child_details' child.id %}"><i class="bi bi-eye"></i></a></td>
                     </tr>
                     {% endfor %}
                 </tbody>

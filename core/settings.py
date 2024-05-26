@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     # =================================== PROJECT APPLICATIONS ===================================
     "apps.users",
     "apps.child",
+    "apps.staff",
     "apps.sponsor",
 ]
 

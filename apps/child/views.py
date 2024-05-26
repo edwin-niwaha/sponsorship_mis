@@ -510,7 +510,7 @@ def child_departure(request):
     )
 
 # =================================== Child Depature Report ===================================
-def depature_list(request):
+def child_depature_list(request):
     queryset = Child.objects.all().filter(is_departed="Yes").order_by("id").prefetch_related("departures")
 
     search_query = request.GET.get("search")
@@ -546,7 +546,7 @@ def reinstate_child(request, pk):
         child.save()
         messages.success(request, "Child reinstated successfully!")
 
-        return redirect("depature_list")
+        return redirect("child_depature_list")
     
     return render(request, 'main/child/child_depature_list.html', {'child': child})
 

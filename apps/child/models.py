@@ -59,7 +59,7 @@ class Child(models.Model):
             MaxValueValidator(limit_value=datetime.date.today()),
         ],
     )
-    picture = models.ImageField(
+    picture = models.ImageField(default="default.jpg",
         upload_to="current_child_profiles/",
         verbose_name="Upload Image(jpg, jpeg, png)",
         validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
@@ -244,7 +244,7 @@ class ChildProfilePicture(models.Model):
     child = models.ForeignKey(
         "Child", on_delete=models.CASCADE, related_name="profile_picture"
     )
-    picture = models.ImageField(
+    picture = models.ImageField(default="default.jpg",
         upload_to="child_profiles/",
         verbose_name="Upload Image(jpg, jpeg, png)",
         validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
