@@ -1,8 +1,6 @@
 import datetime
 
-from django.core.validators import (
-    MinValueValidator, FileExtensionValidator
-)
+from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
