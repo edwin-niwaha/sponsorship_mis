@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Sponsor, SponsorDeparture
+from .models import ChildSponsorship, Sponsor, SponsorDeparture
 
 # =================================== SPONSOR FORM ===================================
 
@@ -49,8 +49,19 @@ class SponsorForm(forms.ModelForm):
 class SponsorDepartForm(forms.ModelForm):
     class Meta:
         model = SponsorDeparture
-        exclude = ("sponsor", )
+        exclude = ("sponsor",)
         widgets ={
              "departure_date": forms.DateInput(attrs={"type": "date"}),
-            'departure_reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            "departure_reason": forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+
+# =================================== Child Sponsorship ===================================
+
+class ChildSponsorshipForm(forms.ModelForm):
+    class Meta:
+        model = ChildSponsorship
+        exclude = ("sponsor", "child", "is_active", "end_date")
+        widgets ={
+             "start_date": forms.DateInput(attrs={"type": "date", "required": True}),
+             "sponsorship_type": forms.Select(attrs={'class': 'form-control', "required": True}),  #
         }

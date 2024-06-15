@@ -7,6 +7,26 @@ from django.core.validators import (
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
+from apps.child.models import Child
+
+
+# Constant for the sponsorship types
+class SponsorshipType:
+    CHILD_FULL_SUPPORT = 'Child full support'
+    CHILD_CO_SUPPORT = 'Child co-support'
+    FAMILY_FULL_SUPPORT = 'Family full support'
+    FAMILY_CO_SUPPORT = 'Family co-support'
+    GENERAL_SUPPORT = 'General support'
+
+SPONSORSHIP_TYPE_CHOICES = (
+    ('', 'Sponsorship Type'),
+    (SponsorshipType.CHILD_FULL_SUPPORT, 'Child full support'),
+    (SponsorshipType.CHILD_CO_SUPPORT, 'Child co-support'),
+    (SponsorshipType.FAMILY_FULL_SUPPORT, 'Family full support'),
+    (SponsorshipType.FAMILY_CO_SUPPORT, 'Family co-support'),
+    (SponsorshipType.GENERAL_SUPPORT, 'General support'),
+)
+
 
 # =================================== SPONSOR MODEL ===================================
 class Sponsor(models.Model):
@@ -18,13 +38,7 @@ class Sponsor(models.Model):
         ('Male', 'Male'),
         ('Female', 'Female'),
     )
-    SPONSORSHIP_TYPE_CHOICES = (
-        ('Child full support', 'Child full support'),
-        ('Child co-support', 'Child co-support'),
-        ('Family full support', 'Family full support'),
-        ('Family co-support', 'Family co-support'),
-        ('General support', 'General support'),
-    )
+
     first_name = models.CharField(max_length=25, null=True, verbose_name="First Name")
     last_name = models.CharField(max_length=25, null=True, verbose_name="Last Name")
     gender = models.CharField(max_length=6, choices=GENDER_CHOICES, blank=False,
@@ -86,27 +100,25 @@ class SponsorDeparture(models.Model):
         verbose_name = 'Sponsor Departure'
         verbose_name_plural = 'Sponsor Departures'
 
-# # =================================== SPONSORSHIP MODEL ===================================
-# class Sponsorship(models.Model):
-#     sponsor = models.ForeignKey(Sponsor, on_delete=models.CASCADE, related_name='sponsorships')
-#     child = models.ForeignKey(Child, on_delete=models.CASCADE, related_name='sponsored_by')
-    
-    # SPONSORSHIP_TYPE_CHOICES = (
-    #     ('Full', 'Full Sponsorship'),
-    #     ('Co', 'Co-Sponsorship'),
-    # )
-    # sponsorship_type = models.CharField(
-    #     max_length=20, choices=SPONSORSHIP_TYPE_CHOICES, null=True, blank=True, verbose_name="Type of sponsorship")
 
-#     start_date = models.DateField()
-#     end_date = models.DateField(blank=True, null=True)
-#     is_active = models.BooleanField(default=True)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
+# =================================== CHILD SPONSORSHIP MODEL ===================================
+class ChildSponsorship(models.Model):
+    sponsor = models.ForeignKey(Sponsor, on_delete=models.CASCADE, related_name='sponsored_children')
+    child = models.ForeignKey(Child, on_delete=models.CASCADE, related_name='sponsorships_received')
+    sponsorship_type = models.CharField(
+        max_length=20, choices=SPONSORSHIP_TYPE_CHOICES, null=True, blank=True, verbose_name="Sponsorship Type"
+    )
+    start_date = models.DateField(null=True, blank=True, verbose_name="Start Date")
+    end_date = models.DateField(blank=True, null=True, verbose_name="End Date")
+    is_active = models.BooleanField(default=True, verbose_name="Is Active")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
 
-#     class Meta:
-#         db_table = 'sponsorship_details'
-#         unique_together = (('child', 'sponsor'),)
+    class Meta:
+        db_table = 'child_sponsorship_details'
+        verbose_name_plural = 'Child Sponsorships'
+        unique_together = (('child', 'sponsor'),)
 
-#     def __str__(self):
-#         return f"{self.child} sponsored by {self.sponsor}"
+    def __str__(self):
+        return f"{self.child} sponsored by {self.sponsor}"
+

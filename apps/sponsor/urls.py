@@ -10,4 +10,11 @@ urlpatterns = [
     path('departure/', views.sponsor_departure, name='sponsor_departure'),
     path("departure/list/", views.sponsor_depature_list, name="sponsor_depature_list"),
     path("reinstate/<int:pk>", views.reinstate_sponsor, name="reinstate_sponsor"),
-    ]
+
+    # Sponsorships
+    path('child-sponsorship/create/', views.child_sponsorship, name='child_sponsorship'),    
+    path('child-sponsorship/report/', views.child_sponsorship_report, name='child_sponsorship_report'),
+    path("child-sponsorship/delete/<int:pk>", views.delete_child_sponsorship, name="delete_child_sponsorship"),
+    path("termnate-child-sponsorship/<int:child_id>", views.terminate_child_sponsorship, 
+         name="terminate_child_sponsorship"),
+         ]

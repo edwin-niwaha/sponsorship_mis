@@ -21,16 +21,16 @@
                 onclick="Export2Doc('printMe');">
                 <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
 
-            <a class="btn btn-sm ml-3 btn-success" href="{% url 'child_correspondence' %}"><i
+            <a class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsorship' %}"><i
                     class="mdi mdi-folder-plus btn-icon-prepend"></i>
             </a>
-            <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'child_correspondence_report' %}"><i
+            <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsorship_report' %}"><i
                     class="mdi mdi-chart-line btn-icon-prepend"></i>
             </a>
         </div>
     </div>
     <hr class="bg-info" style="height: 3px;" />
-    <form method="POST" action="{% url 'child_correspondence_report' %}">
+    <form method="POST" action="{% url 'child_sponsorship_report' %}">
         {% csrf_token %}
         <select name="id" id="dropdown" class="chzn-select" required>
             <option value="" selected disabled>Search child...</option>
@@ -39,18 +39,21 @@
             </option>
             {% endfor %}
         </select> &rarr;
-        <button type="submit" class="btn btn-sm ml-3 btn-success" onclick="return validateForm()"><i
-                class="mdi mdi-view-list btn-icon-prepend"></i></button>
-    </form>
+        <button title="View Sponsorship Report" type="submit" class="btn btn-sm ml-3 btn-success"
+            onclick="return validateForm()"><i class="mdi mdi-view-list btn-icon-prepend"></i></button>
+
+        <a title="Amend Sponsorship" class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsorship_report' %}"><i
+                class="mdi mdi-pencil btn-icon-prepend"></i>
+        </a> </form>
 
     <div id="printMe" class="tab-pane show active">
         <hr class="bg-info" style="height: 3px;" />
 
-        {% if child_correspondence %}
+        {% if child_sponsorship %}
         <header style="text-align: center;">
             <h3 class="text-primary" style="font-family:'Lucida Sans Unicode', sans-serif;">
-                {{ child_name|upper}} ({{ prefix_id }})
-                {{table_title|upper}}</h3>
+                {{ prefix_id }} - {{ child_name|upper}} -
+                Sponsorship Report</h3>
         </header>
         <hr class="bg-info" style="height: 3px;" />
 
@@ -59,31 +62,36 @@
                 <thead>
                     <tr>
                         <th scope="col">#</th>
-                        <th scope="col">Type</th>
-                        <th scope="col">Source</th>
-                        <th scope="col">Comment</th>
+                        <th scope="col">SP ID</th>
+                        <th scope="col">Last Name</th>
+                        <th scope="col">First Name</th>
+                        <th scope="col">Sponsorship Type</th>
+                        <th scope="col">Start Date</th>
+                        <th scope="col">End Date</th>
+                        <th scope="col">Status</th>
                         <th colspan="2" scope="col">Action</th>
 
                     </tr>
                 </thead>
                 <tbody class="table-group-divider">
-                    {% for correspondence in child_correspondence %}
+                    {% for sponsorship in child_sponsorship %}
                     <tr>
                         <th scope="row">{{forloop.counter}}.</th>
-                        <td>{{correspondence.correspondence_type}}</td>
-                        <td>{{correspondence.source}}</td>
-                        <td>{{correspondence.comment}}</td>
+                        <td>{{sponsorship.sponsor.prefixed_id}}</td>
+                        <td>{{sponsorship.sponsor.last_name}}</td>
+                        <td>{{sponsorship.sponsor.first_name}}</td>
+                        <td>{{sponsorship.sponsorship_type}}</td>
+                        <td>{{sponsorship.start_date}}</td>
+                        <td>{{sponsorship.end_date}}</td>
                         <td>
-                            {% if correspondence.attachment %}
-                            <a title="View/donload" href="{{ correspondence.attachment.url }}" target="_blank">
-                                <i class="bi bi-download"></i>
-                            </a>
+                            {% if sponsorship.is_active %}
+                            Active
                             {% else %}
-                            No Attachment
+                            Inactive
                             {% endif %}
                         </td>
                         <td><a class="btn-danger btn-sm" title="Erase"
-                                href="{% url 'delete_correspondence' correspondence.id %}"
+                                href="{% url 'delete_child_sponsorship' sponsorship.id %}"
                                 onclick="return confirm('Are you sure about this? this record will be deleted permanently');"><i
                                     class="bi bi-trash"></i></a></td>
                     </tr>
@@ -92,7 +100,7 @@
             </table>
         </div>
         {% else %}
-        <p>No correspondence records found for the selected child.</p>
+        <p>No sponsorship records found for the selected child.</p>
         {% endif %}
     </div>
 </div>

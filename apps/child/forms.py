@@ -155,6 +155,6 @@ class ChildDepartForm(forms.ModelForm):
         model = ChildDepart
         exclude = ("child", )
         widgets ={
-             "depart_date": forms.DateInput(attrs={"type": "date"}),
-            'depart_reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+             "depart_date": forms.DateInput(attrs={"type": "date", "required": True}),
+            'depart_reason': forms.Textarea(attrs={'class': 'form-control', "required": True, 'rows': 2}),
         }
