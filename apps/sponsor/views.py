@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import IntegrityError, transaction
-from django.http import HttpResponseRedirect, HttpResponseBadRequest
+from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -14,6 +14,7 @@ from .forms import (
     ChildSponsorshipForm,
     SponsorDepartForm,
     SponsorForm,
+    StaffSponsorshipEditForm,
     StaffSponsorshipForm,
 )
 from .models import (
@@ -356,6 +357,23 @@ def staff_sponsorship_report(request):
     return render(request, 'main/sponsorship/staff_sponsorship_rpt.html', 
                     {"table_title": "Staff Sponsorship Report", "active_staff": active_staff})
 
+
+# =================================== Edit Staff Sponsorship Data ===================================
+@login_required
+@transaction.atomic
+def edit_staff_sponsorship(request, sponsorship_id):
+    sponsorship = get_object_or_404(StaffSponsorship, id=sponsorship_id)
+
+    if request.method == 'POST':
+        form = StaffSponsorshipEditForm(request.POST, instance=sponsorship)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Staff sponsorship updated successfully!')
+            return redirect('staff_sponsorship_report')  # Redirect to a report or list view
+    else:
+        form = StaffSponsorshipEditForm(instance=sponsorship)
+
+    return render(request, 'main/sponsorship/staff_sponsorship_edit.html', {'form': form, 'sponsorship': sponsorship})
 
 # =================================== Delete Sponsorship Data ===================================
 @login_required

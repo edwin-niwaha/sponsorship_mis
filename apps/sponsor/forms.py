@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 
 from .models import ChildSponsorship, Sponsor, SponsorDeparture, StaffSponsorship
 
@@ -63,7 +64,7 @@ class ChildSponsorshipForm(forms.ModelForm):
         exclude = ("sponsor", "child", "is_active", "end_date")
         widgets ={
              "start_date": forms.DateInput(attrs={"type": "date", "required": True}),
-             "sponsorship_type": forms.Select(attrs={'class': 'form-control', "required": True}),  #
+             "sponsorship_type": forms.Select(attrs={'class': 'form-control', "required": True}),
         }
 
 class StaffSponsorshipForm(forms.ModelForm):
@@ -74,3 +75,45 @@ class StaffSponsorshipForm(forms.ModelForm):
              "start_date": forms.DateInput(attrs={"type": "date", "required": True}),
              "sponsorship_type": forms.Select(attrs={'class': 'form-control', "required": True}),  #
         }
+
+# class StaffSponsorshipEditForm(forms.ModelForm):
+#     class Meta:
+#         model = StaffSponsorship
+#         exclude = ("staff", "is_active", "end_date",)
+#         widgets ={
+#              "sponsor": forms.Select(attrs={'class': 'form-control', "required": True}), 
+#              "start_date": forms.DateInput(attrs={"type": "date", "required": True}),
+#              "sponsorship_type": forms.Select(attrs={'class': 'form-control', "required": True}),  #
+#         }
+
+class StaffSponsorshipEditForm(forms.ModelForm):
+    class Meta:
+        model = StaffSponsorship
+        fields = ('staff', 'sponsor', 'start_date', 'sponsorship_type')  # Add all relevant fields
+
+        widgets ={
+            "staff": forms.Select(attrs={'class': 'form-control', 'disabled': True}),
+            "sponsor": forms.Select(attrs={'class': 'form-control', "required": True}), 
+            "start_date": forms.DateInput(attrs={"type": "date", "required": True}),
+            "sponsorship_type": forms.Select(attrs={'class': 'form-control', "required": True}),  #
+        }
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        staff = cleaned_data.get('staff')
+        sponsor = cleaned_data.get('sponsor')
+        start_date = cleaned_data.get('start_date')
+        sponsorship_type = cleaned_data.get('sponsorship_type')
+
+        # Check if a sponsorship with the same staff, sponsor, start_date, and sponsorship_type already exists
+        existing_sponsorship = StaffSponsorship.objects.filter(
+            staff=staff,
+            sponsor=sponsor,
+            start_date=start_date,
+            sponsorship_type=sponsorship_type
+        ).exclude(id=self.instance.id if self.instance else None)  # Exclude the current instance if editing
+
+        if existing_sponsorship.exists():
+            raise ValidationError('A sponsorship with the same details already exists.')
+
+        return cleaned_data

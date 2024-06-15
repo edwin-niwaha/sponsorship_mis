@@ -1,9 +1,10 @@
 # Standard Library Imports
 import datetime
 
+from django.core.validators import MaxValueValidator, MinValueValidator
+
 # Third-party Imports
 from django.db import models
-from django.core.validators import MaxValueValidator, MinValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
 
 # Local App Imports
@@ -126,7 +127,8 @@ class ChildSponsorship(models.Model):
 
 # =================================== STAFF SPONSORSHIP MODEL ===================================
 class StaffSponsorship(models.Model):
-    sponsor = models.ForeignKey('Sponsor', on_delete=models.CASCADE, related_name='sponsored_staff')
+    sponsor = models.ForeignKey('Sponsor', on_delete=models.CASCADE, verbose_name="Sponsor", 
+                                related_name='sponsored_staff')
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='sponsorships_received')
     sponsorship_type = models.CharField(
         max_length=20, choices=SPONSORSHIP_TYPE_CHOICES, null=True, blank=True, verbose_name="Sponsorship Type"
