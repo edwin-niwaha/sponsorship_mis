@@ -53,6 +53,12 @@ class Staff(models.Model):
     job_title = models.CharField(max_length=30, null=True, verbose_name="Job Title")
     is_departed = models.CharField(
         max_length=3, choices=DEPARTURE_CHOICES, default='No')
+
+    is_sponsored = models.BooleanField(
+        default=False,
+        verbose_name="Is the Staff sponsored?",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

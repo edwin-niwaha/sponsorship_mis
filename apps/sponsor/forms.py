@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import ChildSponsorship, Sponsor, SponsorDeparture
+from .models import ChildSponsorship, Sponsor, SponsorDeparture, StaffSponsorship
 
 # =================================== SPONSOR FORM ===================================
 
@@ -61,6 +61,15 @@ class ChildSponsorshipForm(forms.ModelForm):
     class Meta:
         model = ChildSponsorship
         exclude = ("sponsor", "child", "is_active", "end_date")
+        widgets ={
+             "start_date": forms.DateInput(attrs={"type": "date", "required": True}),
+             "sponsorship_type": forms.Select(attrs={'class': 'form-control', "required": True}),  #
+        }
+
+class StaffSponsorshipForm(forms.ModelForm):
+    class Meta:
+        model = StaffSponsorship
+        exclude = ("sponsor", "staff", "is_active", "end_date")
         widgets ={
              "start_date": forms.DateInput(attrs={"type": "date", "required": True}),
              "sponsorship_type": forms.Select(attrs={'class': 'form-control', "required": True}),  #

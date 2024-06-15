@@ -7,7 +7,7 @@ from .models import Staff, StaffDeparture
 class StaffForm(forms.ModelForm):
     class Meta:
         model = Staff
-        exclude = ("is_departed", )
+        exclude = ("is_departed", "is_sponsored" )
         widgets = {
             "date_started_work": forms.DateInput(attrs={"type": "date"})
         }

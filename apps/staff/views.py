@@ -170,3 +170,4 @@ def reinstate_staff(request, pk):
         return redirect("staff_depature_list") 
     
     return render(request, 'main/staff/staff_depature_list.html', {'staff': staff})
+
