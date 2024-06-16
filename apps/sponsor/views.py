@@ -12,6 +12,7 @@ from apps.staff.models import Staff
 
 from .forms import (
     ChildSponsorshipForm,
+    ChildSponsorshipEditForm,
     SponsorDepartForm,
     SponsorForm,
     StaffSponsorshipEditForm,
@@ -28,7 +29,7 @@ from .models import (
 # =================================== Sponsors List ===================================
 @login_required
 def sponsor_list(request):
-    queryset = Sponsor.objects.all().filter(is_departed="No").order_by("id")
+    queryset = Sponsor.objects.all().filter(is_departed=False).order_by("id")
 
     search_query = request.GET.get("search")
     if search_query:
@@ -129,7 +130,7 @@ def sponsor_departure(request):
             sponsor_depart.save()
 
             # Update sponsor status to "departed"
-            sponsor_instance.is_departed = "Yes"
+            sponsor_instance.is_departed = True
             sponsor_instance.save()
 
             messages.success(request, "Sponsor departed successfully!")
@@ -139,7 +140,7 @@ def sponsor_departure(request):
     else:
         form = SponsorDepartForm()
 
-    sponsors = Sponsor.objects.filter(is_departed="No").order_by("id") 
+    sponsors = Sponsor.objects.filter(is_departed=False).order_by("id") 
     return render(
         request,
         "main/sponsor/sponsor_depature.html",
@@ -148,7 +149,7 @@ def sponsor_departure(request):
 
 # =================================== sponsor Depature Report ===================================
 def sponsor_departure_list(request):
-    queryset = Sponsor.objects.all().filter(is_departed="Yes").order_by("id").prefetch_related("departures")
+    queryset = Sponsor.objects.all().filter(is_departed=True).order_by("id").prefetch_related("departures")
 
     search_query = request.GET.get("search")
     if search_query:
@@ -179,7 +180,7 @@ def reinstate_sponsor(request, pk):
     sponsor = get_object_or_404(Sponsor, id=pk)
     
     if request.method == 'POST':
-        sponsor.is_departed = "No"
+        sponsor.is_departed = False
         sponsor.save()
         messages.success(request, "Sponsor reinstated successfully!")
 
@@ -216,7 +217,7 @@ def child_sponsorship(request):
                         sponsorship.save()
 
                         # Update sponsor status to "departed"
-                        child_instance.is_sponsored = "Yes"
+                        child_instance.is_sponsored = True
                         child_instance.save()
 
                     messages.success(request, "Assigned successfully!")
@@ -229,8 +230,8 @@ def child_sponsorship(request):
     else:
         form = ChildSponsorshipForm()
 
-    children = Child.objects.filter(is_departed="No").order_by("id")  
-    sponsors = Sponsor.objects.filter(is_departed="No").order_by("id") 
+    children = Child.objects.filter(is_departed=False).order_by("id")  
+    sponsors = Sponsor.objects.filter(is_departed=False).order_by("id") 
     return render(
         request,
         "main/sponsorship/child_sponsorship.html",
@@ -245,7 +246,7 @@ def child_sponsorship_report(request):
         if child_id:
             selected_child = get_object_or_404(Child, id=child_id)
             child_sponsorship = ChildSponsorship.objects.filter(child_id=child_id)
-            children = Child.objects.all().filter(is_departed="No").filter(is_sponsored="Yes").order_by("id")
+            children = Child.objects.all().filter(is_departed=False).order_by("id")
             return render(request, 'main/sponsorship/child_sponsorship_rpt.html', 
                           {"table_title": "Child Sponsorship Report", "children": children, 
                            "child_name": selected_child.full_name, "prefix_id":selected_child.prefixed_id, 
@@ -253,9 +254,26 @@ def child_sponsorship_report(request):
         else:
             messages.error(request, "No child selected.")
     else:
-        children = Child.objects.all().filter(is_departed="No").filter(is_sponsored="Yes").order_by("id")
+        children = Child.objects.all().filter(is_departed=False).order_by("id")
     return render(request, 'main/sponsorship/child_sponsorship_rpt.html', 
                     {"table_title": "Child Sponsorship Report", "children": children})
+
+# =================================== Edit Staff Sponsorship Data ===================================
+@login_required
+@transaction.atomic
+def edit_child_sponsorship(request, sponsorship_id):
+    sponsorship = get_object_or_404(ChildSponsorship, id=sponsorship_id)
+
+    if request.method == 'POST':
+        form = ChildSponsorshipEditForm(request.POST, instance=sponsorship)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Child sponsorship updated successfully!')
+            return redirect('child_sponsorship_report')  # Redirect to a report or list view
+    else:
+        form = ChildSponsorshipEditForm(instance=sponsorship)
+
+    return render(request, 'main/sponsorship/child_sponsorship_edit.html', {'form_name': 'CHILD SPONSORSHIP UPDATE', 'form': form, 'sponsorship': sponsorship})
 
 
 # =================================== Delete Sponsorship Data ===================================
@@ -270,18 +288,25 @@ def delete_child_sponsorship(request, pk):
 # =================================== Terminate Child Sponsorship ===================================
 @login_required
 @transaction.atomic
-def terminate_child_sponsorship(request, pk):
-    child = get_object_or_404(Child, id=pk)
-    
+def terminate_child_sponsorship(request, sponsorship_id):
+    sponsorship = get_object_or_404(ChildSponsorship, id=sponsorship_id)
+
     if request.method == 'POST':
-        child.is_sponsored = "No"
-        child.save()
-        messages.success(request, "Sponsorship terminated successfully!")
+        if sponsorship.is_active:
+            sponsorship.end_date = timezone.now().date()  # Set end_date to today
+            sponsorship.is_active = False
+            sponsorship.save()
 
-        return redirect("child_sponsorship_report")
-    
-    return render(request, 'main/sponsorship/child_sponsorship_rpt.html', {'child': child})
+            # Assuming a direct ForeignKey relationship to Child
+            sponsored_child = sponsorship.child  
+            if sponsored_child:
+                sponsored_child.is_sponsored = False
+                sponsored_child.save()
 
+            messages.success(request, "Sponsorship terminated successfully!")
+            return HttpResponseRedirect(reverse("child_sponsorship_report"))
+
+    return HttpResponseBadRequest('Invalid request')
 
 
 # =================================== Staff Sponsorship ===================================
@@ -326,8 +351,8 @@ def staff_sponsorship_create(request):
     else:
         form = StaffSponsorshipForm()
 
-    active_staff = Staff.objects.filter(is_departed="No").order_by("id")  
-    sponsors = Sponsor.objects.filter(is_departed="No").order_by("id") 
+    active_staff = Staff.objects.filter(is_departed=False).order_by("id")  
+    sponsors = Sponsor.objects.filter(is_departed=False).order_by("id") 
     return render(
         request,
         "main/sponsorship/staff_sponsorship.html",
@@ -342,7 +367,7 @@ def staff_sponsorship_report(request):
         if staff_id:
             selected_staff = get_object_or_404(Staff, id=staff_id)
             staff_sponsorship = StaffSponsorship.objects.filter(staff_id=staff_id)
-            active_staff = Staff.objects.all().filter(is_departed="No").order_by("id")
+            active_staff = Staff.objects.all().filter(is_departed=False).order_by("id")
             return render(request, 'main/sponsorship/staff_sponsorship_rpt.html', 
                           {"table_title": "Staff Sponsorship Report", 
                            "active_staff": active_staff, 
@@ -353,7 +378,7 @@ def staff_sponsorship_report(request):
         else:
             messages.error(request, "No Staff selected.")
     else:
-        active_staff = Staff.objects.all().filter(is_departed="No").order_by("id")
+        active_staff = Staff.objects.all().filter(is_departed=False).order_by("id")
     return render(request, 'main/sponsorship/staff_sponsorship_rpt.html', 
                     {"table_title": "Staff Sponsorship Report", "active_staff": active_staff})
 

@@ -85,26 +85,15 @@ class Child(models.Model):
         max_length=100, null=True, blank=True, verbose_name="Interest and abilities "
     )
 
-    # Child Progress details
-    SCHOOL_CHOICES = (
-        ("Yes", "Yes"),
-        ("No", "No"),
-    )
-    is_child_in_school = models.CharField(
-        max_length=3, choices=SCHOOL_CHOICES, default="No"
+    is_child_in_school = models.BooleanField(
+        default=False,
+        verbose_name="Is the Child in School?",
     )
 
-    SPONSORSHIP_CHOICES = (
-        ("Yes", "Yes"),
-        ("No", "No"),
+    is_sponsored = models.BooleanField(
+        default=False,
+        verbose_name="Is the Child sponsored?",
     )
-    is_sponsored = models.CharField(
-        max_length=3,
-        choices=SPONSORSHIP_CHOICES,
-        default="No",
-        verbose_name="Is the child sponsored?",
-    )
-
     # Family background
     # Parents
     father_name = models.CharField(
@@ -115,6 +104,7 @@ class Child(models.Model):
         max_length=3,
         verbose_name="Is the father alive?",
     )
+    
     father_description = models.TextField(
         max_length=100,
         null=True,
@@ -190,15 +180,10 @@ class Child(models.Model):
         validators=[MinValueValidator(2013), MaxValueValidator(YEAR_MAX)],
         verbose_name="The year when the child was enrolled on the program?",
     )
-    DEPATURE_CHOICES = (
-        ("Yes", "Yes"),
-        ("No", "No"),
-    )
-    is_departed = models.CharField(
-        max_length=3,
-        choices=DEPATURE_CHOICES,
-        default="No",
-        verbose_name="Is the child departed?",
+
+    is_departed = models.BooleanField(
+        default=False,
+        verbose_name="Is the Child departed?",
     )
 
     # Other fields

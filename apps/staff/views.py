@@ -12,7 +12,7 @@ from .models import Staff, StaffDeparture
 
 @login_required
 def staff_list(request):
-    queryset = Staff.objects.all().filter(is_departed="No").order_by("id")
+    queryset = Staff.objects.all().filter(is_departed=False).order_by("id")
 
     search_query = request.GET.get("search")
     if search_query:
@@ -114,7 +114,7 @@ def staff_departure(request):
             staff_depart.save()
 
             # Update Staff status to "departed"
-            staff_instance.is_departed = "Yes"
+            staff_instance.is_departed = True
             staff_instance.save()
 
             messages.success(request, "Staff departed successfully!")
@@ -124,7 +124,7 @@ def staff_departure(request):
     else:
         form = StaffDepartureForm()
 
-    records = Staff.objects.filter(is_departed="No").order_by("id") 
+    records = Staff.objects.filter(is_departed=False).order_by("id") 
     return render(
         request,
         "main/staff/staff_depature.html",
@@ -132,7 +132,7 @@ def staff_departure(request):
     )
 # =================================== staff Depature Report ===================================
 def staff_depature_list(request):
-    queryset = Staff.objects.all().filter(is_departed="Yes").order_by("id").prefetch_related("departures")
+    queryset = Staff.objects.all().filter(is_departed=True).order_by("id").prefetch_related("departures")
 
     search_query = request.GET.get("search")
     if search_query:
@@ -163,7 +163,7 @@ def reinstate_staff(request, pk):
     staff = get_object_or_404(Staff, id=pk)
     
     if request.method == 'POST':
-        staff.is_departed = "No"
+        staff.is_departed = False
         staff.save()
         messages.success(request, "staff reinstated successfully!")
 

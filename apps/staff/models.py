@@ -7,10 +7,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 # =================================== STAFF MODEL ===================================
 class Staff(models.Model):
-    DEPARTURE_CHOICES = (
-        ('Yes', 'Yes'),
-        ('No', 'No'),
-    )
+
     GENDER_CHOICES = (
         ('Male', 'Male'),
         ('Female', 'Female'),
@@ -51,8 +48,10 @@ class Staff(models.Model):
         max_length=20, choices=DEPARTMENT_CHOICES, null=True, blank=True, 
         verbose_name="Department")
     job_title = models.CharField(max_length=30, null=True, verbose_name="Job Title")
-    is_departed = models.CharField(
-        max_length=3, choices=DEPARTURE_CHOICES, default='No')
+    is_departed = models.BooleanField(
+        default=False,
+        verbose_name="Is the Staff departed?",
+    )
 
     is_sponsored = models.BooleanField(
         default=False,

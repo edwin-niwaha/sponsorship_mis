@@ -67,8 +67,10 @@ class Sponsor(models.Model):
     first_street_address = models.CharField(max_length=100, null=True, verbose_name="First Street Address")
     second_street_address = models.CharField(max_length=100, null=True, verbose_name="Second Street Address")
     zip_code = models.CharField(max_length=10, null=True, verbose_name="ZIP Code")
-    is_departed = models.CharField(
-        max_length=3, choices=DEPARTURE_CHOICES, default='No')
+    is_departed = models.BooleanField(
+        default=False,
+        verbose_name="Departed?",
+    )
     comment = models.CharField(max_length=50, null=True, verbose_name="Comment")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
