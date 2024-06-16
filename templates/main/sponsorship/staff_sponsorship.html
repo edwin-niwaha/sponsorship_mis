@@ -27,6 +27,16 @@
                         <form method="post" enctype="multipart/form-data">
                             {% csrf_token %}
                             <div class="form-group">
+                                <select name="id" id="dropdown" class="chzn-select" required style="width: 40%;">
+                                    <option value="" selected disabled>Search staff...</option>
+                                    {% for staff in active_staff %}
+                                    <option value="{{ staff.id }}">{{ staff.last_name }} {{ staff.first_name }} &rarr;
+                                        {{ staff.prefixed_id }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
                                 <select name="sponsor_id" id="sponsor_dropdown" class="chzn-select" required
                                     style="width: 40%;">
                                     <option value="" selected disabled>Search sponsor...</option>
@@ -39,16 +49,6 @@
                             </div>
 
                             {{ form|crispy }}
-                            <div class="form-group">
-                                <select name="id" id="dropdown" class="chzn-select" required>
-                                    <option value="" selected disabled>Search staff...</option>
-                                    {% for staff in active_staff %}
-                                    <option value="{{ staff.id }}">{{ staff.last_name }} {{ staff.first_name }} &rarr;
-                                        {{ staff.prefixed_id }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
                             <div class="form-group mt-4 mb-0">
                                 <button type="submit" class="col-md-12 btn btn-dark"
                                     onclick="return confirm('Are you sure you want to asign this staff to the selected sponsor?') && validateForm()">ASSIGN

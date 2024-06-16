@@ -76,23 +76,13 @@ class StaffSponsorshipForm(forms.ModelForm):
              "sponsorship_type": forms.Select(attrs={'class': 'form-control', "required": True}),  #
         }
 
-# class StaffSponsorshipEditForm(forms.ModelForm):
-#     class Meta:
-#         model = StaffSponsorship
-#         exclude = ("staff", "is_active", "end_date",)
-#         widgets ={
-#              "sponsor": forms.Select(attrs={'class': 'form-control', "required": True}), 
-#              "start_date": forms.DateInput(attrs={"type": "date", "required": True}),
-#              "sponsorship_type": forms.Select(attrs={'class': 'form-control', "required": True}),  #
-#         }
-
 class StaffSponsorshipEditForm(forms.ModelForm):
     class Meta:
         model = StaffSponsorship
-        fields = ('staff', 'sponsor', 'start_date', 'sponsorship_type')  # Add all relevant fields
+        fields = ('staff', 'sponsor', 'start_date', 'sponsorship_type')
 
         widgets ={
-            "staff": forms.Select(attrs={'class': 'form-control', 'disabled': True}),
+            "staff": forms.Select(attrs={'class': 'form-control',}),
             "sponsor": forms.Select(attrs={'class': 'form-control', "required": True}), 
             "start_date": forms.DateInput(attrs={"type": "date", "required": True}),
             "sponsorship_type": forms.Select(attrs={'class': 'form-control', "required": True}),  #

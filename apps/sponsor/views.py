@@ -373,7 +373,7 @@ def edit_staff_sponsorship(request, sponsorship_id):
     else:
         form = StaffSponsorshipEditForm(instance=sponsorship)
 
-    return render(request, 'main/sponsorship/staff_sponsorship_edit.html', {'form': form, 'sponsorship': sponsorship})
+    return render(request, 'main/sponsorship/staff_sponsorship_edit.html', {'form_name': 'STAFF SPONSORSHIP UPDATE', 'form': form, 'sponsorship': sponsorship})
 
 # =================================== Delete Sponsorship Data ===================================
 @login_required
@@ -393,7 +393,6 @@ def terminate_staff_sponsorship(request, sponsorship_id):
 
     if request.method == 'POST':
         if sponsorship.is_active:
-            # Update the end_date and set is_active to False
             sponsorship.end_date = timezone.now().date()  # Set end_date to today
             sponsorship.is_active = False
             sponsorship.save()
