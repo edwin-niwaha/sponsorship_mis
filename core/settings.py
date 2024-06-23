@@ -48,11 +48,13 @@ INSTALLED_APPS = [
     "formtools",
     "crispy_forms",
     "crispy_bootstrap5",
+    'django.contrib.humanize',
     # =================================== PROJECT APPLICATIONS ===================================
     "apps.users",
     "apps.child",
     "apps.staff",
     "apps.sponsor",
+    "apps.finance",
 ]
 
 MIDDLEWARE = [

@@ -16,9 +16,13 @@ class SponsorForm(forms.ModelForm):
             "first_street_address": forms.Textarea(
                 attrs={"class": "form-control", "rows": 3}
             ),
+
             "second_street_address": forms.Textarea(
                 attrs={"class": "form-control", "rows": 3}
-            )
+            ),
+
+            "gender": forms.Select(attrs={'class': 'form-control', "required": True}),
+            "sponsorship_type_at_signup": forms.Select(attrs={'class': 'form-control', "required": True}),
         }
 
     # Form validation
@@ -86,6 +90,7 @@ class ChildSponsorshipForm(forms.ModelForm):
              "sponsorship_type": forms.Select(attrs={'class': 'form-control', "required": True}),
         }
 
+# =================================== Child Sponsorship Edit Form ===================================
 class ChildSponsorshipEditForm(BaseSponsorshipEditForm):
     class Meta:
         model = ChildSponsorship

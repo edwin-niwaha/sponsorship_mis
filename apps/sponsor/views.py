@@ -148,7 +148,7 @@ def sponsor_departure(request):
     )
 
 # =================================== sponsor Depature Report ===================================
-def sponsor_departure_list(request):
+def sponsor_depature_list(request):
     queryset = Sponsor.objects.all().filter(is_departed=True).order_by("id").prefetch_related("departures")
 
     search_query = request.GET.get("search")

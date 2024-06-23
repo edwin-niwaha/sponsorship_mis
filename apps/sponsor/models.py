@@ -2,6 +2,7 @@
 import datetime
 
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.utils.translation import gettext_lazy as _
 
 # Third-party Imports
 from django.db import models
@@ -21,7 +22,7 @@ class SponsorshipType:
     GENERAL_SUPPORT = 'General support'
 
 SPONSORSHIP_TYPE_CHOICES = (
-    ('', 'Sponsorship Type'),
+    ('', '--choose ponsorship type--'),
     (SponsorshipType.CHILD_FULL_SUPPORT, 'Child full support'),
     (SponsorshipType.CHILD_CO_SUPPORT, 'Child co-support'),
     (SponsorshipType.FAMILY_FULL_SUPPORT, 'Family full support'),
@@ -48,7 +49,8 @@ class Sponsor(models.Model):
     email = models.EmailField(verbose_name="Email")
     sponsorship_type_at_signup = models.CharField(
         max_length=20, choices=SPONSORSHIP_TYPE_CHOICES, null=True, blank=True, 
-        verbose_name="Type of Sponsorship Interest")
+        verbose_name="Sponsorship Type")
+    expected_amt = models.DecimalField(_('Amount Expected(UgX)'), max_digits=10, decimal_places=2, default=0)   
     job_title = models.CharField(max_length=30, null=True, verbose_name="Job Title")
     region = models.CharField(max_length=30, null=True, verbose_name="Region")
     town = models.CharField(max_length=30, null=True, verbose_name="Town")
@@ -119,7 +121,7 @@ class ChildSponsorship(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
 
     class Meta:
-        db_table = 'child_sponsorship_details'
+        db_table = 'child_sp_details'
         verbose_name_plural = 'Child Sponsorships'
         unique_together = (('child', 'sponsor'),)
 

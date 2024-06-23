@@ -24,6 +24,7 @@ djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.2
 et-xmlfile==1.1.0
 filelock==3.13.1
+humanize==4.9.0
 idna==3.6
 MarkupPy==1.14
 mysqlclient==2.2.4

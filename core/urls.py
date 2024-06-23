@@ -44,4 +44,5 @@ urlpatterns = [
     path("child/", include("apps.child.urls")),
     path("sponsor/", include("apps.sponsor.urls")),
     path("staff/", include("apps.staff.urls")),
+    path("finance/", include("apps.finance.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

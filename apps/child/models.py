@@ -238,7 +238,7 @@ class ChildProfilePicture(models.Model):
     is_current = models.BooleanField(default=False, verbose_name="Is Current Picture")
 
     class Meta:
-        db_table = "child_profile_pictures"
+        db_table = "child_pictures"
         verbose_name = "Child Profile Picture"
         verbose_name_plural = "Child Profile Pictures"
         ordering = ["-uploaded_at"]
@@ -390,7 +390,7 @@ class ChildCorrespondence(models.Model):
     class Meta:
         verbose_name = "Child Correspondence"
         verbose_name_plural = "Child Correspondences"
-        db_table = 'child_correspondence'
+        db_table = 'child_corres'
 		
     def __str__(self):
         return self.subject
