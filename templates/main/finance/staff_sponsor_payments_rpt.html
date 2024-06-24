@@ -18,16 +18,16 @@
                 onclick="Export2Doc('printMe')">
                 <i class="mdi mdi-file-word btn-icon-prepend"></i>
             </button>
-            <a class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsor_payment' %}">
+            <a class="btn btn-sm ml-3 btn-success" href="{% url 'staff_sponsor_payment' %}">
                 <i class="mdi mdi-folder-plus btn-icon-prepend"></i>
             </a>
-            <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsor_payments_report' %}">
+            <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'staff_sponsor_payments_report' %}">
                 <i class="mdi mdi-chart-line btn-icon-prepend"></i>
             </a>
         </div>
     </div>
     <hr class="bg-info" style="height: 3px;" />
-    <form method="POST" action="{% url 'child_sponsor_payments_report' %}">
+    <form method="POST" action="{% url 'staff_sponsor_payments_report' %}">
         {% csrf_token %}
         <select name="id" id="sp_dropdown" class="chzn-select" required>
             <option value="" selected disabled>Search sponsor...</option>
@@ -57,7 +57,7 @@
                 <thead>
                     <tr>
                         <th class="text-right">Payment Year</th>
-                        <th class="text-left">Total Amount(UgX)</th>
+                        <th class="text-left">Total Amount (UgX)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -82,7 +82,7 @@
                 <thead>
                     <tr>
                         <th scope="col">#</th>
-                        <th scope="col">Child</th>
+                        <th scope="col">Staff</th>
                         <th scope="col">Payment Date</th>
                         <th scope="col">Month</th>
                         <th scope="col">Year</th>
@@ -95,7 +95,7 @@
                     {% for payment in sponsor_payments %}
                     <tr {% if not payment.is_valid %}style="background-color: #f2dede; color: red" {% endif %}>
                         <th scope="row">{{forloop.counter}}</th>
-                        <td>{{ payment.child }}</td>
+                        <td>{{ payment.staff.first_name }} {{ payment.staff.last_name }}</td>
                         <td>{{ payment.payment_date }}</td>
                         <td>{{ payment.get_month_display }}</td>
                         <td>{{ payment.payment_year }}</td>
@@ -110,7 +110,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            <form action="{% url 'validate_child_payment' payment.id %}" method="post"
+                            <form action="{% url 'validate_staff_payment' payment.id %}" method="post"
                                 onsubmit="return confirm('Are you sure you want to validate?');">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-warning btn-sm" title="Validate"
@@ -122,7 +122,7 @@
                         <td>
                             {% if not payment.is_valid %}
                             <a class="btn btn-danger btn-sm" title="Edit"
-                                href="{% url 'edit_child_payment' payment.id %}"
+                                href="{% url 'edit_staff_payment' payment.id %}"
                                 onclick="return confirm('Are you sure you want to edit this record?');">
                                 <i class="bi bi-pencil"></i>
                             </a>
@@ -131,7 +131,7 @@
                         <td>
                             {% if not payment.is_valid %}
                             <a class="btn btn-danger btn-sm" title="Erase"
-                                href="{% url 'delete_child_payment' payment.id %}"
+                                href="{% url 'delete_staff_payment' payment.id %}"
                                 onclick="return confirm('Are you sure you want to delete this record?');"><i
                                     class="bi bi-trash"></i></a>
                             {% endif %}

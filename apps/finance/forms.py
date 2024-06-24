@@ -1,10 +1,13 @@
-from django import forms
-from django.utils.translation import gettext_lazy as _
 from datetime import datetime
 
-from.models import (
+from django import forms
+from django.utils.translation import gettext_lazy as _
+
+from .models import (
     ChildPayments,
+    StaffPayments,
 )
+
 
 # =================================== Child Payments Form ===================================
 class ChildPaymentForm(forms.ModelForm):
@@ -44,6 +47,50 @@ class ChildPaymentEditForm(forms.ModelForm):
     class Meta:
         model = ChildPayments
         exclude = ("sponsor", "child", "is_valid",)
+
+        widgets = {
+            "payment_date": forms.DateInput(attrs={"type": "date", "required": True}),
+            "month": forms.Select(attrs={'class': 'form-control', "required": True}),
+            "amount": forms.NumberInput(attrs={"type": "number", "required": True}),
+        }
+
+# =================================== Staff Payments Form ===================================
+class StaffPaymentForm(forms.ModelForm):
+    current_year = datetime.now().year
+
+    payment_year = forms.IntegerField(
+        label=_('Year of payment'), 
+        widget=forms.NumberInput(attrs={"type": "number", "required": True}),
+        min_value=2023,
+        max_value=current_year,
+    )
+
+    class Meta:
+        model = StaffPayments
+        exclude = ("sponsor", "staff", "is_valid",)
+
+        widgets = {
+            "payment_date": forms.DateInput(attrs={"type": "date", "required": True}),
+            "month": forms.Select(attrs={'class': 'form-control', "required": True}),
+            "amount": forms.NumberInput(attrs={"type": "number", "required": True}),
+        }
+        
+    def clean_payment_year(self):
+        payment_year = self.cleaned_data['payment_year']
+        
+        # Example custom validation: Ensure payment_year is within a specific range
+        if payment_year < 2023 or payment_year > self.current_year:
+            raise forms.ValidationError(f"Payment year must be between 2023 and {self.current_year}.")
+
+        # Add more validation as needed
+        
+        return payment_year
+    
+# =================================== Staff Payment Edit Form ===================================
+class StaffPaymentEditForm(forms.ModelForm):
+    class Meta:
+        model = StaffPayments
+        exclude = ("sponsor", "staff", "is_valid",)
 
         widgets = {
             "payment_date": forms.DateInput(attrs={"type": "date", "required": True}),

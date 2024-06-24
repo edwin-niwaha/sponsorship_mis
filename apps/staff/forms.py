@@ -9,9 +9,11 @@ class StaffForm(forms.ModelForm):
         model = Staff
         exclude = ("is_departed", "is_sponsored" )
         widgets = {
-            "date_started_work": forms.DateInput(attrs={"type": "date"})
+            "date_started_work": forms.DateInput(attrs={"type": "date", "required": True}),
+            "gender": forms.Select(attrs={'class': 'form-control', "required": True}),
+            "marital_status": forms.Select(attrs={'class': 'form-control', "required": True}),
+            "department": forms.Select(attrs={'class': 'form-control', "required": True}),
         }
-
     # Form validation
     def clean(self):
         super(StaffForm, self).clean()

@@ -50,7 +50,7 @@ def register_staff(request):
             messages.info(
                 request, "Record saved successfully!", extra_tags="bg-success"
             )
-            return redirect("staff_list") 
+            return redirect("register_staff") 
         else:
             # Display form errors
             return render(request, "main/staff/staff_register.html", {"form": form})

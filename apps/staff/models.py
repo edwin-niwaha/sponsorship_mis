@@ -9,15 +9,18 @@ from phonenumber_field.modelfields import PhoneNumberField
 class Staff(models.Model):
 
     GENDER_CHOICES = (
+        ('', '--choose gender--'),
         ('Male', 'Male'),
         ('Female', 'Female'),
     )
     DEPARTMENT_CHOICES = (
+        ('', '--select department--'),       
         ('ACCOUNTS', 'ACCOUNTS'),
         ('PROGRAMS', 'PROGRAMS'),
         ('BUSINESS OPERATIONS', 'BUSINESS OPERATIONS'),
     )
     MARITAL_STATUS_CHOICES = (
+        ('', '--select marital status--'),
         ('Single', 'Single'),
         ('Married', 'Married'),
         ('Divorced', 'Divorced'),

@@ -11,8 +11,8 @@ from apps.child.models import Child
 from apps.staff.models import Staff
 
 from .forms import (
-    ChildSponsorshipForm,
     ChildSponsorshipEditForm,
+    ChildSponsorshipForm,
     SponsorDepartForm,
     SponsorForm,
     StaffSponsorshipEditForm,
@@ -273,7 +273,8 @@ def edit_child_sponsorship(request, sponsorship_id):
     else:
         form = ChildSponsorshipEditForm(instance=sponsorship)
 
-    return render(request, 'main/sponsorship/child_sponsorship_edit.html', {'form_name': 'CHILD SPONSORSHIP UPDATE', 'form': form, 'sponsorship': sponsorship})
+    return render(request, 'main/sponsorship/child_sponsorship_edit.html', 
+                  {'form_name': 'CHILD SPONSORSHIP UPDATE', 'form': form, 'sponsorship': sponsorship})
 
 
 # =================================== Delete Sponsorship Data ===================================
@@ -398,7 +399,8 @@ def edit_staff_sponsorship(request, sponsorship_id):
     else:
         form = StaffSponsorshipEditForm(instance=sponsorship)
 
-    return render(request, 'main/sponsorship/staff_sponsorship_edit.html', {'form_name': 'STAFF SPONSORSHIP UPDATE', 'form': form, 'sponsorship': sponsorship})
+    return render(request, 'main/sponsorship/staff_sponsorship_edit.html', 
+                  {'form_name': 'STAFF SPONSORSHIP UPDATE', 'form': form, 'sponsorship': sponsorship})
 
 # =================================== Delete Sponsorship Data ===================================
 @login_required
