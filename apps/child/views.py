@@ -120,8 +120,11 @@ def register_child(request):
 
         if form.is_valid():
             form.save()
-            messages.success(request, "Record saved successfully!")
-            return redirect('register_child')  
+            messages.success(request, "Record saved successfully!", extra_tags="bg-success")
+            return redirect('register_child')
+        else:
+            # Display an error message if the form is not valid
+            messages.error(request, "There was an error saving the record. Please check the form for errors.", extra_tags="bg-danger")
 
     else:
         form = ChildForm()
@@ -131,6 +134,7 @@ def register_child(request):
         "main/child/child_register.html",
         {"form_name": "Child Registration", "form": form},
     )
+
 # =================================== Update Child data ===================================
 @login_required
 @transaction.atomic
