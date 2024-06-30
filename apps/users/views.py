@@ -5,26 +5,22 @@ from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordRes
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
-from django.http import HttpResponseRedirect, HttpResponseBadRequest
-from django.shortcuts import redirect, render, get_object_or_404
-from django.urls import reverse, reverse_lazy
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.views import View
 from django.db import transaction
+from django.http import HttpResponseBadRequest, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse, reverse_lazy
+from django.views import View
 
 from .forms import (
     ContactForm,
     LoginForm,
+    PolicyForm,
     RegisterForm,
     UpdateProfileForm,
     UpdateUserForm,
-    PolicyForm,
 )
-from .models import (
-    Profile, 
-    Policy,
-    PolicyRead
-)
+from .models import Policy, PolicyRead, Profile
 
 
 def home(request):
@@ -191,7 +187,7 @@ def policy_list(request):
 
     return render(
         request,
-        "users/manage_policy.html",
+        "users/policy_list.html",
         {"records": records, "table_title": "Policies"},
     )
 
@@ -210,21 +206,22 @@ def create_policy(request):
             return redirect('policy_list')
         else:
             # Display an error message if the form is not valid
-            messages.error(request, "There was an error saving the record. Please check the form for errors.", extra_tags="bg-danger")
+            messages.error(request, "There was an error saving the record. Please check the form for errors.", 
+                           extra_tags="bg-danger")
 
     else:
         form = PolicyForm()
 
     return render(
         request,
-        "users/create_policy.html",
+        "users/policy_create.html",
         {"form_name": "Create Policy", "form": form},
     )
 
 # =================================== Update Policy ===================================
 @login_required
 @transaction.atomic
-def update_policy(request, pk, template_name="users/create_policy.html"):
+def update_policy(request, pk, template_name="users/policy_create.html"):
     try:
         policy = Policy.objects.get(pk=pk)
     except Policy.DoesNotExist:
@@ -289,3 +286,25 @@ def read_policy(request, policy_id):
             messages.info(request, "You have already read this policy.", extra_tags="bg-danger")
             
     return HttpResponseRedirect(reverse("policy_list"))
+
+
+# =================================== Policy Report ===================================
+@login_required
+def policy_report(request):
+    if request.method == "POST":
+        policy_id = request.POST.get("id")
+        if policy_id:
+            selected_policy = get_object_or_404(Policy, id=policy_id)
+            policy_read = PolicyRead.objects.filter(policy_id=policy_id)
+            policies = Policy.objects.all().order_by("id")
+            return render(request, 'users/policy_rpt.html', 
+                          {"table_title": "policies read", "policies": policies, 
+                           "policy_name": selected_policy.title, 
+                           "policy_upload": selected_policy.upload,
+                           'policy_read': policy_read})
+        else:
+            messages.error(request, "No policy selected.")
+    else:
+        policies = Policy.objects.all().order_by("id")
+    return render(request, 'users/policy_rpt.html', 
+                    {"table_title": "policies read", "policies": policies})

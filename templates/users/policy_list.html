@@ -6,24 +6,31 @@
 <div class="container">
     <!-- Page Header -->
     <div class="page-header flex-wrap">
-        <h3 class="mb-0">{{ table_title|upper }}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
+        <h3 class="mb-0">{{ table_title|upper }}</h3>
         <div class="d-flex">
-            <a title="Create Policy" class="btn btn-sm ml-3 btn-success" href="{% url 'create_policy' %}">
-                <i class="mdi mdi-upload btn-icon-prepend"></i>
+            <a title="Upload Policy" class="btn btn-sm ml-3 btn-success" href="{% url 'create_policy' %}">
+                <i class="mdi mdi-upload btn-icon-prepend"></i> Upload Policy
             </a>
             <a title="View List" class="btn btn-sm ml-3 btn-success" href="{% url 'policy_list' %}">
-                <i class="mdi mdi-chart-line btn-icon-prepend"></i>
+                <i class="mdi mdi-chart-line btn-icon-prepend"></i> View List
+            </a>
+            <a title="View read policies list" class="btn btn-sm ml-3 btn-success" href="{% url 'policy_report' %}">
+                <i class="mdi mdi-chart-line btn-icon-prepend"></i> View Read Policies
             </a>
         </div>
     </div>
 
     <!-- Search Form -->
-    <form method="GET" action="{% url 'client_list' %}">
-        <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..."
-            style="border-radius: 5px; height: 35px;">
-        <button type="submit" class="btn btn-sm ml-3 btn-success">
-            <i class="mdi mdi-magnify"></i>
-        </button>
+    <form method="GET" action="{% url 'policy_list' %}">
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" name="search" id="searchInput" onkeyup="searchTable()"
+                placeholder="Search...">
+            <div class="input-group-append">
+                <button class="btn btn-success" type="submit">
+                    <i class="mdi mdi-magnify"></i>
+                </button>
+            </div>
+        </div>
     </form>
 
     <!-- Policy Table -->
@@ -36,7 +43,8 @@
                     <tr>
                         <th scope="col">#</th>
                         <th scope="col">Title</th>
-                        <th scope="col">Content</th>
+                        <th scope="col">Date Reviewed</th>
+                        <th scope="col">Doc</th>
                         <th scope="col">Clr</th>
                         <th scope="col" colspan="4">Action</th>
                     </tr>
@@ -46,9 +54,12 @@
                     <tr {% if not policy.is_valid %}style="background-color: #f2dede; color: red" {% endif %}>
                         <th scope="row">{{ forloop.counter }}.</th>
                         <td>{{ policy.title }}</td>
+                        <td>{{ policy.date_reviewed }}</td>
                         <td>
                             {% if policy.upload %}
-                            <a target="_blank" href="{{ policy.upload.url }}">View | Download</a>
+                            <a target="_blank" href="{{ policy.upload.url }}">
+                                <i style="color:red; font-size: 24px;" class="mdi mdi-file-pdf btn-icon-prepend"></i>
+                            </a>
                             {% else %}
                             <p>Pending upload...</p>
                             {% endif %}
@@ -56,14 +67,11 @@
                         <td class="{% if policy.is_valid %}valid-policy{% else %}invalid-policy{% endif %}">
                             {% if policy.is_valid %}
                             &#10004;
-                            <!-- Check mark (✔) -->
                             {% else %}
                             &#10007;
-                            <!-- Cross mark (❌) -->
                             {% endif %}
                         </td>
                         <td>
-                            <!-- Validate Policy Button -->
                             <form action="{% url 'validate_policy' policy.id %}" method="post"
                                 onsubmit="return confirm('Are you sure you want to validate?');">
                                 {% csrf_token %}
@@ -74,7 +82,6 @@
                             </form>
                         </td>
                         <td>
-                            <!-- Mark as Read Button -->
                             <form action="{% url 'read_policy' policy.id %}" method="post"
                                 onsubmit="return confirm('Have you read this policy?');">
                                 {% csrf_token %}
@@ -85,13 +92,11 @@
                             </form>
                         </td>
                         <td>
-                            <!-- Edit Policy Button -->
                             <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_policy' policy.id %}">
                                 <i class="bi bi-pencil"></i>
                             </a>
                         </td>
                         <td>
-                            <!-- Delete Policy Button -->
                             <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_policy' policy.id %}"
                                 onclick="return confirm('Are you sure about this? This record will be deleted permanently.');">
                                 <i class="bi bi-trash"></i>

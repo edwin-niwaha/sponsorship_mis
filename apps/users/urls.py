@@ -1,6 +1,18 @@
 from django.urls import path
 
-from .views import RegisterView, contact_us, home, profile, policy_list, create_policy, update_policy, delete_policy, validate_policy, read_policy
+from .views import (
+    RegisterView,
+    contact_us,
+    create_policy,
+    delete_policy,
+    home,
+    policy_list,
+    policy_report,
+    profile,
+    read_policy,
+    update_policy,
+    validate_policy,
+)
 
 urlpatterns = [
     path("", home, name="users-home"),
@@ -13,4 +25,5 @@ urlpatterns = [
     path("policy/delete/<int:pk>", delete_policy, name="delete_policy"),
     path("policy/validate/<int:policy_id>/", validate_policy, name="validate_policy"),
     path("policy/read/<int:policy_id>/", read_policy, name="read_policy"),
+    path("policy/read/", policy_report, name="policy_report")
     ]

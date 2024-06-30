@@ -45,7 +45,8 @@ class Policy(models.Model):
     is_valid = models.BooleanField(
         default=False,
         verbose_name="Valid?",
-    )    
+    ) 
+    date_reviewed = models.DateField(blank=True, null=True)   
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

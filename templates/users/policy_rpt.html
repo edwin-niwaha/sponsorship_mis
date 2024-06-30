@@ -1,0 +1,80 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="container">
+    <div class="page-header flex-wrap">
+        <h3 class="mb-0">
+            {{table_title|upper}}
+        </h3>
+        <div class="d-flex">
+            <a title="Upload Policy" class="btn btn-sm ml-3 btn-success" href="{% url 'create_policy' %}">
+                <i class="mdi mdi-upload btn-icon-prepend"></i> Upload Policy
+            </a>
+            <a title="View List" class="btn btn-sm ml-3 btn-success" href="{% url 'policy_list' %}">
+                <i class="mdi mdi-chart-line btn-icon-prepend"></i> View List
+            </a>
+        </div>
+    </div>
+    <hr class="bg-info" style="height: 3px;" />
+    <form method="POST" action="{% url 'policy_report' %}">
+        {% csrf_token %}
+        <select name="id" id="dropdown" class="chzn-select" required style="width: 40%;">
+            <option value="" selected disabled>Search policy...</option>
+            {% for policy in policies %}
+            <option value="{{ policy.id }}">{{ policy.title }}
+            </option>
+            {% endfor %}
+        </select> &rarr;
+        <button title="View Report" type="submit" class="btn btn-sm ml-3 btn-success" onclick="return validateForm()"><i
+                class="mdi mdi-view-list btn-icon-prepend"></i></button>
+    </form>
+
+    <div id="printMe" class="tab-pane show active">
+        <hr class="bg-info" style="height: 3px;" />
+
+        {% if policy_read %}
+        <header style="text-align: center;">
+            <h3 class="text-primary" style="font-family:'Lucida Sans Unicode', sans-serif;">
+                {{ policy_name|upper}} &rarr;
+
+                {% if policy_name and policy_upload %}
+                <a href="{{ policy_upload.url }}" target="_blank">
+                    <i style="color:red" class="mdi mdi-file-pdf"></i>
+                </a>
+                {% else %}
+                <p>Pending upload...</p>
+                {% endif %}
+            </h3>
+        </header>
+        <hr class="bg-info" style="height: 3px;" />
+
+        <div class="table-responsive">
+            <table class="my-table">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th colspan="2" scope="col">Read by</th>
+                        <th scope="col">Date read</th>
+                    </tr>
+                </thead>
+                <tbody class="table-group-divider">
+                    {% for p in policy_read %}
+                    <tr>
+                        <th scope="row">{{forloop.counter}}.</th>
+                        <td>{{ p.user.username }}</td>
+                        <td>{{ p.user.email }}</td>
+                        <td>{{ p.read_at }}</td>
+                    </tr>
+                    {%endfor%}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No policy read yet!</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock content %}

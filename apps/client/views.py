@@ -1,18 +1,16 @@
-import logging
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import redirect, render
 from django.urls import reverse
 from openpyxl import load_workbook
 
-from .forms import (
-    ClientForm, ImportClientsForm
-)
+from .forms import ClientForm, ImportClientsForm
 from .models import Client
+
 
 # =================================== Fetch and display all clients details ===================================
 @login_required
@@ -55,7 +53,8 @@ def register_client(request):
             return redirect('register_client')
         else:
             # Display an error message if the form is not valid
-            messages.error(request, "There was an error saving the record. Please check the form for errors.", extra_tags="bg-danger")
+            messages.error(request, "There was an error saving the record. Please check the form for errors.", 
+                           extra_tags="bg-danger")
 
     else:
         form = ClientForm()

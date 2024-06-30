@@ -1,7 +1,7 @@
-from django.core.validators import RegexValidator, FileExtensionValidator
-
+from django.core.validators import FileExtensionValidator, RegexValidator
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
+
 
 class Client(models.Model):
     # Basic info

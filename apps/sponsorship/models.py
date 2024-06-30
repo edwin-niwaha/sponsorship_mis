@@ -1,11 +1,11 @@
 # Third-party Imports
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 
 # Local App Imports
 from apps.child.models import Child
-from apps.staff.models import Staff
 from apps.sponsor.models import Sponsor
+from apps.staff.models import Staff
+
 
 # sponsorship_type constants
 class SponsorshipType:

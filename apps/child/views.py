@@ -124,7 +124,8 @@ def register_child(request):
             return redirect('register_child')
         else:
             # Display an error message if the form is not valid
-            messages.error(request, "There was an error saving the record. Please check the form for errors.", extra_tags="bg-danger")
+            messages.error(request, "There was an error saving the record. Please check the form for errors.", 
+                           extra_tags="bg-danger")
 
     else:
         form = ChildForm()

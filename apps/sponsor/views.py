@@ -1,12 +1,10 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db import IntegrityError, transaction
-from django.http import HttpResponseBadRequest, HttpResponseRedirect
+from django.db import transaction
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils import timezone
-
 
 from .forms import (
     SponsorDepartForm,
