@@ -15,14 +15,14 @@
         <li class="nav-item">
             <a class="nav-link" href="/">
                 <i class="mdi mdi-home menu-icon"></i>
-                <span class="menu-title">HOME</span>
+                <span class="menu-title">Home</span>
             </a>
         </li>
 
         <li class="nav-item">
             <a class="nav-link" href="{% url 'main-dashboard' %}">
                 <i class="mdi mdi-lock-open menu-icon"></i>
-                <span class="menu-title">DASHBOARD</span>
+                <span class="menu-title">Dashboard</span>
             </a>
         </li>
         <li>
@@ -131,7 +131,7 @@
         <li class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#ui-basic3" aria-expanded="false" aria-controls="ui-basic">
                 <i class="mdi mdi-square-inc-cash  menu-icon"></i>
-                <span class="menu-title">Finance</span>
+                <span class="menu-title">Contributions</span>
                 <i class="menu-arrow"></i>
             </a>
             <div class="collapse" id="ui-basic3">
@@ -151,7 +151,7 @@
         <li class="nav-item">
             <a class="nav-link" href="{% url 'client_list' %}">
                 <i class="mdi mdi-account-multiple-plus menu-icon"></i>
-                <span class="menu-title">Clients</span>
+                <span class="menu-title">Manage Clients</span>
             </a>
         </li>
 
@@ -161,23 +161,15 @@
                 <span class="menu-title">Reports</span>
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'policy_list' %}">
+                <i class="mdi mdi-attachment menu-icon"></i>
+                <span class="menu-title">Policies</span>
+            </a>
+        </li>
+
         <li>
             <hr />
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="mdi mdi-attachment menu-icon"></i>
-                <span class="menu-title">Policies & Procedures</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="mdi mdi-file-document-box menu-icon"></i>
-                <span class="menu-title">Documentation</span>
-            </a>
-        </li>
-        <li>
-            <hr>
         </li>
 
         <li class="nav-item">
@@ -195,7 +187,12 @@
                         <a class="nav-link active" href="{% url 'users-feedback' %}" target="_self">User Feedback</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'import' %}" target="_self">Bulk Import</a>
+                        <a class="nav-link active" href="{% url 'import' %}" target="_self">Children Bulk Import</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <span class="menu-title">User Manual</span>
+                        </a>
                     </li>
                 </ul>
             </div>

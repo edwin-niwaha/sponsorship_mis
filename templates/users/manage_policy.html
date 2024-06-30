@@ -1,0 +1,146 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="container">
+    <!-- Page Header -->
+    <div class="page-header flex-wrap">
+        <h3 class="mb-0">{{ table_title|upper }}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
+        <div class="d-flex">
+            <a title="Create Policy" class="btn btn-sm ml-3 btn-success" href="{% url 'create_policy' %}">
+                <i class="mdi mdi-upload btn-icon-prepend"></i>
+            </a>
+            <a title="View List" class="btn btn-sm ml-3 btn-success" href="{% url 'policy_list' %}">
+                <i class="mdi mdi-chart-line btn-icon-prepend"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <form method="GET" action="{% url 'client_list' %}">
+        <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..."
+            style="border-radius: 5px; height: 35px;">
+        <button type="submit" class="btn btn-sm ml-3 btn-success">
+            <i class="mdi mdi-magnify"></i>
+        </button>
+    </form>
+
+    <!-- Policy Table -->
+    <div id="printMe" class="tab-pane show active">
+        <header style="text-align: center;"></header>
+        <hr class="bg-info" style="height: 3px;" />
+        <div class="table-responsive">
+            <table class="my-table" id="dataTable">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">Content</th>
+                        <th scope="col">Clr</th>
+                        <th scope="col" colspan="4">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="table-group-divider">
+                    {% for policy in records %}
+                    <tr {% if not policy.is_valid %}style="background-color: #f2dede; color: red" {% endif %}>
+                        <th scope="row">{{ forloop.counter }}.</th>
+                        <td>{{ policy.title }}</td>
+                        <td>
+                            {% if policy.upload %}
+                            <a target="_blank" href="{{ policy.upload.url }}">View | Download</a>
+                            {% else %}
+                            <p>Pending upload...</p>
+                            {% endif %}
+                        </td>
+                        <td class="{% if policy.is_valid %}valid-policy{% else %}invalid-policy{% endif %}">
+                            {% if policy.is_valid %}
+                            &#10004;
+                            <!-- Check mark (✔) -->
+                            {% else %}
+                            &#10007;
+                            <!-- Cross mark (❌) -->
+                            {% endif %}
+                        </td>
+                        <td>
+                            <!-- Validate Policy Button -->
+                            <form action="{% url 'validate_policy' policy.id %}" method="post"
+                                onsubmit="return confirm('Are you sure you want to validate?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning btn-sm" title="Validate"
+                                    {% if policy.is_valid %}hidden{% endif %}>
+                                    Validate
+                                </button>
+                            </form>
+                        </td>
+                        <td>
+                            <!-- Mark as Read Button -->
+                            <form action="{% url 'read_policy' policy.id %}" method="post"
+                                onsubmit="return confirm('Have you read this policy?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning btn-sm" title="Mark as Read"
+                                    {% if policy.is_read %}hidden{% endif %}>
+                                    Mark as Read
+                                </button>
+                            </form>
+                        </td>
+                        <td>
+                            <!-- Edit Policy Button -->
+                            <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_policy' policy.id %}">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                        <td>
+                            <!-- Delete Policy Button -->
+                            <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_policy' policy.id %}"
+                                onclick="return confirm('Are you sure about this? This record will be deleted permanently.');">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <hr class="bg-info" style="height: 3px;" />
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <span class="step-links">
+                    {% if records.has_previous %}
+                    <a href="?page=1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
+                            <path fill="#2375e1"
+                                d="M14 3.002a1 1 0 0 0-1.578-.816l-7 4.963a1 1 0 0 0-.007 1.628l7 5.037A1 1 0 0 0 14 13.003zM2 2.5a.5.5 0 0 1 1 0v11a.5.5 0 0 1-1 0z" />
+                        </svg>
+                    </a>
+                    <a href="?page={{ records.previous_page_number }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
+                            <path fill="#2375e1" d="M4 10l9 9l1.4-1.5L7 10l7.4-7.5L13 1z" />
+                        </svg>
+                    </a>
+                    {% endif %}
+
+                    <span class="current">
+                        Page {{ records.number }} of {{ records.paginator.num_pages }}.
+                    </span>
+
+                    {% if records.has_next %}
+                    <a href="?page={{ records.next_page_number }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
+                            <path fill="#2375e1" d="M7 1L5.6 2.5L13 10l-7.4 7.5L7 19l9-9z" />
+                        </svg>
+                    </a>
+                    <a href="?page={{ records.paginator.num_pages }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 28 28">
+                            <path fill="#2375e1"
+                                d="M23.5 3.75a.75.75 0 0 1 1.5 0v20.5a.75.75 0 0 1-1.5 0zM3 5.254C3 3.438 5.041 2.37 6.533 3.406l12.504 8.68a2.25 2.25 0 0 1 .013 3.688l-12.504 8.81C5.056 25.634 3 24.57 3 22.745z" />
+                        </svg>
+                    </a>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

@@ -37,3 +37,29 @@ class Contact(models.Model):
 
     def __str__(self):
         return self.subject
+    
+
+class Policy(models.Model):
+    title = models.CharField(max_length=50)
+    upload = models.FileField(upload_to='policies/', blank=True, null=True)
+    is_valid = models.BooleanField(
+        default=False,
+        verbose_name="Valid?",
+    )    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+    
+
+class PolicyRead(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    policy = models.ForeignKey(Policy, on_delete=models.CASCADE)
+    read_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'policy')
+
+    def __str__(self):
+        return f"{self.user.username} read {self.policy.title}"

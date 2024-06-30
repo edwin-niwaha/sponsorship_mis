@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
 
-from .models import Contact, Profile
+from .models import Contact, Profile, Policy
 
 
 class RegisterForm(UserCreationForm):
@@ -161,3 +161,17 @@ class ContactForm(forms.ModelForm):
         if not message:
             raise forms.ValidationError("Message field is required")
         return message
+    
+class PolicyForm(forms.ModelForm):
+    class Meta:
+        model = Policy
+        exclude = ("is_valid",)
+    
+    def clean_upload(self):
+        upload = self.cleaned_data.get('upload')
+        if upload:
+            if not upload.name.endswith('.pdf'):
+                raise forms.ValidationError("Only PDF files are allowed.")
+            if upload.size > 10*1024*1024:  # 10 MB limit
+                raise forms.ValidationError("The file is too large. It should be less than 10 MB.")
+        return upload

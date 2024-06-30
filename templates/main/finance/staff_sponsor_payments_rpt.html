@@ -102,7 +102,7 @@
                         <td class="text-right">{{ payment.amount|floatformat:"2"|intcomma }}</td>
                         <td class="{% if payment.is_valid %}valid-payment{% else %}invalid-payment{% endif %}">
                             {% if payment.is_valid %}
-                            &#10003;
+                            &#10004;
                             <!-- Check mark (✔) indicating the payment is valid -->
                             {% else %}
                             &#10007;

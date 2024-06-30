@@ -5,10 +5,12 @@ from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordRes
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
-from django.http import HttpResponseRedirect
-from django.shortcuts import redirect, render
+from django.http import HttpResponseRedirect, HttpResponseBadRequest
+from django.shortcuts import redirect, render, get_object_or_404
 from django.urls import reverse, reverse_lazy
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.views import View
+from django.db import transaction
 
 from .forms import (
     ContactForm,
@@ -16,14 +18,19 @@ from .forms import (
     RegisterForm,
     UpdateProfileForm,
     UpdateUserForm,
+    PolicyForm,
 )
-from .models import Profile
+from .models import (
+    Profile, 
+    Policy,
+    PolicyRead
+)
 
 
 def home(request):
     return render(request, "users/home.html")
 
-
+# =================================== Register User  ===================================
 class RegisterView(View):
     form_class = RegisterForm
     initial = {"key": "value"}
@@ -55,7 +62,8 @@ class RegisterView(View):
         return render(request, self.template_name, {"form": form})
 
 
-# Class based view that extends from the built in login view to add a remember me functionality
+# =================================== Login  ===================================
+
 class CustomLoginView(LoginView):
     form_class = LoginForm
 
@@ -73,6 +81,7 @@ class CustomLoginView(LoginView):
         return super(CustomLoginView, self).form_valid(form)
 
 
+# =================================== Reset password  ===================================
 class ResetPasswordView(SuccessMessageMixin, PasswordResetView):
     template_name = "users/password_reset.html"
     email_template_name = "users/password_reset_email.html"
@@ -85,13 +94,17 @@ class ResetPasswordView(SuccessMessageMixin, PasswordResetView):
     )
     success_url = reverse_lazy("users-home")
 
+# =================================== Change Passord  ===================================
 
 class ChangePasswordView(PasswordChangeView):
     template_name = "users/change_password.html"
     success_message = "Successfully Changed Your Password"
     success_url = reverse_lazy("users-home")
 
+
+# =================================== Profile  ===================================
 @login_required
+@transaction.atomic
 def profile(request):
     try:
         profile_instance = request.user.profile
@@ -120,7 +133,8 @@ def profile(request):
         {"user_form": user_form, "profile_form": profile_form},
     )
 
-
+# ===================================  Contact Us  ===================================
+@transaction.atomic
 def contact_us(request):
     if request.method == 'POST':
         form = ContactForm(request.POST)
@@ -151,3 +165,127 @@ message. Please try again later.")
         form = ContactForm()
 
     return render(request, 'users/contact_us.html', {'form': form})
+
+
+# =================================== View Policy  ===================================
+
+@login_required
+def policy_list(request):
+    queryset = Policy.objects.all().order_by("id")
+
+    search_query = request.GET.get("search")
+    if search_query:
+        queryset = queryset.filter(full_name__icontains=search_query)
+
+    paginator = Paginator(queryset, 25)  # Show 25 records per page
+    page = request.GET.get("page")
+
+    try:
+        records = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        records = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        records = paginator.page(paginator.num_pages)
+
+    return render(
+        request,
+        "users/manage_policy.html",
+        {"records": records, "table_title": "Policies"},
+    )
+
+
+# =================================== Register Policy  ===================================
+
+@login_required
+@transaction.atomic
+def create_policy(request):
+    if request.method == "POST":
+        form = PolicyForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Record saved successfully!", extra_tags="bg-success")
+            return redirect('policy_list')
+        else:
+            # Display an error message if the form is not valid
+            messages.error(request, "There was an error saving the record. Please check the form for errors.", extra_tags="bg-danger")
+
+    else:
+        form = PolicyForm()
+
+    return render(
+        request,
+        "users/create_policy.html",
+        {"form_name": "Create Policy", "form": form},
+    )
+
+# =================================== Update Policy ===================================
+@login_required
+@transaction.atomic
+def update_policy(request, pk, template_name="users/create_policy.html"):
+    try:
+        policy = Policy.objects.get(pk=pk)
+    except Policy.DoesNotExist:
+        messages.error(request, "Client record not found!")
+        return redirect("client_list")  # Or a relevant error page
+
+    if request.method == "POST":
+        form = PolicyForm(request.POST, request.FILES, instance=policy)
+        if form.is_valid():
+            form.save()
+
+            messages.success(request, "Policy updated successfully!", extra_tags="bg-success")
+            return redirect("policy_list")  
+    else:
+
+        form = PolicyForm(instance=policy)
+
+    context = {"form_name": "POLICY UPDATE", "form": form}
+    return render(request, template_name, context)
+
+
+# =================================== Delete selected Policy ===================================
+@login_required
+@transaction.atomic
+def delete_policy(request, pk):
+    policy = Policy.objects.get(id=pk)
+    policy.delete()
+    messages.info(request, "Policy deleted successfully!", extra_tags="bg-danger")
+    return HttpResponseRedirect(reverse("policy_list"))
+
+
+# =================================== Validate Policy  ===================================
+@login_required
+@transaction.atomic
+def validate_policy(request, policy_id):
+    policy = get_object_or_404(Policy, id=policy_id)
+
+    if request.method == 'POST':
+        if not policy.is_valid:
+            policy.is_valid = True
+            policy.save()
+
+            messages.success(request, "Policy validated successfully!", extra_tags="bg-success")
+            return HttpResponseRedirect(reverse("policy_list"))
+
+    return HttpResponseBadRequest('Invalid request')
+
+
+# =================================== Read Policy  ===================================
+
+@login_required
+@transaction.atomic
+def read_policy(request, policy_id):
+    policy = get_object_or_404(Policy, id=policy_id)
+    
+    if request.method == 'POST':
+        _, created = PolicyRead.objects.get_or_create(user=request.user, policy=policy)
+        
+        if created:
+            messages.success(request, "Policy marked as read successfully!", extra_tags="bg-success")
+        else:
+            messages.info(request, "You have already read this policy.", extra_tags="bg-danger")
+            
+    return HttpResponseRedirect(reverse("policy_list"))
