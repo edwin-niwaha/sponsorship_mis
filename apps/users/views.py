@@ -19,8 +19,13 @@ from .forms import (
     RegisterForm,
     UpdateProfileForm,
     UpdateUserForm,
+    EbookForm,
 )
-from .models import Policy, PolicyRead, Profile
+from .models import (Policy, 
+                     PolicyRead, 
+                     Profile,
+                     Ebook,
+                     )
 
 
 def home(request):
@@ -171,7 +176,7 @@ def policy_list(request):
 
     search_query = request.GET.get("search")
     if search_query:
-        queryset = queryset.filter(full_name__icontains=search_query)
+        queryset = queryset.filter(title__icontains=search_query)
 
     paginator = Paginator(queryset, 25)  # Show 25 records per page
     page = request.GET.get("page")
@@ -196,7 +201,7 @@ def policy_list(request):
 
 @login_required
 @transaction.atomic
-def create_policy(request):
+def upload_policy(request):
     if request.method == "POST":
         form = PolicyForm(request.POST, request.FILES)
 
@@ -214,14 +219,14 @@ def create_policy(request):
 
     return render(
         request,
-        "users/policy_create.html",
+        "users/policy_upload.html",
         {"form_name": "Create Policy", "form": form},
     )
 
 # =================================== Update Policy ===================================
 @login_required
 @transaction.atomic
-def update_policy(request, pk, template_name="users/policy_create.html"):
+def update_policy(request, pk, template_name="users/policy_upload.html"):
     try:
         policy = Policy.objects.get(pk=pk)
     except Policy.DoesNotExist:
@@ -308,3 +313,91 @@ def policy_report(request):
         policies = Policy.objects.all().order_by("id")
     return render(request, 'users/policy_rpt.html', 
                     {"table_title": "policies read", "policies": policies})
+
+
+# =================================== Uplaod ebook  ===================================
+@login_required
+@transaction.atomic
+def upload_ebook(request):
+    if request.method == "POST":
+        form = EbookForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Record saved successfully!", extra_tags="bg-success")
+            return redirect('ebook_list')
+        else:
+            # Display an error message if the form is not valid
+            messages.error(request, "There was an error saving the record. Please check the form for errors.", 
+                           extra_tags="bg-danger")
+
+    else:
+        form = EbookForm()
+
+    return render(
+        request,
+        "users/ebook_upload.html",
+        {"form_name": "UPLOAD BOOK", "form": form},
+    )
+
+# ===================================  Books list  ===================================
+@login_required
+def ebook_list(request):
+    queryset = Ebook.objects.all().order_by("id")
+
+    search_query = request.GET.get("search")
+    if search_query:
+        queryset = queryset.filter(title__icontains=search_query)
+
+    paginator = Paginator(queryset, 50)  # Show 50 records per page
+    page = request.GET.get("page")
+
+    try:
+        records = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        records = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        records = paginator.page(paginator.num_pages)
+
+    return render(
+        request,
+        "users/ebook_list.html",
+        {"records": records, "table_title": "Books List"},
+    )
+
+# =================================== Update Book ===================================
+@login_required
+@transaction.atomic
+def update_ebook(request, pk, template_name="users/ebook_upload.html"):
+    # Retrieve the ebook record by primary key, or return a 404 error if not found
+    client_record = get_object_or_404(Ebook, pk=pk)
+
+    if request.method == "POST":
+        # Bind the form to the request data and files, including the instance to update
+        form = EbookForm(request.POST, request.FILES, instance=client_record)
+        if form.is_valid():
+            # Save the updated record
+            form.save()
+
+            # Add a success message and redirect to the ebook list
+            messages.success(request, "Client record updated successfully!", extra_tags="bg-success")
+            return redirect("ebook_list")  # Adjust the redirect as needed
+    else:
+        # Pre-populate the form with existing data
+        form = EbookForm(instance=client_record)
+
+    # Render the form in the template
+    context = {"form_name": "Update Book", "form": form}
+    return render(request, template_name, context)
+
+
+# =================================== Delete Book ===================================
+@login_required
+@transaction.atomic
+def delete_ebook(request, pk):
+    ebook = Ebook.objects.get(id=pk)
+    ebook.delete()
+    messages.info(request, "Book deleted successfully!", extra_tags="bg-danger")
+    return HttpResponseRedirect(reverse("ebook_list"))

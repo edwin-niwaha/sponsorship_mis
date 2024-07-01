@@ -3,7 +3,7 @@ from django.db import models
 from PIL import Image
 
 
-# Extending User Model Using a One-To-One Link
+# =================================== Profile Model  ===================================
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
@@ -25,6 +25,7 @@ class Profile(models.Model):
             img.save(self.avatar.path)
 
 
+# =================================== Contact Model  ===================================
 class Contact(models.Model):
     name = models.CharField(max_length=100, verbose_name="Your Name")
     email = models.EmailField(verbose_name="Your Email")
@@ -39,6 +40,7 @@ class Contact(models.Model):
         return self.subject
     
 
+# =================================== Policy Model  ===================================
 class Policy(models.Model):
     title = models.CharField(max_length=50)
     upload = models.FileField(upload_to='policies/', blank=True, null=True)
@@ -54,6 +56,7 @@ class Policy(models.Model):
         return self.title
     
 
+# =================================== PolicyRead Model ===================================
 class PolicyRead(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     policy = models.ForeignKey(Policy, on_delete=models.CASCADE)
@@ -64,3 +67,17 @@ class PolicyRead(models.Model):
 
     def __str__(self):
         return f"{self.user.username} read {self.policy.title}"
+
+
+
+# =================================== Ebook Model  =================================== 
+class Ebook(models.Model):
+    title = models.CharField(max_length=200)
+    author = models.CharField(max_length=200)
+    ebook_file = models.FileField(upload_to='ebooks/')
+    upload_date = models.DateField(blank=True, null=True)   
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.title

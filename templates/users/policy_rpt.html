@@ -9,11 +9,14 @@
             {{table_title|upper}}
         </h3>
         <div class="d-flex">
-            <a title="Upload Policy" class="btn btn-sm ml-3 btn-success" href="{% url 'create_policy' %}">
+            <a title="Upload Policy" class="btn btn-sm ml-3 btn-success" href="{% url 'upload_policy' %}">
                 <i class="mdi mdi-upload btn-icon-prepend"></i> Upload Policy
             </a>
             <a title="View List" class="btn btn-sm ml-3 btn-success" href="{% url 'policy_list' %}">
                 <i class="mdi mdi-chart-line btn-icon-prepend"></i> View List
+            </a>
+            <a title="View read policies list" class="btn btn-sm ml-3 btn-success" href="{% url 'policy_report' %}">
+                <i class="mdi mdi-chart-line btn-icon-prepend"></i> View Read Policies
             </a>
         </div>
     </div>

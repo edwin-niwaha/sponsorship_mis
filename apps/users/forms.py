@@ -2,9 +2,9 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
 
-from .models import Contact, Policy, Profile
+from .models import Contact, Policy, Profile, Ebook
 
-
+# =================================== Register  ===================================
 class RegisterForm(UserCreationForm):
     # fields we want to include and customize in our form
     first_name = forms.CharField(
@@ -83,6 +83,7 @@ class RegisterForm(UserCreationForm):
         ]
 
 
+# =================================== Login  ===================================
 class LoginForm(AuthenticationForm):
     username = forms.CharField(
         max_length=100,
@@ -114,6 +115,7 @@ class LoginForm(AuthenticationForm):
         fields = ["username", "password", "remember_me"]
 
 
+# =================================== User Update  ===================================
 class UpdateUserForm(forms.ModelForm):
     username = forms.CharField(
         max_length=100,
@@ -129,6 +131,7 @@ class UpdateUserForm(forms.ModelForm):
         fields = ["username", "email"]
 
 
+# =================================== Pofile Update  ===================================
 class UpdateProfileForm(forms.ModelForm):
     avatar = forms.ImageField(
         widget=forms.FileInput(attrs={"class": "form-control-file"})
@@ -142,6 +145,7 @@ class UpdateProfileForm(forms.ModelForm):
         fields = ["avatar", "bio"]
 
 
+# =================================== Contact Form  ===================================
 class ContactForm(forms.ModelForm):
     class Meta:
         model = Contact
@@ -161,7 +165,9 @@ class ContactForm(forms.ModelForm):
         if not message:
             raise forms.ValidationError("Message field is required")
         return message
-    
+
+
+# =================================== Policy Form  ===================================
 class PolicyForm(forms.ModelForm):
     class Meta:
         model = Policy
@@ -179,3 +185,23 @@ class PolicyForm(forms.ModelForm):
             if upload.size > 10*1024*1024:  # 10 MB limit
                 raise forms.ValidationError("The file is too large. It should be less than 10 MB.")
         return upload
+    
+
+# =================================== Ebook Form  ===================================
+class EbookForm(forms.ModelForm):
+    class Meta:
+        model = Ebook
+        fields = "__all__"
+
+        widgets = {
+            "upload_date": forms.DateInput(attrs={"type": "date"}),
+        }
+
+    def clean_ebook_file(self):
+        ebook_file = self.cleaned_data.get('ebook_file')
+        if ebook_file:
+            if not ebook_file.name.endswith('.pdf'):
+                raise forms.ValidationError("Only PDF files are allowed.")
+            if ebook_file.size > 10 * 1024 * 1024:  # 10 MB limit
+                raise forms.ValidationError("The file is too large. It should be less than 10 MB.")
+        return ebook_file
