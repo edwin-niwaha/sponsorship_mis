@@ -15,12 +15,14 @@ class UploadForm(forms.Form):
     excel_file = forms.FileField()
     excel_file.widget.attrs["class"] = "form-control-file"
 
+
 # =================================== CHILD FORM===================================
+
 
 class ChildForm(forms.ModelForm):
     class Meta:
         model = Child
-        exclude = ("is_departed", "is_sponsored" )
+        exclude = ("is_departed", "is_sponsored")
         widgets = {
             "date_of_birth": forms.DateInput(attrs={"type": "date"}),
             "siblings": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
@@ -38,6 +40,15 @@ class ChildForm(forms.ModelForm):
                 attrs={"class": "form-control", "rows": 3}
             ),
             "c_interest": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "gender": forms.Select(attrs={"class": "form-control", "required": True}),
+            "is_father_alive": forms.Select(
+                attrs={"class": "form-control", "required": True}
+            ),
+            "is_mother_alive": forms.Select(
+                attrs={"class": "form-control", "required": True}
+            ),
+            "religion": forms.Select(attrs={"class": "form-control", "required": True}),
+            "is_child_in_school": forms.CheckboxInput(attrs={"class": "form-control"}),
         }
 
     # Form validation
@@ -64,7 +75,7 @@ class ChildForm(forms.ModelForm):
             )
 
         return self.cleaned_data
-    
+
 
 # =================================== CHILD PROFILE ===================================
 class ChildProfilePictureForm(forms.ModelForm):
@@ -79,26 +90,24 @@ class ChildProfilePictureForm(forms.ModelForm):
     def clean_picture(self):
         picture = self.cleaned_data.get("picture")
         return picture
-    
+
 
 # =================================== CHILD  PROGRESS===================================
 class ChildProgressForm(forms.ModelForm):
     class Meta:
         model = ChildProgress
-        exclude = ("child", )
+        exclude = ("child",)
         widgets = {
-            "previous_schools": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
-            "future_plans": forms.Textarea(
+            "previous_schools": forms.Textarea(
                 attrs={"class": "form-control", "rows": 2}
             ),
+            "future_plans": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
             "responsibility_at_home": forms.Textarea(
                 attrs={"class": "form-control", "rows": 2}
             ),
-            "notes": forms.Textarea(
-                attrs={"class": "form-control", "rows": 2}
-            ),
-            "education_level": forms.Select(attrs={'class': 'form-select'}),
-            "child_class": forms.Select(attrs={'class': 'form-select'}),
+            "notes": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+            "education_level": forms.Select(attrs={"class": "form-select"}),
+            "child_class": forms.Select(attrs={"class": "form-select"}),
         }
 
 
@@ -106,55 +115,58 @@ class ChildProgressForm(forms.ModelForm):
 class ChildCorrespondenceForm(forms.ModelForm):
     class Meta:
         model = ChildCorrespondence
-        exclude = ("child", )
+        exclude = ("child",)
         widgets = {
-            'correspondence_type': forms.Select(attrs={'class': 'form-control'}),
-            'source': forms.Select(attrs={'class': 'form-control'}),
-            'attachment': forms.FileInput(attrs={'class': 'form-control-file'}),
-            'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            "correspondence_type": forms.Select(attrs={"class": "form-control"}),
+            "source": forms.Select(attrs={"class": "form-control"}),
+            "attachment": forms.FileInput(attrs={"class": "form-control-file"}),
+            "comment": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
             # 'sponsor': forms.Select(attrs={'class': 'form-control'}),
         }
 
     def clean_attachment(self):
-        attachment = self.cleaned_data.get('attachment')
+        attachment = self.cleaned_data.get("attachment")
         if not attachment:
             raise ValidationError("Attachment is required for all correspondence.")
-        
+
         # Check if the attachment is a PDF file
-        if not attachment.name.endswith('.pdf'):
+        if not attachment.name.endswith(".pdf"):
             raise ValidationError("Only PDF attachments are allowed.")
-        
+
         return attachment
+
 
 # =================================== CHILD INCIDENT ===================================
 class ChildIncidentForm(forms.ModelForm):
     class Meta:
         model = ChildIncident
-        exclude = ("child", )
+        exclude = ("child",)
         widgets = {
             "incident_date": forms.DateInput(attrs={"type": "date"}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'attachment': forms.FileInput(attrs={'class': 'form-control-file'}),
+            "description": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+            "attachment": forms.FileInput(attrs={"class": "form-control-file"}),
         }
 
     def clean_attachment(self):
-        attachment = self.cleaned_data.get('attachment')
+        attachment = self.cleaned_data.get("attachment")
         if not attachment:
             raise ValidationError("Attachment is required.")
-        
+
         # Check if the attachment is a PDF file
-        if not attachment.name.lower().endswith('.pdf'):
+        if not attachment.name.lower().endswith(".pdf"):
             raise ValidationError("Only PDF attachments are allowed.")
-        
+
         return attachment
-    
+
 
 # =================================== CHILD DEPATURE ===================================
 class ChildDepartForm(forms.ModelForm):
     class Meta:
         model = ChildDepart
-        exclude = ("child", )
-        widgets ={
-             "depart_date": forms.DateInput(attrs={"type": "date", "required": True}),
-            'depart_reason': forms.Textarea(attrs={'class': 'form-control', "required": True, 'rows': 2}),
+        exclude = ("child",)
+        widgets = {
+            "depart_date": forms.DateInput(attrs={"type": "date", "required": True}),
+            "depart_reason": forms.Textarea(
+                attrs={"class": "form-control", "required": True, "rows": 2}
+            ),
         }
