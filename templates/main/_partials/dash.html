@@ -20,10 +20,10 @@
                             <div class="d-flex justify-content-between align-items-start">
                                 <div class="color-card">
                                     <p class="mb-0 color-card-head">Total Sponsors</p>
-                                    <h2 class="text-white"> {{total_no_of_kids}} <span class="h5"></span>
+                                    <h2 class="text-white"> {{sponsors_count}} <span class="h5"></span>
                                     </h2>
                                 </div>
-                                <i class="card-icon-indicator mdi mdi-basket bg-inverse-icon-warning"></i>
+                                <i class="card-icon-indicator mdi mdi-account-convert bg-inverse-icon-warning"></i>
                             </div>
                             <h6 class="text-white"></h6>
                         </div>
@@ -35,10 +35,10 @@
                             <div class="d-flex justify-content-between align-items-start">
                                 <div class="color-card">
                                     <p class="mb-0 color-card-head">Total Children</p>
-                                    <h2 class="text-white"> {{total_no_of_kids}} <span class="h5"></span>
+                                    <h2 class="text-white"> {{children_count}} <span class="h5"></span>
                                     </h2>
                                 </div>
-                                <i class="card-icon-indicator mdi mdi-cube-outline bg-inverse-icon-danger"></i>
+                                <i class="card-icon-indicator mdi mdi-account bg-inverse-icon-danger"></i>
                             </div>
                             <h6 class="text-white"></h6>
                         </div>
@@ -50,7 +50,7 @@
                             <div class="d-flex justify-content-between align-items-start">
                                 <div class="color-card">
                                     <p class="mb-0 color-card-head">Sponsored</p>
-                                    <h2 class="text-white"> {{total_no_of_kids}} <span class="h5"></span>
+                                    <h2 class="text-white"> {{sponsored_count}} <span class="h5"></span>
                                     </h2>
                                 </div>
                                 <i class="card-icon-indicator mdi mdi-briefcase-outline bg-inverse-icon-primary"></i>
@@ -65,7 +65,7 @@
                             <div class="d-flex justify-content-between align-items-start">
                                 <div class="color-card">
                                     <p class="mb-0 color-card-head">Non-Sponsored</p>
-                                    <h2 class="text-white">{{total_no_of_kids}} </h2>
+                                    <h2 class="text-white">{{non_sponsored_count}} </h2>
                                 </div>
                                 <i class="card-icon-indicator mdi mdi-account-circle bg-inverse-icon-success"></i>
                             </div>
@@ -73,14 +73,30 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-xl-12 col-md-6 stretch-card grid-margin grid-margin-sm-0 pb-sm-3 pb-lg-0 pb-xl-3 mt-3">
+                    <div class="card bg-danger">
+                        <div class="card-body px-3 py-4">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="color-card">
+                                    <p class="mb-0 color-card-head">Departed</p>
+                                    <h2 class="text-white">{{children_departed_count}} </h2>
+                                </div>
+                                <i class="card-icon-indicator mdi mdi-cancel bg-inverse-icon-danger"></i>
+                            </div>
+                            <h6 class="text-white"></h6>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
+
         <div id="printSurvey" class="col-xl-9 stretch-card grid-margin">
             <div class="card">
                 <div class="card-body">
                     <div class="row">
                         <div class="col-sm-7">
-                            <h5 style="color: #F79420;">Sponsorship Survey -
+                            <h5 class="alert alert-primary" style="color: #F79420;">Sponsorship Survey -
                                 Jan 2017 -
                                 <script>
                                     document.write(new Date().getFullYear());
@@ -90,154 +106,81 @@
                         <div class="col-sm-5 text-md-right">
                             <button type="button" onclick=" printDiv('printSurvey')"
                                 class="btn btn-icon-text mb-3 mb-sm-0 btn-inverse-primary font-weight-normal">
-                                <i class="mdi mdi-email btn-icon-prepend"></i>Download Report
+                                <i class="mdi mdi-printer btn-icon-prepend"></i>
                             </button>
                         </div>
                     </div>
-
-                    <h5>Age Groups</h5>
-                    <hr class="bg-info" style="height: 3px;" />
-
                     <div class="row">
-                        <div class="col-sm-4">
-                            <div class="card bg-success">
-                                <div class="card-body px-3 py-4">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="color-card">
-                                            <p class="mb-0 color-card-head">0-5 Years</p>
-                                            <h2 class="text-white"> 0 <span class="h5"></span>
-                                            </h2>
-                                        </div>
-                                    </div>
+                        <div class="col-sm-12">
+                            <hr class="bg-info" style="height: 3px;" />
+                            <!-- Display sponsor to child ratio -->
+                            <section>
+                                <h5 class="alert alert-success" style="color: teal;">Sponsor : Child</h5>
+                                {% if top_sponsors_with_counts %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Sponsor</th>
+                                                <th>Sponsored Children</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for sponsor, count in top_sponsors_with_counts %}
+                                            <tr>
+                                                <td>{{ sponsor }}</td>
+                                                <td>{{ count }}</td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="2">No top sponsors available.</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div class="card bg-warning">
-                                <div class="card-body px-3 py-4">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="color-card">
-                                            <p class="mb-0 color-card-head">6-17 Years</p>
-                                            <h2 class="text-white"> 0 <span class="h5"></span>
-                                            </h2>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div class="card bg-danger">
-                                <div class="card-body px-3 py-4">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="color-card">
-                                            <p class="mb-0 color-card-head">18+ Years</p>
-                                            <h2 class="text-white"> 0 <span class="h5"></span>
-                                            </h2>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <hr class="bg-info" style="height: 3px;" />
+                                {% else %}
+                                <div class="alert alert-danger">No top sponsors available.</div>
+                                {% endif %}
+                            </section>
 
-                    <h5>Education Levels</h5>
-                    <!--Start first row-->
-                    <div class="row">
-                        <div class="col-sm-4">
-                            <div class="card bg-success">
-                                <div class="card-body px-3 py-4">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="color-card">
-                                            <p class="mb-0 color-card-head">Pre-School</p>
-                                            <h2 class="text-white"> 0 <span class="h5"></span>
-                                            </h2>
-                                        </div>
-                                        <i
-                                            class="card-icon-indicator mdi mdi-account-multiple bg-inverse-icon-primary"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div class="card bg-warning">
-                                <div class="card-body px-3 py-4">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="color-card">
-                                            <p class="mb-0 color-card-head">Kindergarten</p>
-                                            <h2 class="text-white"> 0 <span class="h5"></span>
-                                            </h2>
-                                        </div>
-                                        <i
-                                            class="card-icon-indicator mdi mdi-account-multiple bg-inverse-icon-primary"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div class="card bg-info">
-                                <div class="card-body px-3 py-4">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="color-card">
-                                            <p class="mb-0 color-card-head">Primary</p>
-                                            <h2 class="text-white"> 0 <span class="h5"></span>
-                                            </h2>
-                                        </div>
-                                        <i
-                                            class="card-icon-indicator mdi mdi-account-multiple bg-inverse-icon-primary"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <hr class="bg-info" style="height: 3px;" />
+                            <hr class="bg-info" style="height: 3px;" />
 
-                    <!--Start second row-->
-                    <div class="row">
-                        <div class="col-sm-4">
-                            <div class="card bg-secondary">
-                                <div class="card-body px-3 py-4">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="color-card">
-                                            <p class="mb-0 color-card-head">Secondary</p>
-                                            <h2 class="text-white"> 0 <span class="h5"></span>
-                                            </h2>
-                                        </div>
-                                        <i
-                                            class="card-icon-indicator mdi mdi-account-multiple bg-inverse-icon-primary"></i>
-                                    </div>
+                            <!-- Display child to sponsor ratio -->
+                            <section class="pt-1">
+                                <h5 class="alert alert-success" style="color: teal;">Child : Sponsor</h5>
+                                {% if top_children_with_counts %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Child</th>
+                                                <th>Sponsors</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for child, count in top_children_with_counts %}
+                                            <tr>
+                                                <td>{{ child }}</td>
+                                                <td>{{ count }}</td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="2">
+                                                    <div class="alert alert-danger">No Sponsored Children available.
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div class="card bg-dark">
-                                <div class="card-body px-3 py-4">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="color-card">
-                                            <p class="mb-0 color-card-head">Tertiary</p>
-                                            <h2 class="text-white"> 0 <span class="h5"></span>
-                                            </h2>
-                                        </div>
-                                        <i
-                                            class="card-icon-indicator mdi mdi-account-multiple bg-inverse-icon-primary"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div class="card bg-danger">
-                                <div class="card-body px-3 py-4">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="color-card">
-                                            <p class="mb-0 color-card-head">University</p>
-                                            <h2 class="text-white"> 0 <span class="h5"></span>
-                                            </h2>
-                                        </div>
-                                        <i
-                                            class="card-icon-indicator mdi mdi-account-multiple bg-inverse-icon-primary"></i>
-                                    </div>
-                                </div>
-                            </div>
+                                {% else %}
+                                <p></p>
+                                <div class="alert alert-danger">No Sponsored Children available.</div>
+                                {% endif %}
+                            </section>
+
                         </div>
                     </div>
                 </div>

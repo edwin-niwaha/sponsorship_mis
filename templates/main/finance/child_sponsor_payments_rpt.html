@@ -56,22 +56,28 @@
             <table class="my-table">
                 <thead>
                     <tr>
+                        <th></th>
                         <th class="text-right">Payment Year</th>
-                        <th class="text-left">Total Amount(UgX)</th>
+                        <th class="text-right">Total Amount(UgX)</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for year, subtotal in subtotals.items %}
                     <tr>
+                        <td style="width: 35%;"></td>
                         <td class="text-right">{{ year }}</td>
-                        <td class="text-left">{{ subtotal|floatformat:"2"|intcomma }}</td>
+                        <td class="text-right">{{ subtotal|floatformat:"2"|intcomma }}</td>
+                        <td style="width: 35%;"></td>
                     </tr>
                     {% endfor %}
                 </tbody>
                 <tfoot>
                     <tr>
+                        <th></th>
                         <th class="text-right">Total</th>
-                        <th class="text-left">{{ total_amount|floatformat:"2"|intcomma }}</th>
+                        <th class="text-right">{{ total_amount|floatformat:"2"|intcomma }}</th>
+                        <th></th>
                     </tr>
                 </tfoot>
             </table>

@@ -2,7 +2,8 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
 
-from .models import Contact, Policy, Profile, Ebook
+from .models import Contact, Ebook, Policy, Profile
+
 
 # =================================== Register  ===================================
 class RegisterForm(UserCreationForm):

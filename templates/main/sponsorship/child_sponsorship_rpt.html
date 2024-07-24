@@ -24,9 +24,6 @@
             <a class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsorship' %}"><i
                     class="mdi mdi-folder-plus btn-icon-prepend"></i>
             </a>
-            <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsorship_report' %}"><i
-                    class="mdi mdi-chart-line btn-icon-prepend"></i>
-            </a>
         </div>
     </div>
     <hr class="bg-info" style="height: 3px;" />
@@ -41,6 +38,11 @@
         </select> &rarr;
         <button title="View Sponsorship Report" type="submit" class="btn btn-sm ml-3 btn-success"
             onclick="return validateForm()"><i class="mdi mdi-view-list btn-icon-prepend"></i></button>
+        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsorship_report' %}">CH : SP
+        </a>
+        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'sponsor_to_child_rpt' %}">
+            SP : CH
+        </a>
     </form>
 
     <div id="printMe" class="tab-pane show active">
@@ -49,8 +51,7 @@
         {% if child_sponsorship %}
         <header style="text-align: center;">
             <h3 class="text-primary" style="font-family:'Lucida Sans Unicode', sans-serif;">
-                {{ prefix_id }} - {{ child_name|upper}} -
-                Sponsorship Report</h3>
+                {{ prefix_id }} - {{ child_name|upper}}</h3>
         </header>
         <hr class="bg-info" style="height: 3px;" />
 
@@ -124,7 +125,8 @@
             </table>
         </div>
         {% else %}
-        <p>No sponsorship records found for the selected child.</p>
+        <div class="alert alert-danger">No sponsorship records found for the selected child.</div>
+
         {% endif %}
     </div>
 </div>

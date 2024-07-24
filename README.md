@@ -1,6 +1,6 @@
 # Sponsorship & Donor Management Software (SDMS)
 
-Perpetual-SDMS is a simple yet powerfull tool, built with django which is a Python-based free and open-source web framework that follows the model–template–views architectural pattern.
+SDMS is a simple yet powerfull tool, built with django which is a Python-based free and open-source web framework that follows the model–template–views architectural pattern.
 
 ## Requirements
 Make sure you have python and Node js installed on your system:
@@ -47,6 +47,7 @@ cd backend
   ```bash
    cd backend
    pip install -r requirements.txt
+   pip freeze > requirements.txt
     ```
 - Start Django server
   ```bash

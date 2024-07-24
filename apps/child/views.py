@@ -5,11 +5,14 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
+from django.db.models import Count
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from openpyxl import load_workbook
 
+from apps.sponsor.models import Sponsor
+from apps.sponsorship.models import ChildSponsorship
 from apps.users.models import Contact
 
 from .forms import (
@@ -21,7 +24,14 @@ from .forms import (
     ChildProgressForm,
     UploadForm,
 )
-from .models import Child, ChildCorrespondence, ChildDepart, ChildIncident, ChildProfilePicture, ChildProgress
+from .models import (
+    Child,
+    ChildCorrespondence,
+    ChildDepart,
+    ChildIncident,
+    ChildProfilePicture,
+    ChildProgress,
+)
 
 # The getLogger() function is used to get a logger instance
 logger = logging.getLogger(__name__)
@@ -35,14 +45,79 @@ def home(request):
 # =================================== The dashboard ===================================
 @login_required
 def dashboard(request):
-    records = Child.objects.all().filter(is_departed=False)
-    total_records = records.count()
+    # Retrieve counts using annotations
+    sponsors_count = Sponsor.objects.filter(is_departed=False).count()
+    children_count = Child.objects.count()
+    children_departed_count = Child.objects.filter(is_departed=True).count()
+    sponsored_count = Child.objects.filter(is_departed=False, is_sponsored=True).count()
+    non_sponsored_count = Child.objects.filter(
+        is_departed=False, is_sponsored=False
+    ).count()
+
+    # Get top sponsors and children
+    top_sponsors_data = get_top_sponsors()
+    top_children_data = get_top_children_sponsored()
+
+    # Combine sponsors and counts into a list of tuples
+    top_sponsors_with_counts = list(
+        zip(top_sponsors_data["sponsors"], top_sponsors_data["counts"])
+    )
+    top_children_with_counts = list(
+        zip(top_children_data["children"], top_children_data["counts"])
+    )
 
     context = {
-        "kids_registered": total_records,
-        "total_no_of_kids": total_records,
+        "sponsors_count": sponsors_count,
+        "children_count": children_count,
+        "children_departed_count": children_departed_count,
+        "sponsored_count": sponsored_count,
+        "non_sponsored_count": non_sponsored_count,
+        "top_sponsors_with_counts": top_sponsors_with_counts,
+        "top_children_with_counts": top_children_with_counts,
     }
+
     return render(request, "main/dashboard.html", context)
+
+
+# =================================== Child Sponsorship Count ===================================
+def get_top_sponsors():
+    # Get the top sponsors with the most sponsored children
+    top_sponsors = (
+        ChildSponsorship.objects.values("sponsor__first_name", "sponsor__last_name")
+        .annotate(total_sponsored=Count("child"))
+        .order_by("-total_sponsored")[:10]
+    )
+
+    sponsors = [
+        f"{sponsor['sponsor__first_name']} {sponsor['sponsor__last_name']}"
+        for sponsor in top_sponsors
+    ]
+    counts = [sponsor["total_sponsored"] for sponsor in top_sponsors]
+
+    return {
+        "sponsors": sponsors,
+        "counts": counts,
+    }
+
+
+def get_top_children_sponsored():
+    # Get the top children with the most sponsors
+    top_children = (
+        ChildSponsorship.objects.values(
+            "child__full_name"
+        )  # Use the correct reference to child model
+        .annotate(total_sponsors=Count("sponsor"))
+        .order_by("-total_sponsors")[:10]
+    )
+
+    # Extract child names and sponsor counts
+    children = [child["child__full_name"] for child in top_children]
+    counts = [child["total_sponsors"] for child in top_children]
+
+    return {
+        "children": children,
+        "counts": counts,
+    }
 
 
 # =================================== Fetch and display all children details ===================================
@@ -73,6 +148,7 @@ def child_master_list(request):
         {"records": records, "table_title": "Children MasterList"},
     )
 
+
 @login_required
 def child_master_list_detailed(request):
     # queryset = Child.objects.all().filter(is_departed="No").order_by("id").select_related("profile_picture")
@@ -100,6 +176,7 @@ def child_master_list_detailed(request):
         {"records": records, "table_title": "Children MasterList"},
     )
 
+
 # =================================== Fetch and display selected child's details ===================================
 @login_required
 def child_details(request, pk):
@@ -112,6 +189,7 @@ def child_details(request, pk):
 
 # =================================== Register Child ===================================
 
+
 @login_required
 @transaction.atomic
 def register_child(request):
@@ -120,12 +198,17 @@ def register_child(request):
 
         if form.is_valid():
             form.save()
-            messages.success(request, "Record saved successfully!", extra_tags="bg-success")
-            return redirect('register_child')
+            messages.success(
+                request, "Record saved successfully!", extra_tags="bg-success"
+            )
+            return redirect("register_child")
         else:
             # Display an error message if the form is not valid
-            messages.error(request, "There was an error saving the record. Please check the form for errors.", 
-                           extra_tags="bg-danger")
+            messages.error(
+                request,
+                "There was an error saving the record. Please check the form for errors.",
+                extra_tags="bg-danger",
+            )
 
     else:
         form = ChildForm()
@@ -136,6 +219,7 @@ def register_child(request):
         {"form_name": "Child Registration", "form": form},
     )
 
+
 # =================================== Update Child data ===================================
 @login_required
 @transaction.atomic
@@ -143,7 +227,7 @@ def update_child(request, pk, template_name="main/child/child_register.html"):
     try:
         child_record = Child.objects.get(pk=pk)
     except Child.DoesNotExist:
-        messages.error(request, "Child record not found!")
+        messages.error(request, "Child record not found!", extra_tags="bg-danger")
         return redirect("child_master_list")  # Or a relevant error page
 
     if request.method == "POST":
@@ -151,8 +235,17 @@ def update_child(request, pk, template_name="main/child/child_register.html"):
         if form.is_valid():
             form.save()
 
-            messages.success(request, "Child record updated successfully!")
-            return redirect("child_master_list")  
+            messages.success(
+                request, "Child record updated successfully!", extra_tags="bg-success"
+            )
+            return redirect("child_master_list")
+        else:
+            # Display an error message if the form is not valid
+            messages.error(
+                request,
+                "There was an error updating the record. Please check the form for errors.",
+                extra_tags="bg-danger",
+            )
     else:
         # Pre-populate the form with existing data
         form = ChildForm(instance=child_record)
@@ -173,6 +266,7 @@ def delete_child(request, pk):
 
 # =================================== Upload Profile Picture ===================================
 
+
 @login_required
 @transaction.atomic
 def update_picture(request):
@@ -185,7 +279,9 @@ def update_picture(request):
                 child_profile = Child.objects.get(id=child_id)
             except Child.DoesNotExist:
                 # Handle the case where the child doesn't exist
-                messages.error(request, "Child profile not found.")
+                messages.error(
+                    request, "Child profile not found.", extra_tags="bg-danger"
+                )
                 return redirect("update_picture")
 
             # Create a ChildProfilePicture instance
@@ -197,10 +293,18 @@ def update_picture(request):
             # Update Child
             child_profile.picture = new_picture.picture
             child_profile.save()
-            messages.success(request, "Profile picture updated successfully!")
+            messages.success(
+                request,
+                "Profile picture updated successfully!",
+                extra_tags="bg-success",
+            )
             return redirect("update_picture")
         else:
-            messages.error(request, "Form is invalid.")
+            messages.error(
+                request,
+                "Form is invalid.",
+                extra_tags="bg-danger",
+            )
     else:
         form = ChildProfilePictureForm()
 
@@ -217,6 +321,7 @@ def update_picture(request):
         },
     )
 
+
 # =================================== View Profile Pictures ===================================
 @login_required
 def profile_pictures(request):
@@ -226,17 +331,28 @@ def profile_pictures(request):
             selected_child = get_object_or_404(Child, id=child_id)
             profile_picture = ChildProfilePicture.objects.filter(child_id=child_id)
             children = Child.objects.all().filter(is_departed=False).order_by("id")
-            return render(request, 'main/child/profile_picture_rpt.html', 
-                          {"table_title": "Profile Pictures", "children": children, 
-                           "child_name": selected_child.full_name, "prefix_id":selected_child.prefixed_id, 
-                           'profile_picture': profile_picture})
+            return render(
+                request,
+                "main/child/profile_picture_rpt.html",
+                {
+                    "table_title": "Profile Picture",
+                    "children": children,
+                    "child_name": selected_child.full_name,
+                    "prefix_id": selected_child.prefixed_id,
+                    "profile_picture": profile_picture,
+                },
+            )
         else:
-            messages.error(request, "No child selected.")
+            messages.error(request, "No child selected.", extra_tags="bg-danger")
     else:
         # Handle the GET request, show the form without results
         children = Child.objects.all().filter(is_departed=False).order_by("id")
-    return render(request, 'main/child/profile_picture_rpt.html', 
-                    {"table_title": "Profile Pictures", "children": children})
+    return render(
+        request,
+        "main/child/profile_picture_rpt.html",
+        {"table_title": "Profile Picture", "children": children},
+    )
+
 
 # =================================== Delete Profile Pictures ===================================
 @login_required
@@ -246,6 +362,7 @@ def delete_profile_picture(request, pk):
     records.delete()
     messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
     return HttpResponseRedirect(reverse("profile_pictures"))
+
 
 # =================================== Update Child Progress ===================================
 @login_required
@@ -267,17 +384,27 @@ def child_progress(request):
             child_progress.child_class = form.cleaned_data["child_class"]
             child_progress.best_subject = form.cleaned_data["best_subject"]
             child_progress.score = form.cleaned_data["score"]
-            child_progress.co_curricular_activity = form.cleaned_data["co_curricular_activity"]
-            child_progress.responsibility_at_school = form.cleaned_data["responsibility_at_school"]
+            child_progress.co_curricular_activity = form.cleaned_data[
+                "co_curricular_activity"
+            ]
+            child_progress.responsibility_at_school = form.cleaned_data[
+                "responsibility_at_school"
+            ]
             child_progress.future_plans = form.cleaned_data["future_plans"]
-            child_progress.responsibility_at_home = form.cleaned_data["responsibility_at_home"]
+            child_progress.responsibility_at_home = form.cleaned_data[
+                "responsibility_at_home"
+            ]
             child_progress.notes = form.cleaned_data["notes"]
             child_progress.save()
 
-            messages.success(request, "Child progress recorded successfully!")
+            messages.success(
+                request,
+                "Child progress recorded successfully!",
+                extra_tags="bg-success",
+            )
             return redirect("child_progress")
         else:
-            messages.error(request, "Form is invalid.")
+            messages.error(request, "Form is invalid.", extra_tags="bg-danger")
     else:
         form = ChildProgressForm()
 
@@ -288,6 +415,7 @@ def child_progress(request):
         {"form": form, "form_name": "Child Progress Form", "children": children},
     )
 
+
 # =================================== View Child Progress Report ===================================
 @login_required
 def child_progress_report(request):
@@ -297,20 +425,31 @@ def child_progress_report(request):
             selected_child = get_object_or_404(Child, id=child_id)
             child_progress = ChildProgress.objects.filter(child_id=child_id)
             children = Child.objects.all().filter(is_departed=False).order_by("id")
-            return render(request, 'main/child/progress_rpt.html', 
-                          {"table_title": "Progress Report", "children": children, 
-                           "child_name": selected_child.full_name, "prefix_id":selected_child.prefixed_id, 
-                           'child_progress': child_progress})
+            return render(
+                request,
+                "main/child/progress_rpt.html",
+                {
+                    "table_title": "Progress Report",
+                    "children": children,
+                    "child_name": selected_child.full_name,
+                    "prefix_id": selected_child.prefixed_id,
+                    "child_progress": child_progress,
+                },
+            )
         else:
-            messages.error(request, "No child selected.")
+            messages.error(request, "No child selected.", extra_tags="bg-danger")
     else:
         # Handle the GET request, show the form without results
         children = Child.objects.all().filter(is_departed=False).order_by("id")
-    return render(request, 'main/child/progress_rpt.html', 
-                    {"table_title": "Progress Report", "children": children})
+    return render(
+        request,
+        "main/child/progress_rpt.html",
+        {"table_title": "Progress Report", "children": children},
+    )
 
 
- # =================================== Delete Progress Data ===================================   
+# =================================== Delete Progress Data ===================================
+
 
 @login_required
 @transaction.atomic
@@ -323,6 +462,7 @@ def delete_progress(request, pk):
 
 # =================================== Update Child Correspondence ===================================
 
+
 @login_required
 @transaction.atomic
 def child_correspondence(request):
@@ -333,19 +473,27 @@ def child_correspondence(request):
             child_instance = get_object_or_404(Child, pk=child_id)
 
             # Always create a new correspondence record explicitly
-            child_correspondence = ChildCorrespondence.objects.create(child=child_instance)
+            child_correspondence = ChildCorrespondence.objects.create(
+                child=child_instance
+            )
 
             # Populate correspondence data
-            child_correspondence.correspondence_type = form.cleaned_data["correspondence_type"]
+            child_correspondence.correspondence_type = form.cleaned_data[
+                "correspondence_type"
+            ]
             child_correspondence.source = form.cleaned_data["source"]
             child_correspondence.attachment = form.cleaned_data["attachment"]
             child_correspondence.comment = form.cleaned_data["comment"]
             child_correspondence.save()
 
-            messages.success(request, "Child correspondence recorded successfully!")
+            messages.success(
+                request,
+                "Child correspondence recorded successfully!",
+                extra_tags="bg-success",
+            )
             return redirect("child_correspondence")
         else:
-            messages.error(request, "Form is invalid.")
+            messages.error(request, "Form is invalid.", extra_tags="bg-danger")
     else:
         form = ChildCorrespondenceForm()
 
@@ -356,6 +504,7 @@ def child_correspondence(request):
         {"form": form, "form_name": "Child Correspondence Form", "children": children},
     )
 
+
 # =================================== View Child Correspondence Report ===================================
 @login_required
 def child_correspondence_report(request):
@@ -365,20 +514,31 @@ def child_correspondence_report(request):
             selected_child = get_object_or_404(Child, id=child_id)
             child_correspondence = ChildCorrespondence.objects.filter(child_id=child_id)
             children = Child.objects.all().filter(is_departed=False).order_by("id")
-            return render(request, 'main/child/correspondence_rpt.html', 
-                          {"table_title": "Correspondence Report", "children": children, 
-                           "child_name": selected_child.full_name, "prefix_id":selected_child.prefixed_id, 
-                           'child_correspondence': child_correspondence})
+            return render(
+                request,
+                "main/child/correspondence_rpt.html",
+                {
+                    "table_title": "Correspondence Report",
+                    "children": children,
+                    "child_name": selected_child.full_name,
+                    "prefix_id": selected_child.prefixed_id,
+                    "child_correspondence": child_correspondence,
+                },
+            )
         else:
-            messages.error(request, "No child selected.")
+            messages.error(request, "No child selected.", extra_tags="bg-danger")
     else:
         # Handle the GET request, show the form without results
         children = Child.objects.all().filter(is_departed=False).order_by("id")
-    return render(request, 'main/child/correspondence_rpt.html', 
-                    {"table_title": "Correspondence Report", "children": children})
+    return render(
+        request,
+        "main/child/correspondence_rpt.html",
+        {"table_title": "Correspondence Report", "children": children},
+    )
 
 
 # =================================== Delete Correspondence Data ===================================
+
 
 @login_required
 @transaction.atomic
@@ -412,10 +572,14 @@ def child_incident(request):
             child_incident.attachment = form.cleaned_data["attachment"]
             child_incident.save()
 
-            messages.success(request, "Child incident recorded successfully!")
+            messages.success(
+                request,
+                "Child incident recorded successfully!",
+                extra_tags="bg-success",
+            )
             return redirect("child_incident")
         else:
-            messages.error(request, "Form is invalid.")
+            messages.error(request, "Form is invalid.", extra_tags="bg-danger")
     else:
         form = ChildIncidentForm()
 
@@ -436,19 +600,31 @@ def child_incident_report(request):
             selected_child = get_object_or_404(Child, id=child_id)
             child_incident = ChildIncident.objects.filter(child_id=child_id)
             children = Child.objects.all().filter(is_departed=False).order_by("id")
-            return render(request, 'main/child/incident_rpt.html', 
-                          {"table_title": "Incident Report", "children": children, 
-                           "child_name": selected_child.full_name, "prefix_id":selected_child.prefixed_id, 
-                           'child_incident': child_incident})
+            return render(
+                request,
+                "main/child/incident_rpt.html",
+                {
+                    "table_title": "Incident Report",
+                    "children": children,
+                    "child_name": selected_child.full_name,
+                    "prefix_id": selected_child.prefixed_id,
+                    "child_incident": child_incident,
+                },
+            )
         else:
-            messages.error(request, "No child selected.")
+            messages.error(request, "No child selected.", extra_tags="bg-danger")
     else:
         # Handle the GET request, show the form without results
         children = Child.objects.all().filter(is_departed=False).order_by("id")
-    return render(request, 'main/child/incident_rpt.html', 
-                    {"table_title": "Incident Report", "children": children})
+    return render(
+        request,
+        "main/child/incident_rpt.html",
+        {"table_title": "Incident Report", "children": children},
+    )
+
 
 # =================================== Delete Incident Data ===================================
+
 
 @login_required
 @transaction.atomic
@@ -470,6 +646,7 @@ def user_feedback(request):
         {"table_title": "User Feedback", "feedback": feedback},
     )
 
+
 # =================================== Delete User Feedback ===================================
 @login_required
 @transaction.atomic
@@ -490,7 +667,7 @@ def child_departure(request):
             child_id = request.POST.get("id")
             child_instance = get_object_or_404(Child, pk=child_id)
 
-             # Create a ChildDepart instance
+            # Create a ChildDepart instance
             child_depart = ChildDepart.objects.create(child=child_instance)
             child_depart.depart_date = form.cleaned_data["depart_date"]
             child_depart.depart_reason = form.cleaned_data["depart_reason"]
@@ -500,23 +677,31 @@ def child_departure(request):
             child_instance.is_departed = True
             child_instance.save()
 
-            messages.success(request, "Child departed successfully!")
+            messages.success(
+                request, "Child departed successfully!", extra_tags="bg-success"
+            )
             return redirect("child_departure")
         else:
-            messages.error(request, "Form is invalid.")
+            messages.error(request, "Form is invalid.", extra_tags="bg-danger")
     else:
         form = ChildDepartForm()
 
-    children = Child.objects.filter(is_departed=False).order_by("id") 
+    children = Child.objects.filter(is_departed=False).order_by("id")
     return render(
         request,
         "main/child/child_depature.html",
         {"form": form, "form_name": "Child Depature Form", "children": children},
     )
 
+
 # =================================== Child Depature Report ===================================
 def child_depature_list(request):
-    queryset = Child.objects.all().filter(is_departed=True).order_by("id").prefetch_related("departures")
+    queryset = (
+        Child.objects.all()
+        .filter(is_departed=True)
+        .order_by("id")
+        .prefetch_related("departures")
+    )
 
     search_query = request.GET.get("search")
     if search_query:
@@ -540,20 +725,23 @@ def child_depature_list(request):
         {"records": records, "table_title": "Departed Children"},
     )
 
+
 # =================================== Reinstate departed child ===================================
 @login_required
 @transaction.atomic
 def reinstate_child(request, pk):
     child = get_object_or_404(Child, id=pk)
-    
-    if request.method == 'POST':
+
+    if request.method == "POST":
         child.is_departed = False
         child.save()
-        messages.success(request, "Child reinstated successfully!")
+        messages.success(
+            request, "Child reinstated successfully!", extra_tags="bg-success"
+        )
 
         return redirect("child_depature_list")
-    
-    return render(request, 'main/child/child_depature_list.html', {'child': child})
+
+    return render(request, "main/child/child_depature_list.html", {"child": child})
 
 
 # =================================== Process and Import Excel data ===================================

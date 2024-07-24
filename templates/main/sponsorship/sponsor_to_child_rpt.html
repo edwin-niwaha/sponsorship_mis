@@ -21,36 +21,38 @@
                 onclick="Export2Doc('printMe');">
                 <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
 
-            <a class="btn btn-sm ml-3 btn-success" href="{% url 'update_picture' %}"><i
+            <a class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsorship' %}"><i
                     class="mdi mdi-folder-plus btn-icon-prepend"></i>
-            </a>
-            <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'profile_pictures' %}"><i
-                    class="mdi mdi-chart-line btn-icon-prepend"></i>
             </a>
         </div>
     </div>
     <hr class="bg-info" style="height: 3px;" />
-    <form method="POST" action="{% url 'profile_pictures' %}">
+    <form method="POST" action="{% url 'sponsor_to_child_rpt' %}">
         {% csrf_token %}
-        <select name="id" id="dropdown" class="chzn-select" required>
-            <option value="" selected disabled>Search child...</option>
-            {% for child in children %}
-            <option value="{{ child.id }}">{{ child.full_name }} - {{ child.prefixed_id }}
-            </option>
+        <select name="sponsor_id" id="sponsor_dropdown" class="chzn-select" required style="width: 40%;">
+            <option value="" selected disabled>Search sponsor...</option>
+            {% for sponsor in sponsors %}
+            <option value="{{ sponsor.id }}">{{ sponsor.last_name }}
+                {{ sponsor.first_name }} &rarr;
+                {{ sponsor.prefixed_id }}</option>
             {% endfor %}
         </select> &rarr;
-        <button type="submit" class="btn btn-sm ml-3 btn-success" onclick="return validateForm()"><i
-                class="mdi mdi-view-list btn-icon-prepend"></i></button>
+        <button title="View Sponsorship Report" type="submit" class="btn btn-sm ml-3 btn-success"
+            onclick="return validateForm()"><i class="mdi mdi-view-list btn-icon-prepend"></i></button>
+        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsorship_report' %}">CH : SP
+        </a>
+        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'sponsor_to_child_rpt' %}">
+            SP : CH
+        </a>
     </form>
 
     <div id="printMe" class="tab-pane show active">
         <hr class="bg-info" style="height: 3px;" />
 
-        {% if profile_picture %}
+        {% if sponsor_to_child %}
         <header style="text-align: center;">
-            <h3 class="text-primary" style="font-family: 'Lucida Calligraphy', 'Lucida Sans Unicode', sans-serif;">
-                {{ child_name|upper}} ({{ prefix_id }})
-                {{table_title|upper}}</h3>
+            <h3 class="text-primary" style="font-family:'Lucida Sans Unicode', sans-serif;">
+                {{ prefix_id }} - {{ first_name|upper }} {{ last_name|upper}}</h3>
         </header>
         <hr class="bg-info" style="height: 3px;" />
 
@@ -59,40 +61,42 @@
                 <thead>
                     <tr>
                         <th scope="col">#</th>
-                        <th scope="col">Updated at</th>
+                        <th scope="col">Reg.No</th>
                         <th scope="col">Picture</th>
-                        <th colspan="2" scope="col">Action</th>
+                        <th scope="col">Full Name</th>
+                        <th scope="col">Gender</th>
+                        <th scope="col">D.O.B</th>
+                        <th scope="col">Sponsorship Type</th>
 
                     </tr>
                 </thead>
                 <tbody class="table-group-divider">
-                    {% for child in profile_picture %}
+                    {% for sponsorship in sponsor_to_child %}
                     <tr>
                         <th scope="row">{{forloop.counter}}.</th>
-                        <td>{{child.uploaded_at}}</td>
+                        <td>{{sponsorship.child.prefixed_id}}</td>
                         <td>
                             {% if child.picture == ""  %}
                             No Picture!
                             {% else %}
-                            <img class="rounded-circle account-img" height="100" width="100"
-                                src="{{ child.picture.url }}" alt="">
-                            <a href="{{ child.picture.url }}" download title="Download Picture"
-                                onclick="return confirm('Download Picture?');">
-                                <i class="bi bi-download"></i>
+                            <a>
+                                <img class="rounded-circle account-img" height="50" width="50"
+                                    src="{{ sponsorship.child.picture.url }}" alt="">
                             </a>
                             {% endif %}
                         </td>
-                        <td><a class="btn-danger btn-sm" title="Erase"
-                                href="{% url 'delete_profile_picture' child.id %}"
-                                onclick="return confirm('Are you sure about this? this record will be deleted permanently');"><i
-                                    class="bi bi-trash"></i></a></td>
+                        <td>{{sponsorship.child.full_name}}</td>
+                        <td>{{sponsorship.child.gender}}</td>
+                        <td>{{sponsorship.child.date_of_birth}}</td>
+                        <td>{{sponsorship.sponsorship_type}}</td>
                     </tr>
                     {%endfor%}
                 </tbody>
             </table>
         </div>
         {% else %}
-        <p class="alert alert-danger">No Profile picture found for the selected child.</p>
+        <div class="alert alert-danger">No sponsorship records found for the selected sponsor.</div>
+
         {% endif %}
     </div>
 </div>

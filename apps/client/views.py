@@ -1,4 +1,3 @@
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
@@ -39,7 +38,9 @@ def client_list(request):
         {"records": records, "table_title": "Clients List"},
     )
 
+
 # =================================== Register Client  ===================================
+
 
 @login_required
 @transaction.atomic
@@ -49,12 +50,17 @@ def register_client(request):
 
         if form.is_valid():
             form.save()
-            messages.success(request, "Record saved successfully!", extra_tags="bg-success")
-            return redirect('register_client')
+            messages.success(
+                request, "Record saved successfully!", extra_tags="bg-success"
+            )
+            return redirect("register_client")
         else:
             # Display an error message if the form is not valid
-            messages.error(request, "There was an error saving the record. Please check the form for errors.", 
-                           extra_tags="bg-danger")
+            messages.error(
+                request,
+                "There was an error saving the record. Please check the form for errors.",
+                extra_tags="bg-danger",
+            )
 
     else:
         form = ClientForm()
@@ -65,6 +71,7 @@ def register_client(request):
         {"form_name": "Client Registration", "form": form},
     )
 
+
 # =================================== Update client data ===================================
 @login_required
 @transaction.atomic
@@ -72,7 +79,7 @@ def update_client(request, pk, template_name="main/client/client_register.html")
     try:
         client_record = Client.objects.get(pk=pk)
     except Client.DoesNotExist:
-        messages.error(request, "Client record not found!")
+        messages.error(request, "Client record not found!", extra_tags="bg-danger")
         return redirect("client_list")  # Or a relevant error page
 
     if request.method == "POST":
@@ -80,8 +87,10 @@ def update_client(request, pk, template_name="main/client/client_register.html")
         if form.is_valid():
             form.save()
 
-            messages.success(request, "Client record updated successfully!", extra_tags="bg-success")
-            return redirect("client_list")  
+            messages.success(
+                request, "Client record updated successfully!", extra_tags="bg-success"
+            )
+            return redirect("client_list")
     else:
         # Pre-populate the form with existing data
         form = ClientForm(instance=client_record)
@@ -108,7 +117,7 @@ def import_client_data(request):
         form = ImportClientsForm(request.POST, request.FILES)
         if form.is_valid():
             excel_file = request.FILES.get("excel_file")
-            if excel_file and excel_file.name.endswith('.xlsx'):
+            if excel_file and excel_file.name.endswith(".xlsx"):
                 try:
                     # Call process_and_import_data function
                     errors = process_and_import_data(excel_file)
@@ -117,7 +126,9 @@ def import_client_data(request):
                             messages.error(request, error, extra_tags="bg-danger")
                     else:
                         messages.success(
-                            request, "Data imported successfully!", extra_tags="bg-success"
+                            request,
+                            "Data imported successfully!",
+                            extra_tags="bg-success",
                         )
                 except Exception as e:
                     messages.error(
@@ -125,7 +136,9 @@ def import_client_data(request):
                     )
                 return redirect("client_list")
             else:
-                messages.error(request, "Please upload a valid Excel file.", extra_tags="bg-danger")
+                messages.error(
+                    request, "Please upload a valid Excel file.", extra_tags="bg-danger"
+                )
     else:
         form = ImportClientsForm()
     return render(
@@ -161,6 +174,7 @@ def process_and_import_data(excel_file):
     except Exception as e:
         errors.append(f"Failed to process the Excel file: {e}")
     return errors
+
 
 # =================================== Delete all records at once ===================================
 @login_required

@@ -59,7 +59,8 @@ class Child(models.Model):
             MaxValueValidator(limit_value=datetime.date.today()),
         ],
     )
-    picture = models.ImageField(default="default.jpg",
+    picture = models.ImageField(
+        default="default.jpg",
         upload_to="current_child_profiles/",
         verbose_name="Upload Image(jpg, jpeg, png)",
         validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
@@ -104,7 +105,7 @@ class Child(models.Model):
         max_length=3,
         verbose_name="Is the father alive?",
     )
-    
+
     father_description = models.TextField(
         max_length=100,
         null=True,
@@ -193,7 +194,7 @@ class Child(models.Model):
     compiled_by = models.CharField(
         max_length=10, null=True, blank=True, verbose_name="Compiled by"
     )
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -207,7 +208,7 @@ class Child(models.Model):
 
     @property
     def prefixed_id(self):
-        return f"PC-0{self.pk}"
+        return f"CH0{self.pk}"
 
     def calculate_age(self):
         today = date.today()
@@ -229,7 +230,8 @@ class ChildProfilePicture(models.Model):
     child = models.ForeignKey(
         "Child", on_delete=models.CASCADE, related_name="profile_picture"
     )
-    picture = models.ImageField(default="default.jpg",
+    picture = models.ImageField(
+        default="default.jpg",
         upload_to="child_profiles/",
         verbose_name="Upload Image(jpg, jpeg, png)",
         validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
@@ -255,13 +257,9 @@ class ChildProgress(models.Model):
     child = models.ForeignKey(
         "Child", on_delete=models.CASCADE, related_name="progresses"
     )
-    name_of_school = models.CharField(
-        max_length=50, 
-        verbose_name="Name of the School"
-    )
+    name_of_school = models.CharField(max_length=50, verbose_name="Name of the School")
     previous_schools = models.TextField(
-        max_length=200, 
-        verbose_name="Previous Schools Attended"
+        max_length=200, verbose_name="Previous Schools Attended"
     )
     EDUC_LEVEL_CHOICES = [
         ("Pre-School", "Pre-School"),
@@ -275,7 +273,7 @@ class ChildProgress(models.Model):
         choices=EDUC_LEVEL_CHOICES,
         default="Pre-School",
         verbose_name="Level of Education",
-        max_length=20
+        max_length=20,
     )
     CLASS_LEVEL_CHOICES = [
         ("", "Select Class"),  # Default option
@@ -303,40 +301,32 @@ class ChildProgress(models.Model):
         choices=CLASS_LEVEL_CHOICES,
         verbose_name="Class",
     )
-    best_subject = models.CharField(
-        max_length=30, 
-        verbose_name="Best Subject"
-    )
+    best_subject = models.CharField(max_length=30, verbose_name="Best Subject")
     score = models.IntegerField(
         verbose_name="Score",
         default=0,
     )
     co_curricular_activity = models.CharField(
-        max_length=50, 
+        max_length=50,
         verbose_name="Co-curricular Activity (Optional)",
         null=True,
-        blank=True
+        blank=True,
     )
     responsibility_at_school = models.CharField(
         max_length=50,
         verbose_name="Responsibility at School (Optional)",
         null=True,
-        blank=True
+        blank=True,
     )
     future_plans = models.TextField(
-        max_length=200, 
+        max_length=200,
         verbose_name="Future Plans",
     )
     responsibility_at_home = models.TextField(
-        verbose_name="Responsibility at Home (Optional)",
-        null=True,
-        blank=True
+        verbose_name="Responsibility at Home (Optional)", null=True, blank=True
     )
     notes = models.TextField(
-        max_length=200, 
-        verbose_name="Notes (Optional)",
-        null=True,
-        blank=True
+        max_length=200, verbose_name="Notes (Optional)", null=True, blank=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -348,37 +338,49 @@ class ChildProgress(models.Model):
 
     def __str__(self):
         return f"{self.child.full_name} - {self.name_of_school}"
-    
+
 
 # =================================== CHILD CORRESPONDENCE MODEL ===================================
+
 
 class ChildCorrespondence(models.Model):
     SOURCE_CHOICES = (
         ("", "Select correspondence source"),  # Default option
-        ('CHILD', 'Child'),
-        ('SPONSOR', 'Sponsor'),
+        ("CHILD", "Child"),
+        ("SPONSOR", "Sponsor"),
     )
 
     CORRESPONDENCE_CHOICES = (
         ("", "Select correspondence type"),  # Default option
-        ('Christmas Gift', 'Christmas Gift'),
-        ('Birthday Gift', 'Birthday Gift'),
-        ('Letter', 'Letter'),
-        ('Package', 'Package'),
-        ('Money', 'Money'),
-        ('Photo', 'Photo'),
-
+        ("Christmas Gift", "Christmas Gift"),
+        ("Birthday Gift", "Birthday Gift"),
+        ("Letter", "Letter"),
+        ("Package", "Package"),
+        ("Money", "Money"),
+        ("Photo", "Photo"),
     )
     child = models.ForeignKey(
-        "Child", on_delete=models.CASCADE, related_name="correspondences",
-        verbose_name="Child"
+        "Child",
+        on_delete=models.CASCADE,
+        related_name="correspondences",
+        verbose_name="Child",
     )
-    correspondence_type = models.CharField(max_length=20, choices=CORRESPONDENCE_CHOICES, 
-                                           verbose_name="Select the type of correspondence")
-    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, 
-                              verbose_name="Select the source of correspondence")
-    attachment = models.FileField(upload_to='correspondence_attachments/', blank=True, null=True, 
-                                  verbose_name="Attachment")
+    correspondence_type = models.CharField(
+        max_length=20,
+        choices=CORRESPONDENCE_CHOICES,
+        verbose_name="Select the type of correspondence",
+    )
+    source = models.CharField(
+        max_length=20,
+        choices=SOURCE_CHOICES,
+        verbose_name="Select the source of correspondence",
+    )
+    attachment = models.FileField(
+        upload_to="correspondence_attachments/",
+        blank=True,
+        null=True,
+        verbose_name="Attachment",
+    )
     comment = models.CharField(max_length=100, null=True, verbose_name="Any comment?")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -386,49 +388,53 @@ class ChildCorrespondence(models.Model):
     #     "Sponsor", on_delete=models.CASCADE, related_name="correspondences",
     #     verbose_name="Sponsor"
     # )
-    
+
     class Meta:
         verbose_name = "Child Correspondence"
         verbose_name_plural = "Child Correspondences"
-        db_table = 'child_corres'
-		
+        db_table = "child_corres"
+
     def __str__(self):
         return self.subject
-    
+
+
 # =================================== CHILD INCIDENT MODEL ===================================
 class ChildIncident(models.Model):
     child = models.ForeignKey(
-        Child, 
-        on_delete=models.CASCADE, 
-        related_name="incidents",
-        verbose_name="Child"
+        Child, on_delete=models.CASCADE, related_name="incidents", verbose_name="Child"
     )
-    incident_date = models.DateField(verbose_name="Incident Date",
-                                             null=True,
-                                             blank=True,
-                                             validators=[
+    incident_date = models.DateField(
+        verbose_name="Incident Date",
+        null=True,
+        blank=True,
+        validators=[
             MinValueValidator(limit_value=datetime.date(year=1900, month=1, day=1)),
             MaxValueValidator(limit_value=datetime.date.today()),
-        ],)
-    description = models.TextField(max_length=100, verbose_name="Description of the Incident")
+        ],
+    )
+    description = models.TextField(
+        max_length=100, verbose_name="Description of the Incident"
+    )
     action_taken = models.CharField(max_length=100, verbose_name="Action Taken")
-    results = models.CharField(max_length=100, verbose_name="Results after Action Taken")
+    results = models.CharField(
+        max_length=100, verbose_name="Results after Action Taken"
+    )
     reported_by = models.CharField(max_length=25, verbose_name="Reported By")
     followed_up_by = models.CharField(max_length=25, verbose_name="Followed Up By")
     attachment = models.FileField(
-        upload_to='incident_attachments/', 
-        blank=True, 
-        null=True, 
-        verbose_name="Attachment"
+        upload_to="incident_attachments/",
+        blank=True,
+        null=True,
+        verbose_name="Attachment",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = "Child Incident"
         verbose_name_plural = "Child Incidents"
-        db_table = 'child_incident'
-		
+        db_table = "child_incident"
+
     def __str__(self):
         return f"Incident of {self.child.full_name} on {self.incident_date}"
 
@@ -436,17 +442,20 @@ class ChildIncident(models.Model):
 # =================================== CHILD DEPATURE MODEL ===================================
 class ChildDepart(models.Model):
     child = models.ForeignKey(
-        'Child',
+        "Child",
         on_delete=models.CASCADE,
-        verbose_name='Child Information', 
-        related_name='departures'
+        verbose_name="Child Information",
+        related_name="departures",
     )
-    depart_date = models.DateField(verbose_name='Departure Date', null=True,
-                                             blank=True,)
-    depart_reason = models.TextField(verbose_name='Reason for Departure')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created At')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated At')
+    depart_date = models.DateField(
+        verbose_name="Departure Date",
+        null=True,
+        blank=True,
+    )
+    depart_reason = models.TextField(verbose_name="Reason for Departure")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
 
     class Meta:
-        verbose_name = 'Child Departure'
-        verbose_name_plural = 'Child Departures'
+        verbose_name = "Child Departure"
+        verbose_name_plural = "Child Departures"

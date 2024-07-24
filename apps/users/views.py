@@ -14,18 +14,19 @@ from django.views import View
 
 from .forms import (
     ContactForm,
+    EbookForm,
     LoginForm,
     PolicyForm,
     RegisterForm,
     UpdateProfileForm,
     UpdateUserForm,
-    EbookForm,
 )
-from .models import (Policy, 
-                     PolicyRead, 
-                     Profile,
-                     Ebook,
-                     )
+from .models import (
+    Ebook,
+    Policy,
+    PolicyRead,
+    Profile,
+)
 
 
 def home(request):
@@ -56,7 +57,9 @@ class RegisterView(View):
             form.save()
 
             username = form.cleaned_data.get("username")
-            messages.success(request, f"Account created for {username}")
+            messages.success(
+                request, f"Account created for {username}", extra_tags="bg-success"
+            )
 
             return redirect(to="login")
 
@@ -122,7 +125,9 @@ def profile(request):
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
-            messages.success(request, "Your profile is updated successfully")
+            messages.success(
+                request, "Your profile is updated successfully", extra_tags="bg-success"
+            )
             return redirect(to="users-profile")
     else:
         user_form = UpdateUserForm(instance=request.user)
@@ -152,13 +157,21 @@ We will get back to you soon!\n\nThanks,\nPerpetual - SDMS\nManagement"
                 send_mail(subject, message, from_email, to)
 
                 # Set success message
-                messages.success(request, "Your message has been sent successfully. \
-We will get back to you soon!")
+                messages.success(
+                    request,
+                    "Your message has been sent successfully. \
+We will get back to you soon!",
+                    extra_tags="bg-success",
+                )
             except Exception as e:
                 # Handle exceptions such as email address not found or internet being off
                 print("An error occurred while sending email:", str(e))
-                messages.error(request, "Sorry, an error occurred while sending your \
-message. Please try again later.")
+                messages.error(
+                    request,
+                    "Sorry, an error occurred while sending your \
+message. Please try again later.",
+                    extra_tags="bg-danger",
+                )
 
             # Redirect to the contact page
             return HttpResponseRedirect(reverse('contact_us'))
@@ -230,7 +243,7 @@ def update_policy(request, pk, template_name="users/policy_upload.html"):
     try:
         policy = Policy.objects.get(pk=pk)
     except Policy.DoesNotExist:
-        messages.error(request, "Client record not found!")
+        messages.error(request, "Client record not found!", extra_tags="bg-danger")
         return redirect("client_list")  # Or a relevant error page
 
     if request.method == "POST":
@@ -308,7 +321,7 @@ def policy_report(request):
                            "policy_upload": selected_policy.upload,
                            'policy_read': policy_read})
         else:
-            messages.error(request, "No policy selected.")
+            messages.error(request, "No policy selected.", extra_tags="bg-danger")
     else:
         policies = Policy.objects.all().order_by("id")
     return render(request, 'users/policy_rpt.html', 

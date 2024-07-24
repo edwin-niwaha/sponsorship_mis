@@ -3,19 +3,19 @@ from django.urls import path
 from .views import (
     RegisterView,
     contact_us,
-    upload_policy,
+    delete_ebook,
     delete_policy,
+    ebook_list,
     home,
     policy_list,
     policy_report,
     profile,
     read_policy,
+    update_ebook,
     update_policy,
-    validate_policy,
     upload_ebook,
-    ebook_list,
-    delete_ebook,
-    update_ebook
+    upload_policy,
+    validate_policy,
 )
 
 urlpatterns = [

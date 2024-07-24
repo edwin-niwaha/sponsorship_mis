@@ -26,7 +26,9 @@
                             <!--  -->
                             <input type="file" name="excel_file" accept=".xls,.xlsx">
                             <div class="form-group mt-4 mb-0">
-                                <button type="submit" class="col-md-12 btn btn-dark">Bulk Import</button><br>
+                                <button type="submit" class="col-md-12 btn btn-dark"
+                                    onclick="return confirm('Are you sure you want to proceed?') && validateForm()">
+                                    IMPORT</button>
                             </div>
                         </form>
                     </div>
