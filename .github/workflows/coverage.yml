@@ -18,11 +18,11 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest coverage codecov
+          pip install pytest pytest-django coverage codecov
 
-      - name: Run tests with coverage
+      - name: Run Django tests with coverage
         run: |
-          pytest --cov=app
+          pytest --cov=myapp  # Replace 'myapp' with your Django app name
 
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v3
