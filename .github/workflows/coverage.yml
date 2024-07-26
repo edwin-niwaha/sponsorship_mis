@@ -1,4 +1,4 @@
-name: Python CI
+name: Django CI
 
 on:
   push:
@@ -12,6 +12,22 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: --health-cmd "pg_isready -U user -d test_db" --health-interval 10s --health-timeout 5s --health-retries 5
+
+    env:
+      DJANGO_SETTINGS_MODULE: myapp.settings
+      DATABASE_URL: postgres://user:password@localhost:5432/test_db
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -19,16 +35,26 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.x'
+        python-version: '3.12'
 
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
         pip install coverage
 
+    - name: Wait for PostgreSQL
+      run: |
+        until pg_isready -h localhost -p 5432 -U user; do
+          echo "Waiting for PostgreSQL..."
+          sleep 2
+        done
+
+    - name: Apply migrations
+      run: python manage.py migrate
+
     - name: Run tests with coverage
       run: |
-        coverage run --source='apps' manage.py test
+        coverage run --source='apps.child' manage.py test --verbosity=2
         coverage report
         coverage html
 
