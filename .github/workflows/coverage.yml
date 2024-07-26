@@ -37,22 +37,22 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
+          pip install coverage codecov
 
-      - name: Check environment variables
+      - name: Run tests with coverage
+        env:
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
         run: |
-          echo "DB_NAME=${{ secrets.DB_NAME }}"
-          echo "DB_USER=${{ secrets.DB_USER }}"
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
-          echo "DB_HOST=${{ secrets.DB_HOST }}"
-          echo "DB_PORT=${{ secrets.DB_PORT }}"
-
-      - name: Run tests
-        run: |
-          coverage run --source='apps.child.models' manage.py test
+          coverage run --source='apps' manage.py test
           coverage report
+          coverage xml
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v3
         with:
-          name: coverage-report
-          path: coverage.xml
+          files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
