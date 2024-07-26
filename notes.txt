@@ -6,3 +6,27 @@ git push origin --delete sms-local-dev
 
 //change the remote URL to reflect the new repository name:
 git remote set-url origin https://github.com/edwin-niwaha/sponsorship_mis
+
+
+2. Running Tests
+2.1. Running All Tests
+
+You can run all tests in your project with the following command:
+
+python manage.py test
+
+This command discovers and runs tests from all apps listed in INSTALLED_APPS, including those in tests directories.
+
+2.2. Running Tests from a Specific App
+
+python manage.py test app_name
+
+For example:
+python manage.py test child
+This command runs tests specifically in the apps/child/tests/ directory.
+
+2.3. Running Tests from a Specific File
+python manage.py test app_name.tests.test_file
+For example:
+
+python manage.py test child.tests.test_models
