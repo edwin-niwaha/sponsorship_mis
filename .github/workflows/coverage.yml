@@ -18,7 +18,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install coverage
+          pip install coverage codecov
 
       - name: Run tests and measure coverage
         run: |
@@ -26,9 +26,7 @@ jobs:
           coverage report
           coverage html
 
-      - name: Upload coverage report to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./htmlcov
-
+          upload_token: ${{ secrets.CODECOV_TOKEN }}
