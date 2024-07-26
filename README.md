@@ -1,8 +1,6 @@
 # Project Name
 # Sponsorship & Donor Management Software (SDMS)
 
-[![Coverage Status](https://codecov.io/gh/edwin-niwaha/sponsorship_mis/branch/main/graph/badge.svg)](https://codecov.io/gh/edwin-niwaha/sponsorship_mis)
-
 [![codecov](https://codecov.io/gh/edwin-niwaha/sponsorship_mis/graph/badge.svg?token=S0TZOCC74E)](https://codecov.io/gh/edwin-niwaha/sponsorship_mis)
 
 
