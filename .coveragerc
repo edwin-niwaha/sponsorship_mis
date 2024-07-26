@@ -1,0 +1,13 @@
+[run]
+branch = True
+source = child
+omit =
+    */migrations/*
+    */tests.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __str__
+    def __repr__
+    raise AssertionError
