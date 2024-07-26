@@ -12,7 +12,7 @@ from django.urls import reverse
 from openpyxl import load_workbook
 
 from apps.sponsor.models import Sponsor
-from apps.sponsorship.models import ChildSponsorship
+from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
 from apps.users.models import Contact
 
 from .forms import (
@@ -48,15 +48,16 @@ def dashboard(request):
     # Retrieve counts using annotations
     sponsors_count = Sponsor.objects.filter(is_departed=False).count()
     children_count = Child.objects.count()
-    children_departed_count = Child.objects.filter(is_departed=True).count()
     sponsored_count = Child.objects.filter(is_departed=False, is_sponsored=True).count()
     non_sponsored_count = Child.objects.filter(
         is_departed=False, is_sponsored=False
     ).count()
+    children_departed_count = Child.objects.filter(is_departed=True).count()
 
     # Get top sponsors and children
     top_sponsors_data = get_top_sponsors()
     top_children_data = get_top_children_sponsored()
+    top_staff_data = get_top_staff_sponsored()
 
     # Combine sponsors and counts into a list of tuples
     top_sponsors_with_counts = list(
@@ -65,7 +66,9 @@ def dashboard(request):
     top_children_with_counts = list(
         zip(top_children_data["children"], top_children_data["counts"])
     )
-
+    top_staff_with_counts = list(
+        zip(top_staff_data["staff_active"], top_staff_data["counts"])
+    )
     context = {
         "sponsors_count": sponsors_count,
         "children_count": children_count,
@@ -74,6 +77,7 @@ def dashboard(request):
         "non_sponsored_count": non_sponsored_count,
         "top_sponsors_with_counts": top_sponsors_with_counts,
         "top_children_with_counts": top_children_with_counts,
+        "top_staff_with_counts": top_staff_with_counts,
     }
 
     return render(request, "main/dashboard.html", context)
@@ -116,6 +120,27 @@ def get_top_children_sponsored():
 
     return {
         "children": children,
+        "counts": counts,
+    }
+
+
+def get_top_staff_sponsored():
+    # Query to get the top staff with the most sponsors
+    top_staff = (
+        StaffSponsorship.objects.values("staff__first_name", "staff__last_name")
+        .annotate(total_sponsors=Count("sponsor"))
+        .order_by("-total_sponsors")[:10]
+    )
+
+    # Extract staff names and sponsor counts
+    staff_active = [
+        f"{staff['staff__first_name']} {staff['staff__last_name']}"
+        for staff in top_staff
+    ]
+    counts = [staff["total_sponsors"] for staff in top_staff]
+
+    return {
+        "staff_active": staff_active,
         "counts": counts,
     }
 

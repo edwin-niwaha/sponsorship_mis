@@ -121,7 +121,7 @@
                                     <table class="table table-striped">
                                         <thead>
                                             <tr>
-                                                <th>Sponsor</th>
+                                                <th style="width: 60%;">Sponsor</th>
                                                 <th>Sponsored Children</th>
                                             </tr>
                                         </thead>
@@ -154,7 +154,7 @@
                                     <table class="table table-striped">
                                         <thead>
                                             <tr>
-                                                <th>Child</th>
+                                                <th style="width: 60%;">Child</th>
                                                 <th>Sponsors</th>
                                             </tr>
                                         </thead>
@@ -167,7 +167,7 @@
                                             {% empty %}
                                             <tr>
                                                 <td colspan="2">
-                                                    <div class="alert alert-danger">No Sponsored Children available.
+                                                    <div class="alert alert-danger">No sponsored children available.
                                                     </div>
                                                 </td>
                                             </tr>
@@ -177,7 +177,42 @@
                                 </div>
                                 {% else %}
                                 <p></p>
-                                <div class="alert alert-danger">No Sponsored Children available.</div>
+                                <div class="alert alert-danger">No sponsored children available.</div>
+                                {% endif %}
+                            </section>
+
+                            <hr class="bg-info" style="height: 3px;" />
+                            <!-- Display sponsor to staff ratio -->
+                            <section>
+                                <h5 class="alert alert-success" style="color: teal;">Staff : Sponsor
+                                </h5>
+                                {% if top_staff_with_counts %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 60%;">Staff</th>
+                                                <th>Sponsors</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for staff, count in top_staff_with_counts %}
+                                            <tr>
+                                                <td>{{ staff }}</td>
+                                                <td>{{ count }}</td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="2">No top sponsors available..
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-danger">No top sponsors available.
+                                </div>
                                 {% endif %}
                             </section>
 
