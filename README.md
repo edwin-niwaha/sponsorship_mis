@@ -1,7 +1,7 @@
 # Project Name
 # Sponsorship & Donor Management Software (SDMS)
 
-[![Coverage Status](https://codecov.io/gh/yourusername/yourrepo/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/yourrepo)
+[![Coverage Status](https://codecov.io/gh/edwin-niwaha/sponsorship_mis/branch/main/graph/badge.svg)](https://codecov.io/gh/edwin-niwaha/sponsorship_mis)
 
 
 SDMS is a simple yet powerfull tool, built with django which is a Python-based free and open-source web framework that follows the model–template–views architectural pattern.
