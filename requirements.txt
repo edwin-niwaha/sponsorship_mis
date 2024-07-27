@@ -1,8 +1,11 @@
 asgiref==3.7.2
+autopep8==2.3.1
 beautifulsoup4==4.12.3
+black==24.4.2
 certifi==2024.2.2
 cffi==1.16.0
 charset-normalizer==3.3.2
+click==8.1.7
 codecov==2.1.13
 colorama==0.4.6
 coverage==7.6.0
@@ -32,8 +35,10 @@ flake8==7.1.0
 humanize==4.9.0
 idna==3.6
 iniconfig==2.0.0
+isort==5.13.2
 MarkupPy==1.14
 mccabe==0.7.0
+mypy-extensions==1.0.0
 mysqlclient==2.2.4
 numpy==1.26.4
 oauthlib==3.2.2
@@ -42,6 +47,7 @@ olefile==0.47
 openpyxl==3.1.2
 packaging==24.1
 pandas==2.2.1
+pathspec==0.12.1
 phonenumbers==8.13.32
 pillow==10.2.0
 pipenv==2023.12.1
