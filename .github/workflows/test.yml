@@ -12,7 +12,15 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: "3.x"
+          python-version: "3.12"
+
+      - name: Cache Python packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Install dependencies
         run: |
@@ -25,8 +33,9 @@ jobs:
           coverage run manage.py test
           coverage report
           coverage html
+          coverage xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          files: coverage.html
+          files: coverage.xml
