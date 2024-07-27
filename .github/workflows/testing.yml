@@ -18,9 +18,9 @@ jobs:
         ports:
           - 5432:5432
         env:
-          POSTGRES_DB: mydatabase
-          POSTGRES_USER: myuser
-          POSTGRES_PASSWORD: mypassword
+          POSTGRES_DB: sms_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: _Pearl!22@
         options: >-
           --health-cmd="pg_isready -U myuser"
           --health-interval=10s
@@ -40,6 +40,13 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Wait for PostgreSQL
+        run: sleep 30
+
+      - name: Apply database migrations
+        run: |
+          python manage.py migrate
 
       - name: Lint with Flake8
         run: |
