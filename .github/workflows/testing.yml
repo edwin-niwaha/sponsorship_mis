@@ -8,14 +8,24 @@ on:
     branches:
       - main
 
-# Uncomment the following block to enable scheduled runs
-# on:
-#   schedule:
-#     - cron: '0 12 * * 1'  # Runs every Monday at 12 PM
-
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:latest
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: mydatabase
+          POSTGRES_USER: myuser
+          POSTGRES_PASSWORD: mypassword
+        options: >-
+          --health-cmd="pg_isready -U myuser"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout code
