@@ -1,1 +1,47 @@
+name: Sponsorship Tests
 
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Uncomment the following block to enable scheduled runs
+# on:
+#   schedule:
+#     - cron: '0 12 * * 1'  # Runs every Monday at 12 PM
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint with Flake8
+        run: |
+          pip install flake8
+          flake8
+
+      - name: Run tests and generate coverage report
+        run: |
+          pip install coverage
+          coverage run manage.py test
+          coverage report
+
+      - name: Upload coverage report to Codecov
+        run: |
+          python3 manage.py test
