@@ -48,10 +48,12 @@ jobs:
 
       - name: Wait for PostgreSQL
         run: |
+          echo "Waiting for PostgreSQL to be ready..."
           until pg_isready -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER; do
-            echo "Waiting for PostgreSQL..."
+            echo "PostgreSQL not ready yet, retrying..."
             sleep 2
           done
+          echo "PostgreSQL is ready."
 
       - name: Lint with Flake8
         run: flake8
