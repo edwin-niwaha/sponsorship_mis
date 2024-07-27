@@ -18,11 +18,11 @@ jobs:
         ports:
           - 5432:5432
         env:
-          POSTGRES_DB: sms_db
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: _Pearl!22@
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         options: >-
-          --health-cmd="pg_isready -U postgres"
+          --health-cmd="pg_isready -U ${{ secrets.POSTGRES_USER }}"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -43,7 +43,7 @@ jobs:
 
       - name: Wait for PostgreSQL to be ready
         run: |
-          until pg_isready -h localhost -p 5432 -U postgres; do
+          until pg_isready -h localhost -p 5432 -U ${{ secrets.POSTGRES_USER }}; do
             echo "Waiting for PostgreSQL..."
             sleep 2
           done
