@@ -22,27 +22,31 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: _Pearl!22@
         options: >-
-          --health-cmd="pg_isready -U myuser"
+          --health-cmd="pg_isready -U postgres"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Wait for PostgreSQL
-        run: sleep 30
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
 
       - name: Apply database migrations
         run: |
@@ -57,9 +61,9 @@ jobs:
         run: |
           pip install coverage
           coverage run manage.py test
-          coverage report
+          coverage xml  # Ensure the coverage report is generated in XML format
 
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v3
         with:
-          files: coverage.xml # Adjust the path if necessary
+          files: coverage.xml
