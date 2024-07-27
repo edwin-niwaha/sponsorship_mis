@@ -17,12 +17,8 @@ jobs:
         image: postgres:latest
         ports:
           - 5432:5432
-        env:
-          POSTGRES_DB: ${{ secrets.DB_NAME }}
-          POSTGRES_USER: ${{ secrets.DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
         options: >-
-          --health-cmd="pg_isready -U ${{ secrets.DB_USER }}"
+          --health-cmd="pg_isready -U $POSTGRES_USER"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -36,26 +32,32 @@ jobs:
         with:
           python-version: 3.9
 
+      - name: Set Up Environment Variables
+        run: |
+          echo "POSTGRES_DB=${{ secrets.DB_NAME }}" >> $GITHUB_ENV
+          echo "POSTGRES_USER=${{ secrets.DB_USER }}" >> $GITHUB_ENV
+          echo "POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
+          echo "POSTGRES_HOST=${{ secrets.DB_HOST }}" >> $GITHUB_ENV
+          echo "POSTGRES_PORT=${{ secrets.DB_PORT }}" >> $GITHUB_ENV
+
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install flake8 coverage
 
       - name: Wait for PostgreSQL
         run: |
-          until pg_isready -h localhost -p 5432 -U ${{ secrets.DB_USER }}; do
+          until pg_isready -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER; do
             echo "Waiting for PostgreSQL..."
             sleep 2
           done
 
       - name: Lint with Flake8
-        run: |
-          pip install flake8
-          flake8
+        run: flake8
 
       - name: Run Tests and Generate Coverage Report
         run: |
-          pip install coverage
           coverage run manage.py test
           coverage xml
 
