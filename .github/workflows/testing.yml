@@ -48,9 +48,7 @@ jobs:
             sleep 2
           done
 
-      - name: Apply database migrations
-        run: |
-          python manage.py migrate
+      # Removed migration step
 
       - name: Lint with Flake8
         run: |
