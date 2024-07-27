@@ -14,7 +14,7 @@ class ChildPaymentForm(forms.ModelForm):
     current_year = datetime.now().year
 
     payment_year = forms.IntegerField(
-        label=_('Year of payment'), 
+        label=_("Year of payment"),
         widget=forms.NumberInput(attrs={"type": "number", "required": True}),
         min_value=2018,
         max_value=current_year,
@@ -22,44 +22,55 @@ class ChildPaymentForm(forms.ModelForm):
 
     class Meta:
         model = ChildPayments
-        exclude = ("sponsor", "child", "is_valid",)
+        exclude = (
+            "sponsor",
+            "child",
+            "is_valid",
+        )
 
         widgets = {
             "payment_date": forms.DateInput(attrs={"type": "date", "required": True}),
-            "month": forms.Select(attrs={'class': 'form-control', "required": True}),
+            "month": forms.Select(attrs={"class": "form-control", "required": True}),
             "amount": forms.NumberInput(attrs={"type": "number", "required": True}),
         }
-        
+
     def clean_payment_year(self):
-        payment_year = self.cleaned_data['payment_year']
-        
+        payment_year = self.cleaned_data["payment_year"]
+
         # Example custom validation: Ensure payment_year is within a specific range
         if payment_year < 2018 or payment_year > self.current_year:
-            raise forms.ValidationError(f"Payment year must be between 2018 and {self.current_year}.")
+            raise forms.ValidationError(
+                f"Payment year must be between 2018 and {self.current_year}."
+            )
 
         # Add more validation as needed
-        
+
         return payment_year
 
-    
+
 # =================================== Child Payment Edit Form ===================================
 class ChildPaymentEditForm(forms.ModelForm):
     class Meta:
         model = ChildPayments
-        exclude = ("sponsor", "child", "is_valid",)
+        exclude = (
+            "sponsor",
+            "child",
+            "is_valid",
+        )
 
         widgets = {
             "payment_date": forms.DateInput(attrs={"type": "date", "required": True}),
-            "month": forms.Select(attrs={'class': 'form-control', "required": True}),
+            "month": forms.Select(attrs={"class": "form-control", "required": True}),
             "amount": forms.NumberInput(attrs={"type": "number", "required": True}),
         }
+
 
 # =================================== Staff Payments Form ===================================
 class StaffPaymentForm(forms.ModelForm):
     current_year = datetime.now().year
 
     payment_year = forms.IntegerField(
-        label=_('Year of payment'), 
+        label=_("Year of payment"),
         widget=forms.NumberInput(attrs={"type": "number", "required": True}),
         min_value=2023,
         max_value=current_year,
@@ -67,33 +78,44 @@ class StaffPaymentForm(forms.ModelForm):
 
     class Meta:
         model = StaffPayments
-        exclude = ("sponsor", "staff", "is_valid",)
+        exclude = (
+            "sponsor",
+            "staff",
+            "is_valid",
+        )
 
         widgets = {
             "payment_date": forms.DateInput(attrs={"type": "date", "required": True}),
-            "month": forms.Select(attrs={'class': 'form-control', "required": True}),
+            "month": forms.Select(attrs={"class": "form-control", "required": True}),
             "amount": forms.NumberInput(attrs={"type": "number", "required": True}),
         }
-        
+
     def clean_payment_year(self):
-        payment_year = self.cleaned_data['payment_year']
-        
+        payment_year = self.cleaned_data["payment_year"]
+
         # Example custom validation: Ensure payment_year is within a specific range
         if payment_year < 2023 or payment_year > self.current_year:
-            raise forms.ValidationError(f"Payment year must be between 2023 and {self.current_year}.")
+            raise forms.ValidationError(
+                f"Payment year must be between 2023 and {self.current_year}."
+            )
 
         # Add more validation as needed
-        
+
         return payment_year
-    
+
+
 # =================================== Staff Payment Edit Form ===================================
 class StaffPaymentEditForm(forms.ModelForm):
     class Meta:
         model = StaffPayments
-        exclude = ("sponsor", "staff", "is_valid",)
+        exclude = (
+            "sponsor",
+            "staff",
+            "is_valid",
+        )
 
         widgets = {
             "payment_date": forms.DateInput(attrs={"type": "date", "required": True}),
-            "month": forms.Select(attrs={'class': 'form-control', "required": True}),
+            "month": forms.Select(attrs={"class": "form-control", "required": True}),
             "amount": forms.NumberInput(attrs={"type": "number", "required": True}),
         }

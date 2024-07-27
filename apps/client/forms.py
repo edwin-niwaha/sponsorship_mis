@@ -20,9 +20,12 @@ class ClientForm(forms.ModelForm):
 
         if len(full_name) < 3:
             self.add_error("full_name", "Full name must be at least 3 characters long.")
-            self.fields["full_name"].widget.attrs.update({"class": "form-control is-invalid"})
+            self.fields["full_name"].widget.attrs.update(
+                {"class": "form-control is-invalid"}
+            )
 
         return cleaned_data
+
 
 # Import form
 class ImportClientsForm(forms.Form):

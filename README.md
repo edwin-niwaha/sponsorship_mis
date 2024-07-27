@@ -93,3 +93,7 @@ coverage report
 
 # Generate XML Report
 - coverage xml
+
+# Installing flake8
+- pip install flake8
+- flake8

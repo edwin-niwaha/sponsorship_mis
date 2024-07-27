@@ -153,16 +153,16 @@ class ContactForm(forms.ModelForm):
         fields = "__all__"
         widgets = {
             "message": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
-        }   
+        }
 
     def clean_email(self):
-        email = self.cleaned_data.get('email')
+        email = self.cleaned_data.get("email")
         if not email:
             raise forms.ValidationError("Email field is required")
         return email
 
     def clean_message(self):
-        message = self.cleaned_data.get('message')
+        message = self.cleaned_data.get("message")
         if not message:
             raise forms.ValidationError("Message field is required")
         return message
@@ -179,14 +179,16 @@ class PolicyForm(forms.ModelForm):
         }
 
     def clean_upload(self):
-        upload = self.cleaned_data.get('upload')
+        upload = self.cleaned_data.get("upload")
         if upload:
-            if not upload.name.endswith('.pdf'):
+            if not upload.name.endswith(".pdf"):
                 raise forms.ValidationError("Only PDF files are allowed.")
-            if upload.size > 10*1024*1024:  # 10 MB limit
-                raise forms.ValidationError("The file is too large. It should be less than 10 MB.")
+            if upload.size > 10 * 1024 * 1024:  # 10 MB limit
+                raise forms.ValidationError(
+                    "The file is too large. It should be less than 10 MB."
+                )
         return upload
-    
+
 
 # =================================== Ebook Form  ===================================
 class EbookForm(forms.ModelForm):
@@ -199,10 +201,12 @@ class EbookForm(forms.ModelForm):
         }
 
     def clean_ebook_file(self):
-        ebook_file = self.cleaned_data.get('ebook_file')
+        ebook_file = self.cleaned_data.get("ebook_file")
         if ebook_file:
-            if not ebook_file.name.endswith('.pdf'):
+            if not ebook_file.name.endswith(".pdf"):
                 raise forms.ValidationError("Only PDF files are allowed.")
             if ebook_file.size > 10 * 1024 * 1024:  # 10 MB limit
-                raise forms.ValidationError("The file is too large. It should be less than 10 MB.")
+                raise forms.ValidationError(
+                    "The file is too large. It should be less than 10 MB."
+                )
         return ebook_file

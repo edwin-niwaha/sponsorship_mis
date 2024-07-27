@@ -34,5 +34,4 @@ urlpatterns = [
     path("ebook/list/", ebook_list, name="ebook_list"),
     path("ebook/delete/<int:pk>", delete_ebook, name="delete_ebook"),
     path("ebook/update/<int:pk>", update_ebook, name="update_ebook"),
-
-    ]
+]

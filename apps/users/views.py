@@ -32,6 +32,7 @@ from .models import (
 def home(request):
     return render(request, "users/home.html")
 
+
 # =================================== Register User  ===================================
 class RegisterView(View):
     form_class = RegisterForm
@@ -68,6 +69,7 @@ class RegisterView(View):
 
 # =================================== Login  ===================================
 
+
 class CustomLoginView(LoginView):
     form_class = LoginForm
 
@@ -98,7 +100,9 @@ class ResetPasswordView(SuccessMessageMixin, PasswordResetView):
     )
     success_url = reverse_lazy("users-home")
 
+
 # =================================== Change Passord  ===================================
+
 
 class ChangePasswordView(PasswordChangeView):
     template_name = "users/change_password.html"
@@ -114,7 +118,9 @@ def profile(request):
         profile_instance = request.user.profile
     except ObjectDoesNotExist:
         # If the user doesn't have a profile, create one
-        profile_instance = Profile.objects.create(user=request.user, bio='', avatar='default.jpg')
+        profile_instance = Profile.objects.create(
+            user=request.user, bio="", avatar="default.jpg"
+        )
 
     if request.method == "POST":
         user_form = UpdateUserForm(request.POST, instance=request.user)
@@ -139,20 +145,23 @@ def profile(request):
         {"user_form": user_form, "profile_form": profile_form},
     )
 
+
 # ===================================  Contact Us  ===================================
 @transaction.atomic
 def contact_us(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ContactForm(request.POST)
         if form.is_valid():
             instance = form.save()
 
             try:
                 # Send email to the user
-                subject = 'Your message has been received'
+                subject = "Your message has been received"
                 message = f"Hello {instance.name},\n\nYour message has been received. \
 We will get back to you soon!\n\nThanks,\nPerpetual - SDMS\nManagement"
-                from_email = settings.EMAIL_HOST_USER  # Use default from email from settings
+                from_email = (
+                    settings.EMAIL_HOST_USER
+                )  # Use default from email from settings
                 to = [instance.email]  # Access email entered in the form
                 send_mail(subject, message, from_email, to)
 
@@ -174,14 +183,15 @@ message. Please try again later.",
                 )
 
             # Redirect to the contact page
-            return HttpResponseRedirect(reverse('contact_us'))
+            return HttpResponseRedirect(reverse("contact_us"))
     else:
         form = ContactForm()
 
-    return render(request, 'users/contact_us.html', {'form': form})
+    return render(request, "users/contact_us.html", {"form": form})
 
 
 # =================================== View Policy  ===================================
+
 
 @login_required
 def policy_list(request):
@@ -212,6 +222,7 @@ def policy_list(request):
 
 # =================================== Register Policy  ===================================
 
+
 @login_required
 @transaction.atomic
 def upload_policy(request):
@@ -220,12 +231,17 @@ def upload_policy(request):
 
         if form.is_valid():
             form.save()
-            messages.success(request, "Record saved successfully!", extra_tags="bg-success")
-            return redirect('policy_list')
+            messages.success(
+                request, "Record saved successfully!", extra_tags="bg-success"
+            )
+            return redirect("policy_list")
         else:
             # Display an error message if the form is not valid
-            messages.error(request, "There was an error saving the record. Please check the form for errors.", 
-                           extra_tags="bg-danger")
+            messages.error(
+                request,
+                "There was an error saving the record. Please check the form for errors.",
+                extra_tags="bg-danger",
+            )
 
     else:
         form = PolicyForm()
@@ -235,6 +251,7 @@ def upload_policy(request):
         "users/policy_upload.html",
         {"form_name": "Create Policy", "form": form},
     )
+
 
 # =================================== Update Policy ===================================
 @login_required
@@ -251,8 +268,10 @@ def update_policy(request, pk, template_name="users/policy_upload.html"):
         if form.is_valid():
             form.save()
 
-            messages.success(request, "Policy updated successfully!", extra_tags="bg-success")
-            return redirect("policy_list")  
+            messages.success(
+                request, "Policy updated successfully!", extra_tags="bg-success"
+            )
+            return redirect("policy_list")
     else:
 
         form = PolicyForm(instance=policy)
@@ -277,32 +296,39 @@ def delete_policy(request, pk):
 def validate_policy(request, policy_id):
     policy = get_object_or_404(Policy, id=policy_id)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         if not policy.is_valid:
             policy.is_valid = True
             policy.save()
 
-            messages.success(request, "Policy validated successfully!", extra_tags="bg-success")
+            messages.success(
+                request, "Policy validated successfully!", extra_tags="bg-success"
+            )
             return HttpResponseRedirect(reverse("policy_list"))
 
-    return HttpResponseBadRequest('Invalid request')
+    return HttpResponseBadRequest("Invalid request")
 
 
 # =================================== Read Policy  ===================================
+
 
 @login_required
 @transaction.atomic
 def read_policy(request, policy_id):
     policy = get_object_or_404(Policy, id=policy_id)
-    
-    if request.method == 'POST':
+
+    if request.method == "POST":
         _, created = PolicyRead.objects.get_or_create(user=request.user, policy=policy)
-        
+
         if created:
-            messages.success(request, "Policy marked as read successfully!", extra_tags="bg-success")
+            messages.success(
+                request, "Policy marked as read successfully!", extra_tags="bg-success"
+            )
         else:
-            messages.info(request, "You have already read this policy.", extra_tags="bg-danger")
-            
+            messages.info(
+                request, "You have already read this policy.", extra_tags="bg-danger"
+            )
+
     return HttpResponseRedirect(reverse("policy_list"))
 
 
@@ -315,17 +341,26 @@ def policy_report(request):
             selected_policy = get_object_or_404(Policy, id=policy_id)
             policy_read = PolicyRead.objects.filter(policy_id=policy_id)
             policies = Policy.objects.all().order_by("id")
-            return render(request, 'users/policy_rpt.html', 
-                          {"table_title": "policies read", "policies": policies, 
-                           "policy_name": selected_policy.title, 
-                           "policy_upload": selected_policy.upload,
-                           'policy_read': policy_read})
+            return render(
+                request,
+                "users/policy_rpt.html",
+                {
+                    "table_title": "policies read",
+                    "policies": policies,
+                    "policy_name": selected_policy.title,
+                    "policy_upload": selected_policy.upload,
+                    "policy_read": policy_read,
+                },
+            )
         else:
             messages.error(request, "No policy selected.", extra_tags="bg-danger")
     else:
         policies = Policy.objects.all().order_by("id")
-    return render(request, 'users/policy_rpt.html', 
-                    {"table_title": "policies read", "policies": policies})
+    return render(
+        request,
+        "users/policy_rpt.html",
+        {"table_title": "policies read", "policies": policies},
+    )
 
 
 # =================================== Uplaod ebook  ===================================
@@ -337,12 +372,17 @@ def upload_ebook(request):
 
         if form.is_valid():
             form.save()
-            messages.success(request, "Record saved successfully!", extra_tags="bg-success")
-            return redirect('ebook_list')
+            messages.success(
+                request, "Record saved successfully!", extra_tags="bg-success"
+            )
+            return redirect("ebook_list")
         else:
             # Display an error message if the form is not valid
-            messages.error(request, "There was an error saving the record. Please check the form for errors.", 
-                           extra_tags="bg-danger")
+            messages.error(
+                request,
+                "There was an error saving the record. Please check the form for errors.",
+                extra_tags="bg-danger",
+            )
 
     else:
         form = EbookForm()
@@ -352,6 +392,7 @@ def upload_ebook(request):
         "users/ebook_upload.html",
         {"form_name": "UPLOAD BOOK", "form": form},
     )
+
 
 # ===================================  Books list  ===================================
 @login_required
@@ -380,6 +421,7 @@ def ebook_list(request):
         {"records": records, "table_title": "Books List"},
     )
 
+
 # =================================== Update Book ===================================
 @login_required
 @transaction.atomic
@@ -395,7 +437,9 @@ def update_ebook(request, pk, template_name="users/ebook_upload.html"):
             form.save()
 
             # Add a success message and redirect to the ebook list
-            messages.success(request, "Client record updated successfully!", extra_tags="bg-success")
+            messages.success(
+                request, "Client record updated successfully!", extra_tags="bg-success"
+            )
             return redirect("ebook_list")  # Adjust the redirect as needed
     else:
         # Pre-populate the form with existing data

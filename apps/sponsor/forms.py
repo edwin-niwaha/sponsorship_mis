@@ -7,21 +7,20 @@ from .models import Sponsor, SponsorDeparture
 class SponsorForm(forms.ModelForm):
     class Meta:
         model = Sponsor
-        exclude = ("is_departed", )
+        exclude = ("is_departed",)
         widgets = {
             "start_date": forms.DateInput(attrs={"type": "date"}),
             "comment": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-
             "first_street_address": forms.Textarea(
                 attrs={"class": "form-control", "rows": 3}
             ),
-
             "second_street_address": forms.Textarea(
                 attrs={"class": "form-control", "rows": 3}
             ),
-
-            "gender": forms.Select(attrs={'class': 'form-control', "required": True}),
-            "sponsorship_type_at_signup": forms.Select(attrs={'class': 'form-control', "required": True}),
+            "gender": forms.Select(attrs={"class": "form-control", "required": True}),
+            "sponsorship_type_at_signup": forms.Select(
+                attrs={"class": "form-control", "required": True}
+            ),
         }
 
     # Form validation
@@ -48,13 +47,16 @@ class SponsorForm(forms.ModelForm):
             )
 
         return self.cleaned_data
-    
+
+
 # =================================== SPONSOR DEPATURE ===================================
 class SponsorDepartForm(forms.ModelForm):
     class Meta:
         model = SponsorDeparture
         exclude = ("sponsor",)
-        widgets ={
-             "departure_date": forms.DateInput(attrs={"type": "date"}),
-            "departure_reason": forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        widgets = {
+            "departure_date": forms.DateInput(attrs={"type": "date"}),
+            "departure_reason": forms.Textarea(
+                attrs={"class": "form-control", "rows": 2}
+            ),
         }

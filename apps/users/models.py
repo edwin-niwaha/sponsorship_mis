@@ -34,27 +34,27 @@ class Contact(models.Model):
 
     class Meta:
         verbose_name = "User Feedback"
-        db_table = 'user_feedback'
+        db_table = "user_feedback"
 
     def __str__(self):
         return self.subject
-    
+
 
 # =================================== Policy Model  ===================================
 class Policy(models.Model):
     title = models.CharField(max_length=50)
-    upload = models.FileField(upload_to='policies/', blank=True, null=True)
+    upload = models.FileField(upload_to="policies/", blank=True, null=True)
     is_valid = models.BooleanField(
         default=False,
         verbose_name="Valid?",
-    ) 
-    date_reviewed = models.DateField(blank=True, null=True)   
+    )
+    date_reviewed = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.title
-    
+
 
 # =================================== PolicyRead Model ===================================
 class PolicyRead(models.Model):
@@ -63,21 +63,20 @@ class PolicyRead(models.Model):
     read_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'policy')
+        unique_together = ("user", "policy")
 
     def __str__(self):
         return f"{self.user.username} read {self.policy.title}"
 
 
-
-# =================================== Ebook Model  =================================== 
+# =================================== Ebook Model  ===================================
 class Ebook(models.Model):
     title = models.CharField(max_length=200)
     author = models.CharField(max_length=200)
-    ebook_file = models.FileField(upload_to='ebooks/')
-    upload_date = models.DateField(blank=True, null=True)   
+    ebook_file = models.FileField(upload_to="ebooks/")
+    upload_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return self.title
