@@ -73,7 +73,7 @@ class Staff(models.Model):
         verbose_name="Is the Staff sponsored?",
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

@@ -30,7 +30,7 @@ class Client(models.Model):
     mobile_telephone = PhoneNumberField(
         verbose_name="Mobile Telephone", null=True, blank=True, default="+256999999999"
     )
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

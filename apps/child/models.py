@@ -41,6 +41,7 @@ class Child(models.Model):
         max_length=20,
         null=True,
         blank=True,
+        verbose_name="Tribe",
     )
 
     GENDER_CHOICES = (
@@ -195,8 +196,8 @@ class Child(models.Model):
         max_length=10, null=True, blank=True, verbose_name="Compiled by"
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated at")
 
     class Meta:
         db_table = "child_info"
@@ -228,15 +229,19 @@ class Child(models.Model):
 
 class ChildProfilePicture(models.Model):
     child = models.ForeignKey(
-        "Child", on_delete=models.CASCADE, related_name="profile_picture"
+        "Child",
+        on_delete=models.CASCADE,
+        related_name="profile_picture",
+        verbose_name="Child",
     )
     picture = models.ImageField(
-        default="default.jpg",
-        upload_to="child_profiles/",
+        default="current_child_profiles/default.jpg",
+        upload_to="current_child_profiles/",
         verbose_name="Upload Image(jpg, jpeg, png)",
         validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
     )
-    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name="Uploaded at")
     is_current = models.BooleanField(default=False, verbose_name="Is Current Picture")
 
     class Meta:
@@ -247,7 +252,9 @@ class ChildProfilePicture(models.Model):
         unique_together = ("child", "picture")
 
     def __str__(self):
-        return f"Profile picture of {self.child.name} uploaded at {self.uploaded_at}"
+        return (
+            f"Profile picture of {self.child.full_name} uploaded at {self.uploaded_at}"
+        )
 
 
 # =================================== CHILD PROGRESS MODEL ===================================
@@ -276,7 +283,7 @@ class ChildProgress(models.Model):
         max_length=20,
     )
     CLASS_LEVEL_CHOICES = [
-        ("", "Select Class"),  # Default option
+        ("", "Select Class"),
         ("Baby", "Baby"),
         ("Middle", "Middle"),
         ("Top", "Top"),
@@ -328,8 +335,8 @@ class ChildProgress(models.Model):
     notes = models.TextField(
         max_length=200, verbose_name="Notes (Optional)", null=True, blank=True
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated at")
 
     class Meta:
         db_table = "child_progress"
@@ -382,8 +389,8 @@ class ChildCorrespondence(models.Model):
         verbose_name="Attachment",
     )
     comment = models.CharField(max_length=100, null=True, verbose_name="Any comment?")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated at")
     # sponsor = models.ForeignKey(
     #     "Sponsor", on_delete=models.CASCADE, related_name="correspondences",
     #     verbose_name="Sponsor"
@@ -427,8 +434,8 @@ class ChildIncident(models.Model):
         null=True,
         verbose_name="Attachment",
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated at")
 
     class Meta:
         verbose_name = "Child Incident"

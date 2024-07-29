@@ -90,7 +90,7 @@ class Sponsor(models.Model):
         verbose_name="Departed?",
     )
     comment = models.CharField(max_length=50, null=True, verbose_name="Comment")
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

@@ -109,7 +109,10 @@ class StaffPayments(models.Model):
         default=False,
         verbose_name=_("Valid?"),
     )
-    created_at = models.DateTimeField(_("Created At"), auto_now_add=True)
+    created_at = models.DateTimeField(
+        _("Created At"),
+        auto_now_add=True,
+    )
     updated_at = models.DateTimeField(_("Updated At"), auto_now=True)
 
     class Meta:

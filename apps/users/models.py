@@ -49,7 +49,7 @@ class Policy(models.Model):
         verbose_name="Valid?",
     )
     date_reviewed = models.DateField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -60,7 +60,7 @@ class Policy(models.Model):
 class PolicyRead(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     policy = models.ForeignKey(Policy, on_delete=models.CASCADE)
-    read_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
 
     class Meta:
         unique_together = ("user", "policy")
@@ -75,7 +75,7 @@ class Ebook(models.Model):
     author = models.CharField(max_length=200)
     ebook_file = models.FileField(upload_to="ebooks/")
     upload_date = models.DateField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
