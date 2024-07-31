@@ -38,27 +38,3 @@ class ChildFormTest(TestCase):
             form.errors["preferred_name"],
             ["Can not save last name less than 3 characters long"],
         )
-
-
-def test_valid_form(self):
-    form_data = {
-        "full_name": "John Doe",
-        "preferred_name": "John",
-        "date_of_birth": "2010-01-01",
-        "siblings": "None",
-        "background_info": "Info",
-        "responsibility": "None",
-        "mother_description": "Description",
-        "staff_comment": "Comment",
-        "father_description": "Description",
-        "c_interest": "Interest",
-        "gender": "Male",
-        "is_father_alive": "Yes",
-        "is_mother_alive": "Yes",
-        "religion": "Religion",
-        "is_child_in_school": True,
-    }
-    form = ChildForm(data=form_data)
-    if not form.is_valid():
-        print("Form errors:", form.errors)
-    self.assertTrue(form.is_valid())
