@@ -80,6 +80,8 @@ class ChildForm(forms.ModelForm):
 
 # =================================== CHILD PROFILE ===================================
 class ChildProfilePictureForm(forms.ModelForm):
+    picture = forms.ImageField(required=False)
+
     class Meta:
         model = ChildProfilePicture
         fields = ["picture"]

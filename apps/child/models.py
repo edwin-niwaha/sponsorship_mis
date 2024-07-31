@@ -237,6 +237,8 @@ class ChildProfilePicture(models.Model):
     picture = models.ImageField(
         default="current_child_profiles/default.jpg",
         upload_to="current_child_profiles/",
+        blank=True,
+        null=True,
         verbose_name="Upload Image(jpg, jpeg, png)",
         validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
     )
