@@ -23,6 +23,7 @@ class ChildForm(forms.ModelForm):
     class Meta:
         model = Child
         exclude = ("is_departed", "is_sponsored")
+        # date_of_birth = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
         widgets = {
             "date_of_birth": forms.DateInput(attrs={"type": "date"}),
             "siblings": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
