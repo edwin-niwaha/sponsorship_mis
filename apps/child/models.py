@@ -262,7 +262,10 @@ class ChildProfilePicture(models.Model):
 
 class ChildProgress(models.Model):
     child = models.ForeignKey(
-        "Child", on_delete=models.CASCADE, related_name="progresses"
+        "Child",
+        on_delete=models.CASCADE,
+        related_name="progresses",
+        verbose_name="Child",
     )
     name_of_school = models.CharField(max_length=50, verbose_name="Name of the School")
     previous_schools = models.TextField(
@@ -351,13 +354,13 @@ class ChildProgress(models.Model):
 
 
 class ChildCorrespondence(models.Model):
-    SOURCE_CHOICES = (
+    SOURCE_CHOICES = [
         ("", "Select correspondence source"),  # Default option
         ("CHILD", "Child"),
         ("SPONSOR", "Sponsor"),
-    )
+    ]
 
-    CORRESPONDENCE_CHOICES = (
+    CORRESPONDENCE_CHOICES = [
         ("", "Select correspondence type"),  # Default option
         ("Christmas Gift", "Christmas Gift"),
         ("Birthday Gift", "Birthday Gift"),
@@ -365,7 +368,8 @@ class ChildCorrespondence(models.Model):
         ("Package", "Package"),
         ("Money", "Money"),
         ("Photo", "Photo"),
-    )
+    ]
+
     child = models.ForeignKey(
         "Child",
         on_delete=models.CASCADE,
@@ -388,12 +392,16 @@ class ChildCorrespondence(models.Model):
         null=True,
         verbose_name="Attachment",
     )
-    comment = models.CharField(max_length=100, null=True, verbose_name="Any comment?")
+    comment = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Any comment?"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated at")
     # sponsor = models.ForeignKey(
-    #     "Sponsor", on_delete=models.CASCADE, related_name="correspondences",
-    #     verbose_name="Sponsor"
+    #     "Sponsor",
+    #     on_delete=models.CASCADE,
+    #     related_name="correspondences",
+    #     verbose_name="Sponsor",
     # )
 
     class Meta:
@@ -402,7 +410,7 @@ class ChildCorrespondence(models.Model):
         db_table = "child_corres"
 
     def __str__(self):
-        return self.subject
+        return f"{self.child} - {self.correspondence_type}"
 
 
 # =================================== CHILD INCIDENT MODEL ===================================
