@@ -1,9 +1,17 @@
 from django.test import TestCase
+from io import BytesIO
 from django import forms
-from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.exceptions import ValidationError
+
+from django.core.files.uploadedfile import SimpleUploadedFile, InMemoryUploadedFile
 
 # Import the necessary forms for testing
-from apps.child.forms import ChildForm, ChildProfilePictureForm
+from apps.child.forms import (
+    ChildForm,
+    ChildProfilePictureForm,
+    ChildCorrespondenceForm,
+    ChildIncidentForm,
+)
 
 
 # =================================== TEST CHILD FORM ===================================
@@ -91,3 +99,79 @@ class ChildProfilePictureFormTests(TestCase):
         else:
             # Print errors if the form is invalid
             print("Form errors:", form.errors)
+
+
+# =================================== TEST CHILD CORRESSPONDENCE ===================================
+class ChildCorrespondenceFormTests(TestCase):
+    def test_missing_attachment(self):
+        form = ChildCorrespondenceForm(data={})
+        self.assertFalse(form.is_valid())
+        self.assertEqual(
+            form.errors["attachment"],
+            ["Attachment is required for all correspondence."],
+        )
+
+    def test_invalid_file_type(self):
+        # Create a fake non-PDF file
+        txt_file = InMemoryUploadedFile(
+            file=BytesIO(b"This is a test file"),
+            field_name="attachment",
+            name="test.txt",
+            content_type="text/plain",
+            size=100,
+            charset=None,
+        )
+        form = ChildCorrespondenceForm(files={"attachment": txt_file})
+        self.assertFalse(form.is_valid())
+        self.assertEqual(
+            form.errors["attachment"], ["Only PDF attachments are allowed."]
+        )
+
+
+# =================================== TEST CHILD DEPATURE ===================================
+class ChildIncidentFormTests(TestCase):
+
+    def test_invalid_file_type(self):
+        # Create a fake text file (not a PDF)
+        text_file = InMemoryUploadedFile(
+            file=BytesIO(b"This is not a PDF."),
+            field_name="attachment",
+            name="test_attachment.txt",
+            content_type="text/plain",
+            size=16,
+            charset=None,
+        )
+
+        form = ChildIncidentForm(files={"attachment": text_file})
+
+        # Ensure the form is invalid
+        self.assertFalse(form.is_valid())
+        self.assertEqual(
+            form.errors["attachment"], ["Only PDF attachments are allowed."]
+        )
+
+    # def test_valid_pdf_attachment(self):
+    #     # Create a shorter valid PDF file
+    #     pdf_content = b"%PDF-1.0\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n"
+    #     pdf_file = InMemoryUploadedFile(
+    #         file=BytesIO(pdf_content),
+    #         field_name="attachment",
+    #         name="test_attachment.pdf",
+    #         content_type="application/pdf",
+    #         size=len(pdf_content),
+    #         charset=None,
+    #     )
+
+    #     # Create form instance with the PDF file
+    #     form = ChildIncidentForm(files={"attachment": pdf_file})
+
+    #     # Print form errors and debug information if invalid
+    #     if not form.is_valid():
+    #         print("Form errors:", form.errors)
+    #         print("Form cleaned data:", form.cleaned_data)
+    #         print("Uploaded file name:", form.files.get("attachment").name)
+
+    #     # Ensure the form is valid
+    #     self.assertTrue(
+    #         form.is_valid(), "Form should be valid with a correct PDF attachment"
+    #     )
