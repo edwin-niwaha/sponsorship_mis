@@ -16,12 +16,18 @@ from .views import (
     upload_ebook,
     upload_policy,
     validate_policy,
+    profile_list,
+    delete_profile,
+    update_profile,
 )
 
 urlpatterns = [
     path("", home, name="users-home"),
     path("register/", RegisterView.as_view(), name="users-register"),
     path("profile/", profile, name="users-profile"),
+    path("profile-list/", profile_list, name="profile_list"),
+    path("profile/update/<int:pk>", update_profile, name="update_profile"),
+    path("profile/delete/<int:pk>", delete_profile, name="delete_profile"),
     path("contact-us/", contact_us, name="contact_us"),
     path("policy-list/", policy_list, name="policy_list"),
     path("create-policy/", upload_policy, name="upload_policy"),

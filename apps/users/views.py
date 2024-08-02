@@ -21,6 +21,7 @@ from .forms import (
     RegisterForm,
     UpdateProfileForm,
     UpdateUserForm,
+    UpdateProfileAllForm,
 )
 from .models import (
     Ebook,
@@ -111,7 +112,57 @@ class ChangePasswordView(PasswordChangeView):
     success_url = reverse_lazy("users-home")
 
 
-# =================================== Profile  ===================================
+# =================================== Profile List  ===================================
+@login_required
+def profile_list(request):
+    queryset = Profile.objects.all().order_by("user__username")
+
+    search_query = request.GET.get("search")
+    if search_query:
+        queryset = queryset.filter(
+            user__username__icontains=search_query
+        )  # Search by username
+
+    paginator = Paginator(queryset, 25)  # Show 25 profiles per page
+    page = request.GET.get("page")
+
+    try:
+        profiles = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver the first page.
+        profiles = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g., 9999), deliver the last page of results.
+        profiles = paginator.page(paginator.num_pages)
+
+    return render(
+        request,
+        "users/profile_list.html",  # Ensure this is the correct template name
+        {"profiles": profiles, "table_title": "Profile List"},
+    )
+
+
+# =================================== Update Profile ===================================
+@login_required
+@transaction.atomic
+def update_profile(request, pk, template_name="users/profile_update.html"):
+    profile = get_object_or_404(Profile, pk=pk)
+
+    if request.method == "POST":
+        form = UpdateProfileAllForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Updated successfully!", extra_tags="bg-success")
+            return redirect("profile_list")
+    else:
+        form = UpdateProfileAllForm(instance=profile)
+
+    # Render the form in the template
+    context = {"form_name": "Update Profile", "form": form}
+    return render(request, template_name, context)
+
+
+# =================================== Profile Update ===================================
 @login_required
 @transaction.atomic
 def profile(request):
@@ -145,6 +196,16 @@ def profile(request):
         "users/profile.html",
         {"user_form": user_form, "profile_form": profile_form},
     )
+
+
+# =================================== Delete Profile ===================================
+@login_required
+@transaction.atomic
+def delete_profile(request, pk):
+    profile = Profile.objects.get(id=pk)
+    profile.delete()
+    messages.info(request, "Profile deleted successfully!", extra_tags="bg-danger")
+    return HttpResponseRedirect(reverse("profile_list"))
 
 
 # ===================================  Contact Us  ===================================

@@ -133,6 +133,8 @@ class UpdateUserForm(forms.ModelForm):
 
 
 # =================================== Pofile Update  ===================================
+
+
 class UpdateProfileForm(forms.ModelForm):
     avatar = forms.ImageField(
         widget=forms.FileInput(attrs={"class": "form-control-file"})
@@ -143,7 +145,23 @@ class UpdateProfileForm(forms.ModelForm):
 
     class Meta:
         model = Profile
-        fields = ["avatar", "bio"]
+        fields = ["avatar", "bio", "role"]
+        widgets = {
+            "role": forms.Select(attrs={"class": "form-control", "required": True}),
+        }
+
+
+# =================================== Pofile Update * ===================================
+
+
+class UpdateProfileAllForm(forms.ModelForm):
+
+    class Meta:
+        model = Profile
+        fields = ["role"]
+        widgets = {
+            "role": forms.Select(attrs={"class": "form-control", "required": True}),
+        }
 
 
 # =================================== Contact Form  ===================================
