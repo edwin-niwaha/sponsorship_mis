@@ -5,7 +5,11 @@ from django.contrib.auth import views as auth_views
 from django.urls import include, path, re_path
 
 from apps.users.forms import LoginForm
-from apps.users.views import ChangePasswordView, CustomLoginView, ResetPasswordView
+from apps.users.views import (
+    ChangePasswordView,
+    CustomLoginView,
+    ResetPasswordView,
+)
 
 urlpatterns = [
     path("admin/", admin.site.urls),

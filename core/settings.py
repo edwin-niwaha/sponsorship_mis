@@ -193,7 +193,7 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = str(os.getenv("GOOGLE_SECRET"))
 # SOCIAL_AUTH_LINKEDIN_OAUTH2_KEY = str(os.getenv("LINKEDIN_KEY"))
 # SOCIAL_AUTH_LINKEDIN_OAUTH2_SECRET = str(os.getenv("LINKEDIN_SECRET"))
 
-# # social auth configs for linkedin
+# # social auth configs for twitter
 # SOCIAL_AUTH_TWITTER_KEY = str(os.getenv("TWITTER_KEY"))
 # SOCIAL_AUTH_TWITTER_SECRET  = str(os.getenv("TWITTER_SECRET"))
 
@@ -206,9 +206,8 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = str(os.getenv("EMAIL_USER"))
 EMAIL_HOST_PASSWORD = str(os.getenv("EMAIL_PASS"))
 
-# `SESSION_COOKIE_AGE = 60 * 60 * 24 * 30` is setting the age of the session cookie in seconds.
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 30
-
+SESSION_COOKIE_AGE = 1800  # Session duration in seconds
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Expire session when browser closes
 
 # Specifying default primary key field type for models that don't define a primary key field explicitly.
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

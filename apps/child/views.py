@@ -1,4 +1,3 @@
-# from formtools.wizard.views import SessionWizardView
 import logging
 
 from django.contrib import messages
@@ -13,7 +12,7 @@ from openpyxl import load_workbook
 
 from apps.sponsor.models import Sponsor
 from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
-from apps.users.models import Contact
+from apps.users.models import Contact, Profile
 
 from .forms import (
     ChildCorrespondenceForm,
