@@ -10,7 +10,6 @@ from django.db import transaction
 from django.http import (
     HttpResponseBadRequest,
     HttpResponseRedirect,
-    HttpResponseForbidden,
 )
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -33,6 +32,9 @@ from .models import (
     PolicyRead,
     Profile,
 )
+from .decorators import manager_required, staff_required, administrator_required
+
+# from apps.user.decorators import manager_required, staff_required, administrator_required
 
 
 def home(request):
@@ -119,9 +121,15 @@ class ChangePasswordView(PasswordChangeView):
 # =================================== Profile List  ===================================
 @login_required
 def profile_list(request):
-    # Check if the logged-in user is an administrator
-    if not request.user.profile.role == "administrator":
-        return render(request, "main/errors/403.html")
+    # Handle the case where the user might not have a profile
+    try:
+        user_profile = request.user.profile
+    except Profile.DoesNotExist:
+        return render(request, "main/errors/403.html", status=403)
+
+    # Check if the logged-in user is an administrator or manager
+    if user_profile.role not in ["administrator", "manager"]:
+        return render(request, "main/errors/403.html", status=403)
 
     # Fetch all profiles and related user data
     queryset = Profile.objects.select_related("user").all().order_by("user__username")
