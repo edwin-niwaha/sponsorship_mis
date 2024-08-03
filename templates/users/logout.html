@@ -18,7 +18,7 @@
 
                         <!-- Welcome Message -->
                         <div class="welcome-message">
-                            <p>Dear <span style="color:#F79420;">{{user.first_name.title|default:'Guest'}}</span>,
+                            <p>Dear <span style="color:#F79420;">{{user.username.title|default:'Guest'}}</span>,
                                 You have been logged out! <a href="{% url 'contact_us' %}">contact us</a>
                                 for any comments or suggestions.
                             </p>

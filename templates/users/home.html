@@ -27,7 +27,7 @@
 
             <!-- Welcome Message -->
             <div class="welcome-message">
-              <p>Dear <span style="color:#F79420;">{{user.first_name.title|default:'Guest'}}</span>,
+              <p>Dear <span style="color:#F79420;">{{user.username.title|default:'Guest'}}</span>,
                 Welcome to SDMS{% if not user.is_authenticated %} | You must be a registered user to use
                 this tool.{% endif %}
               </p>

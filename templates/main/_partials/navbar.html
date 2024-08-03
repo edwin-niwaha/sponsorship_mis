@@ -61,7 +61,7 @@
             <li class="nav-item nav-profile dropdown border-0">
                 <a class="nav-link dropdown-toggle" id="profileDropdown" href="#" data-toggle="dropdown">
                     <img class="nav-profile-img mr-2" src="{{ user.profile.avatar.url }}" />
-                    <span class="profile-name">{{user.first_name.title|default:'Guest'}}</span>
+                    <span class="profile-name">{{user.username.title|default:'Guest'}}</span>
                 </a>
                 <div class="dropdown-menu navbar-dropdown w-100" aria-labelledby="profileDropdown">
                     <a class="dropdown-item" href="{% url 'users-profile' %}">

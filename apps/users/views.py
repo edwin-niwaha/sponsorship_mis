@@ -7,7 +7,11 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from django.http import HttpResponseBadRequest, HttpResponseRedirect
+from django.http import (
+    HttpResponseBadRequest,
+    HttpResponseRedirect,
+    HttpResponseForbidden,
+)
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views import View
@@ -115,19 +119,24 @@ class ChangePasswordView(PasswordChangeView):
 # =================================== Profile List  ===================================
 @login_required
 def profile_list(request):
-    queryset = Profile.objects.all().order_by("user__username")
+    # Check if the logged-in user is an administrator
+    if not request.user.profile.role == "administrator":
+        return render(request, "main/errors/403.html")
 
+    # Fetch all profiles and related user data
+    queryset = Profile.objects.select_related("user").all().order_by("user__username")
+
+    # Search functionality
     search_query = request.GET.get("search")
     if search_query:
-        queryset = queryset.filter(
-            user__username__icontains=search_query
-        )  # Search by username
+        queryset = queryset.filter(user__username__icontains=search_query)
 
+    # Pagination
     paginator = Paginator(queryset, 25)  # Show 25 profiles per page
-    page = request.GET.get("page")
+    page_number = request.GET.get("page")
 
     try:
-        profiles = paginator.page(page)
+        profiles = paginator.page(page_number)
     except PageNotAnInteger:
         # If page is not an integer, deliver the first page.
         profiles = paginator.page(1)
@@ -138,7 +147,10 @@ def profile_list(request):
     return render(
         request,
         "users/profile_list.html",  # Ensure this is the correct template name
-        {"profiles": profiles, "table_title": "Profile List"},
+        {
+            "profiles": profiles,
+            "table_title": "Profile List",
+        },
     )
 
 

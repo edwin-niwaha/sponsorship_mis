@@ -145,7 +145,7 @@ class UpdateProfileForm(forms.ModelForm):
 
     class Meta:
         model = Profile
-        fields = ["avatar", "bio", "role"]
+        fields = ["avatar", "bio"]
         widgets = {
             "role": forms.Select(attrs={"class": "form-control", "required": True}),
         }
