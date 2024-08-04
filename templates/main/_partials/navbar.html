@@ -61,13 +61,15 @@
             <li class="nav-item nav-profile dropdown border-0">
                 <a class="nav-link dropdown-toggle" id="profileDropdown" href="#" data-toggle="dropdown">
                     <img class="nav-profile-img mr-2" src="{{ user.profile.avatar.url }}" />
-                    <span class="profile-name">{{user.username.title|default:'Guest'}}</span>
+                    <span class="profile-name">{{user.username.title|default:'Guest'}}
+                        {% if user.profile.role %}
+                        <small class="text-muted">({{ user.profile.get_role_display }})</small>
+                        {% endif %}
+                    </span>
                 </a>
                 <div class="dropdown-menu navbar-dropdown w-100" aria-labelledby="profileDropdown">
-                    <a class="dropdown-item" href="{% url 'users-profile' %}">
-                        <i class="mdi mdi-settings"></i> Settings </a>
                     <a class="dropdown-item" href="{% url 'profile_list' %}">
-                        <i class="mdi mdi-settings"></i> Profile </a>
+                        <i class="mdi mdi-settings"></i>Profile </a>
                     <a class="dropdown-item" href="{% url 'logout' %}">
                         <i class="mdi mdi-logout mr-2 text-primary"></i> Signout </a>
                 </div>

@@ -3,9 +3,6 @@
     <div class="text-center sidebar-brand-wrapper d-flex align-items-center">
         <a class="sidebar-brand brand-logo" href="{% url 'main-dashboard' %}" style="color:#127D61;">
             <img src="{% static 'images/file.png' %}" height="30" width="30" alt="" loading="lazy" />
-            <h5 style="font-family: 'Times New Roman', Times, serif">
-                SDMS
-            </h5>
         </a>
     </div>
     <ul class="nav">
@@ -15,14 +12,14 @@
         <li class="nav-item">
             <a class="nav-link" href="/">
                 <i class="mdi mdi-home menu-icon"></i>
-                <span class="menu-title">Home</span>
+                <span class="menu-title">SDMS-HOME</span>
             </a>
         </li>
 
         <li class="nav-item">
             <a class="nav-link" href="{% url 'main-dashboard' %}">
                 <i class="mdi mdi-lock-open menu-icon"></i>
-                <span class="menu-title">Dashboard</span>
+                <span class="menu-title">DASHBOARD</span>
             </a>
         </li>
         <li>
@@ -151,7 +148,7 @@
         <li class="nav-item">
             <a class="nav-link" href="{% url 'client_list' %}">
                 <i class="mdi mdi-account-multiple-plus menu-icon"></i>
-                <span class="menu-title">Manage Clients</span>
+                <span class="menu-title">Clients</span>
             </a>
         </li>
 
@@ -186,10 +183,10 @@
             <div class="collapse" id="ui-basic4">
                 <ul class="nav flex-column sub-menu">
                     <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'users-profile' %}" target="_self">User Profile</a>
+                        <a class="nav-link active" href="{% url 'profile_list' %}" target="_self">Profile</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'users-feedback' %}" target="_self">User Feedback</a>
+                        <a class="nav-link active" href="{% url 'users-feedback' %}" target="_self">Feedback</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="{% url 'import' %}" target="_self">Bulk Import</a>

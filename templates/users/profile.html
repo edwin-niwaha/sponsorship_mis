@@ -32,11 +32,14 @@
                       style="cursor: pointer" />
                     {{user.first_name}} {{user.last_name}}
                     <hr />
+                    Role: {% if user.profile.role %}
+                    <small class="text-muted">({{ user.profile.get_role_display }})</small>
+                    {% endif %}
                   </div>
                 </div>
                 <div class="col-md-6">
                   <div class="form-group">
-                    <label class="small mb-1">User Name</label>
+                    <label class="small mb-1">User Name:</label>
                     {{ user_form.username }}
                     <br />
                     <a class="col-md-12 btn btn-primary" href="{% url 'password_change' %}">Change Password</a>
@@ -53,7 +56,7 @@
                 </div>
                 <div class="col-md-6">
                   <div class="form-group">
-                    <label class="small mb-1">Email</label>
+                    <label class="small mb-1">Email:</label>
                     {{ user_form.email }}
                   </div>
                 </div>

@@ -39,13 +39,10 @@
         <!-- Left links -->
         <ul class="mb-2 navbar-nav me-auto mb-lg-0">
           <li class="nav-item">
-            <a class="nav-link" href="/">Home</a></li>
-          <li class="nav-item"><a class="nav-link" target="_blank" href="https://pendeza.org/">About Us</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'contact_us' %}">Contact Us</a></li>
-
+            <a class="nav-link" href="/">HOME</a></li>
           {% if user.is_authenticated %}
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'main-dashboard' %}">Main Dashboard</a>
+            <a class="nav-link" href="{% url 'main-dashboard' %}">MAIN DASHBOARD</a>
           </li>
           {% endif %}
         </ul>
@@ -54,11 +51,11 @@
         <ul class="mb-2 navbar-nav ms-auto mb-lg-0">
           {% if user.is_authenticated %}
           <li>
-            <a href="{% url 'users-profile' %}" class="nav-item nav-link">Profile</a>
+            <a href="{% url 'users-profile' %}" class="nav-item nav-link">MY PROFILE</a>
           </li>
           <li>
             <a href="{% url 'logout' %}" class="nav-item nav-link"
-              onclick="return confirm('Are you sure you want to logout?');">Logout</a>
+              onclick="return confirm('Are you sure you want to logout?');">LOGOUT</a>
           </li>
 
           {% else %}

@@ -63,27 +63,15 @@
             <td>{{ profile.user.username }}</td>
             <td>{{ profile.get_role_display }}</td>
             <td>
-              {% if profile.role != "administrator" %}
               <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_profile' profile.id %}">
                 <i class="bi bi-pencil"></i>
               </a>
-              {% else %}
-              <button class="btn btn-primary btn-sm" disabled>
-                <i class="bi bi-pencil"></i>
-              </button>
-              {% endif %}
             </td>
             <td>
-              {% if profile.role != "administrator" %}
               <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_profile' profile.id %}"
                 onclick="return confirm('Are you sure about this? This record will be deleted permanently.');">
                 <i class="bi bi-trash"></i>
               </a>
-              {% else %}
-              <button class="btn btn-danger btn-sm" disabled>
-                <i class="bi bi-trash"></i>
-              </button>
-              {% endif %}
             </td>
           </tr>
           {% endfor %}

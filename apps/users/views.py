@@ -128,7 +128,8 @@ def profile_list(request):
         return render(request, "main/errors/403.html", status=403)
 
     # Check if the logged-in user is an administrator or manager
-    if user_profile.role not in ["administrator", "manager"]:
+    # if user_profile.role not in ["administrator", "manager"]:
+    if user_profile.role != "administrator":
         return render(request, "main/errors/403.html", status=403)
 
     # Fetch all profiles and related user data
