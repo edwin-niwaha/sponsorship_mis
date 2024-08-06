@@ -7,12 +7,18 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from openpyxl import load_workbook
 
+from apps.users.decorators import (
+    admin_or_manager_or_staff_required,
+    admin_or_manager_required,
+)
+
 from .forms import ClientForm, ImportClientsForm
 from .models import Client
 
 
 # =================================== Fetch and display all clients details ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def client_list(request):
     queryset = Client.objects.all().order_by("id")
 
@@ -43,6 +49,7 @@ def client_list(request):
 
 
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def register_client(request):
     if request.method == "POST":
@@ -74,6 +81,7 @@ def register_client(request):
 
 # =================================== Update client data ===================================
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def update_client(request, pk, template_name="main/client/client_register.html"):
     try:
@@ -101,6 +109,7 @@ def update_client(request, pk, template_name="main/client/client_register.html")
 
 # =================================== Delete selected client ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_client(request, pk):
     records = Client.objects.get(id=pk)
@@ -111,6 +120,7 @@ def delete_client(request, pk):
 
 # =================================== Process and Import Excel data ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def import_client_data(request):
     if request.method == "POST":
@@ -178,6 +188,7 @@ def process_and_import_data(excel_file):
 
 # =================================== Delete all records at once ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_confirm(request):
     if request.method == "POST":

@@ -9,6 +9,10 @@ from django.utils import timezone
 from apps.child.models import Child
 from apps.sponsor.models import Sponsor
 from apps.staff.models import Staff
+from apps.users.decorators import (
+    admin_or_manager_or_staff_required,
+    admin_or_manager_required,
+)
 
 from .forms import (
     ChildSponsorshipEditForm,
@@ -24,6 +28,7 @@ from .models import (
 
 # =================================== Child Sponsorship ===================================
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def child_sponsorship(request):
     if request.method == "POST":
@@ -91,6 +96,7 @@ def child_sponsorship(request):
 
 # =================================== Child Sponsorship Report ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def child_sponsorship_report(request):
     if request.method == "POST":
         child_id = request.POST.get("id")
@@ -122,6 +128,7 @@ def child_sponsorship_report(request):
 
 # =================================== sponsor_to_child_rpt ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def sponsor_to_child_rpt(request):
     sponsors = Sponsor.objects.all().filter(is_departed=False).order_by("id")
     if request.method == "POST":
@@ -152,6 +159,7 @@ def sponsor_to_child_rpt(request):
 
 # =================================== Edit Staff Sponsorship Data ===================================
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def edit_child_sponsorship(request, sponsorship_id):
     sponsorship = get_object_or_404(ChildSponsorship, id=sponsorship_id)
@@ -184,6 +192,7 @@ def edit_child_sponsorship(request, sponsorship_id):
 
 # =================================== Delete Sponsorship Data ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_child_sponsorship(request, pk):
     records = ChildSponsorship.objects.get(id=pk)
@@ -194,6 +203,7 @@ def delete_child_sponsorship(request, pk):
 
 # =================================== Terminate Child Sponsorship ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def terminate_child_sponsorship(request, sponsorship_id):
     sponsorship = get_object_or_404(ChildSponsorship, id=sponsorship_id)
@@ -220,6 +230,7 @@ def terminate_child_sponsorship(request, sponsorship_id):
 
 # =================================== Staff Sponsorship ===================================
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def staff_sponsorship_create(request):
     if request.method == "POST":
@@ -286,6 +297,7 @@ def staff_sponsorship_create(request):
 
 # =================================== Staff Sponsorship Report ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def staff_sponsorship_report(request):
     if request.method == "POST":
         staff_id = request.POST.get("id")
@@ -318,6 +330,7 @@ def staff_sponsorship_report(request):
 
 # =================================== Edit Staff Sponsorship Data ===================================
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def edit_staff_sponsorship(request, sponsorship_id):
     sponsorship = get_object_or_404(StaffSponsorship, id=sponsorship_id)
@@ -350,6 +363,7 @@ def edit_staff_sponsorship(request, sponsorship_id):
 
 # =================================== Delete Sponsorship Data ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_staff_sponsorship(request, pk):
     records = StaffSponsorship.objects.get(id=pk)
@@ -361,6 +375,7 @@ def delete_staff_sponsorship(request, pk):
 
 # =================================== End Staff Sponsorship Data ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def terminate_staff_sponsorship(request, sponsorship_id):
     sponsorship = get_object_or_404(StaffSponsorship, id=sponsorship_id)

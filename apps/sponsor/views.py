@@ -6,6 +6,11 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
+from apps.users.decorators import (
+    admin_or_manager_or_staff_required,
+    admin_or_manager_required,
+)
+
 from .forms import (
     SponsorDepartForm,
     SponsorForm,
@@ -18,6 +23,7 @@ from .models import (
 
 # =================================== Sponsors List ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def sponsor_list(request):
     queryset = Sponsor.objects.all().filter(is_departed=False).order_by("id")
 
@@ -50,6 +56,7 @@ def sponsor_list(request):
 
 
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def register_sponsor(request):
     if request.method == "POST":
@@ -79,6 +86,7 @@ def register_sponsor(request):
 
 # =================================== Update Sponsor data ===================================
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def update_sponsor(request, pk, template_name="main/sponsor/sponsor_register.html"):
     try:
@@ -113,6 +121,7 @@ def update_sponsor(request, pk, template_name="main/sponsor/sponsor_register.htm
 
 # =================================== Delete selected Sponsor ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_sponsor(request, pk):
     records = Sponsor.objects.get(id=pk)
@@ -123,6 +132,7 @@ def delete_sponsor(request, pk):
 
 # =================================== Depart Sponsor ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def sponsor_departure(request):
     if request.method == "POST":
@@ -159,6 +169,8 @@ def sponsor_departure(request):
 
 
 # =================================== sponsor Depature Report ===================================
+@login_required
+@admin_or_manager_or_staff_required
 def sponsor_depature_list(request):
     queryset = (
         Sponsor.objects.all()
@@ -194,6 +206,7 @@ def sponsor_depature_list(request):
 
 # =================================== Reinstate departed sponsor ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def reinstate_sponsor(request, pk):
     sponsor = get_object_or_404(Sponsor, id=pk)

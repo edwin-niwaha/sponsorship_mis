@@ -1,24 +1,36 @@
-from django.contrib.auth.decorators import user_passes_test
-from django.shortcuts import get_object_or_404
-from .models import Profile
+from functools import wraps
+
+from django.shortcuts import render
 
 
-def role_required(role):
-    def decorator(function):
-        def check_role(user):
-            if user.is_authenticated:
-                try:
-                    profile = user.profile
-                    return profile.role == role
-                except Profile.DoesNotExist:
-                    return False
-            return False
+def role_required(roles):
+    """Decorator to require one or more roles."""
+    if isinstance(roles, str):
+        roles = [roles]
 
-        return user_passes_test(check_role, login_url="login")(function)
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            user_profile = getattr(request.user, "profile", None)
+            if not user_profile or user_profile.role not in roles:
+                return render(request, "users/errors/403.html", status=403)
+            return view_func(request, *args, **kwargs)
+
+        return _wrapped_view
 
     return decorator
 
 
-manager_required = role_required("manager")
-staff_required = role_required("staff")
-administrator_required = role_required("administrator")
+def admin_required(view_func):
+    """Decorator to require the user to be an administrator."""
+    return role_required("administrator")(view_func)
+
+
+def admin_or_manager_required(view_func):
+    """Decorator to require the user to be an administrator or manager."""
+    return role_required(["administrator", "manager"])(view_func)
+
+
+def admin_or_manager_or_staff_required(view_func):
+    """Decorator to require the user to be either an administrator, manager, or staff."""
+    return role_required(["administrator", "manager", "staff"])(view_func)

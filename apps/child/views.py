@@ -12,7 +12,11 @@ from openpyxl import load_workbook
 
 from apps.sponsor.models import Sponsor
 from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
-from apps.users.models import Contact, Profile
+from apps.users.decorators import (
+    admin_or_manager_or_staff_required,
+    admin_or_manager_required,
+)
+from apps.users.models import Contact
 
 from .forms import (
     ChildCorrespondenceForm,
@@ -43,6 +47,7 @@ def home(request):
 
 # =================================== The dashboard ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def dashboard(request):
     # Retrieve counts using annotations
     sponsors_count = Sponsor.objects.filter(is_departed=False).count()
@@ -146,6 +151,7 @@ def get_top_staff_sponsored():
 
 # =================================== Fetch and display all children details ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def child_master_list(request):
     # queryset = Child.objects.all().filter(is_departed="No").order_by("id").select_related("profile_picture")
     queryset = Child.objects.all().filter(is_departed=False).order_by("id")
@@ -174,6 +180,7 @@ def child_master_list(request):
 
 
 @login_required
+@admin_or_manager_or_staff_required
 def child_master_list_detailed(request):
     # queryset = Child.objects.all().filter(is_departed="No").order_by("id").select_related("profile_picture")
     queryset = Child.objects.all().filter(is_departed=False).order_by("id")
@@ -203,6 +210,7 @@ def child_master_list_detailed(request):
 
 # =================================== Fetch and display selected child's details ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def child_details(request, pk):
     record = Child.objects.get(pk=pk)
     age = record.calculate_age()
@@ -215,6 +223,7 @@ def child_details(request, pk):
 
 
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def register_child(request):
     if request.method == "POST":
@@ -246,6 +255,7 @@ def register_child(request):
 
 # =================================== Update Child data ===================================
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def update_child(request, pk, template_name="main/child/child_register.html"):
     try:
@@ -280,6 +290,7 @@ def update_child(request, pk, template_name="main/child/child_register.html"):
 
 # =================================== Deleted selected child ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_child(request, pk):
     records = Child.objects.get(id=pk)
@@ -292,6 +303,7 @@ def delete_child(request, pk):
 
 
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def update_picture(request):
     if request.method == "POST":
@@ -348,6 +360,7 @@ def update_picture(request):
 
 # =================================== View Profile Pictures ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def profile_pictures(request):
     if request.method == "POST":
         child_id = request.POST.get("id")
@@ -380,6 +393,7 @@ def profile_pictures(request):
 
 # =================================== Delete Profile Pictures ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_profile_picture(request, pk):
     records = ChildProfilePicture.objects.get(id=pk)
@@ -390,6 +404,7 @@ def delete_profile_picture(request, pk):
 
 # =================================== Update Child Progress ===================================
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def child_progress(request):
     if request.method == "POST":
@@ -442,6 +457,7 @@ def child_progress(request):
 
 # =================================== View Child Progress Report ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def child_progress_report(request):
     if request.method == "POST":
         child_id = request.POST.get("id")
@@ -476,6 +492,7 @@ def child_progress_report(request):
 
 
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_progress(request, pk):
     records = ChildProgress.objects.get(id=pk)
@@ -488,6 +505,7 @@ def delete_progress(request, pk):
 
 
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def child_correspondence(request):
     if request.method == "POST":
@@ -531,6 +549,7 @@ def child_correspondence(request):
 
 # =================================== View Child Correspondence Report ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def child_correspondence_report(request):
     if request.method == "POST":
         child_id = request.POST.get("id")
@@ -565,6 +584,7 @@ def child_correspondence_report(request):
 
 
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_correspondence(request, pk):
     records = ChildCorrespondence.objects.get(id=pk)
@@ -575,6 +595,7 @@ def delete_correspondence(request, pk):
 
 # =================================== Update Child Incident ===================================
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def child_incident(request):
     if request.method == "POST":
@@ -617,6 +638,7 @@ def child_incident(request):
 
 # =================================== Update Child Incident ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def child_incident_report(request):
     if request.method == "POST":
         child_id = request.POST.get("id")
@@ -651,6 +673,7 @@ def child_incident_report(request):
 
 
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_incident(request, pk):
     records = ChildIncident.objects.get(id=pk)
@@ -661,6 +684,7 @@ def delete_incident(request, pk):
 
 # =================================== Display User Feedback ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def user_feedback(request):
     feedback = Contact.objects.all()
@@ -673,6 +697,7 @@ def user_feedback(request):
 
 # =================================== Delete User Feedback ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_feedback(request, pk):
     feedback = Contact.objects.get(id=pk)
@@ -683,6 +708,7 @@ def delete_feedback(request, pk):
 
 # =================================== Add Child Depature ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def child_departure(request):
     if request.method == "POST":
@@ -719,6 +745,8 @@ def child_departure(request):
 
 
 # =================================== Child Depature Report ===================================
+@login_required
+@admin_or_manager_or_staff_required
 def child_depature_list(request):
     queryset = (
         Child.objects.all()
@@ -752,6 +780,7 @@ def child_depature_list(request):
 
 # =================================== Reinstate departed child ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def reinstate_child(request, pk):
     child = get_object_or_404(Child, id=pk)
@@ -770,6 +799,7 @@ def reinstate_child(request, pk):
 
 # =================================== Process and Import Excel data ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def import_data(request):
     if request.method == "POST":
@@ -798,6 +828,7 @@ def import_data(request):
 
 # Function to import Excel data
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def process_and_import_data(excel_file):
     try:
@@ -876,6 +907,7 @@ def process_and_import_data(excel_file):
 
 # =================================== Fetch and display imported data ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def import_details(request):
     records = Child.objects.all().filter(is_departed=False)
@@ -888,6 +920,7 @@ def import_details(request):
 
 # =================================== Delete selected individual ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_excel_data(request, pk):
     record_imported = Child.objects.get(id=pk)
@@ -898,6 +931,7 @@ def delete_excel_data(request, pk):
 
 # =================================== Delete all records at once ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_confirmation(request):
     if request.method == "POST":

@@ -10,6 +10,10 @@ from django.urls import reverse
 from apps.child.models import Child
 from apps.sponsor.models import Sponsor
 from apps.staff.models import Staff
+from apps.users.decorators import (
+    admin_or_manager_or_staff_required,
+    admin_or_manager_required,
+)
 
 from .forms import (
     ChildPaymentEditForm,
@@ -25,6 +29,7 @@ from .models import (
 
 # =================================== Child Payment ===================================
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def child_sponsor_payment(request):
     if request.method == "POST":
@@ -73,6 +78,7 @@ def child_sponsor_payment(request):
 
 # =================================== Saff Payment ===================================
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def staff_sponsor_payment(request):
     if request.method == "POST":
@@ -122,6 +128,7 @@ def staff_sponsor_payment(request):
 # =================================== OTHER OPERATIONS ===================================
 # =================================== Validate Child payment  ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def validate_child_payment(request, payment_id):
     sponsor_payments = get_object_or_404(ChildPayments, id=payment_id)
@@ -141,6 +148,7 @@ def validate_child_payment(request, payment_id):
 
 # =================================== Edit Child Payment  ===================================
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def edit_child_payment(request, payment_id):
     sponsor_payments = get_object_or_404(ChildPayments, id=payment_id)
@@ -167,6 +175,7 @@ def edit_child_payment(request, payment_id):
 
 # =================================== Delete Child Payment Transaction ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_child_payment(request, pk):
     records = ChildPayments.objects.get(id=pk)
@@ -177,6 +186,7 @@ def delete_child_payment(request, pk):
 
 # =================================== Validate Staff payment  ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def validate_staff_payment(request, payment_id):
     sponsor_payments = get_object_or_404(StaffPayments, id=payment_id)
@@ -196,6 +206,7 @@ def validate_staff_payment(request, payment_id):
 
 # =================================== Edit Staff Payment  ===================================
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def edit_staff_payment(request, payment_id):
     sponsor_payments = get_object_or_404(StaffPayments, id=payment_id)
@@ -222,6 +233,7 @@ def edit_staff_payment(request, payment_id):
 
 # =================================== Delete Staff Payment Transaction ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_staff_payment(request, pk):
     records = StaffPayments.objects.get(id=pk)
@@ -287,6 +299,7 @@ def generate_payments_report(request, report_title, template_name, payment_model
 
 
 @login_required
+@admin_or_manager_or_staff_required
 def child_sponsor_payments_report(request):
     return generate_payments_report(
         request,
@@ -297,6 +310,7 @@ def child_sponsor_payments_report(request):
 
 
 @login_required
+@admin_or_manager_or_staff_required
 def staff_sponsor_payments_report(request):
     return generate_payments_report(
         request,

@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordResetView
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
@@ -15,6 +16,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views import View
 
+from apps.users.decorators import (
+    admin_or_manager_or_staff_required,
+    admin_or_manager_required,
+)
 
 from .forms import (
     ContactForm,
@@ -22,9 +27,9 @@ from .forms import (
     LoginForm,
     PolicyForm,
     RegisterForm,
+    UpdateProfileAllForm,
     UpdateProfileForm,
     UpdateUserForm,
-    UpdateProfileAllForm,
 )
 from .models import (
     Ebook,
@@ -32,11 +37,9 @@ from .models import (
     PolicyRead,
     Profile,
 )
-from .decorators import manager_required, staff_required, administrator_required
-
-# from apps.user.decorators import manager_required, staff_required, administrator_required
 
 
+# =================================== Home User  ===================================
 def home(request):
     return render(request, "users/home.html")
 
@@ -75,7 +78,7 @@ class RegisterView(View):
         return render(request, self.template_name, {"form": form})
 
 
-# =================================== Login  ===================================
+# =================================== Login View ===================================
 
 
 class CustomLoginView(LoginView):
@@ -95,7 +98,9 @@ class CustomLoginView(LoginView):
         return super(CustomLoginView, self).form_valid(form)
 
 
-# =================================== Reset password  ===================================
+# =================================== Reset password View  ===================================
+
+
 class ResetPasswordView(SuccessMessageMixin, PasswordResetView):
     template_name = "users/password_reset.html"
     email_template_name = "users/password_reset_email.html"
@@ -118,20 +123,12 @@ class ChangePasswordView(PasswordChangeView):
     success_url = reverse_lazy("users-home")
 
 
-# =================================== Profile List  ===================================
+# =================================== Profile List View  ===================================
+
+
 @login_required
+@admin_or_manager_required
 def profile_list(request):
-    # Handle the case where the user might not have a profile
-    try:
-        user_profile = request.user.profile
-    except Profile.DoesNotExist:
-        return render(request, "main/errors/403.html", status=403)
-
-    # Check if the logged-in user is an administrator or manager
-    # if user_profile.role not in ["administrator", "manager"]:
-    if user_profile.role != "administrator":
-        return render(request, "main/errors/403.html", status=403)
-
     # Fetch all profiles and related user data
     queryset = Profile.objects.select_related("user").all().order_by("user__username")
 
@@ -221,6 +218,7 @@ def profile(request):
 
 # =================================== Delete Profile ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_profile(request, pk):
     profile = Profile.objects.get(id=pk)
@@ -277,6 +275,7 @@ message. Please try again later.",
 
 
 @login_required
+@admin_or_manager_or_staff_required
 def policy_list(request):
     queryset = Policy.objects.all().order_by("id")
 
@@ -307,6 +306,7 @@ def policy_list(request):
 
 
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def upload_policy(request):
     if request.method == "POST":
@@ -338,6 +338,7 @@ def upload_policy(request):
 
 # =================================== Update Policy ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def update_policy(request, pk, template_name="users/policy_upload.html"):
     try:
@@ -365,6 +366,7 @@ def update_policy(request, pk, template_name="users/policy_upload.html"):
 
 # =================================== Delete selected Policy ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_policy(request, pk):
     policy = Policy.objects.get(id=pk)
@@ -375,6 +377,7 @@ def delete_policy(request, pk):
 
 # =================================== Validate Policy  ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def validate_policy(request, policy_id):
     policy = get_object_or_404(Policy, id=policy_id)
@@ -396,6 +399,7 @@ def validate_policy(request, policy_id):
 
 
 @login_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def read_policy(request, policy_id):
     policy = get_object_or_404(Policy, id=policy_id)
@@ -417,6 +421,7 @@ def read_policy(request, policy_id):
 
 # =================================== Policy Report ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def policy_report(request):
     if request.method == "POST":
         policy_id = request.POST.get("id")
@@ -448,6 +453,7 @@ def policy_report(request):
 
 # =================================== Uplaod ebook  ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def upload_ebook(request):
     if request.method == "POST":
@@ -479,6 +485,7 @@ def upload_ebook(request):
 
 # ===================================  Books list  ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def ebook_list(request):
     queryset = Ebook.objects.all().order_by("id")
 
@@ -492,11 +499,14 @@ def ebook_list(request):
     try:
         records = paginator.page(page)
     except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
         records = paginator.page(1)
     except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
         records = paginator.page(paginator.num_pages)
+
+    # Add file existence information to each record
+    for record in records:
+        file_path = record.ebook_file.name
+        record.file_exists = default_storage.exists(file_path)
 
     return render(
         request,
@@ -507,6 +517,7 @@ def ebook_list(request):
 
 # =================================== Update Book ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def update_ebook(request, pk, template_name="users/ebook_upload.html"):
     # Retrieve the ebook record by primary key, or return a 404 error if not found
@@ -535,6 +546,7 @@ def update_ebook(request, pk, template_name="users/ebook_upload.html"):
 
 # =================================== Delete Book ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_ebook(request, pk):
     ebook = Ebook.objects.get(id=pk)

@@ -41,9 +41,15 @@
           <li class="nav-item">
             <a class="nav-link" href="/">HOME</a></li>
           {% if user.is_authenticated %}
+          {% if user.profile.role == 'guest' %}
+          <li class="nav-item">
+            <a class="nav-link" href="#" onclick="showMessageDash(event)">MAIN DASHBOARD</a>
+          </li>
+          {% else %}
           <li class="nav-item">
             <a class="nav-link" href="{% url 'main-dashboard' %}">MAIN DASHBOARD</a>
           </li>
+          {% endif %}
           {% endif %}
         </ul>
         <!-- Left links -->

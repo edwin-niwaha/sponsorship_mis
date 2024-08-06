@@ -6,11 +6,16 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
+from apps.users.decorators import (
+    admin_or_manager_required,
+)
+
 from .forms import StaffDepartureForm, StaffForm
 from .models import Staff, StaffDeparture
 
 
 @login_required
+@admin_or_manager_required
 def staff_list(request):
     queryset = Staff.objects.all().filter(is_departed=False).order_by("id")
 
@@ -43,6 +48,7 @@ def staff_list(request):
 
 
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def register_staff(request):
     if request.method == "POST":
@@ -72,6 +78,7 @@ def register_staff(request):
 
 # =================================== Update Staff data ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def update_staff(request, pk, template_name="main/staff/staff_register.html"):
     try:
@@ -106,6 +113,7 @@ def update_staff(request, pk, template_name="main/staff/staff_register.html"):
 
 # =================================== Deleted selected Staff ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def delete_staff(request, pk):
     records = Staff.objects.get(id=pk)
@@ -116,6 +124,7 @@ def delete_staff(request, pk):
 
 # =================================== Depart staff ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def staff_departure(request):
     if request.method == "POST":
@@ -152,6 +161,8 @@ def staff_departure(request):
 
 
 # =================================== staff Depature Report ===================================
+@login_required
+@admin_or_manager_required
 def staff_depature_list(request):
     queryset = (
         Staff.objects.all()
@@ -187,6 +198,7 @@ def staff_depature_list(request):
 
 # =================================== Reinstate departed staff ===================================
 @login_required
+@admin_or_manager_required
 @transaction.atomic
 def reinstate_staff(request, pk):
     staff = get_object_or_404(Staff, id=pk)

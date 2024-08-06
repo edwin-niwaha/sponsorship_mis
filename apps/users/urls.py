@@ -5,20 +5,20 @@ from .views import (
     contact_us,
     delete_ebook,
     delete_policy,
+    delete_profile,
     ebook_list,
     home,
     policy_list,
     policy_report,
     profile,
+    profile_list,
     read_policy,
     update_ebook,
     update_policy,
+    update_profile,
     upload_ebook,
     upload_policy,
     validate_policy,
-    profile_list,
-    delete_profile,
-    update_profile,
 )
 
 urlpatterns = [

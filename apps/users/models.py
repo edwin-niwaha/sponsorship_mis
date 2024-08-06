@@ -9,11 +9,12 @@ class Profile(models.Model):
         ("administrator", "Administrator"),
         ("manager", "Manager"),
         ("staff", "Staff"),
+        ("guest", "Guest"),
     )
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
-    role = models.CharField(max_length=15, choices=ROLE_CHOICES, default="staff")
+    role = models.CharField(max_length=15, choices=ROLE_CHOICES, default="guest")
     avatar = models.ImageField(default="default.jpg", upload_to="profile_images")
     bio = models.TextField()
 
