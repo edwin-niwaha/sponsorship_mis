@@ -2,229 +2,209 @@
 {% load static %}
 
 {% block content %}
-
 <div>
-    <div class="page-header flex-wrap">
-        <h3 class="mb-0">Welcome, <i style="color:#F79420">{{user.first_name.title}} {{user.last_name.title}} !</i>
-
-        </h3>
-        <div class="d-flex">
-            <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
-                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
-        </div>
+    <div class="page-header d-flex justify-content-center">
+        <h3 class="mb-0">ALL REPORTS</h3>
     </div>
-    <hr class="bg-info" style="height: 3px;" />
-
-    <div id="printMe" class="row">
-        <div class="col-xl-3 col-lg-12 stretch-card grid-margin">
-            <div class="row">
-                <div class="col-xl-12 col-md-6 stretch-card grid-margin grid-margin-sm-0 pb-sm-3">
-                    <div class="card bg-warning">
-                        <div class="card-body px-3 py-4">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="color-card">
-                                    <p class="mb-0 color-card-head">Total Sponsors</p>
-                                    <h2 class="text-white"> {{sponsors_count}} <span class="h5"></span>
-                                    </h2>
-                                </div>
-                                <i class="card-icon-indicator mdi mdi-account-convert bg-inverse-icon-warning"></i>
-                            </div>
-                            <h6 class="text-white"></h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-12 col-md-6 stretch-card grid-margin grid-margin-sm-0 pb-sm-3">
-                    <div class="card bg-danger">
-                        <div class="card-body px-3 py-4">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="color-card">
-                                    <p class="mb-0 color-card-head">Total Children</p>
-                                    <h2 class="text-white"> {{children_count}} <span class="h5"></span>
-                                    </h2>
-                                </div>
-                                <i class="card-icon-indicator mdi mdi-account bg-inverse-icon-danger"></i>
-                            </div>
-                            <h6 class="text-white"></h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-12 col-md-6 stretch-card grid-margin grid-margin-sm-0 pb-sm-3 pb-lg-0 pb-xl-3">
-                    <div class="card bg-success">
-                        <div class="card-body px-3 py-4">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="color-card">
-                                    <p class="mb-0 color-card-head">Sponsored</p>
-                                    <h2 class="text-white"> {{sponsored_count}} <span class="h5"></span>
-                                    </h2>
-                                </div>
-                                <i class="card-icon-indicator mdi mdi-briefcase-outline bg-inverse-icon-primary"></i>
-                            </div>
-                            <h6 class="text-white"></h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-12 col-md-6 stretch-card pb-sm-3 pb-lg-0">
-                    <div class="card bg-warning">
-                        <div class="card-body px-3 py-4">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="color-card">
-                                    <p class="mb-0 color-card-head">Non-Sponsored</p>
-                                    <h2 class="text-white">{{non_sponsored_count}} </h2>
-                                </div>
-                                <i class="card-icon-indicator mdi mdi-account-circle bg-inverse-icon-success"></i>
-                            </div>
-                            <h6 class="text-white"></h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-12 col-md-6 stretch-card grid-margin grid-margin-sm-0 pb-sm-3 pb-lg-0 pb-xl-3 mt-3">
-                    <div class="card bg-danger">
-                        <div class="card-body px-3 py-4">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="color-card">
-                                    <p class="mb-0 color-card-head">Departed</p>
-                                    <h2 class="text-white">{{children_departed_count}} </h2>
-                                </div>
-                                <i class="card-icon-indicator mdi mdi-cancel bg-inverse-icon-danger"></i>
-                            </div>
-                            <h6 class="text-white"></h6>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <div id="printSurvey" class="col-xl-9 stretch-card grid-margin">
+    <div class="row">
+        <!-- Combined Card Row -->
+        <div class="col-xl-12 stretch-card grid-margin">
             <div class="card">
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-sm-7">
-                            <h5 class="alert alert-primary" style="color: #F79420;">Sponsorship Survey -
-                                Jan 2017 -
-                                <script>
-                                    document.write(new Date().getFullYear());
-                                </script>
-                            </h5>
+                        <!-- Card Box 1 -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-white bg-primary">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">
+                                        <a href="#" class="text-white">All Children</a>
+                                    </h5>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-sm-5 text-md-right">
-                            <button type="button" onclick=" printDiv('printSurvey')"
-                                class="btn btn-icon-text mb-3 mb-sm-0 btn-inverse-primary font-weight-normal">
-                                <i class="mdi mdi-printer btn-icon-prepend"></i>
-                            </button>
+                        <!-- Card Box 2 -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-white bg-secondary">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">
+                                        <a href="#" class="text-white">Sponsored</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card Box 3 -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-white bg-success">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">
+                                        <a href="#" class="text-white">Non-Sponsored</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card Box 4 -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-white bg-danger">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">
+                                        <a href="#" class="text-white">Departed CH</a>
+                                    </h5>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    <!-- Progress Bar for Row 1 -->
+                    <div class="progress mb-4" style="height: 8px;">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: 100%;" aria-valuenow="100"
+                            aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+
                     <div class="row">
-                        <div class="col-sm-12">
-                            <hr class="bg-info" style="height: 3px;" />
-                            <!-- Display sponsor to child ratio -->
-                            <section>
-                                <h5 class="alert alert-success" style="color: teal;">Sponsor : Child</h5>
-                                {% if top_sponsors_with_counts %}
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th style="width: 60%;">Sponsor</th>
-                                                <th>Sponsored Children</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for sponsor, count in top_sponsors_with_counts %}
-                                            <tr>
-                                                <td>{{ sponsor }}</td>
-                                                <td>{{ count }}</td>
-                                            </tr>
-                                            {% empty %}
-                                            <tr>
-                                                <td colspan="2">No top sponsors available.</td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
+                        <!-- Card Box 5 -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-white bg-warning">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">
+                                        <a href="#" class="text-white">Child Progress</a>
+                                    </h5>
                                 </div>
-                                {% else %}
-                                <div class="alert alert-danger">No top sponsors available.</div>
-                                {% endif %}
-                            </section>
-
-                            <hr class="bg-info" style="height: 3px;" />
-
-                            <!-- Display child to sponsor ratio -->
-                            <section class="pt-1">
-                                <h5 class="alert alert-success" style="color: teal;">Child : Sponsor</h5>
-                                {% if top_children_with_counts %}
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th style="width: 60%;">Child</th>
-                                                <th>Sponsors</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for child, count in top_children_with_counts %}
-                                            <tr>
-                                                <td>{{ child }}</td>
-                                                <td>{{ count }}</td>
-                                            </tr>
-                                            {% empty %}
-                                            <tr>
-                                                <td colspan="2">
-                                                    <div class="alert alert-danger">No sponsored children available.
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                {% else %}
-                                <p></p>
-                                <div class="alert alert-danger">No sponsored children available.</div>
-                                {% endif %}
-                            </section>
-
-                            <hr class="bg-info" style="height: 3px;" />
-                            <!-- Display sponsor to staff ratio -->
-                            <section>
-                                <h5 class="alert alert-success" style="color: teal;">Staff : Sponsor
-                                </h5>
-                                {% if top_staff_with_counts %}
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th style="width: 60%;">Staff</th>
-                                                <th>Sponsors</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for staff, count in top_staff_with_counts %}
-                                            <tr>
-                                                <td>{{ staff }}</td>
-                                                <td>{{ count }}</td>
-                                            </tr>
-                                            {% empty %}
-                                            <tr>
-                                                <td colspan="2">No top sponsors available..
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                {% else %}
-                                <div class="alert alert-danger">No top sponsors available.
-                                </div>
-                                {% endif %}
-                            </section>
-
+                            </div>
                         </div>
+                        <!-- Card Box 6 -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-white bg-info">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">
+                                        <a href="#" class="text-white">Correspondence</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card Box 7 -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-white bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">
+                                        <a href="#" class="text-dark">Incidence</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card Box 8 -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-white bg-dark">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">
+                                        <a href="#" class="text-white">MasterList</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Progress Bar for Row 2 -->
+                    <div class="progress mb-4" style="height: 8px;">
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: 100%;" aria-valuenow="100"
+                            aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Card Box 9 -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-white bg-primary">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">
+                                        <a href="#" class="text-white">All Sponsors</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card Box 10 -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-white bg-secondary">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">
+                                        <a href="#" class="text-white">Contributions</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card Box 11 -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-white bg-success">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">
+                                        <a href="#" class="text-white">Departed SPs</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card Box 12 -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-white bg-danger">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">
+                                        <a href="#" class="text-white">Ind. Statement</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Progress Bar for Row 3 -->
+                    <div class="progress mb-4" style="height: 8px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="100"
+                            aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Card Box 13 -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-white bg-warning">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">
+                                        <a href="#" class="text-white">All Staff</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card Box 14 -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-white bg-info">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">
+                                        <a href="#" class="text-white">Sponsored</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card Box 15 -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-white bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">
+                                        <a href="#" class="text-dark">Non-Sponsored</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card Box 16 -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-white bg-dark">
+                                <div class="card-body">
+                                    <h5 class="card-title text-center">
+                                        <a href="#" class="text-white">Departed Staff</a>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Progress Bar for Row 4 -->
+                    <div class="progress mb-4" style="height: 8px;">
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: 100%;" aria-valuenow="100"
+                            aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
             </div>
         </div>
-        <!-- ============================================= -->
-
-        {% endblock content %}
+    </div>
+</div>
+{% endblock content %}
