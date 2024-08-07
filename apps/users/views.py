@@ -41,14 +41,14 @@ from .models import (
 
 # =================================== Home User  ===================================
 def home(request):
-    return render(request, "users/home.html")
+    return render(request, "main/users/home.html")
 
 
 # =================================== Register User  ===================================
 class RegisterView(View):
     form_class = RegisterForm
     initial = {"key": "value"}
-    template_name = "users/register.html"
+    template_name = "main/users/register.html"
 
     def dispatch(self, request, *args, **kwargs):
         # will redirect to the home page if a user tries to access the register page while logged in
@@ -102,9 +102,9 @@ class CustomLoginView(LoginView):
 
 
 class ResetPasswordView(SuccessMessageMixin, PasswordResetView):
-    template_name = "users/password_reset.html"
-    email_template_name = "users/password_reset_email.html"
-    subject_template_name = "users/password_reset_subject"
+    template_name = "main/users/password_reset.html"
+    email_template_name = "main/users/password_reset_email.html"
+    subject_template_name = "main/users/password_reset_subject"
     success_message = (
         "We've emailed you instructions for setting your password, "
         "if an account exists with the email you entered. You should receive them shortly."
@@ -118,7 +118,7 @@ class ResetPasswordView(SuccessMessageMixin, PasswordResetView):
 
 
 class ChangePasswordView(PasswordChangeView):
-    template_name = "users/change_password.html"
+    template_name = "main/users/change_password.html"
     success_message = "Successfully Changed Your Password"
     success_url = reverse_lazy("users-home")
 
@@ -152,7 +152,7 @@ def profile_list(request):
 
     return render(
         request,
-        "users/profile_list.html",  # Ensure this is the correct template name
+        "main/users/profile_list.html",  # Ensure this is the correct template name
         {
             "profiles": profiles,
             "table_title": "Profile List",
@@ -163,7 +163,7 @@ def profile_list(request):
 # =================================== Update Profile ===================================
 @login_required
 @transaction.atomic
-def update_profile(request, pk, template_name="users/profile_update.html"):
+def update_profile(request, pk, template_name="main/users/profile_update.html"):
     profile = get_object_or_404(Profile, pk=pk)
 
     if request.method == "POST":
@@ -211,7 +211,7 @@ def profile(request):
 
     return render(
         request,
-        "users/profile.html",
+        "main/users/profile.html",
         {"user_form": user_form, "profile_form": profile_form},
     )
 
@@ -268,7 +268,7 @@ message. Please try again later.",
     else:
         form = ContactForm()
 
-    return render(request, "users/contact_us.html", {"form": form})
+    return render(request, "main/users/contact_us.html", {"form": form})
 
 
 # =================================== View Policy  ===================================
@@ -297,7 +297,7 @@ def policy_list(request):
 
     return render(
         request,
-        "users/policy_list.html",
+        "main/users/policy_list.html",
         {"records": records, "table_title": "Policies"},
     )
 
@@ -331,7 +331,7 @@ def upload_policy(request):
 
     return render(
         request,
-        "users/policy_upload.html",
+        "main/users/policy_upload.html",
         {"form_name": "Create Policy", "form": form},
     )
 
@@ -340,7 +340,7 @@ def upload_policy(request):
 @login_required
 @admin_or_manager_required
 @transaction.atomic
-def update_policy(request, pk, template_name="users/policy_upload.html"):
+def update_policy(request, pk, template_name="main/users/policy_upload.html"):
     try:
         policy = Policy.objects.get(pk=pk)
     except Policy.DoesNotExist:
@@ -431,7 +431,7 @@ def policy_report(request):
             policies = Policy.objects.all().order_by("id")
             return render(
                 request,
-                "users/policy_rpt.html",
+                "main/users/policy_rpt.html",
                 {
                     "table_title": "policies read",
                     "policies": policies,
@@ -446,7 +446,7 @@ def policy_report(request):
         policies = Policy.objects.all().order_by("id")
     return render(
         request,
-        "users/policy_rpt.html",
+        "main/users/policy_rpt.html",
         {"table_title": "policies read", "policies": policies},
     )
 
@@ -478,7 +478,7 @@ def upload_ebook(request):
 
     return render(
         request,
-        "users/ebook_upload.html",
+        "main/users/ebook_upload.html",
         {"form_name": "UPLOAD BOOK", "form": form},
     )
 
@@ -510,7 +510,7 @@ def ebook_list(request):
 
     return render(
         request,
-        "users/ebook_list.html",
+        "main/users/ebook_list.html",
         {"records": records, "table_title": "Books List"},
     )
 
@@ -519,7 +519,7 @@ def ebook_list(request):
 @login_required
 @admin_or_manager_required
 @transaction.atomic
-def update_ebook(request, pk, template_name="users/ebook_upload.html"):
+def update_ebook(request, pk, template_name="main/users/ebook_upload.html"):
     # Retrieve the ebook record by primary key, or return a 404 error if not found
     client_record = get_object_or_404(Ebook, pk=pk)
 

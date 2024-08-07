@@ -13,7 +13,7 @@ def role_required(roles):
         def _wrapped_view(request, *args, **kwargs):
             user_profile = getattr(request.user, "profile", None)
             if not user_profile or user_profile.role not in roles:
-                return render(request, "users/errors/403.html", status=403)
+                return render(request, "main/users/errors/403.html", status=403)
             return view_func(request, *args, **kwargs)
 
         return _wrapped_view

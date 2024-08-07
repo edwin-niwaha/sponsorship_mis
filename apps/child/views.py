@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 def home(request):
-    return render(request, "users/home.html")
+    return render(request, "main/users/home.html")
 
 
 # =================================== The dashboard ===================================
@@ -690,7 +690,7 @@ def user_feedback(request):
     feedback = Contact.objects.all()
     return render(
         request,
-        "users/user_feedback.html",
+        "main/users/user_feedback.html",
         {"table_title": "User Feedback", "feedback": feedback},
     )
 
