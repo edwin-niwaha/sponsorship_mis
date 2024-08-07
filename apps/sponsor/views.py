@@ -49,7 +49,7 @@ def sponsor_list(request):
     return render(
         request,
         "main/sponsor/sponsor_details.html",
-        {"records": records, "table_title": "Sponsors MasterList"},
+        {"records": records, "table_title": "Sponsors List"},
     )
 
 

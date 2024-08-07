@@ -7,11 +7,11 @@ urlpatterns = [
     path("main/dashboard/", views.dashboard, name="main-dashboard"),
     # The child paths
     path("add/", views.register_child, name="register_child"),
-    path("master-list/", views.child_master_list, name="child_master_list"),
+    path("master-list/", views.child_list, name="child_list"),
     path(
         "master-list/detailed/",
-        views.child_master_list_detailed,
-        name="child_master_list_detailed",
+        views.child_list_detailed,
+        name="child_list_detailed",
     ),
     path("list/details/<int:pk>", views.child_details, name="child_details"),
     path("update/<int:pk>", views.update_child, name="update_child"),

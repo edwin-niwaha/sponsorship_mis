@@ -42,7 +42,7 @@ def staff_list(request):
     return render(
         request,
         "main/staff/staff_details.html",
-        {"records": records, "table_title": "Staff MasterList"},
+        {"records": records, "table_title": "Staff List"},
     )
 
 

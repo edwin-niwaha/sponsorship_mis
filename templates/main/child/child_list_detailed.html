@@ -1,12 +1,12 @@
 {% extends 'main/base_rpts.html' %}
 
-{% block title %}Sponsors MasterList{% endblock %}
+{% block title %}Sponsors List{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="page-header flex-wrap p-2">
         <h3 class="mb-0">{{table_title|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-        <form method="GET" action="{% url 'child_master_list_detailed' %}">
+        <form method="GET" action="{% url 'child_list_detailed' %}">
             <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..."
                 style="border-radius: 5px; height: 35px;">
             <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
@@ -37,7 +37,7 @@
                 });
 
                 document.getElementById("viewListBtn").addEventListener("click", function () {
-                    window.location.href = "{% url 'child_master_list_detailed' %}";
+                    window.location.href = "{% url 'child_list_detailed' %}";
                 });
             </script>
         </div>

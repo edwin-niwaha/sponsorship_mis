@@ -153,7 +153,7 @@ def get_top_staff_sponsored():
 # =================================== Fetch and display all children details ===================================
 @login_required
 @admin_or_manager_or_staff_required
-def child_master_list(request):
+def child_list(request):
     # queryset = Child.objects.all().filter(is_departed="No").order_by("id").select_related("profile_picture")
     queryset = Child.objects.all().filter(is_departed=False).order_by("id")
 
@@ -175,14 +175,14 @@ def child_master_list(request):
 
     return render(
         request,
-        "main/child/child_master_list.html",
-        {"records": records, "table_title": "Children MasterList"},
+        "main/child/child_list.html",
+        {"records": records, "table_title": "Children List"},
     )
 
 
 @login_required
 @admin_or_manager_or_staff_required
-def child_master_list_detailed(request):
+def child_list_detailed(request):
     # queryset = Child.objects.all().filter(is_departed="No").order_by("id").select_related("profile_picture")
     queryset = Child.objects.all().filter(is_departed=False).order_by("id")
 
@@ -204,8 +204,8 @@ def child_master_list_detailed(request):
 
     return render(
         request,
-        "main/child/child_master_list_detailed.html",
-        {"records": records, "table_title": "Children MasterList"},
+        "main/child/child_list_detailed.html",
+        {"records": records, "table_title": "Children List"},
     )
 
 
@@ -263,7 +263,7 @@ def update_child(request, pk, template_name="main/child/child_register.html"):
         child_record = Child.objects.get(pk=pk)
     except Child.DoesNotExist:
         messages.error(request, "Child record not found!", extra_tags="bg-danger")
-        return redirect("child_master_list")  # Or a relevant error page
+        return redirect("child_list")  # Or a relevant error page
 
     if request.method == "POST":
         form = ChildForm(request.POST, request.FILES, instance=child_record)
@@ -273,7 +273,7 @@ def update_child(request, pk, template_name="main/child/child_register.html"):
             messages.success(
                 request, "Child record updated successfully!", extra_tags="bg-success"
             )
-            return redirect("child_master_list")
+            return redirect("child_list")
         else:
             # Display an error message if the form is not valid
             messages.error(
@@ -297,7 +297,7 @@ def delete_child(request, pk):
     records = Child.objects.get(id=pk)
     records.delete()
     messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
-    return HttpResponseRedirect(reverse("child_master_list"))
+    return HttpResponseRedirect(reverse("child_list"))
 
 
 # =================================== Upload Profile Picture ===================================

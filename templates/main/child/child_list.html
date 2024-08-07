@@ -22,17 +22,17 @@
                     class="mdi mdi-account-plus btn-icon-prepend"></i>
             </a>
 
-            <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'child_master_list' %}"><i
+            <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'child_list' %}"><i
                     class="mdi mdi-chart-line btn-icon-prepend"></i>
             </a>
         </div>
     </div>
-    <form method="GET" action="{% url 'child_master_list' %}">
+    <form method="GET" action="{% url 'child_list' %}">
         <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..."
             style="border-radius: 5px; height: 35px;">
         <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
         </a>
-        <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'child_master_list_detailed' %}">View
+        <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'child_list_detailed' %}">View
             detailed rpt</i>
         </a>
     </form>
