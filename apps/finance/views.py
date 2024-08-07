@@ -13,6 +13,7 @@ from apps.staff.models import Staff
 from apps.users.decorators import (
     admin_or_manager_or_staff_required,
     admin_or_manager_required,
+    admin_required,
 )
 
 from .forms import (

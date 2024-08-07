@@ -7,7 +7,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from apps.users.decorators import (
+    admin_or_manager_or_staff_required,
     admin_or_manager_required,
+    admin_required,
 )
 
 from .forms import StaffDepartureForm, StaffForm
@@ -15,7 +17,7 @@ from .models import Staff, StaffDeparture
 
 
 @login_required
-@admin_or_manager_required
+@admin_or_manager_or_staff_required
 def staff_list(request):
     queryset = Staff.objects.all().filter(is_departed=False).order_by("id")
 
@@ -48,7 +50,7 @@ def staff_list(request):
 
 
 @login_required
-@admin_or_manager_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def register_staff(request):
     if request.method == "POST":
@@ -78,7 +80,7 @@ def register_staff(request):
 
 # =================================== Update Staff data ===================================
 @login_required
-@admin_or_manager_required
+@admin_or_manager_or_staff_required
 @transaction.atomic
 def update_staff(request, pk, template_name="main/staff/staff_register.html"):
     try:

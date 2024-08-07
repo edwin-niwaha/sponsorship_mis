@@ -15,6 +15,7 @@ from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
 from apps.users.decorators import (
     admin_or_manager_or_staff_required,
     admin_or_manager_required,
+    admin_required,
 )
 from apps.users.models import Contact
 

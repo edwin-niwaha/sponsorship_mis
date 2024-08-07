@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "social_django",
-    # =================================== OTHER APPLICATION ===================================
+    # =================================== OTHER APPLICATIONS ===================================
     "bootstrap5",
     "formtools",
     "crispy_forms",
@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "apps.finance",
     "apps.sponsorship",
     "apps.client",
+    "apps.reports",
 ]
 
 MIDDLEWARE = [
