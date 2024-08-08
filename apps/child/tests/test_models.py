@@ -106,7 +106,7 @@ class ChildModelTest(TestCase):
         self.assertEqual(age, expected_age)
 
     def test_prefixed_id(self):
-        self.assertEqual(self.child.prefixed_id, f"CH0{self.child.pk}")
+        self.assertEqual(self.child.prefixed_id, f"CH-{self.child.pk}")
 
     def test_str_method(self):
         self.assertEqual(str(self.child), "John Doe")

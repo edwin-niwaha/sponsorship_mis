@@ -85,7 +85,7 @@ class Staff(models.Model):
 
     @property
     def prefixed_id(self):
-        return f"ST-0{self.pk}"
+        return f"ST-{self.pk}"
 
 
 # =================================== STAFF DEPARTURE MODEL ===================================

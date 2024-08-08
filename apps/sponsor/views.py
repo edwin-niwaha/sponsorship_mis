@@ -34,7 +34,7 @@ def sponsor_list(request):
             last_name__icontains=search_query
         )
 
-    paginator = Paginator(queryset, 25)  # Show 25 records per page
+    paginator = Paginator(queryset, 50)
     page = request.GET.get("page")
 
     try:
@@ -186,7 +186,7 @@ def sponsor_depature_list(request):
             last_name__icontains=search_query
         )
 
-    paginator = Paginator(queryset, 25)  # Show 10 records per page
+    paginator = Paginator(queryset, 50)
     page = request.GET.get("page")
 
     try:

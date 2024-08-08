@@ -103,7 +103,7 @@ class Child(models.Model):
     )
     is_father_alive = models.CharField(
         choices=(("Yes", "Yes"), ("No", "No")),
-        max_length=3,
+        max_length=10,
         verbose_name="Is the father alive?",
     )
 
@@ -118,7 +118,7 @@ class Child(models.Model):
     )
     is_mother_alive = models.CharField(
         choices=(("Yes", "Yes"), ("No", "No")),
-        max_length=3,
+        max_length=10,
         verbose_name="is the mother alive?",
     )
     mother_description = models.TextField(
@@ -207,9 +207,18 @@ class Child(models.Model):
     def __str__(self):
         return self.full_name
 
+    # @property
+    # def prefixed_id(self):
+    #     return f"CH-00{self.pk}"
+
     @property
     def prefixed_id(self):
-        return f"CH0{self.pk}"
+        if self.pk < 10:
+            return f"CH-00{self.pk}"
+        elif self.pk < 100:
+            return f"CH-0{self.pk}"
+        else:
+            return f"CH-{self.pk}"
 
     def calculate_age(self):
         today = date.today()

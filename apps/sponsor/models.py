@@ -102,7 +102,7 @@ class Sponsor(models.Model):
 
     @property
     def prefixed_id(self):
-        return f"SP0{self.pk}"
+        return f"SP-{self.pk}"
 
 
 # =================================== SPONSOR DEPARTURE MODEL ===================================

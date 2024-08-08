@@ -139,7 +139,7 @@ def profile_list(request):
         queryset = queryset.filter(user__username__icontains=search_query)
 
     # Pagination
-    paginator = Paginator(queryset, 25)  # Show 25 profiles per page
+    paginator = Paginator(queryset, 50)
     page_number = request.GET.get("page")
 
     try:
@@ -284,7 +284,7 @@ def policy_list(request):
     if search_query:
         queryset = queryset.filter(title__icontains=search_query)
 
-    paginator = Paginator(queryset, 25)  # Show 25 records per page
+    paginator = Paginator(queryset, 50)
     page = request.GET.get("page")
 
     try:
@@ -494,7 +494,7 @@ def ebook_list(request):
     if search_query:
         queryset = queryset.filter(title__icontains=search_query)
 
-    paginator = Paginator(queryset, 50)  # Show 50 records per page
+    paginator = Paginator(queryset, 50)
     page = request.GET.get("page")
 
     try:

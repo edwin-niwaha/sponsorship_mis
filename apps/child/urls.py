@@ -50,7 +50,7 @@ urlpatterns = [
         "user/feedback/delete/<int:pk>", views.delete_feedback, name="delete_feedback"
     ),
     # Excel import paths
-    path("import/", views.import_data, name="import"),
+    path("import/", views.import_child_data, name="import_child_data"),
     path("excel/list/", views.import_details, name="imported_data"),
     path("excel-data/delete/<int:pk>", views.delete_excel_data, name="delete_excel"),
     path("delete_confirmation/", views.delete_confirmation, name="delete_confirmation"),

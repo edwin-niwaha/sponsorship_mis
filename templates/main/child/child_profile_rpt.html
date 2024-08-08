@@ -44,13 +44,13 @@
             </tr>
             <tr>
                 <td width="45%" rowspan="2" colspan="2">
-                    {% if record.avatar == ""  %}
-                    No avatar!
-                    {% else %}
+                    {% if record.picture and record.picture.url %}
                     <img class="rounded-circle account-img" height="100" width="100" src="{{ record.picture.url }}"
                         style="cursor: pointer" />
+                    {% else %}
+                    No avatar!
                     {% endif %}
-                    <i class="text-info">Reg. No:</i> {{ record.prefixed_id}}
+                    <i class="text-info">Reg. No:</i> {{ record.prefixed_id }}
                 </td>
                 <td class="text-info">Full Name:</td>
                 <td>{{record.full_name}}</td>

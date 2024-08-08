@@ -18,7 +18,7 @@
                 onclick="Export2Doc('printMe');">
                 <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
 
-            <a title="Bulk Import" class="btn btn-sm ml-3 btn-success" href="{% url 'import' %}"><i
+            <a title="Bulk Import" class="btn btn-sm ml-3 btn-success" href="{% url 'import_child_data' %}"><i
                     class="mdi mdi-upload btn-icon-prepend"></i></a>
 
             <a title="View imported data" class="btn btn-sm ml-3 btn-success" href="{% url 'imported_data' %}"><i
@@ -43,7 +43,10 @@
                     <th scope="col">#</th>
                     <th scope="col">ID</th>
                     <th scope="col">Name</th>
+                    <th scope="col">Gender</th>
                     <th scope="col">D.O.B</th>
+                    <th scope="col">Weight</th>
+                    <th scope="col">Height</th>
                     <th scope="col">Action</th>
                 </tr>
             </thead>
@@ -53,14 +56,18 @@
                     <th scope="row">{{forloop.counter}}.</th>
                     <td>{{r.prefixed_id}}</td>
                     <td>{{r.full_name}}</td>
+                    <td>{{r.gender}}</td>
                     <td>{{r.date_of_birth}}</td>
+                    <td>{{r.weight}}</td>
+                    <td>{{r.height}}</td>
                     <td>
                         {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
                         <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_excel' r.id %}"
-                            onclick="return confirm('Are you sure about this? this record will be deleted permanently');"><i
-                                class="bi bi-trash"></a>
+                            onclick="return confirm('Are you sure about this? This record will be deleted permanently.');">
+                            <i class="bi bi-trash"></i>
+                        </a>
                         {% else %}
-                        <button class="btn btn-danger btn-sm" onclick="showNoPermissionMessage('delete')">
+                        <button class="btn btn-danger btn-sm disabled" onclick="showNoPermissionMessage('delete')">
                             <i class="bi bi-trash"></i>
                         </button>
                         {% endif %}

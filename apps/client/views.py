@@ -27,7 +27,7 @@ def client_list(request):
     if search_query:
         queryset = queryset.filter(full_name__icontains=search_query)
 
-    paginator = Paginator(queryset, 25)  # Show 25 records per page
+    paginator = Paginator(queryset, 50)  # Show 50 records per page
     page = request.GET.get("page")
 
     try:
@@ -121,7 +121,7 @@ def delete_client(request, pk):
 
 # =================================== Process and Import Excel data ===================================
 @login_required
-@admin_or_manager_required
+@admin_required
 @transaction.atomic
 def import_client_data(request):
     if request.method == "POST":
@@ -155,7 +155,7 @@ def import_client_data(request):
     return render(
         request,
         "main/client/bulk_import.html",
-        {"form_name": "Import Excel Data", "form": form},
+        {"form_name": "Import Clients - Excel", "form": form},
     )
 
 

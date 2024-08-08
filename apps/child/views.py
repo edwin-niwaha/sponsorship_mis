@@ -161,7 +161,7 @@ def child_list(request):
     if search_query:
         queryset = queryset.filter(full_name__icontains=search_query)
 
-    paginator = Paginator(queryset, 25)  # Show 25 records per page
+    paginator = Paginator(queryset, 50)
     page = request.GET.get("page")
 
     try:
@@ -190,7 +190,7 @@ def child_list_detailed(request):
     if search_query:
         queryset = queryset.filter(full_name__icontains=search_query)
 
-    paginator = Paginator(queryset, 25)  # Show 25 records per page
+    paginator = Paginator(queryset, 50)
     page = request.GET.get("page")
 
     try:
@@ -760,7 +760,7 @@ def child_depature_list(request):
     if search_query:
         queryset = queryset.filter(full_name__icontains=search_query)
 
-    paginator = Paginator(queryset, 25)  # Show 10 records per page
+    paginator = Paginator(queryset, 50)
     page = request.GET.get("page")
 
     try:
@@ -800,9 +800,9 @@ def reinstate_child(request, pk):
 
 # =================================== Process and Import Excel data ===================================
 @login_required
-@admin_or_manager_required
+@admin_required
 @transaction.atomic
-def import_data(request):
+def import_child_data(request):
     if request.method == "POST":
         form = UploadForm(request.POST, request.FILES)
         if form.is_valid():
@@ -823,87 +823,79 @@ def import_data(request):
     return render(
         request,
         "main/child/bulk_import.html",
-        {"form_name": "Import Excel Data", "form": form},
+        {"form_name": "Import Children - Excel", "form": form},
     )
 
 
 # Function to import Excel data
-@login_required
-@admin_or_manager_required
-@transaction.atomic
+def parse_boolean(value):
+    """Convert values like 'Yes' or 'No' to boolean."""
+    if value in ["Yes", "yes", True]:
+        return True
+    elif value in ["No", "no", False]:
+        return False
+    return None
+
+
 def process_and_import_data(excel_file):
     try:
         wb = load_workbook(excel_file)
         sheet = wb.active
         for row in sheet.iter_rows(min_row=2):
-            fname = row[0].value
-            preferred_name = row[1].value
-            residence = row[2].value
-            tribe = row[3].value
-            gender = row[4].value
-            date_of_birth = row[5].value
-            weight = row[6].value
-            height = row[7].value
-            c_interest = row[8].value
-            is_child_in_school = row[9].value
-            is_sponsored = row[10].value  # True if
-            father_name = row[11].value
-            is_father_alive = row[12].value
-            father_description = row[13].value
-            mother_name = row[14].value
-            is_mother_alive = row[15].value
-            mother_description = row[16].value
-            guardian = row[17].value
-            guardian_contact = row[18].value
-            relationship_with_guardian = row[19].value
-            siblings = row[20].value
-            background_info = row[21].value
-            health_status = row[22].value
-            responsibility = row[23].value
-            relationship_with_christ = row[24].value
-            religion = row[25].value
-            prayer_request = row[26].value
-            year_enrolled = row[27].value
-            is_departed = row[28].value
-            staff_comment = row[29].value
-            compiled_by = row[30].value
-            if fname is not None:
-                obj = Child.objects.create(
-                    full_name=fname,
-                    preferred_name=preferred_name,
-                    residence=residence,
-                    tribe=tribe,
-                    gender=gender,
-                    date_of_birth=date_of_birth,
-                    weight=weight,
-                    height=height,
-                    c_interest=c_interest,
-                    is_child_in_school=is_child_in_school,
-                    is_sponsored=is_sponsored,
-                    father_name=father_name,
-                    is_father_alive=is_father_alive,
-                    father_description=father_description,
-                    mother_name=mother_name,
-                    is_mother_alive=is_mother_alive,
-                    mother_description=mother_description,
-                    guardian=guardian,
-                    guardian_contact=guardian_contact,
-                    relationship_with_guardian=relationship_with_guardian,
-                    siblings=siblings,
-                    background_info=background_info,
-                    health_status=health_status,
-                    responsibility=responsibility,
-                    relationship_with_christ=relationship_with_christ,
-                    religion=religion,
-                    prayer_request=prayer_request,
-                    year_enrolled=year_enrolled,
-                    is_departed=is_departed,
-                    staff_comment=staff_comment,
-                    compiled_by=compiled_by,
-                )
-                obj.save()
+            data = {
+                "full_name": row[0].value,
+                "preferred_name": row[1].value,
+                "residence": row[2].value,
+                "district": row[3].value,
+                "tribe": row[4].value,
+                "gender": row[5].value,
+                "date_of_birth": row[6].value,
+                "picture": row[7].value,
+                "weight": row[8].value,
+                "height": row[9].value,
+                "aspiration": row[10].value,
+                "c_interest": row[11].value,
+                "is_child_in_school": parse_boolean(row[12].value),
+                "is_sponsored": parse_boolean(row[13].value),
+                "father_name": row[14].value,
+                "is_father_alive": row[15].value,
+                "father_description": row[16].value,
+                "mother_name": row[17].value,
+                "is_mother_alive": row[18].value,
+                "mother_description": row[19].value,
+                "guardian": row[20].value,
+                "guardian_contact": row[21].value,
+                "relationship_with_guardian": row[22].value,
+                "siblings": row[23].value,
+                "background_info": row[24].value,
+                "health_status": row[25].value,
+                "responsibility": row[26].value,
+                "relationship_with_christ": row[27].value,
+                "religion": row[28].value,
+                "prayer_request": row[29].value,
+                "year_enrolled": (
+                    row[30].value if row[30].value is not None else 2024
+                ),  # Provide a default year if missing
+                "is_departed": parse_boolean(row[31].value),
+                "staff_comment": row[32].value,
+                "compiled_by": row[33].value,
+            }
+
+            # Validate and log data
+            logger.debug(f"Processing data: {data}")
+
+            # Ensure values conform to the constraints
+            if not data["full_name"]:
+                continue  # Skip rows with missing required fields
+
+            # Save the record
+            obj = Child(**data)
+            obj.save()
     except Exception as e:
-        raise e  # Reraise the exception for better error handling at the view level
+        logger.error(
+            f"Error importing data: {e}", exc_info=True
+        )  # Log error with traceback
+        raise e
 
 
 # =================================== Fetch and display imported data ===================================
@@ -915,7 +907,7 @@ def import_details(request):
     return render(
         request,
         "main/child/bulk_import_rpt.html",
-        {"table_title": "Imported Excel Data", "records": records},
+        {"table_title": "Imported Chldren Excel", "records": records},
     )
 
 
