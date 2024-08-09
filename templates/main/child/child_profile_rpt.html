@@ -91,11 +91,16 @@
             </tr>
             <tr>
                 <td colspan="2">
-                    <i class="text-info">Is the child in school? &rarr; </i> {{record.is_child_in_school}}
+                    <i class="text-info">Is the child in school? &rarr; </i>
+                    {% if record.is_child_in_school %}
+                    Yes
+                    {% else %}
+                    No
+                    {% endif %}
                 </td>
                 <td colspan="2">
-                    {% if record.is_child_in_school == "True"  %}
-                    <a href="#"
+                    {% if record.is_child_in_school %}
+                    <a href="{% url 'child_progress_report' %}"
                         class="link-info link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">
                         <i class="text-success">View education details...</i>
                     </a>
@@ -110,11 +115,16 @@
                 </td>
             </tr>
             <tr>
-                <td colspan="2"><i class="text-info">Is the child sponsored? &rarr; </i> {{record.is_sponsored}}
+                <td colspan="2"><i class="text-info">Is the child sponsored? &rarr; </i>
+                    {% if record.is_sponsored %}
+                    Yes
+                    {% else %}
+                    No
+                    {% endif %}
                 </td>
                 <td colspan="2">
-                    {% if record.is_sponsored == "True"  %}
-                    <a href="#"
+                    {% if record.is_sponsored%}
+                    <a href="{% url 'child_sponsorship_report' %}"
                         class="link-info link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">
                         <i class="text-success">View sponsorship details...</i>
                     </a>

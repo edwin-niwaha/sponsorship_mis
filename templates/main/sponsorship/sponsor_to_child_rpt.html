@@ -76,13 +76,13 @@
                         <th scope="row">{{forloop.counter}}.</th>
                         <td>{{sponsorship.child.prefixed_id}}</td>
                         <td>
-                            {% if child.picture == ""  %}
-                            No Picture!
-                            {% else %}
+                            {% if sponsorship.child.picture %}
                             <a>
                                 <img class="rounded-circle account-img" height="50" width="50"
                                     src="{{ sponsorship.child.picture.url }}" alt="">
                             </a>
+                            {% else %}
+                            No Picture!
                             {% endif %}
                         </td>
                         <td>{{sponsorship.child.full_name}}</td>

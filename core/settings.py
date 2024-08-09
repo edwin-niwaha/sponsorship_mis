@@ -207,7 +207,7 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = str(os.getenv("EMAIL_USER"))
 EMAIL_HOST_PASSWORD = str(os.getenv("EMAIL_PASS"))
 
-SESSION_COOKIE_AGE = 1800  # Session duration in seconds
+SESSION_COOKIE_AGE = 3600  # 60 * 60 Session duration in seconds
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Expire session when browser closes
 
 # Specifying default primary key field type for models that don't define a primary key field explicitly.

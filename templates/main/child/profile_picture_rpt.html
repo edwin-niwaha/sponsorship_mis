@@ -71,15 +71,15 @@
                         <th scope="row">{{forloop.counter}}.</th>
                         <td>{{child.uploaded_at}}</td>
                         <td>
-                            {% if child.picture == ""  %}
-                            No Picture!
-                            {% else %}
+                            {% if child.picture %}
                             <img class="rounded-circle account-img" height="100" width="100"
                                 src="{{ child.picture.url }}" alt="">
                             <a href="{{ child.picture.url }}" download title="Download Picture"
                                 onclick="return confirm('Download Picture?');">
                                 <i class="bi bi-download"></i>
                             </a>
+                            {% else %}
+                            No Picture!
                             {% endif %}
                         </td>
                         <td>
