@@ -54,4 +54,9 @@ urlpatterns = [
     path("excel/list/", views.import_details, name="imported_data"),
     path("excel-data/delete/<int:pk>", views.delete_excel_data, name="delete_excel"),
     path("delete_confirmation/", views.delete_confirmation, name="delete_confirmation"),
+    path(
+        "update-contacts/",
+        views.update_guardian_contacts,
+        name="update_guardian_contacts",
+    ),
 ]

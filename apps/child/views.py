@@ -9,6 +9,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from openpyxl import load_workbook
+from django.core.management import call_command
 
 from apps.sponsor.models import Sponsor
 from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
@@ -903,12 +904,43 @@ def process_and_import_data(excel_file):
 @admin_or_manager_required
 @transaction.atomic
 def import_details(request):
-    records = Child.objects.all().filter(is_departed=False)
+    records = Child.objects.all().filter(is_departed=False).order_by("id")
     return render(
         request,
         "main/child/bulk_import_rpt.html",
-        {"table_title": "Imported Chldren Excel", "records": records},
+        {"table_title": "Imported Children - Excel", "records": records},
     )
+
+
+# ===================================  'Update all phone numbers to include a prefix + sign' ===================================
+@login_required
+@admin_required
+def update_guardian_contacts(request):
+    if request.method == "POST":
+        # Call the management command and handle success or failure
+        try:
+            call_command(
+                "gurdian_contacts"
+            )  # Replace "gurdian_contacts" with your actual command name
+            messages.success(
+                request,
+                "Guardian contacts updated successfully!",
+                extra_tags="bg-success",
+            )
+            logger.info("Successfully updated guardian contacts.")
+        except Exception as e:
+            messages.error(
+                request,
+                f"Error updating guardian contacts: {e}",
+                extra_tags="bg-danger",
+            )
+            logger.error(f"Error updating guardian contacts: {e}", exc_info=True)
+
+        # Redirect to avoid re-posting data on refresh
+        return HttpResponseRedirect(reverse("imported_data"))
+
+    # Render the form if not a POST request
+    return render(request, "main/child/bulk_import_rpt.html")
 
 
 # =================================== Delete selected individual ===================================

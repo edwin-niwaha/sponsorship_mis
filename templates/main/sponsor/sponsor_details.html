@@ -108,8 +108,9 @@
                         <td>
                             {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
                             <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_sponsor' sponsor.id %}"
-                                onclick="return confirm('Are you sure about this? this record will be deleted permanently');"><i
-                                    class="bi bi-trash"></a>
+                                onclick="return confirm('Are you sure about this? This record will be deleted permanently');">
+                                <i class="bi bi-trash"></i>
+                            </a>
                             {% else %}
                             <button class="btn btn-danger btn-sm" onclick="showNoPermissionMessage('delete')">
                                 <i class="bi bi-trash"></i>

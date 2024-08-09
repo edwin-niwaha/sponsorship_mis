@@ -74,7 +74,7 @@ class Child(models.Model):
         verbose_name="Weight in kilograms",
     )
     height = models.PositiveIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(100)],
+        validators=[MinValueValidator(1), MaxValueValidator(300)],
         null=True,
         blank=True,
         verbose_name="Height in centimeters",

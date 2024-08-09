@@ -8,7 +8,15 @@
 
 <div class="container">
     <div class="page-header flex-wrap">
-        <h3 class="mb-0"> {{form_name|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></h3>
+        <h3 class="mb-0"> {{form_name|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block">
+                <form method="post" action="{% url 'update_guardian_contacts' %}">
+                    {% csrf_token %}
+                    <button class="col-md-12 btn btn-dark" type="submit"
+                        onclick=" return confirm('Update all guardian contact numbers to include a prefix + sign');">Update
+                        +
+                    </button>
+                </form>
+        </h3>
         <div class="d-flex">
             <a title="View imported data" class="btn btn-sm ml-3 btn-success" href="{% url 'imported_data' %}"><i
                     class="mdi mdi-chart-line btn-icon-prepend"></i></a>
@@ -28,7 +36,7 @@
                             <div class="form-group mt-4 mb-0">
                                 <button type="submit" class="col-md-12 btn btn-dark"
                                     onclick="return confirm('Are you sure you want to proceed?') && validateForm()">
-                                    IMPORT</button>
+                                    IMPORT DATA</button>
                             </div>
                         </form>
                     </div>
