@@ -4,15 +4,12 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from django.db.models import Count
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from openpyxl import load_workbook
 from django.core.management import call_command
 
-from apps.sponsor.models import Sponsor
-from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
 from apps.users.decorators import (
     admin_or_manager_or_staff_required,
     admin_or_manager_required,
@@ -41,114 +38,6 @@ from .models import (
 # The getLogger() function is used to get a logger instance
 logger = logging.getLogger(__name__)
 # logger.info("Child ID received: %s", child_id)  # Log the child_id value
-
-
-def home(request):
-    return render(request, "main/users/home.html")
-
-
-# =================================== The dashboard ===================================
-@login_required
-@admin_or_manager_or_staff_required
-def dashboard(request):
-    # Retrieve counts using annotations
-    sponsors_count = Sponsor.objects.filter(is_departed=False).count()
-    children_count = Child.objects.count()
-    sponsored_count = Child.objects.filter(is_departed=False, is_sponsored=True).count()
-    non_sponsored_count = Child.objects.filter(
-        is_departed=False, is_sponsored=False
-    ).count()
-    children_departed_count = Child.objects.filter(is_departed=True).count()
-
-    # Get top sponsors and children
-    top_sponsors_data = get_top_sponsors()
-    top_children_data = get_top_children_sponsored()
-    top_staff_data = get_top_staff_sponsored()
-
-    # Combine sponsors and counts into a list of tuples
-    top_sponsors_with_counts = list(
-        zip(top_sponsors_data["sponsors"], top_sponsors_data["counts"])
-    )
-    top_children_with_counts = list(
-        zip(top_children_data["children"], top_children_data["counts"])
-    )
-    top_staff_with_counts = list(
-        zip(top_staff_data["staff_active"], top_staff_data["counts"])
-    )
-    context = {
-        "sponsors_count": sponsors_count,
-        "children_count": children_count,
-        "children_departed_count": children_departed_count,
-        "sponsored_count": sponsored_count,
-        "non_sponsored_count": non_sponsored_count,
-        "top_sponsors_with_counts": top_sponsors_with_counts,
-        "top_children_with_counts": top_children_with_counts,
-        "top_staff_with_counts": top_staff_with_counts,
-    }
-
-    return render(request, "main/dashboard.html", context)
-
-
-# =================================== Child Sponsorship Count ===================================
-def get_top_sponsors():
-    # Get the top sponsors with the most sponsored children
-    top_sponsors = (
-        ChildSponsorship.objects.values("sponsor__first_name", "sponsor__last_name")
-        .annotate(total_sponsored=Count("child"))
-        .order_by("-total_sponsored")[:10]
-    )
-
-    sponsors = [
-        f"{sponsor['sponsor__first_name']} {sponsor['sponsor__last_name']}"
-        for sponsor in top_sponsors
-    ]
-    counts = [sponsor["total_sponsored"] for sponsor in top_sponsors]
-
-    return {
-        "sponsors": sponsors,
-        "counts": counts,
-    }
-
-
-def get_top_children_sponsored():
-    # Get the top children with the most sponsors
-    top_children = (
-        ChildSponsorship.objects.values(
-            "child__full_name"
-        )  # Use the correct reference to child model
-        .annotate(total_sponsors=Count("sponsor"))
-        .order_by("-total_sponsors")[:10]
-    )
-
-    # Extract child names and sponsor counts
-    children = [child["child__full_name"] for child in top_children]
-    counts = [child["total_sponsors"] for child in top_children]
-
-    return {
-        "children": children,
-        "counts": counts,
-    }
-
-
-def get_top_staff_sponsored():
-    # Query to get the top staff with the most sponsors
-    top_staff = (
-        StaffSponsorship.objects.values("staff__first_name", "staff__last_name")
-        .annotate(total_sponsors=Count("sponsor"))
-        .order_by("-total_sponsors")[:10]
-    )
-
-    # Extract staff names and sponsor counts
-    staff_active = [
-        f"{staff['staff__first_name']} {staff['staff__last_name']}"
-        for staff in top_staff
-    ]
-    counts = [staff["total_sponsors"] for staff in top_staff]
-
-    return {
-        "staff_active": staff_active,
-        "counts": counts,
-    }
 
 
 # =================================== Fetch and display all children details ===================================

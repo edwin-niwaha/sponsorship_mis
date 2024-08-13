@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "apps.sponsorship",
     "apps.client",
     "apps.reports",
+    "apps.dashboard",
 ]
 
 MIDDLEWARE = [

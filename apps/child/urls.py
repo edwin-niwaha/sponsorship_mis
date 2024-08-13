@@ -3,8 +3,6 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path("", views.home, name="users-home"),
-    path("main/dashboard/", views.dashboard, name="main-dashboard"),
     # The child paths
     path("add/", views.register_child, name="register_child"),
     path("master-list/", views.child_list, name="child_list"),

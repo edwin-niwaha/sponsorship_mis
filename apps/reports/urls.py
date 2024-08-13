@@ -4,7 +4,7 @@ from . import views
 
 urlpatterns = [
     # Dashboard
-    path("dashboard/", views.reports_dash, name="reports_dash"),
+    path("reports-dashboard/", views.reports_dash, name="reports_dash"),
     # Children
     path("children/list", views.all_children, name="all_children"),
     path("sponsored-children/", views.sponsored_children, name="sponsored_children"),

@@ -100,7 +100,7 @@
             <div class="card">
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-sm-7">
+                        <div class="col-sm-12">
                             <h5 class="alert alert-primary" style="color: #F79420;">Sponsorship Survey -
                                 Jan 2017 -
                                 <script>
@@ -108,16 +108,12 @@
                                 </script>
                             </h5>
                         </div>
-                        <div class="col-sm-5 text-md-right">
-                            <button type="button" onclick=" printDiv('printSurvey')"
-                                class="btn btn-icon-text mb-3 mb-sm-0 btn-inverse-primary font-weight-normal">
-                                <i class="mdi mdi-printer btn-icon-prepend"></i>
-                            </button>
-                        </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-12">
-                            <hr class="bg-info" style="height: 3px;" />
+                            <!-- Create the Canvas Element -->
+                            <canvas id="sponsorsChart" width="100%"></canvas>
+
                             <!-- Display sponsor to child ratio -->
                             <section>
                                 <h5 class="alert alert-success" style="color: teal;">Sponsor : Child</h5>
