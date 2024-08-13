@@ -219,6 +219,7 @@ class Child(models.Model):
             return f"CH-0{self.pk}"
         else:
             return f"CH-{self.pk}"
+        
 
     def calculate_age(self):
         today = date.today()

@@ -18,6 +18,7 @@
                                 <div class="card-body">
                                     <h5 class="card-title text-center">
                                         <a href="{% url 'all_children' %}" class="text-white">All Children</a>
+                                        <p class="text-white"> ({{children_count}}) </p>
                                     </h5>
                                 </div>
                             </div>
@@ -28,6 +29,7 @@
                                 <div class="card-body">
                                     <h5 class="card-title text-center">
                                         <a href="{% url 'sponsored_children' %}" class="text-white">Sponsored</a>
+                                        <p class="text-white"> ({{sponsored_count}}) </p>
                                     </h5>
                                 </div>
                             </div>
@@ -37,7 +39,8 @@
                             <div class="card text-white bg-success">
                                 <div class="card-body">
                                     <h5 class="card-title text-center">
-                                        <a href="#" class="text-white">Non-Sponsored</a>
+                                        <a href="{% url 'un_sponsored_children' %}" class="text-white">Non-Sponsored</a>
+                                        <p class="text-white"> ({{non_sponsored_count}}) </p>
                                     </h5>
                                 </div>
                             </div>
@@ -47,7 +50,8 @@
                             <div class="card text-white bg-danger">
                                 <div class="card-body">
                                     <h5 class="card-title text-center">
-                                        <a href="#" class="text-white">Departed CH</a>
+                                        <a href="{% url 'departed_children' %}" class="text-white">Departed CH</a>
+                                        <p class="text-white"> ({{children_departed_count}}) </p>
                                     </h5>
                                 </div>
                             </div>
@@ -65,7 +69,8 @@
                             <div class="card text-white bg-warning">
                                 <div class="card-body">
                                     <h5 class="card-title text-center">
-                                        <a href="#" class="text-white">Child Progress</a>
+                                        <a href="{% url 'child_progress_report' %}" class="text-white">Child
+                                            Progress</a>
                                     </h5>
                                 </div>
                             </div>
@@ -75,7 +80,8 @@
                             <div class="card text-white bg-info">
                                 <div class="card-body">
                                     <h5 class="card-title text-center">
-                                        <a href="#" class="text-white">Correspondence</a>
+                                        <a href="{% url 'child_correspondence_report' %}"
+                                            class="text-white">Correspondence</a>
                                     </h5>
                                 </div>
                             </div>
@@ -85,7 +91,7 @@
                             <div class="card text-white bg-light">
                                 <div class="card-body">
                                     <h5 class="card-title text-center">
-                                        <a href="#" class="text-dark">Incidence</a>
+                                        <a href="{% url 'child_incident_report' %}" class="text-dark">Incidence</a>
                                     </h5>
                                 </div>
                             </div>
@@ -95,7 +101,7 @@
                             <div class="card text-white bg-dark">
                                 <div class="card-body">
                                     <h5 class="card-title text-center">
-                                        <a href="#" class="text-white">MasterList</a>
+                                        <a href="#" class="text-white">IND. REPORTS</a>
                                     </h5>
                                 </div>
                             </div>
@@ -113,7 +119,8 @@
                             <div class="card text-white bg-primary">
                                 <div class="card-body">
                                     <h5 class="card-title text-center">
-                                        <a href="#" class="text-white">All Sponsors</a>
+                                        <a href="{% url 'sponsor_list' %}" class="text-white">All Sponsors</a>
+                                        <p class="text-white"> ({{sponsors_count}}) </p>
                                     </h5>
                                 </div>
                             </div>
@@ -123,7 +130,8 @@
                             <div class="card text-white bg-secondary">
                                 <div class="card-body">
                                     <h5 class="card-title text-center">
-                                        <a href="#" class="text-white">Contributions</a>
+                                        <a href="{% url 'departed_sponsors' %}" class="text-white">Departed</a>
+                                        <p class="text-white"> ({{sponsors_departed_count}}) </p>
                                     </h5>
                                 </div>
                             </div>
@@ -133,8 +141,11 @@
                             <div class="card text-white bg-success">
                                 <div class="card-body">
                                     <h5 class="card-title text-center">
-                                        <a href="#" class="text-white">Departed SPs</a>
+                                        <a href="#" class="text-white"><u>SP Statements</u></a>
                                     </h5>
+                                    <a href="{% url 'child_sponsor_payments_report' %}" class="text-white">Children</a>
+                                    |
+                                    <a href="{% url 'staff_sponsor_payments_report' %}" class="text-white">Staff</a>
                                 </div>
                             </div>
                         </div>
@@ -143,8 +154,11 @@
                             <div class="card text-white bg-danger">
                                 <div class="card-body">
                                     <h5 class="card-title text-center">
-                                        <a href="#" class="text-white">Ind. Statement</a>
+                                        <a href="#" class="text-white"><u>Payments</u></a>
                                     </h5>
+                                    <a href="{% url 'sponsor_payments_child' %}" class="text-white">Children</a>
+                                    |
+                                    <a href="{% url 'sponsor_payments_staff' %}" class="text-white">Staff</a>
                                 </div>
                             </div>
                         </div>
@@ -161,7 +175,8 @@
                             <div class="card text-white bg-warning">
                                 <div class="card-body">
                                     <h5 class="card-title text-center">
-                                        <a href="#" class="text-white">All Staff</a>
+                                        <a href="{% url 'staff_list' %}" class="text-white">All Staff</a>
+                                        <p class="text-white"> ({{staff_count}}) </p>
                                     </h5>
                                 </div>
                             </div>
@@ -171,7 +186,9 @@
                             <div class="card text-white bg-info">
                                 <div class="card-body">
                                     <h5 class="card-title text-center">
-                                        <a href="#" class="text-white">Sponsored</a>
+                                        <a href="{%url 'sponsored_staff' %}" class="text-white">Sponsored</a>
+                                        <p class="text-white">
+                                            ({{sponsored_staff_count}}) </p>
                                     </h5>
                                 </div>
                             </div>
@@ -181,7 +198,8 @@
                             <div class="card text-white bg-light">
                                 <div class="card-body">
                                     <h5 class="card-title text-center">
-                                        <a href="#" class="text-dark">Non-Sponsored</a>
+                                        <a href="{% url 'non_sponsored_staff' %}" class="text-dark">Non-Sponsored</a>
+                                        <p class="text-black"> ({{non_sponsored_staff_count}}) </p>
                                     </h5>
                                 </div>
                             </div>
@@ -191,7 +209,8 @@
                             <div class="card text-white bg-dark">
                                 <div class="card-body">
                                     <h5 class="card-title text-center">
-                                        <a href="#" class="text-white">Departed Staff</a>
+                                        <a href="{% url 'departed_staff' %}" class="text-white">Departed Staff</a>
+                                        <p class="text-white"> ({{departed_staff_count}}) </p>
                                     </h5>
                                 </div>
                             </div>

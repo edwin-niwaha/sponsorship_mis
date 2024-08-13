@@ -45,7 +45,7 @@ class Sponsor(models.Model):
         max_length=6, choices=GENDER_CHOICES, blank=False, verbose_name="Gender"
     )
     email = models.EmailField(verbose_name="Email")
-    sponsorship_type_at_signup = models.CharField(
+    sponsorship_type = models.CharField(
         max_length=20,
         choices=SPONSORSHIP_TYPE_CHOICES,
         null=True,
@@ -102,7 +102,12 @@ class Sponsor(models.Model):
 
     @property
     def prefixed_id(self):
-        return f"SP-{self.pk}"
+        if self.pk < 10:
+            return f"SP-00{self.pk}"
+        elif self.pk < 100:
+            return f"SP-0{self.pk}"
+        else:
+            return f"SP-{self.pk}"
 
 
 # =================================== SPONSOR DEPARTURE MODEL ===================================

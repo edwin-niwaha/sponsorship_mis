@@ -85,7 +85,12 @@ class Staff(models.Model):
 
     @property
     def prefixed_id(self):
-        return f"ST-{self.pk}"
+        if self.pk < 10:
+            return f"ST-00{self.pk}"
+        elif self.pk < 100:
+            return f"ST-0{self.pk}"
+        else:
+            return f"ST-{self.pk}"
 
 
 # =================================== STAFF DEPARTURE MODEL ===================================

@@ -1,20 +1,18 @@
 {% extends 'main/base_rpts.html' %}
 
-{% block title %}Sponsors List{% endblock %}
+{% block title %}All Non Sponsored Staff{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="page-header flex-wrap p-2">
         <h3 class="mb-0">{{table_title|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-        <form method="GET" action="{% url 'sponsor_list' %}">
+        <form method="GET" action="{% url 'non_sponsored_staff' %}">
             <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..."
                 style="border-radius: 5px; height: 35px;">
             <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
             </a>
         </form>
         <div class="d-flex">
-            <!-- <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
-                <i class="mdi mdi-printer btn-icon-prepend"></i> </button> -->
 
             <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success"
                 onclick="ExportToExcel('xlsx')">
@@ -24,25 +22,16 @@
                 onclick="Export2Doc('printMe');">
                 <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
 
-            <button title="Register Child" id="registerChildBtn" type="button" class="btn btn-sm ml-3 btn-success">
-                <i class="mdi mdi-account-plus btn-icon-prepend"></i>
-            </button>
-
-            <button title="View List..." id="viewListBtn" type="button" class="btn btn-sm ml-3 btn-success">
-                <i class="mdi mdi-chart-line btn-icon-prepend"></i>
+            <button id="back_btn" type="button" class="btn btn-sm ml-3 btn-success">
+                <i class="mdi mdi-arrow-left btn-icon-prepend"></i>
             </button>
             <script>
-                document.getElementById("registerChildBtn").addEventListener("click", function () {
-                    window.location.href = "{% url 'register_sponsor' %}";
-                });
-
-                document.getElementById("viewListBtn").addEventListener("click", function () {
-                    window.location.href = "{% url 'sponsor_list' %}";
+                document.getElementById("back_btn").addEventListener("click", function () {
+                    window.location.href = "{% url 'reports_dash' %}";
                 });
             </script>
         </div>
     </div>
-
     <div id="printMe" class="tab-pane show active">
         <hr class="bg-info" style="height: 3px;" />
         <!--Start table-->
@@ -52,75 +41,35 @@
                     <tr>
                         <th scope="col">#</th>
                         <th scope="col">Reg.No</th>
+                        <th scope="col">Picture</th>
                         <th scope="col">First_Name</th>
                         <th scope="col">Last_Name</th>
                         <th scope="col">Gender</th>
                         <th scope="col">Email</th>
-                        <th scope="col">Sponsorship_Type</th>
-                        <th scope="col">Amount Expected</th>
-                        <th scope="col">Job_Title</th>
-                        <th scope="col">Region</th>
-                        <th scope="col">Town</th>
-                        <th scope="col">Origin</th>
-                        <th scope="col">Business_Telephone</th>
-                        <th scope="col">Mobile_Telephone</th>
-                        <th scope="col">City</th>
-                        <th scope="col">Start_Date</th>
-                        <th scope="col">Street_Address_1</th>
-                        <th scope="col">Street_Address_2</th>
-                        <th scope="col">Zip_Code</th>
-                        <th scope="col" colspan="2">Action</th>
-
                     </tr>
                 </thead>
                 <tbody class="table-group-divider">
-                    {%for sponsor in records%}
+                    {%for staff in records%}
                     <tr>
                         <th scope="row">{{forloop.counter}}.</th>
-                        <td>{{sponsor.prefixed_id}}</td>
-                        <td>{{sponsor.first_name}}</td>
-                        <td>{{sponsor.last_name}}</td>
-                        <td>{{sponsor.gender}}</td>
-                        <td>{{sponsor.email}}</td>
-                        <td>{{sponsor.sponsorship_type}}</td>
-                        <td>{{sponsor.expected_amt}}</td>
-                        <td>{{sponsor.job_title}}</td>
-                        <td>{{sponsor.region}}</td>
-                        <td>{{sponsor.town}}</td>
-                        <td>{{sponsor.origin}}</td>
-                        <td>{{sponsor.business_telephone}}</td>
-                        <td>{{sponsor.mobile_telephone}}</td>
-                        <td>{{sponsor.city}}</td>
-                        <td>{{sponsor.start_date}}</td>
-                        <td>{{sponsor.first_street_address}}</td>
-                        <td>{{sponsor.second_street_address}}</td>
-                        <td>{{sponsor.zip_code}}</td>
+                        <td>{{staff.prefixed_id}}</td>
                         <td>
-                            {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
-                            <a class="btn btn-primary btn-sm" title="Edit"
-                                href="{% url 'update_sponsor' sponsor.id %}"><i class="bi bi-pencil"></i></a>
+                            {% if staff.picture %}
+                            <img class="rounded-circle account-img" height="50" width="50" src="{{ staff.picture.url }}"
+                                alt="">
                             {% else %}
-                            <button class="btn btn-primary btn-sm" onclick="showNoPermissionMessage('edit')">
-                                <i class="bi bi-pencil"></i>
-                            </button>
+                            No Picture!
                             {% endif %}
                         </td>
-                        <td>
-                            {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                            <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_sponsor' sponsor.id %}"
-                                onclick="return confirm('Are you sure about this? This record will be deleted permanently');">
-                                <i class="bi bi-trash"></i>
-                            </a>
-                            {% else %}
-                            <button class="btn btn-danger btn-sm" onclick="showNoPermissionMessage('delete')">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                            {% endif %}
-                        </td>
+                        <td>{{staff.first_name}}</td>
+                        <td>{{staff.last_name}}</td>
+                        <td>{{staff.gender}}</td>
+                        <td>{{staff.email}}</td>
                     </tr>
                     {%endfor%}
                 </tbody>
             </table>
+
         </div>
         <!--End Table-->
 

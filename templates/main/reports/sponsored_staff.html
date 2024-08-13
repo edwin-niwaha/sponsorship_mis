@@ -1,12 +1,12 @@
 {% extends 'main/base_rpts.html' %}
 
-{% block title %}All sponsored Children{% endblock %}
+{% block title %}All Sponsored Staff{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="page-header flex-wrap p-2">
         <h3 class="mb-0">{{table_title|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-        <form method="GET" action="{% url 'sponsored_children' %}">
+        <form method="GET" action="{% url 'sponsored_staff' %}">
             <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..."
                 style="border-radius: 5px; height: 35px;">
             <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
@@ -41,22 +41,22 @@
                     <tr>
                         <th scope="col">#</th>
                         <th scope="col">Reg.No</th>
-                        <th scope="col">Full Name</th>
+                        <th scope="col">First_Name</th>
+                        <th scope="col">Last_Name</th>
                         <th scope="col">Gender</th>
-                        <th scope="col">D.O.B</th>
                         <th colspan="2" scope="col">Sponsor</th>
                         <th scope="col">Start Date</th>
                         <th scope="col">Sponsorship Type</th>
                     </tr>
                 </thead>
                 <tbody class="table-group-divider">
-                    {% for child, sponsorships in records %}
+                    {% for staff, sponsorships in records %}
                     <tr>
                         <th scope="row">{{ forloop.counter }}.</th>
-                        <td>{{ child.prefixed_id }}</td>
-                        <td>{{ child.full_name }}</td>
-                        <td>{{ child.gender }}</td>
-                        <td>{{ child.date_of_birth }}</td>
+                        <td>{{ staff.prefixed_id }}</td>
+                        <td>{{staff.first_name}}</td>
+                        <td>{{staff.last_name}}</td>
+                        <td>{{staff.gender}}</td>
                         <td colspan="2">{{ sponsorships.0.sponsor.last_name }} {{ sponsorships.0.sponsor.first_name }}
                         </td>
                         <td>{{ sponsorships.0.sponsor.start_date }}</td>

@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="page-header flex-wrap p-2">
         <h3 class="mb-0">{{table_title|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-        <form method="GET" action="{% url 'child_list_detailed' %}">
+        <form method="GET" action="{% url 'all_children' %}">
             <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..."
                 style="border-radius: 5px; height: 35px;">
             <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
@@ -40,14 +40,13 @@
                 <thead>
                     <tr>
                         <th scope="col">#</th>
-                        <th scope="col">Reg.No</th>
+                        <th scope="col">Reg_No</th>
                         <th scope="col">Full_Name</th>
-                        <th scope="col">Preferred</th>
                         <th scope="col">Residence</th>
                         <th scope="col">District</th>
                         <th scope="col">Tribe</th>
                         <th scope="col">Gender</th>
-                        <th scope="col">D.O.B</th>
+                        <th scope="col">Date_of_Birth</th>
                         <th scope="col">Weight</th>
                         <th scope="col">Height</th>
                         <th scope="col">Aspiration</th>
@@ -72,7 +71,6 @@
                         <th scope="row">{{forloop.counter}}.</th>
                         <td>{{child.prefixed_id}}</td>
                         <td>{{child.full_name}}</td>
-                        <td>{{child.preferred_name}}</td>
                         <td>{{child.residence}}</td>
                         <td>{{child.district}}</td>
                         <td>{{child.tribe}}</td>
