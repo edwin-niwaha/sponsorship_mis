@@ -97,7 +97,7 @@
                     <div class="row">
                         <div class="col-sm-12">
                             <!-- Chart section -->
-                            <h2>Number of sponsors registered over time</h2>
+                            <h2 class="text-center mb-4">Number of sponsors registered over time</h2>
                             <hr class="bg-info" style="height: 1px;" />
                             <canvas id="sponsorsChart" width="100%"></canvas>
                             <hr class="bg-info" style="height: 3px;" />
@@ -119,7 +119,7 @@
             <div class="row">
                 <div class="col-sm-12">
                     <section>
-                        <h2>Registered children birthdays distribution by month</h2>
+                        <h2 class="text-center mb-4">Registered children birthdays distribution by month</h2>
                         <hr class="bg-info" style="height: 1px;" />
 
                         <canvas id="pieChart"></canvas>
@@ -139,7 +139,7 @@
                     <hr class="bg-info" style="height: 3px;" />
 
                     <section>
-                        <h2>Number of sponsors registered against children over time</h2>
+                        <h2 class="text-center mb-4">Number of sponsors registered against children over time</h2>
                         <hr class="bg-info" style="height: 1px;" />
                         <canvas id="dataChart" width="100%"></canvas>
                         <div id="errorDisplay" style="color: red; margin-top: 20px;"></div>
@@ -148,7 +148,20 @@
             </div>
             <div class="row">
                 <div class="col-sm-12">
+                    <hr class="bg-info" style="height: 3px;" />
+
+                    <section>
+                        <h2 class="text-center mb-4">Sponsor contributions collected over the years(UgX)</h2>
+                        <hr class="bg-info" style="height: 1px;" />
+                        <canvas id="paymentsChart"></canvas>
+                    </section>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
                     <!-- Display sponsor to child ratio -->
+                    <h1 class="text-center mb-4">Top Sponsors</h1>
+                    <hr class="bg-info" style="height: 1px;" />
                     <section>
                         <h5 class="alert alert-success" style="color: teal;">Sponsor : Child</h5>
                         {% if top_sponsors_with_counts %}

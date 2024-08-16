@@ -20,4 +20,9 @@ urlpatterns = [
         views.get_combined_data,
         name="get_combined_data",
     ),
+    path(
+        "get_payments_data/",
+        views.get_payments_data,
+        name="get_payments_data",
+    ),
 ]

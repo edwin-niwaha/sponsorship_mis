@@ -1,10 +1,11 @@
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count
+from django.db.models import Count, Sum
 from django.shortcuts import render
 from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
 from apps.users.decorators import admin_or_manager_or_staff_required
 from apps.child.models import Child
 from apps.sponsor.models import Sponsor
+from apps.finance.models import ChildPayments, StaffPayments
 
 from django.http import JsonResponse
 from django.db.models.functions import ExtractYear
@@ -170,10 +171,7 @@ def get_children_data(request):
         )
 
 
-# =================================== Sposnors & Children ===================================
-# registration_date
-
-
+# =================================== Sponsors & Children ===================================
 @login_required
 @admin_or_manager_or_staff_required
 def get_combined_data(request):
@@ -214,7 +212,7 @@ def get_combined_data(request):
         )
 
 
-# =================================== Birthday Graph ===================================
+# =================================== Children Birthday Graph ===================================
 @login_required
 @admin_or_manager_or_staff_required
 def birthdays_by_month(request):
@@ -247,3 +245,15 @@ def birthdays_by_month(request):
     }
 
     return JsonResponse(response_data)
+
+
+# =================================== Sponsor Payments - Children ===================================
+def get_payments_data(request):
+    payments_per_year = (
+        ChildPayments.objects.annotate(year=ExtractYear("payment_date"))
+        .values("year")
+        .annotate(total_amount=Sum("amount"))
+        .order_by("year")
+    )
+    data = list(payments_per_year)
+    return JsonResponse(data, safe=False)
