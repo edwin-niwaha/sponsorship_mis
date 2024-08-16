@@ -740,35 +740,36 @@ def process_and_import_data(excel_file):
                 "tribe": row[4].value,
                 "gender": row[5].value,
                 "date_of_birth": row[6].value,
-                "picture": row[7].value,
-                "weight": row[8].value,
-                "height": row[9].value,
-                "aspiration": row[10].value,
-                "c_interest": row[11].value,
-                "is_child_in_school": parse_boolean(row[12].value),
-                "is_sponsored": parse_boolean(row[13].value),
-                "father_name": row[14].value,
-                "is_father_alive": row[15].value,
-                "father_description": row[16].value,
-                "mother_name": row[17].value,
-                "is_mother_alive": row[18].value,
-                "mother_description": row[19].value,
-                "guardian": row[20].value,
-                "guardian_contact": row[21].value,
-                "relationship_with_guardian": row[22].value,
-                "siblings": row[23].value,
-                "background_info": row[24].value,
-                "health_status": row[25].value,
-                "responsibility": row[26].value,
-                "relationship_with_christ": row[27].value,
-                "religion": row[28].value,
-                "prayer_request": row[29].value,
+                "registration_date": row[7].value,
+                "picture": row[8].value,
+                "weight": row[9].value,
+                "height": row[10].value,
+                "aspiration": row[11].value,
+                "c_interest": row[12].value,
+                "is_child_in_school": parse_boolean(row[13].value),
+                "is_sponsored": parse_boolean(row[14].value),
+                "father_name": row[15].value,
+                "is_father_alive": parse_boolean(row[16].value),
+                "father_description": row[17].value,
+                "mother_name": row[18].value,
+                "is_mother_alive": parse_boolean(row[19].value),
+                "mother_description": row[20].value,
+                "guardian": row[21].value,
+                "guardian_contact": row[22].value,
+                "relationship_with_guardian": row[23].value,
+                "siblings": row[24].value,
+                "background_info": row[25].value,
+                "health_status": row[26].value,
+                "responsibility": row[27].value,
+                "relationship_with_christ": row[28].value,
+                "religion": row[29].value,
+                "prayer_request": row[30].value,
                 "year_enrolled": (
-                    row[30].value if row[30].value is not None else 2024
+                    row[31].value if row[31].value is not None else 2024
                 ),  # Provide a default year if missing
-                "is_departed": parse_boolean(row[31].value),
-                "staff_comment": row[32].value,
-                "compiled_by": row[33].value,
+                "is_departed": parse_boolean(row[32].value),
+                "staff_comment": row[33].value,
+                "compiled_by": row[34].value,
             }
 
             # Validate and log data
@@ -776,6 +777,7 @@ def process_and_import_data(excel_file):
 
             # Ensure values conform to the constraints
             if not data["full_name"]:
+                logger.warning(f"Skipping row with missing full_name: {data}")
                 continue  # Skip rows with missing required fields
 
             # Save the record

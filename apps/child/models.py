@@ -60,6 +60,16 @@ class Child(models.Model):
             MaxValueValidator(limit_value=datetime.date.today()),
         ],
     )
+    registration_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Date of Registration",
+        default=datetime.date(2013, 1, 1),
+        validators=[
+            MinValueValidator(limit_value=datetime.date(year=2013, month=1, day=1)),
+            MaxValueValidator(limit_value=datetime.date.today()),
+        ],
+    )
     picture = models.ImageField(
         default="default.jpg",
         upload_to="current_child_profiles/",
@@ -179,8 +189,13 @@ class Child(models.Model):
     )
     YEAR_MAX = current_year()
     year_enrolled = models.IntegerField(
-        validators=[MinValueValidator(2013), MaxValueValidator(YEAR_MAX)],
-        verbose_name="The year when the child was enrolled on the program?",
+        null=True,  # Allows the field to be NULL in the database
+        blank=True,  # Allows the field to be empty in forms
+        validators=[
+            MinValueValidator(2013),  # Minimum allowed year
+            MaxValueValidator(YEAR_MAX),  # Maximum allowed year (current year)
+        ],
+        verbose_name="The year when the child was enrolled in the program?",
     )
 
     is_departed = models.BooleanField(
@@ -219,7 +234,6 @@ class Child(models.Model):
             return f"CH-0{self.pk}"
         else:
             return f"CH-{self.pk}"
-        
 
     def calculate_age(self):
         today = date.today()

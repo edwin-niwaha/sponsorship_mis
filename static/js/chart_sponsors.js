@@ -22,7 +22,7 @@ function renderChart(data) {
       labels: years,
       datasets: [
         {
-          label: "Number of Sponsors Over Time",
+          label: "Number of Sponsors",
           data: counts,
           backgroundColor: "rgba(0, 123, 255, 0.2)", // Bootstrap primary color with transparency
           borderColor: "rgba(0, 123, 255, 1)", // Bootstrap primary color

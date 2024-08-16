@@ -78,150 +78,186 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-12 col-md-6 stretch-card grid-margin grid-margin-sm-0 pb-sm-3 pb-lg-0 pb-xl-3 mt-3">
-                    <div class="card bg-danger">
-                        <div class="card-body px-3 py-4">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="color-card">
-                                    <p class="mb-0 color-card-head">Departed</p>
-                                    <h2 class="text-white">{{children_departed_count}} </h2>
-                                </div>
-                                <i class="card-icon-indicator mdi mdi-cancel bg-inverse-icon-danger"></i>
-                            </div>
-                            <h6 class="text-white"></h6>
-                        </div>
-                    </div>
-                </div>
 
             </div>
         </div>
 
-        <div id="printSurvey" class="col-xl-9 stretch-card grid-margin">
+        <!-- Container for the main content -->
+        <div class="col-xl-9 stretch-card grid-margin">
             <div class="card">
                 <div class="card-body">
                     <div class="row">
                         <div class="col-sm-12">
-                            <h5 class="alert alert-primary" style="color: #F79420;">Sponsorship Survey -
-                                Jan 2017 -
-                                <script>
-                                    document.write(new Date().getFullYear());
-                                </script>
+                            <!-- Title with dynamic year -->
+                            <h5 class="alert alert-primary text-primary">
+                                Sponsorship Survey - Jan 2017 - <span id="currentYear"></span>
                             </h5>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-12">
-                            <!-- Create the Canvas Element -->
+                            <!-- Chart section -->
+                            <h2>Number of sponsors registered over time</h2>
+                            <hr class="bg-info" style="height: 1px;" />
                             <canvas id="sponsorsChart" width="100%"></canvas>
-
-                            <!-- Display sponsor to child ratio -->
-                            <section>
-                                <h5 class="alert alert-success" style="color: teal;">Sponsor : Child</h5>
-                                {% if top_sponsors_with_counts %}
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th style="width: 60%;">Sponsor</th>
-                                                <th>Sponsored Children</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for sponsor, count in top_sponsors_with_counts %}
-                                            <tr>
-                                                <td>{{ sponsor }}</td>
-                                                <td>{{ count }}</td>
-                                            </tr>
-                                            {% empty %}
-                                            <tr>
-                                                <td colspan="2">No top sponsors available.</td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                {% else %}
-                                <div class="alert alert-danger">No top sponsors available.</div>
-                                {% endif %}
-                            </section>
-
                             <hr class="bg-info" style="height: 3px;" />
-
-                            <!-- Display child to sponsor ratio -->
-                            <section class="pt-1">
-                                <h5 class="alert alert-success" style="color: teal;">Child : Sponsor</h5>
-                                {% if top_children_with_counts %}
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th style="width: 60%;">Child</th>
-                                                <th>Sponsors</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for child, count in top_children_with_counts %}
-                                            <tr>
-                                                <td>{{ child }}</td>
-                                                <td>{{ count }}</td>
-                                            </tr>
-                                            {% empty %}
-                                            <tr>
-                                                <td colspan="2">
-                                                    <div class="alert alert-danger">No sponsored children available.
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                {% else %}
-                                <p></p>
-                                <div class="alert alert-danger">No sponsored children available.</div>
-                                {% endif %}
-                            </section>
-
-                            <hr class="bg-info" style="height: 3px;" />
-                            <!-- Display sponsor to staff ratio -->
-                            <section>
-                                <h5 class="alert alert-success" style="color: teal;">Staff : Sponsor
-                                </h5>
-                                {% if top_staff_with_counts %}
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th style="width: 60%;">Staff</th>
-                                                <th>Sponsors</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for staff, count in top_staff_with_counts %}
-                                            <tr>
-                                                <td>{{ staff }}</td>
-                                                <td>{{ count }}</td>
-                                            </tr>
-                                            {% empty %}
-                                            <tr>
-                                                <td colspan="2">No top sponsors available..
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                {% else %}
-                                <div class="alert alert-danger">No top sponsors available.
-                                </div>
-                                {% endif %}
-                            </section>
-
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <!-- ============================================= -->
 
-        {% endblock content %}
+        <!-- JavaScript to dynamically update the year -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                document.getElementById('currentYear').textContent = new Date().getFullYear();
+            });
+        </script>
+
+
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-sm-12">
+                    <section>
+                        <h2>Registered children birthdays distribution by month</h2>
+                        <hr class="bg-info" style="height: 1px;" />
+
+                        <canvas id="pieChart"></canvas>
+                    </section>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <section>
+                        <hr class="bg-info" style="height: 1px;" />
+                        <canvas id="birthdayChart"></canvas>
+                    </section>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <hr class="bg-info" style="height: 3px;" />
+
+                    <section>
+                        <h2>Number of sponsors registered against children over time</h2>
+                        <hr class="bg-info" style="height: 1px;" />
+                        <canvas id="dataChart" width="100%"></canvas>
+                        <div id="errorDisplay" style="color: red; margin-top: 20px;"></div>
+                    </section>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <!-- Display sponsor to child ratio -->
+                    <section>
+                        <h5 class="alert alert-success" style="color: teal;">Sponsor : Child</h5>
+                        {% if top_sponsors_with_counts %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60%;">Sponsor</th>
+                                        <th>Sponsored Children</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sponsor, count in top_sponsors_with_counts %}
+                                    <tr>
+                                        <td>{{ sponsor }}</td>
+                                        <td>{{ count }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="2">No top sponsors available.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-danger">No top sponsors available.</div>
+                        {% endif %}
+                    </section>
+
+                    <hr class="bg-info" style="height: 3px;" />
+
+                    <!-- Display child to sponsor ratio -->
+                    <section class="pt-1">
+                        <h5 class="alert alert-success" style="color: teal;">Child : Sponsor</h5>
+                        {% if top_children_with_counts %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60%;">Child</th>
+                                        <th>Sponsors</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for child, count in top_children_with_counts %}
+                                    <tr>
+                                        <td>{{ child }}</td>
+                                        <td>{{ count }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="2">
+                                            <div class="alert alert-danger">No sponsored children available.
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p></p>
+                        <div class="alert alert-danger">No sponsored children available.</div>
+                        {% endif %}
+                    </section>
+
+                    <hr class="bg-info" style="height: 3px;" />
+                    <!-- Display sponsor to staff ratio -->
+                    <section>
+                        <h5 class="alert alert-success" style="color: teal;">Staff : Sponsor
+                        </h5>
+                        {% if top_staff_with_counts %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60%;">Staff</th>
+                                        <th>Sponsors</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for staff, count in top_staff_with_counts %}
+                                    <tr>
+                                        <td>{{ staff }}</td>
+                                        <td>{{ count }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="2">No top sponsors available..
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-danger">No top sponsors available.
+                        </div>
+                        {% endif %}
+                    </section>
+                </div>
+            </div>
+            <hr class="bg-info" style="height: 3px;" />
+
+        </div>
+    </div>
+
+</div>
+<!-- ============================================= -->
+
+{% endblock content %}

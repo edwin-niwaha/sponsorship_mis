@@ -1,7 +1,7 @@
 from collections import defaultdict
-
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.shortcuts import render
+from django.db.models import Sum
 from django.contrib.auth.decorators import login_required
 
 from apps.child.models import Child
@@ -224,8 +224,6 @@ def departed_sponsors(request):
 
 
 # =================================== Child - Sponsor Payments ===================================
-
-
 @login_required
 @admin_or_manager_or_staff_required
 def sponsor_payments_child(request):
@@ -236,13 +234,20 @@ def sponsor_payments_child(request):
     search_query = request.GET.get("search")
     queryset = filter_by_search(queryset, search_query, ["first_name", "last_name"])
 
+    # Calculate the total amount
+    total_amount = queryset.aggregate(total_amount=Sum("amount"))["total_amount"] or 0
+
     page = request.GET.get("page")
     records = paginate_queryset(queryset, page)
 
     return render(
         request,
         "main/reports/payments_child.html",
-        {"records": records, "table_title": "Sponsor Payments - Child"},
+        {
+            "records": records,
+            "table_title": "Sponsor Payments - Child",
+            "total_amount": total_amount,
+        },
     )
 
 
@@ -259,13 +264,20 @@ def sponsor_payments_staff(request):
     search_query = request.GET.get("search")
     queryset = filter_by_search(queryset, search_query, ["first_name", "last_name"])
 
+    # Calculate the total amount
+    total_amount = queryset.aggregate(total_amount=Sum("amount"))["total_amount"] or 0
+
     page = request.GET.get("page")
     records = paginate_queryset(queryset, page)
 
     return render(
         request,
         "main/reports/payments_staff.html",
-        {"records": records, "table_title": "Sponsor Payments - Staff"},
+        {
+            "records": records,
+            "table_title": "Sponsor Payments - Staff",
+            "total_amount": total_amount,
+        },
     )
 
 

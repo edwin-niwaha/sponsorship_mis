@@ -62,7 +62,7 @@ def get_top_sponsors():
     top_sponsors = (
         ChildSponsorship.objects.values("sponsor__first_name", "sponsor__last_name")
         .annotate(total_sponsored=Count("child"))
-        .order_by("-total_sponsored")[:10]
+        .order_by("-total_sponsored")[:5]
     )
 
     sponsors = [
@@ -84,7 +84,7 @@ def get_top_children_sponsored():
             "child__full_name"
         )  # Use the correct reference to child model
         .annotate(total_sponsors=Count("sponsor"))
-        .order_by("-total_sponsors")[:10]
+        .order_by("-total_sponsors")[:5]
     )
 
     # Extract child names and sponsor counts
@@ -102,7 +102,7 @@ def get_top_staff_sponsored():
     top_staff = (
         StaffSponsorship.objects.values("staff__first_name", "staff__last_name")
         .annotate(total_sponsors=Count("sponsor"))
-        .order_by("-total_sponsors")[:10]
+        .order_by("-total_sponsors")[:5]
     )
 
     # Extract staff names and sponsor counts
@@ -142,3 +142,108 @@ def get_sponsors_data(request):
         return JsonResponse(
             {"error": "An error occurred while fetching the data"}, status=500
         )
+
+
+# =================================== Children Graph ===================================
+@login_required
+@admin_or_manager_or_staff_required
+def get_children_data(request):
+    try:
+        children_per_year = (
+            Child.objects.annotate(year=ExtractYear("updated_at"))
+            .values("year")
+            .annotate(count=Count("id"))
+            .order_by("year")
+        )
+
+        data = list(children_per_year)
+
+        return JsonResponse(data, safe=False, status=200)
+
+    except Child.DoesNotExist:
+        return JsonResponse({"error": "No children data found"}, status=404)
+
+    except Exception as e:
+        # Log the exception here if logging is set up
+        return JsonResponse(
+            {"error": "An error occurred while fetching the data"}, status=500
+        )
+
+
+# =================================== Sposnors & Children ===================================
+# registration_date
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def get_combined_data(request):
+    try:
+        sponsors_per_year = (
+            Sponsor.objects.annotate(year=ExtractYear("start_date"))
+            .values("year")
+            .annotate(count=Count("id"))
+            .order_by("year")
+        )
+        children_per_year = (
+            Child.objects.annotate(year=ExtractYear("updated_at"))
+            .values("year")
+            .annotate(count=Count("id"))
+            .order_by("year")
+        )
+
+        sponsors_data = {item["year"]: item["count"] for item in sponsors_per_year}
+        children_data = {item["year"]: item["count"] for item in children_per_year}
+
+        combined_data = {
+            "sponsors": sponsors_data,
+            "children": children_data,
+        }
+
+        return JsonResponse(combined_data, safe=False, status=200)
+
+    except Sponsor.DoesNotExist:
+        return JsonResponse({"error": "No sponsor data found"}, status=404)
+
+    except Child.DoesNotExist:
+        return JsonResponse({"error": "No children data found"}, status=404)
+
+    except Exception as e:
+        # Log the exception here if logging is set up
+        return JsonResponse(
+            {"error": "An error occurred while fetching the data"}, status=500
+        )
+
+
+# =================================== Birthday Graph ===================================
+@login_required
+@admin_or_manager_or_staff_required
+def birthdays_by_month(request):
+    # Query all children with non-null date_of_birth
+    children = Child.objects.filter(date_of_birth__isnull=False)
+
+    # Extract month
+    months = [child.date_of_birth.month for child in children]
+
+    # Count occurrences per month
+    month_counts = [months.count(month) for month in range(1, 13)]
+
+    # Prepare the response data
+    response_data = {
+        "months": [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ],
+        "counts": month_counts,
+    }
+
+    return JsonResponse(response_data)

@@ -10,4 +10,14 @@ urlpatterns = [
         views.get_sponsors_data,
         name="get_sponsors_data",
     ),
+    path(
+        "birthdays_by_month/",
+        views.birthdays_by_month,
+        name="birthdays_by_month",
+    ),
+    path(
+        "get_combined_data/",
+        views.get_combined_data,
+        name="get_combined_data",
+    ),
 ]
