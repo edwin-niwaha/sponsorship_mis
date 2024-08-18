@@ -573,30 +573,6 @@ def delete_incident(request, pk):
     return HttpResponseRedirect(reverse("child_incident_report"))
 
 
-# =================================== Display User Feedback ===================================
-@login_required
-@admin_or_manager_required
-@transaction.atomic
-def user_feedback(request):
-    feedback = Contact.objects.all()
-    return render(
-        request,
-        "main/users/user_feedback.html",
-        {"table_title": "User Feedback", "feedback": feedback},
-    )
-
-
-# =================================== Delete User Feedback ===================================
-@login_required
-@admin_or_manager_required
-@transaction.atomic
-def delete_feedback(request, pk):
-    feedback = Contact.objects.get(id=pk)
-    feedback.delete()
-    messages.info(request, "Record deleted!", extra_tags="bg-danger")
-    return HttpResponseRedirect(reverse("users-feedback"))
-
-
 # =================================== Add Child Depature ===================================
 @login_required
 @admin_or_manager_required

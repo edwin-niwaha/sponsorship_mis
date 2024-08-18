@@ -37,6 +37,7 @@ from .models import (
     Policy,
     PolicyRead,
     Profile,
+    Contact,
 )
 
 
@@ -226,50 +227,6 @@ def delete_profile(request, pk):
     profile.delete()
     messages.info(request, "Profile deleted successfully!", extra_tags="bg-danger")
     return HttpResponseRedirect(reverse("profile_list"))
-
-
-# ===================================  Contact Us  ===================================
-@transaction.atomic
-def contact_us(request):
-    if request.method == "POST":
-        form = ContactForm(request.POST)
-        if form.is_valid():
-            instance = form.save()
-
-            try:
-                # Send email to the user
-                subject = "Your message has been received"
-                message = f"Hello {instance.name},\n\nYour message has been received. \
-We will get back to you soon!\n\nThanks,\nPerpetual - SDMS\nManagement"
-                from_email = (
-                    settings.EMAIL_HOST_USER
-                )  # Use default from email from settings
-                to = [instance.email]  # Access email entered in the form
-                send_mail(subject, message, from_email, to)
-
-                # Set success message
-                messages.success(
-                    request,
-                    "Your message has been sent successfully. \
-We will get back to you soon!",
-                    extra_tags="bg-success",
-                )
-            except Exception as e:
-                # Handle exceptions such as email address not found or internet being off
-                print("An error occurred while sending email:", str(e))
-                messages.error(
-                    request,
-                    "Sorry, an error occurred while sending your \
-message. Please try again later.",
-                    extra_tags="bg-danger",
-                )
-
-            # Redirect to the contact page
-            return HttpResponseRedirect(reverse("contact_us"))
-    else:
-        form = ContactForm()
-
-    return render(request, "main/users/contact_us.html", {"form": form})
 
 
 # =================================== View Policy  ===================================
@@ -554,3 +511,91 @@ def delete_ebook(request, pk):
     ebook.delete()
     messages.info(request, "Book deleted successfully!", extra_tags="bg-danger")
     return HttpResponseRedirect(reverse("ebook_list"))
+
+
+# ===================================  Contact Us  ===================================
+@transaction.atomic
+def contact_us(request):
+    if request.method == "POST":
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            instance = form.save()
+
+            try:
+                # Send email to the user
+                subject = "Your message has been received"
+                message = f"Hello {instance.name},\n\nYour message has been received. \
+We will get back to you soon!\n\nThanks,\nPerpetual - SDMS\nManagement"
+                from_email = (
+                    settings.EMAIL_HOST_USER
+                )  # Use default from email from settings
+                to = [instance.email]  # Access email entered in the form
+                send_mail(subject, message, from_email, to)
+
+                # Set success message
+                messages.success(
+                    request,
+                    "Your message has been sent successfully. \
+We will get back to you soon!",
+                    extra_tags="bg-success",
+                )
+            except Exception as e:
+                # Handle exceptions such as email address not found or internet being off
+                print("An error occurred while sending email:", str(e))
+                messages.error(
+                    request,
+                    "Sorry, an error occurred while sending your \
+message. Please try again later.",
+                    extra_tags="bg-danger",
+                )
+
+            # Redirect to the contact page
+            return HttpResponseRedirect(reverse("contact_us"))
+    else:
+        form = ContactForm()
+
+    return render(request, "main/users/contact_us.html", {"form": form})
+
+
+# =================================== Display User Feedback ===================================
+@login_required
+@admin_or_manager_required
+@transaction.atomic
+def user_feedback(request):
+    feedback = Contact.objects.all()
+    return render(
+        request,
+        "main/users/user_feedback.html",
+        {"table_title": "User Feedback", "feedback": feedback},
+    )
+
+
+# =================================== Delete User Feedback ===================================
+@login_required
+@admin_or_manager_required
+@transaction.atomic
+def delete_feedback(request, pk):
+    feedback = Contact.objects.get(id=pk)
+    feedback.delete()
+    messages.info(request, "Record deleted!", extra_tags="bg-danger")
+    return HttpResponseRedirect(reverse("user_feedback"))
+
+
+# =================================== Validate User Feedback  ===================================
+@login_required
+@admin_or_manager_required
+@transaction.atomic
+def validate_user_feedback(request, contact_id):
+    user_feedback = get_object_or_404(Contact, id=contact_id)
+
+    if request.method == "POST":
+        if not user_feedback.is_valid:
+            user_feedback.is_valid = True
+            user_feedback.save()
+
+            messages.success(
+                request, "User validated successfully!", extra_tags="bg-success"
+            )
+            return HttpResponseRedirect(reverse("user_feedback"))
+
+    return HttpResponseBadRequest("Invalid request")

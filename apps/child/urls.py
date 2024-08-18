@@ -42,11 +42,6 @@ urlpatterns = [
     path("departure/", views.child_departure, name="child_departure"),
     path("departure/list/", views.child_depature_list, name="child_depature_list"),
     path("reinstate/<int:pk>", views.reinstate_child, name="reinstate_child"),
-    # User Feedback
-    path("user/feedback/", views.user_feedback, name="users-feedback"),
-    path(
-        "user/feedback/delete/<int:pk>", views.delete_feedback, name="delete_feedback"
-    ),
     # Excel import paths
     path("import/", views.import_child_data, name="import_child_data"),
     path("excel/list/", views.import_details, name="imported_data"),

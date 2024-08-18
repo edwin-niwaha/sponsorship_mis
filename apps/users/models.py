@@ -38,6 +38,7 @@ class Contact(models.Model):
     name = models.CharField(max_length=100, verbose_name="Your Name")
     email = models.EmailField(verbose_name="Your Email")
     message = models.TextField(verbose_name="Message")
+    is_valid = models.BooleanField(default=False, verbose_name="Valid?")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
 
     class Meta:
@@ -45,7 +46,7 @@ class Contact(models.Model):
         db_table = "user_feedback"
 
     def __str__(self):
-        return self.subject
+        return f"Feedback from {self.name} ({self.email})"
 
 
 # =================================== Policy Model  ===================================

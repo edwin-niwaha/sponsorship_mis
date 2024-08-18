@@ -6,6 +6,7 @@ from apps.users.decorators import admin_or_manager_or_staff_required
 from apps.child.models import Child
 from apps.sponsor.models import Sponsor
 from apps.finance.models import ChildPayments, StaffPayments
+from apps.users.models import Profile
 
 from django.http import JsonResponse
 from django.db.models.functions import ExtractYear

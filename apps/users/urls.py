@@ -19,6 +19,9 @@ from .views import (
     upload_ebook,
     upload_policy,
     validate_policy,
+    validate_user_feedback,
+    user_feedback,
+    delete_feedback,
 )
 
 urlpatterns = [
@@ -28,7 +31,6 @@ urlpatterns = [
     path("profile-list/", profile_list, name="profile_list"),
     path("profile/update/<int:pk>", update_profile, name="update_profile"),
     path("profile/delete/<int:pk>", delete_profile, name="delete_profile"),
-    path("contact-us/", contact_us, name="contact_us"),
     path("policy-list/", policy_list, name="policy_list"),
     path("create-policy/", upload_policy, name="upload_policy"),
     path("policy/update/<int:pk>", update_policy, name="update_policy"),
@@ -40,4 +42,13 @@ urlpatterns = [
     path("ebook/list/", ebook_list, name="ebook_list"),
     path("ebook/delete/<int:pk>", delete_ebook, name="delete_ebook"),
     path("ebook/update/<int:pk>", update_ebook, name="update_ebook"),
+    # User Feedback
+    path("contact-us/", contact_us, name="contact_us"),
+    path("feedback/", user_feedback, name="user_feedback"),
+    path("feedback/delete/<int:pk>", delete_feedback, name="delete_feedback"),
+    path(
+        "feedback/validate/<int:contact_id>/",
+        validate_user_feedback,
+        name="validate_user_feedback",
+    ),
 ]
