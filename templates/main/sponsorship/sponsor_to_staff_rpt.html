@@ -27,7 +27,7 @@
         </div>
     </div>
     <hr class="bg-info" style="height: 3px;" />
-    <form method="POST" action="{% url 'sponsor_to_child_rpt' %}">
+    <form method="POST" action="{% url 'sponsor_to_staff_rpt' %}">
         {% csrf_token %}
         <select name="sponsor_id" id="sponsor_dropdown" class="chzn-select" required style="width: 40%;">
             <option value="" selected disabled>Search sponsor...</option>
@@ -39,9 +39,9 @@
         </select> &rarr;
         <button title="View Sponsorship Report" type="submit" class="btn btn-sm ml-3 btn-success"
             onclick="return validateForm()"><i class="mdi mdi-view-list btn-icon-prepend"></i></button>
-        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsorship_report' %}">CHILD
+        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'staff_sponsorship_report' %}">STAFF
         </a>
-        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'sponsor_to_child_rpt' %}">
+        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'sponsor_to_staff_rpt' %}">
             SPONSOR
         </a>
     </form>
@@ -49,7 +49,7 @@
     <div id="printMe" class="tab-pane show active">
         <hr class="bg-info" style="height: 3px;" />
 
-        {% if sponsor_to_child %}
+        {% if sponsor_to_staff %}
         <header style="text-align: center;">
             <h3 class="text-primary" style="font-family:'Lucida Sans Unicode', sans-serif;">
                 {{ prefix_id }} - {{ first_name|upper }} {{ last_name|upper}}</h3>
@@ -63,31 +63,31 @@
                         <th scope="col">#</th>
                         <th scope="col">Reg.No</th>
                         <th scope="col">Picture</th>
-                        <th scope="col">Full Name</th>
+                        <th scope="col">First_Name</th>
+                        <th scope="col">Last_Name</th>
                         <th scope="col">Gender</th>
-                        <th scope="col">D.O.B</th>
                         <th scope="col">Sponsorship Type</th>
 
                     </tr>
                 </thead>
                 <tbody class="table-group-divider">
-                    {% for sponsorship in sponsor_to_child %}
+                    {% for sponsorship in sponsor_to_staff %}
                     <tr>
                         <th scope="row">{{forloop.counter}}.</th>
-                        <td>{{sponsorship.child.prefixed_id}}</td>
+                        <td>{{sponsorship.staff.prefixed_id}}</td>
                         <td>
-                            {% if sponsorship.child.picture %}
+                            {% if sponsorship.staff.picture %}
                             <a>
                                 <img class="rounded-circle account-img" height="50" width="50"
-                                    src="{{ sponsorship.child.picture.url }}" alt="">
+                                    src="{{ sponsorship.staff.picture.url }}" alt="">
                             </a>
                             {% else %}
                             No Picture!
                             {% endif %}
                         </td>
-                        <td>{{sponsorship.child.full_name}}</td>
-                        <td>{{sponsorship.child.gender}}</td>
-                        <td>{{sponsorship.child.date_of_birth}}</td>
+                        <td>{{sponsorship.staff.first_name}}</td>
+                        <td>{{sponsorship.staff.last_name}}</td>
+                        <td>{{sponsorship.staff.gender}}</td>
                         <td>{{sponsorship.sponsorship_type}}</td>
                     </tr>
                     {%endfor%}

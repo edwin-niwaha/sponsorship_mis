@@ -60,3 +60,11 @@ class SponsorDepartForm(forms.ModelForm):
                 attrs={"class": "form-control", "rows": 2}
             ),
         }
+
+
+# =================================== SPONSOR upload ===================================
+
+
+class SponsorUploadForm(forms.Form):
+    excel_file = forms.FileField()
+    excel_file.widget.attrs["class"] = "form-control-file"

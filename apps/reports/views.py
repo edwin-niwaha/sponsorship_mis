@@ -59,7 +59,7 @@ def reports_dash(request):
 
     # Children
     children_count = Child.objects.count()
-    sponsored_count = Child.objects.filter(is_departed=False, is_sponsored=True).count()
+    sponsored_count = ChildSponsorship.objects.filter(is_active=True).count()
     non_sponsored_count = Child.objects.filter(
         is_departed=False, is_sponsored=False
     ).count()
@@ -67,9 +67,7 @@ def reports_dash(request):
 
     # Staff
     staff_count = Staff.objects.count()
-    sponsored_staff_count = Staff.objects.filter(
-        is_departed=False, is_sponsored=True
-    ).count()
+    sponsored_staff_count = StaffSponsorship.objects.filter(is_active=True).count()
     non_sponsored_staff_count = Staff.objects.filter(
         is_departed=False, is_sponsored=False
     ).count()

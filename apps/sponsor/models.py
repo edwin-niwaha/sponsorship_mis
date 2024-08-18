@@ -39,14 +39,14 @@ class Sponsor(models.Model):
         ("Female", "Female"),
     )
 
-    first_name = models.CharField(max_length=25, null=True, verbose_name="First Name")
-    last_name = models.CharField(max_length=25, null=True, verbose_name="Last Name")
+    first_name = models.CharField(max_length=50, null=True, verbose_name="First Name")
+    last_name = models.CharField(max_length=50, null=True, verbose_name="Last Name")
     gender = models.CharField(
         max_length=6, choices=GENDER_CHOICES, blank=False, verbose_name="Gender"
     )
     email = models.EmailField(verbose_name="Email")
     sponsorship_type = models.CharField(
-        max_length=20,
+        max_length=50,
         choices=SPONSORSHIP_TYPE_CHOICES,
         null=True,
         blank=True,
@@ -55,10 +55,10 @@ class Sponsor(models.Model):
     expected_amt = models.DecimalField(
         _("Amount Expected(UgX)"), max_digits=10, decimal_places=2, default=0
     )
-    job_title = models.CharField(max_length=30, null=True, verbose_name="Job Title")
-    region = models.CharField(max_length=30, null=True, verbose_name="Region")
-    town = models.CharField(max_length=30, null=True, verbose_name="Town")
-    origin = models.CharField(max_length=30, null=True, verbose_name="Origin")
+    job_title = models.CharField(max_length=100, null=True, verbose_name="Job Title")
+    region = models.CharField(max_length=100, null=True, verbose_name="Region")
+    town = models.CharField(max_length=100, null=True, verbose_name="Town")
+    origin = models.CharField(max_length=100, null=True, verbose_name="Origin")
     business_telephone = PhoneNumberField(
         null=True,
         blank=True,
@@ -84,12 +84,14 @@ class Sponsor(models.Model):
     second_street_address = models.CharField(
         max_length=100, null=True, verbose_name="Second Street Address"
     )
-    zip_code = models.CharField(max_length=10, null=True, verbose_name="ZIP Code")
+    zip_code = models.CharField(
+        max_length=50, null=True, verbose_name="ZIP Code or Box Number"
+    )
     is_departed = models.BooleanField(
         default=False,
         verbose_name="Departed?",
     )
-    comment = models.CharField(max_length=50, null=True, verbose_name="Comment")
+    comment = models.CharField(max_length=100, null=True, verbose_name="Comment")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -103,11 +105,11 @@ class Sponsor(models.Model):
     @property
     def prefixed_id(self):
         if self.pk < 10:
-            return f"SP-00{self.pk}"
+            return f"PS00{self.pk}"
         elif self.pk < 100:
-            return f"SP-0{self.pk}"
+            return f"PS0{self.pk}"
         else:
-            return f"SP-{self.pk}"
+            return f"PS{self.pk}"
 
 
 # =================================== SPONSOR DEPARTURE MODEL ===================================

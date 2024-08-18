@@ -123,7 +123,7 @@ def child_sponsorship_report(request):
     return render(
         request,
         "main/sponsorship/child_sponsorship_rpt.html",
-        {"table_title": "child-to-sponsor report", "children": children},
+        {"table_title": "sponsorship report - child", "children": children},
     )
 
 
@@ -154,7 +154,7 @@ def sponsor_to_child_rpt(request):
     return render(
         request,
         "main/sponsorship/sponsor_to_child_rpt.html",
-        {"table_title": "sponsor-to-child report", "sponsors": sponsors},
+        {"table_title": "sponsorship report - sponsor", "sponsors": sponsors},
     )
 
 
@@ -325,7 +325,38 @@ def staff_sponsorship_report(request):
     return render(
         request,
         "main/sponsorship/staff_sponsorship_rpt.html",
-        {"table_title": "Staff Sponsorship Report", "active_staff": active_staff},
+        {"table_title": "sponsorship report - Staff", "active_staff": active_staff},
+    )
+
+
+# =================================== sponsor_to_staff_rpt ===================================
+@login_required
+@admin_or_manager_or_staff_required
+def sponsor_to_staff_rpt(request):
+    sponsors = Sponsor.objects.all().filter(is_departed=False).order_by("id")
+    if request.method == "POST":
+        sponsor_id = request.POST.get("sponsor_id")
+        if sponsor_id:
+            selected_sponsor = get_object_or_404(Sponsor, id=sponsor_id)
+            sponsor_to_staff = StaffSponsorship.objects.filter(sponsor_id=sponsor_id)
+            return render(
+                request,
+                "main/sponsorship/sponsor_to_staff_rpt.html",
+                {
+                    "table_title": "sponsorship report - sponsor",
+                    "sponsors": sponsors,
+                    "first_name": selected_sponsor.first_name,
+                    "last_name": selected_sponsor.last_name,
+                    "prefix_id": selected_sponsor.prefixed_id,
+                    "sponsor_to_staff": sponsor_to_staff,
+                },
+            )
+        else:
+            messages.error(request, "No sponsor selected.", extra_tags="bg-danger")
+    return render(
+        request,
+        "main/sponsorship/sponsor_to_staff_rpt.html",
+        {"table_title": "sponsorship report - sponsor", "sponsors": sponsors},
     )
 
 

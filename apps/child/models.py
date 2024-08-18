@@ -229,11 +229,11 @@ class Child(models.Model):
     @property
     def prefixed_id(self):
         if self.pk < 10:
-            return f"CH-00{self.pk}"
+            return f"P00{self.pk}"
         elif self.pk < 100:
-            return f"CH-0{self.pk}"
+            return f"P0{self.pk}"
         else:
-            return f"CH-{self.pk}"
+            return f"P{self.pk}"
 
     def calculate_age(self):
         today = date.today()

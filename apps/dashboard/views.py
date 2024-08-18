@@ -22,7 +22,7 @@ def dashboard(request):
     # Retrieve counts using annotations
     sponsors_count = Sponsor.objects.filter(is_departed=False).count()
     children_count = Child.objects.count()
-    sponsored_count = Child.objects.filter(is_departed=False, is_sponsored=True).count()
+    sponsored_count = ChildSponsorship.objects.filter(is_active=True).count()
     non_sponsored_count = Child.objects.filter(
         is_departed=False, is_sponsored=False
     ).count()
@@ -119,6 +119,16 @@ def get_top_staff_sponsored():
     }
 
 
+# =================================== Sponsorship Chart ===================================
+
+
+def sponsorship_chart(request):
+    data = ChildSponsorship.objects.values("sponsorship_type").annotate(
+        count=Count("sponsorship_type")
+    )
+    return JsonResponse(list(data), safe=False)
+
+
 # =================================== Sponsors Graph ===================================
 @login_required
 @admin_or_manager_or_staff_required
@@ -151,7 +161,7 @@ def get_sponsors_data(request):
 def get_children_data(request):
     try:
         children_per_year = (
-            Child.objects.annotate(year=ExtractYear("updated_at"))
+            Child.objects.annotate(year=ExtractYear("registration_date"))
             .values("year")
             .annotate(count=Count("id"))
             .order_by("year")
@@ -183,7 +193,7 @@ def get_combined_data(request):
             .order_by("year")
         )
         children_per_year = (
-            Child.objects.annotate(year=ExtractYear("updated_at"))
+            Child.objects.annotate(year=ExtractYear("registration_date"))
             .values("year")
             .annotate(count=Count("id"))
             .order_by("year")
@@ -248,9 +258,21 @@ def birthdays_by_month(request):
 
 
 # =================================== Sponsor Payments - Children ===================================
-def get_payments_data(request):
+def get_payments_children(request):
     payments_per_year = (
         ChildPayments.objects.annotate(year=ExtractYear("payment_date"))
+        .values("year")
+        .annotate(total_amount=Sum("amount"))
+        .order_by("year")
+    )
+    data = list(payments_per_year)
+    return JsonResponse(data, safe=False)
+
+
+# =================================== Sponsor Payments - Staff ===================================
+def get_payments_staff(request):
+    payments_per_year = (
+        StaffPayments.objects.annotate(year=ExtractYear("payment_date"))
         .values("year")
         .annotate(total_amount=Sum("amount"))
         .order_by("year")

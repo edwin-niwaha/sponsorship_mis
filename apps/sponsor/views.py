@@ -5,6 +5,9 @@ from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from openpyxl import load_workbook
+
+from django.core.management import call_command
 
 from apps.users.decorators import (
     admin_or_manager_or_staff_required,
@@ -12,14 +15,15 @@ from apps.users.decorators import (
     admin_required,
 )
 
-from .forms import (
-    SponsorDepartForm,
-    SponsorForm,
-)
+from .forms import SponsorDepartForm, SponsorForm, SponsorUploadForm
 from .models import (
     Sponsor,
     SponsorDeparture,
 )
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # =================================== Sponsors List ===================================
@@ -224,3 +228,142 @@ def reinstate_sponsor(request, pk):
     return render(
         request, "main/sponsor/sponsor_depature_list.html", {"sponsor": sponsor}
     )
+
+
+# =================================== Process and Import Excel data ===================================
+@login_required
+@admin_required
+@transaction.atomic
+def import_sponsor_data(request):
+    if request.method == "POST":
+        form = SponsorUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            excel_file = request.FILES["excel_file"]
+            try:
+                # Call process_and_import_data function
+                process_and_import_data(excel_file)
+                messages.success(
+                    request, "Data imported successfully!", extra_tags="bg-success"
+                )
+            except Exception as e:
+                messages.error(
+                    request, f"Error importing data: {e}", extra_tags="bg-danger"
+                )  # Handle unexpected errors
+            return redirect("import_sponsor_data")  # Replace with your redirect URL
+    else:
+        form = SponsorUploadForm()
+    return render(
+        request,
+        "main/sponsor/import_sponsors.html",
+        {"form_name": "Import Sponsors - Excel", "form": form},
+    )
+
+
+# Function to import Excel data
+def parse_boolean(value):
+    """Convert values like 'Yes' or 'No' to boolean."""
+    if value in ["Yes", "yes", True]:
+        return True
+    elif value in ["No", "no", False]:
+        return False
+    return None
+
+
+def process_and_import_data(excel_file):
+    try:
+        wb = load_workbook(excel_file)
+        sheet = wb.active
+        for row in sheet.iter_rows(min_row=2):
+            data = {
+                "first_name": row[0].value,
+                "last_name": row[1].value,
+                "gender": row[2].value,
+                "email": row[3].value,
+                "sponsorship_type": row[4].value,
+                "expected_amt": row[5].value,
+                "job_title": row[6].value,
+                "region": row[7].value,
+                "town": row[8].value,
+                "origin": row[9].value,
+                "business_telephone": row[10].value,
+                "mobile_telephone": row[11].value,
+                "city": row[12].value,
+                "start_date": row[13].value,
+                "first_street_address": row[14].value,
+                "second_street_address": row[15].value,
+                "zip_code": row[16].value,
+                "is_departed": parse_boolean(row[17].value),
+                "comment": row[18].value,
+            }
+
+            # Validate and log data
+            logger.debug(f"Processing data: {data}")
+
+            # Ensure values conform to the constraints
+            if not data["first_name"]:
+                logger.warning(f"Skipping row with missing first_name: {data}")
+                continue  # Skip rows with missing required fields
+
+            # Save the record
+            obj = Sponsor(**data)
+            obj.save()
+    except Exception as e:
+        logger.error(
+            f"Error importing data: {e}", exc_info=True
+        )  # Log error with traceback
+        raise e
+
+
+# =================================== Fetch and display imported data ===================================
+@login_required
+@admin_or_manager_required
+@transaction.atomic
+def imported_sponsors(request):
+    records = Sponsor.objects.all().filter(is_departed=False).order_by("id")
+    return render(
+        request,
+        "main/sponsor/imported_sponsors_rpt.html",
+        {"table_title": "Imported Sponsors - Excel", "records": records},
+    )
+
+
+# =================================== Delete all sponsors at once ===================================
+@login_required
+@admin_or_manager_required
+@transaction.atomic
+def delete_sponsors(request):
+    if request.method == "POST":
+        Sponsor.objects.all().delete()
+        messages.info(request, "All records deleted!", extra_tags="bg-danger")
+        return HttpResponseRedirect(reverse("imported_sponsors"))
+
+
+# ===================================  'Update all phone numbers to include a prefix + sign' ===================================
+@login_required
+@admin_required
+def update_sponsor_contacts(request):
+    if request.method == "POST":
+        # Call the management command and handle success or failure
+        try:
+            call_command(
+                "sponsor_contacts"
+            )  # Replace "sponsor_contacts" with your actual command name
+            messages.success(
+                request,
+                "Sponsors contacts updated successfully!",
+                extra_tags="bg-success",
+            )
+            logger.info("Successfully updated sponsors contacts.")
+        except Exception as e:
+            messages.error(
+                request,
+                f"Error updating sponsors contacts: {e}",
+                extra_tags="bg-danger",
+            )
+            logger.error(f"Error updating sponsors contacts: {e}", exc_info=True)
+
+        # Redirect to avoid re-posting data on refresh
+        return HttpResponseRedirect(reverse("imported_sponsors"))
+
+    # Render the form if not a POST request
+    return render(request, "main/sponsor/imported_sponsors_rpt.html")

@@ -97,9 +97,9 @@
                     <div class="row">
                         <div class="col-sm-12">
                             <!-- Chart section -->
-                            <h2 class="text-center mb-4">Number of sponsors registered over time</h2>
+                            <h2 class="text-center mb-4">Child Sponsorship Categories</h2>
                             <hr class="bg-info" style="height: 1px;" />
-                            <canvas id="sponsorsChart" width="100%"></canvas>
+                            <canvas id="sponsorshipChart" width="100%"></canvas>
                             <hr class="bg-info" style="height: 3px;" />
                         </div>
                     </div>
@@ -119,25 +119,24 @@
             <div class="row">
                 <div class="col-sm-12">
                     <section>
-                        <h2 class="text-center mb-4">Registered children birthdays distribution by month</h2>
-                        <hr class="bg-info" style="height: 1px;" />
-
-                        <canvas id="pieChart"></canvas>
+                        <h2 class="text-center mb-4">Number of sponsors registered over time
+                        </h2>
+                        <canvas id="sponsorsChart" width="100%"></canvas>
                     </section>
                 </div>
             </div>
             <div class="row">
                 <div class="col-sm-12">
                     <section>
-                        <hr class="bg-info" style="height: 1px;" />
-                        <canvas id="birthdayChart"></canvas>
+                        <h2 class="text-center mb-4">Number of children registered over time
+                        </h2>
+                        <canvas id="childrenChart" width="100%"></canvas>
                     </section>
                 </div>
             </div>
             <div class="row">
                 <div class="col-sm-12">
                     <hr class="bg-info" style="height: 3px;" />
-
                     <section>
                         <h2 class="text-center mb-4">Number of sponsors registered against children over time</h2>
                         <hr class="bg-info" style="height: 1px;" />
@@ -146,14 +145,45 @@
                     </section>
                 </div>
             </div>
+
+            <div class="row">
+                <div class="col-sm-12">
+                    <hr class="bg-info" style="height: 3px;" />
+                    <section>
+                        <h2 class="text-center mb-4">Registered children birthdays distribution by month
+                        </h2>
+                        {% comment %} <canvas id="pieChart"></canvas> {% endcomment %}
+                    </section>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <section>
+                        <canvas id="birthdayChart"></canvas>
+                    </section>
+                </div>
+            </div>
+
             <div class="row">
                 <div class="col-sm-12">
                     <hr class="bg-info" style="height: 3px;" />
 
                     <section>
-                        <h2 class="text-center mb-4">Sponsor contributions collected over the years(UgX)</h2>
-                        <hr class="bg-info" style="height: 1px;" />
-                        <canvas id="paymentsChart"></canvas>
+                        <h2 class="text-center mb-4">Sponsor contributions for children collected over the years(UgX)
+                        </h2>
+                        <canvas id="paymentsChart" width="100%"></canvas>
+                    </section>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <hr class="bg-info" style="height: 3px;" />
+
+                    <section>
+                        <h2 class="text-center mb-4">Sponsor contributions for staff collected over the
+                            years(UgX)
+                        </h2>
+                        <canvas id="StaffpaymentsChart" width="100%"></canvas>
                     </section>
                 </div>
             </div>

@@ -44,6 +44,11 @@ urlpatterns = [
         name="staff_sponsorship_report",
     ),
     path(
+        "sponsor-to-staff/report/",
+        views.sponsor_to_staff_rpt,
+        name="sponsor_to_staff_rpt",
+    ),
+    path(
         "staff-sponsorship/delete/<int:pk>/",
         views.delete_staff_sponsorship,
         name="delete_staff_sponsorship",
