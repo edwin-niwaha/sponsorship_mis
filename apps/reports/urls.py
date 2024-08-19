@@ -6,6 +6,9 @@ urlpatterns = [
     # Dashboard
     path("reports-dashboard/", views.reports_dash, name="reports_dash"),
     # Children
+    path(
+        "children/master-list", views.children_master_list, name="children_master_list"
+    ),
     path("children/list", views.all_children, name="all_children"),
     path("sponsored-children/", views.sponsored_children, name="sponsored_children"),
     path(

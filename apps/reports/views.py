@@ -91,6 +91,35 @@ def reports_dash(request):
     return render(request, "main/reports/_reports_dash_.html", context)
 
 
+# =================================== All Children Master List ===================================
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def children_master_list(request):
+    queryset = (
+        ChildSponsorship.objects.filter(is_active=True)
+        .select_related("child", "sponsor")
+        .order_by("child", "id")
+    )
+    search_query = request.GET.get("search")
+    queryset = filter_by_search(queryset, search_query, ["child__full_name"])
+
+    # Group the queryset by child
+    grouped_sponsorships = defaultdict(list)
+    for sponsorship in queryset:
+        grouped_sponsorships[sponsorship.child].append(sponsorship)
+
+    page = request.GET.get("page")
+    records = paginate_queryset(list(grouped_sponsorships.items()), page)
+
+    return render(
+        request,
+        "main/reports/children_master_list.html",
+        {"records": records, "table_title": "Children Master List"},
+    )
+
+
 # =================================== All Children List ===================================
 
 
