@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
 
-from .models import Contact, Ebook, Policy, Profile
+from .models import Contact, Ebook, Policy, Profile, DocumentUpload
 
 
 # =================================== Register  ===================================
@@ -228,3 +228,12 @@ class EbookForm(forms.ModelForm):
                     "The file is too large. It should be less than 10 MB."
                 )
         return ebook_file
+
+
+# =================================== Document Form  ===================================
+
+
+class DocumentForm(forms.ModelForm):
+    class Meta:
+        model = DocumentUpload
+        fields = "__all__"

@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from django.db import models
 from PIL import Image
+from django.core.exceptions import ValidationError
+import os
 
 
 # =================================== Profile Model  ===================================
@@ -86,6 +88,35 @@ class Ebook(models.Model):
     upload_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+
+
+# =================================== Document Uploads  ===================================
+# Custom validator function
+def validate_file_extension(value):
+    ext = os.path.splitext(value.name)[1]
+    valid_extensions = [".pdf", ".xls", ".xlsx"]
+    if not ext.lower() in valid_extensions:
+        raise ValidationError(
+            "Unsupported file extension. Only PDF and Excel files are allowed."
+        )
+
+
+class DocumentUpload(models.Model):
+    title = models.CharField(max_length=50, verbose_name="Document Title")
+    file = models.FileField(
+        upload_to="default_uploads/", validators=[validate_file_extension]
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Document Upload"
+        verbose_name_plural = "Document Uploads"
+        ordering = ["-created_at"]
+        db_table = "document_uploads"
 
     def __str__(self):
         return self.title

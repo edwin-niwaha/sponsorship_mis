@@ -31,6 +31,7 @@ from .forms import (
     UpdateProfileAllForm,
     UpdateProfileForm,
     UpdateUserForm,
+    DocumentForm,
 )
 from .models import (
     Ebook,
@@ -38,6 +39,7 @@ from .models import (
     PolicyRead,
     Profile,
     Contact,
+    DocumentUpload,
 )
 
 
@@ -302,8 +304,8 @@ def update_policy(request, pk, template_name="main/users/policy_upload.html"):
     try:
         policy = Policy.objects.get(pk=pk)
     except Policy.DoesNotExist:
-        messages.error(request, "Client record not found!", extra_tags="bg-danger")
-        return redirect("client_list")  # Or a relevant error page
+        messages.error(request, "Record not found!", extra_tags="bg-danger")
+        return redirect("policy_list")  # Or a relevant error page
 
     if request.method == "POST":
         form = PolicyForm(request.POST, request.FILES, instance=policy)
@@ -379,7 +381,7 @@ def read_policy(request, policy_id):
 
 # =================================== Policy Report ===================================
 @login_required
-@admin_or_manager_or_staff_required
+@admin_or_manager_required
 def policy_report(request):
     if request.method == "POST":
         policy_id = request.POST.get("id")
@@ -599,3 +601,109 @@ def validate_user_feedback(request, contact_id):
             return HttpResponseRedirect(reverse("user_feedback"))
 
     return HttpResponseBadRequest("Invalid request")
+
+
+# ===================================  Documents list  ===================================
+@login_required
+@admin_or_manager_or_staff_required
+def doc_list(request):
+    queryset = DocumentUpload.objects.all().order_by("id")
+
+    search_query = request.GET.get("search")
+    if search_query:
+        queryset = queryset.filter(title__icontains=search_query)
+
+    paginator = Paginator(queryset, 50)
+    page_number = request.GET.get("page", 1)
+
+    try:
+        records = paginator.page(page_number)
+    except PageNotAnInteger:
+        records = paginator.page(1)
+    except EmptyPage:
+        records = paginator.page(paginator.num_pages)
+
+    # Add file existence information to each record
+    for record in records:
+        file_path = (
+            record.file.name
+        )  # Ensure 'file' is used if 'file' is the correct field
+        record.file_exists = default_storage.exists(file_path)
+
+    return render(
+        request,
+        "main/users/default_upload_list.html",
+        {"records": records, "table_title": "Documents List"},
+    )
+
+
+# =================================== Uplaod Doccument  ===================================
+@login_required
+@admin_or_manager_required
+@transaction.atomic
+def upload_doc(request):
+    if request.method == "POST":
+        form = DocumentForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request, "Record saved successfully!", extra_tags="bg-success"
+            )
+            return redirect("doc_list")
+        else:
+            # Display an error message if the form is not valid
+            messages.error(
+                request,
+                "There was an error saving the record. Please check the form for errors.",
+                extra_tags="bg-danger",
+            )
+
+    else:
+        form = DocumentForm()
+
+    return render(
+        request,
+        "main/users/default_upload.html",
+        {"form_name": "UPLOAD DOCUMENT", "form": form},
+    )
+
+
+# =================================== Update Documents ===================================
+@login_required
+@admin_or_manager_required
+@transaction.atomic
+def update_doc(request, pk, template_name="main/users/default_upload.html"):
+    # Retrieve the doc record by primary key, or return a 404 error if not found
+    record = get_object_or_404(DocumentUpload, pk=pk)
+
+    if request.method == "POST":
+        # Bind the form to the request data and files, including the instance to update
+        form = DocumentForm(request.POST, request.FILES, instance=record)
+        if form.is_valid():
+            # Save the updated record
+            form.save()
+
+            # Add a success message and redirect to the doc list
+            messages.success(
+                request, "Record updated successfully!", extra_tags="bg-success"
+            )
+            return redirect("doc_list")  # Adjust the redirect as needed
+    else:
+        # Pre-populate the form with existing data
+        form = DocumentForm(instance=record)
+
+    # Render the form in the template
+    context = {"form_name": "Update Documents", "form": form}
+    return render(request, template_name, context)
+
+
+# =================================== Delete Document ===================================
+@login_required
+@admin_or_manager_required
+@transaction.atomic
+def delete_doc(request, pk):
+    doc = DocumentUpload.objects.get(id=pk)
+    doc.delete()
+    messages.info(request, "Document deleted successfully!", extra_tags="bg-danger")
+    return HttpResponseRedirect(reverse("doc_list"))
