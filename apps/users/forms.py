@@ -168,7 +168,7 @@ class UpdateProfileAllForm(forms.ModelForm):
 class ContactForm(forms.ModelForm):
     class Meta:
         model = Contact
-        fields = "__all__"
+        exclude = ("is_valid",)
         widgets = {
             "message": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
         }

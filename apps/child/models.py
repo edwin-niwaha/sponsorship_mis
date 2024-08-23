@@ -449,7 +449,7 @@ class ChildIncident(models.Model):
         null=True,
         blank=True,
         validators=[
-            MinValueValidator(limit_value=datetime.date(year=1900, month=1, day=1)),
+            MinValueValidator(limit_value=datetime.date(year=2013, month=1, day=1)),
             MaxValueValidator(limit_value=datetime.date.today()),
         ],
     )
@@ -492,6 +492,10 @@ class ChildDepart(models.Model):
         verbose_name="Departure Date",
         null=True,
         blank=True,
+        validators=[
+            MinValueValidator(limit_value=datetime.date(year=2013, month=1, day=1)),
+            MaxValueValidator(limit_value=datetime.date.today()),
+        ],
     )
     depart_reason = models.TextField(verbose_name="Reason for Departure")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")

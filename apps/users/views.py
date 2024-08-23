@@ -131,7 +131,7 @@ class ChangePasswordView(PasswordChangeView):
 
 
 @login_required
-@admin_or_manager_required
+@admin_required
 def profile_list(request):
     # Fetch all profiles and related user data
     queryset = Profile.objects.select_related("user").all().order_by("user__username")
@@ -337,7 +337,7 @@ def delete_policy(request, pk):
 
 # =================================== Validate Policy  ===================================
 @login_required
-@admin_or_manager_required
+@admin_required
 @transaction.atomic
 def validate_policy(request, policy_id):
     policy = get_object_or_404(Policy, id=policy_id)
@@ -637,7 +637,7 @@ def doc_list(request):
     )
 
 
-# =================================== Uplaod Doccument  ===================================
+# =================================== Uplaod Document  ===================================
 @login_required
 @admin_or_manager_required
 @transaction.atomic
