@@ -34,15 +34,15 @@ cd backend
     ```
 - Create a python virtual environment for backend
   ```bash
-    $ python -m venv .venv
+    $ python -m venv venv
     ```
 - Activate the virtual environment
   ```bash
   # For winodws
-    source .venv/Scripts/activate
+    source venv/Scripts/activate
     
   # For linux
-    source .venv/bin/activate
+    source venv/bin/activate
     ```
 - Install python libraries
   ```bash
