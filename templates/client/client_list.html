@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="container">
+    <div class="page-header flex-wrap">
+        <h3 class="mb-0">{{table_title|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
+        <div class="d-flex">
+            <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
+                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
+
+            <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success"
+                onclick="ExportToExcel('xlsx')">
+                <i class="mdi mdi-file-excel btn-icon-prepend"></i> </button>
+
+            <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success"
+                onclick="Export2Doc('printMe');">
+                <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
+
+            <a title="Register Client" class="btn btn-sm ml-3 btn-success" href="{% url 'register_client' %}"><i
+                    class="mdi mdi-account-plus btn-icon-prepend"></i>
+            </a>
+
+            <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'client_list' %}"><i
+                    class="mdi mdi-chart-line btn-icon-prepend"></i>
+            </a>
+            <form action="{% url 'delete_confirm' %}" method="post">
+                {% csrf_token %}
+                <button title="Delete All" class="btn btn-sm ml-3 btn-danger btn-sm" type="submit"
+                    onclick="return confirm('Are you sure about this? all records will be deleted permanently');"><i
+                        class="mdi mdi-cancel btn-icon-prepend"></i></button>
+            </form>
+        </div>
+    </div>
+    <form method="GET" action="{% url 'client_list' %}">
+        <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..."
+            style="border-radius: 5px; height: 35px;">
+        <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
+        </a>
+    </form>
+
+    <div id="printMe" class="tab-pane show active">
+        <header style="text-align: center;">
+        </header>
+        <hr class="bg-info" style="height: 3px;" />
+        <div class="table-responsive">
+
+            <table class="my-table" id="dataTable">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Reg.No</th>
+                        <th scope="col">Picture</th>
+                        <th scope="col">Client Name</th>
+                        <th scope="col">Telephone</th>
+                        <th scope="col" colspan="2">Action</th>
+
+                    </tr>
+                </thead>
+                <tbody class="table-group-divider">
+                    {%for client in records%}
+                    <tr>
+                        <th scope="row">{{forloop.counter}}.</th>
+                        <td>{{client.reg_number}}</td>
+                        <td>
+                            {% if client.picture %}
+                            <a title="Click to update picture" href="{% url 'update_picture' %}"
+                                onclick="return confirm('Are you sure you want to update client picture? ');">
+                                <img class="rounded-circle account-img" height="50" width="50"
+                                    src="{{ client.picture.url }}" alt="">
+                            </a>
+                            {% else %}
+                            No Picture!
+                            {% endif %}
+                        </td>
+                        <td>{{client.full_name}}</td>
+                        <td>{{client.mobile_telephone}}</td>
+                        <td>
+                            {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
+                            <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_client' client.id %}"><i
+                                    class="bi bi-pencil"></i></a>
+                            {% else %}
+                            <button class="btn btn-primary btn-sm" onclick="showNoPermissionMessage('edit')">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+                            <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_client' client.id %}"
+                                onclick="return confirm('Are you sure about this? This record will be deleted permanently.');">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                            {% else %}
+                            <button class="btn btn-danger btn-sm disabled" onclick="showNoPermissionMessage('delete')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {%endfor%}
+                </tbody>
+            </table>
+            <hr class="bg-info" style="height: 3px;" />
+
+            <!-- Pagination links &raquo;  -->
+            <div class="pagination">
+                <span class="step-links">
+                    {% if records.has_previous %}
+                    <a href="?page=1">
+                        <!-- first -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
+                            <path fill="#2375e1"
+                                d="M14 3.002a1 1 0 0 0-1.578-.816l-7 4.963a1 1 0 0 0-.007 1.628l7 5.037A1 1 0 0 0 14 13.003zM2 2.5a.5.5 0 0 1 1 0v11a.5.5 0 0 1-1 0z" />
+                        </svg> </a>
+                    <a href="?page={{ records.previous_page_number }}">
+                        <!-- previous -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
+                            <path fill="#2375e1" d="m4 10l9 9l1.4-1.5L7 10l7.4-7.5L13 1z" /></svg>
+                    </a>
+                    {% endif %}
+
+                    <span class="current">
+                        Page {{ records.number }} of {{ records.paginator.num_pages }}.
+                    </span>
+
+                    {% if records.has_next %}
+                    <a href="?page={{ records.next_page_number }}">
+                        <!-- Next -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
+                            <path fill="#2375e1" d="M7 1L5.6 2.5L13 10l-7.4 7.5L7 19l9-9z" /></svg>
+                    </a>
+                    <a href="?page={{ records.paginator.num_pages }}">
+                        <!-- last  -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 28 28">
+                            <path fill="#2375e1"
+                                d="M23.5 3.75a.75.75 0 0 1 1.5 0v20.5a.75.75 0 0 1-1.5 0zM3 5.254C3 3.438 5.041 2.37 6.533 3.406l12.504 8.68a2.25 2.25 0 0 1 .013 3.688l-12.504 8.81C5.056 25.634 3 24.57 3 22.745z" />
+                        </svg>
+                        </svg>
+                    </a>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock content %}

@@ -14,7 +14,7 @@ function showMessageDash(event) {
       'Oops! You do not have access rights to view this page. Please click "OK" to contact the administrator.'
     )
   ) {
-    window.open("http://127.0.0.1:8000/contact-us/");
+    window.open("http://127.0.0.1:83/contact-us/");
   }
 }
 

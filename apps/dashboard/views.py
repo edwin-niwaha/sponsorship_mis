@@ -13,7 +13,7 @@ from django.db.models.functions import ExtractYear
 
 
 def home(request):
-    return render(request, "main/users/home.html")
+    return render(request, "users/home.html")
 
 
 # =================================== The dashboard ===================================

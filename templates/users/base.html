@@ -1,0 +1,74 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <link rel="shortcut icon" href="{% static 'images/file.png' %}" />
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous" />
+
+  <!-- Add custom stylesheets -->
+  <link href="{% static 'css/footer.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'css/users.css' %}" rel="stylesheet" type="text/css" />
+
+  <!-- Font Awesome icons -->
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css"
+    integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous" />
+
+  <title>{% block title %}Child Sponsorship Software{% endblock title %}</title>
+</head>
+
+<body>
+  <!-- ========== Topbar Start ========== -->
+  {% block topbar %}
+  {% include 'users/_partials/navbar.html' %}
+  {% endblock topbar %}
+  <!-- ========== Topbar End ========== -->
+
+  <!-- =============== Messages Start ================= -->
+  {% block messages %}
+  {% include '_partials/messages.html' %}
+  {% endblock messages %}
+  <!-- =============== Messages End ================= -->
+
+  <!-- Content -->
+  <div class="container">
+    {% block content %}{% endblock content %}
+  </div>
+
+  <!-- ============== Footer ===================== -->
+  {% block footer %}
+  {% include '_partials/footer.html' %}
+  {% endblock footer %}
+  <!-- ============================================= -->
+
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+    integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous">
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+    integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous">
+  </script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+    integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous">
+  </script>
+
+  <!-- A plugin for password show/hide  -->
+  <script src="https://unpkg.com/bootstrap-show-password@1.2.1/dist/bootstrap-show-password.min.js"></script>
+
+  <!-- Additional scripts -->
+  {% block scripts %}
+  <script src="{% static 'assets/vendors/js/vendor.bundle.base.js' %}"></script>
+  <!--disabled btn-->
+  <script type="text/javascript" src="{% static 'js/disabled_btn.js' %}"></script>
+
+  {% endblock scripts %}
+</body>
+
+</html>

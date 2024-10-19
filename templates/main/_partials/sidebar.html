@@ -27,12 +27,13 @@
         </li>
 
         <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#ui-basic" aria-expanded="false" aria-controls="ui-basic">
+            <a class="nav-link" data-toggle="collapse" href="#ui-basic-child" aria-expanded="false"
+                aria-controls="ui-basic-child">
                 <i class="mdi mdi-account menu-icon"></i>
                 <span class="menu-title">Manage Child</span>
                 <i class="menu-arrow"></i>
             </a>
-            <div class="collapse" id="ui-basic">
+            <div class="collapse" id="ui-basic-child">
                 <ul class="nav flex-column sub-menu">
                     <li class="nav-item">
                         <a class="nav-link active" href="{% url 'register_child' %}" target="_self">Register Child</a>
@@ -61,12 +62,13 @@
             </div>
         </li>
         <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#ui-basic1" aria-expanded="false" aria-controls="ui-basic">
+            <a class="nav-link" data-toggle="collapse" href="#ui-basic-staff" aria-expanded="false"
+                aria-controls="ui-basic-staff">
                 <i class="mdi mdi-account-plus menu-icon"></i>
                 <span class="menu-title">Manage Staff</span>
                 <i class="menu-arrow"></i>
             </a>
-            <div class="collapse" id="ui-basic1">
+            <div class="collapse" id="ui-basic-staff">
                 <ul class="nav flex-column sub-menu">
                     <li class="nav-item">
                         <a class="nav-link active" href="{% url 'register_staff' %}" target="_self">Register Staff</a>
@@ -83,7 +85,7 @@
 
         <li class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#ui-basic-sp" aria-expanded="false"
-                aria-controls="ui-basic">
+                aria-controls="ui-basic-sp">
                 <i class="mdi mdi-account-convert menu-icon"></i>
                 <span class="menu-title">Manage Sponsor</span>
                 <i class="menu-arrow"></i>
@@ -106,12 +108,13 @@
         </li>
 
         <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#ui-basic2" aria-expanded="false" aria-controls="ui-basic">
+            <a class="nav-link" data-toggle="collapse" href="#ui-basic-ship" aria-expanded="false"
+                aria-controls="ui-basic-ship">
                 <i class="mdi mdi-gift menu-icon"></i>
                 <span class="menu-title">Sponsorship</span>
                 <i class="menu-arrow"></i>
             </a>
-            <div class="collapse" id="ui-basic2">
+            <div class="collapse" id="ui-basic-ship">
                 <ul class="nav flex-column sub-menu">
                     <li class="nav-item">
                         <a class="nav-link active" href="{% url 'child_sponsorship' %}" target="_self">Child
@@ -126,12 +129,13 @@
         </li>
 
         <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#ui-basic3" aria-expanded="false" aria-controls="ui-basic">
+            <a class="nav-link" data-toggle="collapse" href="#ui-basic-cont" aria-expanded="false"
+                aria-controls="ui-basic-cont">
                 <i class="mdi mdi-square-inc-cash  menu-icon"></i>
                 <span class="menu-title">Contributions</span>
                 <i class="menu-arrow"></i>
             </a>
-            <div class="collapse" id="ui-basic3">
+            <div class="collapse" id="ui-basic-cont">
                 <ul class="nav flex-column sub-menu">
                     <li class="nav-item">
                         <a class="nav-link active" href="{% url 'child_sponsor_payment' %}" target="_self">Child
@@ -143,50 +147,99 @@
                     </li>
                 </ul>
             </div>
-            <hr />
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#ui-basic-loan" aria-expanded="false"
+                aria-controls="ui-basic-loan">
+                <i class="mdi mdi-cash-multiple menu-icon"></i>
+                <span class="menu-title">Loan Manager</span>
+                <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="ui-basic-loan">
+                <ul class="nav flex-column sub-menu">
+                    <!-- Loan Applications -->
+                    <li class="nav-item">
+                        <a class="nav-link active" href="" target="_self">Loan
+                            Applications</a>
+                    </li>
+
+                    <!-- Borrower Management -->
+                    <li class="nav-item">
+                        <a class="nav-link active" href="" target="_self">Manage Borrowers</a>
+                    </li>
+
+                    <!-- Loan Disbursement -->
+                    <li class="nav-item">
+                        <a class="nav-link active" href="" target="_self">Loan
+                            Disbursement</a>
+                    </li>
+
+                    <!-- Loan Repayments -->
+                    <li class="nav-item">
+                        <a class="nav-link active" href="" target="_self">Loan Repayments</a>
+                    </li>
+
+                    <!-- Loan Reports -->
+                    <li class="nav-item">
+                        <a class="nav-link active" href="" target="_self">Loan Reports</a>
+                    </li>
+                </ul>
+            </div>
+        </li>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="{% url 'reports_dash' %}">
-                <i class="mdi mdi-chart-bar menu-icon"></i>
-                <span class="menu-title">Reports</span>
+            <a class="nav-link" data-bs-toggle="collapse" href="#extraMenu" aria-expanded="false"
+                aria-controls="extraMenu">
+                <i class="mdi mdi-folder-outline menu-icon"></i>
+                <span class="menu-title">Extra</span>
+                <i class="menu-arrow"></i>
             </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'client_list' %}">
-                <i class="mdi mdi-account-multiple-plus menu-icon"></i>
-                <span class="menu-title">Clients</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'policy_list' %}">
-                <i class="mdi mdi-attachment menu-icon"></i>
-                <span class="menu-title">Policies</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'ebook_list' %}">
-                <i class="mdi mdi-file-pdf menu-icon"></i>
-                <span class="menu-title">E-books</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'doc_list' %}">
-                <i class="mdi mdi-download menu-icon"></i>
-                <span class="menu-title">Others</span>
-            </a>
+            <div class="collapse" id="extraMenu">
+                <ul class="nav flex-column sub-menu">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'reports_dash' %}">
+                            <i class="mdi mdi-chart-bar menu-icon"></i>
+                            <span class="menu-title">Reports</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'client_list' %}">
+                            <i class="mdi mdi-account-multiple-plus menu-icon"></i>
+                            <span class="menu-title">Clients</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'policy_list' %}">
+                            <i class="mdi mdi-attachment menu-icon"></i>
+                            <span class="menu-title">Policies</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'ebook_list' %}">
+                            <i class="mdi mdi-file-pdf menu-icon"></i>
+                            <span class="menu-title">E-books</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'doc_list' %}">
+                            <i class="mdi mdi-download menu-icon"></i>
+                            <span class="menu-title">Others</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </li>
         <li>
-            <hr />
         </li>
 
         {% if user.profile.role == 'administrator' %}
         <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#ui-basic4" aria-expanded="false" aria-controls="ui-basic">
+            <a class="nav-link" data-toggle="collapse" href="#ui-basic-settings" aria-expanded="false"
+                aria-controls="ui-basic-settings">
                 <i class="mdi mdi-settings menu-icon"></i>
                 <span class="menu-title">Settings</span>
                 <i class="menu-arrow"></i>
             </a>
-            <div class="collapse" id="ui-basic4">
+            <div class="collapse" id="ui-basic-settings">
                 <ul class="nav flex-column sub-menu">
                     <li class="nav-item">
                         <a class="nav-link active" href="{% url 'profile_list' %}" target="_self">Users Profile</a>

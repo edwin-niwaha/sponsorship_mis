@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="container">
+    <div class="page-header flex-wrap">
+        <h3 class="mb-0">
+            {{table_title|upper}}
+        </h3>
+        <div class="d-flex">
+
+            <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
+                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
+
+            <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success"
+                onclick="ExportToExcel('xlsx')">
+                <i class="mdi mdi-file-excel btn-icon-prepend"></i> </button>
+
+            <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success"
+                onclick="Export2Doc('printMe');">
+                <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
+
+            <a class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsorship' %}"><i
+                    class="mdi mdi-folder-plus btn-icon-prepend"></i>
+            </a>
+        </div>
+    </div>
+    <hr class="bg-info" style="height: 3px;" />
+    <form method="POST" action="{% url 'sponsor_to_child_rpt' %}">
+        {% csrf_token %}
+        <select name="sponsor_id" id="sponsor_dropdown" class="chzn-select" required style="width: 40%;">
+            <option value="" selected disabled>Search sponsor...</option>
+            {% for sponsor in sponsors %}
+            <option value="{{ sponsor.id }}">{{ sponsor.last_name }}
+                {{ sponsor.first_name }} &rarr;
+                {{ sponsor.prefixed_id }}</option>
+            {% endfor %}
+        </select> &rarr;
+        <button title="View Sponsorship Report" type="submit" class="btn btn-sm ml-3 btn-success"
+            onclick="return validateForm()"><i class="mdi mdi-view-list btn-icon-prepend"></i></button>
+        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsorship_report' %}">CHILD
+        </a>
+        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'sponsor_to_child_rpt' %}">
+            SPONSOR
+        </a>
+    </form>
+
+    <div id="printMe" class="tab-pane show active">
+        <hr class="bg-info" style="height: 3px;" />
+
+        {% if sponsor_to_child %}
+        <header style="text-align: center;">
+            <h3 class="text-primary" style="font-family:'Lucida Sans Unicode', sans-serif;">
+                {{ prefix_id }} - {{ first_name|upper }} {{ last_name|upper}}</h3>
+        </header>
+        <hr class="bg-info" style="height: 3px;" />
+
+        <div class="table-responsive">
+            <table class="my-table">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Reg.No</th>
+                        <th scope="col">Picture</th>
+                        <th scope="col">Full Name</th>
+                        <th scope="col">Gender</th>
+                        <th scope="col">D.O.B</th>
+                        <th scope="col">Sponsorship Type</th>
+
+                    </tr>
+                </thead>
+                <tbody class="table-group-divider">
+                    {% for sponsorship in sponsor_to_child %}
+                    <tr>
+                        <th scope="row">{{forloop.counter}}.</th>
+                        <td>{{sponsorship.child.prefixed_id}}</td>
+                        <td>
+                            {% if sponsorship.child.picture %}
+                            <a>
+                                <img class="rounded-circle account-img" height="50" width="50"
+                                    src="{{ sponsorship.child.picture.url }}" alt="">
+                            </a>
+                            {% else %}
+                            No Picture!
+                            {% endif %}
+                        </td>
+                        <td>{{sponsorship.child.full_name}}</td>
+                        <td>{{sponsorship.child.gender}}</td>
+                        <td>{{sponsorship.child.date_of_birth}}</td>
+                        <td>{{sponsorship.sponsorship_type}}</td>
+                    </tr>
+                    {%endfor%}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-danger">No sponsorship records found for the selected sponsor.</div>
+
+        {% endif %}
+    </div>
+</div>
+
+{% endblock content %}
