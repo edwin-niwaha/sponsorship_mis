@@ -67,7 +67,7 @@ def child_sponsor_payment(request):
     sponsors = Sponsor.objects.filter(is_departed=False).order_by("id")
     return render(
         request,
-        "finance/child_sponsor_payments.html",
+        "sdms/finance/child_sponsor_payments.html",
         {
             "form": form,
             "form_name": "Child-Sponsor Payments",
@@ -165,7 +165,7 @@ def edit_child_payment(request, payment_id):
 
     return render(
         request,
-        "finance/child_payment_edit.html",
+        "sdms/finance/child_payment_edit.html",
         {
             "form_name": "PAYEMENT UPDATE",
             "form": form,
@@ -223,7 +223,7 @@ def edit_staff_payment(request, payment_id):
 
     return render(
         request,
-        "finance/staff_payment_edit.html",
+        "sdms/finance/staff_payment_edit.html",
         {
             "form_name": "PAYEMENT UPDATE",
             "form": form,
@@ -305,7 +305,7 @@ def child_sponsor_payments_report(request):
     return generate_payments_report(
         request,
         "Child - Sponsor Payments Report",
-        "finance/child_sponsor_payments_rpt.html",
+        "sdms/finance/child_sponsor_payments_rpt.html",
         ChildPayments,
     )
 
@@ -316,6 +316,6 @@ def staff_sponsor_payments_report(request):
     return generate_payments_report(
         request,
         "Staff - Sponsor Payments Report",
-        "finance/staff_sponsor_payments_rpt.html",
+        "sdms/finance/staff_sponsor_payments_rpt.html",
         StaffPayments,
     )

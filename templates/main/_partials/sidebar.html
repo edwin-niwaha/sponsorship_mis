@@ -16,12 +16,30 @@
             </a>
         </li>
 
+        <!-- Main Dashboard -->
         <li class="nav-item">
             <a class="nav-link" href="{% url 'main-dashboard' %}">
                 <i class="mdi mdi-lock-open menu-icon"></i>
-                <span class="menu-title">DASHBOARD</span>
+                <span class="menu-title">SDMS MAIN</span>
             </a>
         </li>
+
+        <!-- Inventory Dashboard -->
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'main-dashboard' %}">
+                <i class="mdi mdi-warehouse menu-icon"></i>
+                <span class="menu-title">INVENTORY MGT</span>
+            </a>
+        </li>
+
+        <!-- Loan Manager Dashboard -->
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'main-dashboard' %}">
+                <i class="mdi mdi-cash-multiple menu-icon"></i>
+                <span class="menu-title">LOAN MANAGER</span>
+            </a>
+        </li>
+
         <li>
             <hr />
         </li>
@@ -147,45 +165,9 @@
                     </li>
                 </ul>
             </div>
-        <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#ui-basic-loan" aria-expanded="false"
-                aria-controls="ui-basic-loan">
-                <i class="mdi mdi-cash-multiple menu-icon"></i>
-                <span class="menu-title">Loan Manager</span>
-                <i class="menu-arrow"></i>
-            </a>
-            <div class="collapse" id="ui-basic-loan">
-                <ul class="nav flex-column sub-menu">
-                    <!-- Loan Applications -->
-                    <li class="nav-item">
-                        <a class="nav-link active" href="" target="_self">Loan
-                            Applications</a>
-                    </li>
-
-                    <!-- Borrower Management -->
-                    <li class="nav-item">
-                        <a class="nav-link active" href="" target="_self">Manage Borrowers</a>
-                    </li>
-
-                    <!-- Loan Disbursement -->
-                    <li class="nav-item">
-                        <a class="nav-link active" href="" target="_self">Loan
-                            Disbursement</a>
-                    </li>
-
-                    <!-- Loan Repayments -->
-                    <li class="nav-item">
-                        <a class="nav-link active" href="" target="_self">Loan Repayments</a>
-                    </li>
-
-                    <!-- Loan Reports -->
-                    <li class="nav-item">
-                        <a class="nav-link active" href="" target="_self">Loan Reports</a>
-                    </li>
-                </ul>
-            </div>
+            <hr />
         </li>
-        </li>
+
         <li class="nav-item">
             <a class="nav-link" data-bs-toggle="collapse" href="#extraMenu" aria-expanded="false"
                 aria-controls="extraMenu">

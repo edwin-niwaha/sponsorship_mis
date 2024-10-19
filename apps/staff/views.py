@@ -41,7 +41,7 @@ def staff_list(request):
 
     return render(
         request,
-        "staff/staff_details.html",
+        "sdms/staff/staff_details.html",
         {"records": records, "table_title": "Staff List"},
     )
 
@@ -73,7 +73,7 @@ def register_staff(request):
         form = StaffForm()
     return render(
         request,
-        "staff/staff_register.html",
+        "sdms/staff/staff_register.html",
         {"form_name": "Staff Registration", "form": form},
     )
 
@@ -82,7 +82,7 @@ def register_staff(request):
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
-def update_staff(request, pk, template_name="staff/staff_register.html"):
+def update_staff(request, pk, template_name="sdms/staff/staff_register.html"):
     try:
         staff_record = Staff.objects.get(pk=pk)
     except Staff.DoesNotExist:
@@ -157,7 +157,7 @@ def staff_departure(request):
     records = Staff.objects.filter(is_departed=False).order_by("id")
     return render(
         request,
-        "staff/staff_depature.html",
+        "sdms/staff/staff_depature.html",
         {"form": form, "form_name": "Staff Depature Form", "records": records},
     )
 
@@ -193,7 +193,7 @@ def staff_depature_list(request):
 
     return render(
         request,
-        "staff/staff_depature_list.html",
+        "sdms/staff/staff_depature_list.html",
         {"records": records, "table_title": "Departed Staff"},
     )
 
@@ -214,4 +214,4 @@ def reinstate_staff(request, pk):
 
         return redirect("staff_depature_list")
 
-    return render(request, "staff/staff_depature_list.html", {"staff": staff})
+    return render(request, "sdms/staff/staff_depature_list.html", {"staff": staff})

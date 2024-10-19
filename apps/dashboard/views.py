@@ -13,7 +13,7 @@ from django.db.models.functions import ExtractYear
 
 
 def home(request):
-    return render(request, "users/home.html")
+    return render(request, "accounts/home.html")
 
 
 # =================================== The dashboard ===================================
@@ -55,7 +55,7 @@ def dashboard(request):
         "top_staff_with_counts": top_staff_with_counts,
     }
 
-    return render(request, "main/dashboard.html", context)
+    return render(request, "main/main_dashboard.html", context)
 
 
 # =================================== Child Sponsorship Count ===================================

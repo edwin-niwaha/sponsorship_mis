@@ -41,7 +41,7 @@ def client_list(request):
 
     return render(
         request,
-        "client/client_list.html",
+        "sdms/sdms/client/client_list.html",
         {"records": records, "table_title": "Clients List"},
     )
 
@@ -75,7 +75,7 @@ def register_client(request):
 
     return render(
         request,
-        "client/client_register.html",
+        "sdms/sdms/client/client_register.html",
         {"form_name": "Client Registration", "form": form},
     )
 
@@ -84,7 +84,7 @@ def register_client(request):
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
-def update_client(request, pk, template_name="client/client_register.html"):
+def update_client(request, pk, template_name="sdms/client/client_register.html"):
     try:
         client_record = Client.objects.get(pk=pk)
     except Client.DoesNotExist:
@@ -154,7 +154,7 @@ def import_client_data(request):
         form = ImportClientsForm()
     return render(
         request,
-        "client/bulk_import.html",
+        "sdms/client/bulk_import.html",
         {"form_name": "Import Clients - Excel", "form": form},
     )
 

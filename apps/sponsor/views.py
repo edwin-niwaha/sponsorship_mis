@@ -52,7 +52,7 @@ def sponsor_list(request):
 
     return render(
         request,
-        "sponsor/sponsor_details.html",
+        "sdms/sponsor/sponsor_details.html",
         {"records": records, "table_title": "Sponsors List"},
     )
 
@@ -84,7 +84,7 @@ def register_sponsor(request):
         form = SponsorForm()
     return render(
         request,
-        "sponsor/sponsor_register.html",
+        "sdms/sponsor/sponsor_register.html",
         {"form_name": "Sponsor Registration", "form": form},
     )
 
@@ -93,7 +93,7 @@ def register_sponsor(request):
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
-def update_sponsor(request, pk, template_name="sponsor/sponsor_register.html"):
+def update_sponsor(request, pk, template_name="sdms/sponsor/sponsor_register.html"):
     try:
         sponsor_record = Sponsor.objects.get(pk=pk)
     except Sponsor.DoesNotExist:
@@ -168,7 +168,7 @@ def sponsor_departure(request):
     sponsors = Sponsor.objects.filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sponsor/sponsor_depature.html",
+        "sdms/sponsor/sponsor_depature.html",
         {"form": form, "form_name": "Sponsors Depature Form", "sponsors": sponsors},
     )
 
@@ -204,7 +204,7 @@ def sponsor_depature_list(request):
 
     return render(
         request,
-        "sponsor/sponsor_depature_list.html",
+        "sdms/sponsor/sponsor_depature_list.html",
         {"records": records, "table_title": "Departed Sponsors"},
     )
 
@@ -225,7 +225,9 @@ def reinstate_sponsor(request, pk):
 
         return redirect("sponsor_depature_list")
 
-    return render(request, "sponsor/sponsor_depature_list.html", {"sponsor": sponsor})
+    return render(
+        request, "sdms/sponsor/sponsor_depature_list.html", {"sponsor": sponsor}
+    )
 
 
 # =================================== Process and Import Excel data ===================================
@@ -252,7 +254,7 @@ def import_sponsor_data(request):
         form = SponsorUploadForm()
     return render(
         request,
-        "sponsor/import_sponsors.html",
+        "sdms/sponsor/import_sponsors.html",
         {"form_name": "Import Sponsors - Excel", "form": form},
     )
 
@@ -320,7 +322,7 @@ def imported_sponsors(request):
     records = Sponsor.objects.all().filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sponsor/imported_sponsors_rpt.html",
+        "sdms/sponsor/imported_sponsors_rpt.html",
         {"table_title": "Imported Sponsors - Excel", "records": records},
     )
 
@@ -364,4 +366,4 @@ def update_sponsor_contacts(request):
         return HttpResponseRedirect(reverse("imported_sponsors"))
 
     # Render the form if not a POST request
-    return render(request, "sponsor/imported_sponsors_rpt.html")
+    return render(request, "sdms/sponsor/imported_sponsors_rpt.html")
