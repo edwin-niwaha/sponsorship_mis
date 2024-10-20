@@ -59,6 +59,11 @@ INSTALLED_APPS = [
     "apps.client",
     "apps.reports",
     "apps.dashboard",
+    # =================================== INVENTORY APPS ===================================
+    "apps.inventory.customers",
+    "apps.inventory.supplier",
+    "apps.inventory.products",
+    "apps.inventory.sales",
 ]
 
 MIDDLEWARE = [
@@ -91,6 +96,7 @@ TEMPLATES = [
                 # Other context processors
                 "apps.users.context_processors.guest_profiles_context",
                 "apps.users.context_processors.guest_user_feedback_context",
+                "apps.users.context_processors.low_stock_alerts_context",
             ],
         },
     },

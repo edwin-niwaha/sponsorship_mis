@@ -7,9 +7,20 @@ from apps.child.models import Child
 from apps.sponsor.models import Sponsor
 from apps.finance.models import ChildPayments, StaffPayments
 from apps.users.models import Profile
-
+import json
 from django.http import JsonResponse
 from django.db.models.functions import ExtractYear
+from datetime import date, timedelta
+from django.db.models import Sum, FloatField, F
+from django.db.models.functions import Coalesce
+from django.db.models import Min, Max
+
+from apps.inventory.products.models import Product, Category
+from apps.inventory.sales.models import Sale, SaleDetail
+
+from .utils import (
+    get_top_selling_products,
+)
 
 
 def home(request):
@@ -280,3 +291,133 @@ def get_payments_staff(request):
     )
     data = list(payments_per_year)
     return JsonResponse(data, safe=False)
+
+
+# =================================== INVENTORY DASHBOARD ===================================
+@login_required
+@admin_or_manager_or_staff_required
+def get_total_sales_for_period(start_date, end_date):
+    return (
+        Sale.objects.filter(trans_date__range=[start_date, end_date]).aggregate(
+            total_sales=Sum("grand_total")
+        )["total_sales"]
+        or 0
+    )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def inventory_dashboard(request):
+    today = date.today()
+    year = today.year
+
+    # Helper function to get total sales for a period
+    def get_total_sales_for_period(start_date, end_date):
+        return (
+            Sale.objects.filter(trans_date__range=[start_date, end_date]).aggregate(
+                total_sales=Coalesce(Sum("grand_total"), 0.0)
+            )["total_sales"]
+            or 0
+        )
+
+    # Calculate monthly and annual earnings
+    monthly_earnings = [
+        Sale.objects.filter(trans_date__year=year, trans_date__month=month).aggregate(
+            total=Coalesce(Sum("grand_total"), 0.0)
+        )["total"]
+        for month in range(1, 13)
+    ]
+    annual_earnings = format(sum(monthly_earnings), ".2f")
+    avg_month = format(sum(monthly_earnings) / 12, ".2f")
+
+    # Get total sales for today, week, and month
+    total_sales_today = get_total_sales_for_period(today, today)
+    total_sales_week = get_total_sales_for_period(
+        today - timedelta(days=today.weekday()), today
+    )
+    total_sales_month = get_total_sales_for_period(today.replace(day=1), today)
+
+    # Get top-selling products using the new method
+    top_products = get_top_selling_products()
+
+    # Total stock from Inventory
+    total_stock = Product.objects.filter(status="ACTIVE").aggregate(
+        total=Coalesce(Sum("inventory__quantity"), 0)
+    )["total"]
+
+    context = {
+        "products": Product.objects.filter(status="ACTIVE").count(),
+        "total_stock": total_stock,
+        "categories": Category.objects.count(),
+        "annual_earnings": annual_earnings,
+        "monthly_earnings": json.dumps(monthly_earnings),
+        "avg_month": avg_month,
+        "total_sales_today": total_sales_today,
+        "total_sales_week": total_sales_week,
+        "total_sales_month": total_sales_month,
+        "top_products": top_products,
+    }
+
+    return render(request, "main/inventory_dashboard.html", context)
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def monthly_earnings_view(request):
+    today = date.today()
+    year = today.year
+    monthly_earnings = []
+
+    for month in range(1, 13):
+        earning = (
+            Sale.objects.filter(trans_date__year=year, trans_date__month=month)
+            .aggregate(
+                total_variable=Coalesce(
+                    Sum(F("grand_total")), 0.0, output_field=FloatField()
+                )
+            )
+            .get("total_variable")
+        )
+        monthly_earnings.append(earning)
+
+    return JsonResponse(
+        {
+            "labels": [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+            ],
+            "data": monthly_earnings,
+        }
+    )
+
+
+# =================================== Annual Sales graph ===================================
+@login_required
+@admin_or_manager_or_staff_required
+def sales_data_api(request):
+    # Query to get total sales grouped by year
+    sales_per_year = (
+        Sale.objects.annotate(year=ExtractYear("trans_date"))
+        .values("year")
+        .annotate(total_sales=Sum("grand_total"))
+        .order_by("year")
+    )
+
+    # Prepare the data as a dictionary
+    data = {
+        "years": [item["year"] for item in sales_per_year],
+        "total_sales": [item["total_sales"] for item in sales_per_year],
+    }
+
+    # Return the data as JSON
+    return JsonResponse(data)

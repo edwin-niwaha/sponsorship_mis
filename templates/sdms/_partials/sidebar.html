@@ -16,30 +16,36 @@
             </a>
         </li>
 
-        <!-- Main Dashboard -->
         <li class="nav-item">
-            <a class="nav-link" href="{% url 'main-dashboard' %}">
-                <i class="mdi mdi-lock-open menu-icon"></i>
-                <span class="menu-title">SDMS MAIN</span>
+            <a class="nav-link" data-toggle="collapse" href="#dashboards-menu" aria-expanded="false"
+                aria-controls="dashboards-menu">
+                <i class="mdi mdi-view-dashboard menu-icon"></i>
+                <span class="menu-title">DASHBOARDS</span>
+                <i class="menu-arrow"></i>
             </a>
+            <div class="collapse" id="dashboards-menu">
+                <ul class="nav flex-column sub-menu">
+                    <!-- Main Dashboard -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'main-dashboard' %}">
+                            <i class="mdi mdi-lock-open menu-icon"></i> SPONSORSHIP
+                        </a>
+                    </li>
+                    <!-- Inventory Dashboard -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'inventory-dashboard' %}">
+                            <i class="mdi mdi-warehouse menu-icon"></i> INVENTORY MGT
+                        </a>
+                    </li>
+                    <!-- Loan Manager Dashboard -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'inventory-dashboard' %}">
+                            <i class="mdi mdi-cash-multiple menu-icon"></i> LOAN MANAGER
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </li>
-
-        <!-- Inventory Dashboard -->
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'main-dashboard' %}">
-                <i class="mdi mdi-warehouse menu-icon"></i>
-                <span class="menu-title">INVENTORY MGT</span>
-            </a>
-        </li>
-
-        <!-- Loan Manager Dashboard -->
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'main-dashboard' %}">
-                <i class="mdi mdi-cash-multiple menu-icon"></i>
-                <span class="menu-title">LOAN MANAGER</span>
-            </a>
-        </li>
-
         <li>
             <hr />
         </li>

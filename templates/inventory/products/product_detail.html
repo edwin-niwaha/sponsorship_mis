@@ -1,0 +1,90 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Product Image Carousel -->
+        <div class="col-md-6">
+            <div id="product-carousel" class="carousel slide" data-ride="carousel" aria-label="Product Image Carousel">
+                <div class="carousel-inner">
+                    {% if product.images.exists %}
+                    {% for image in product.images.all %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        <img src="{{ image.image.url }}" class="d-block w-100 rounded" alt="{{ product.name }}"
+                            style="height: 300px; object-fit: cover;">
+                        <div class="carousel-caption d-none d-md-block">
+                            <h5>{{ product.name }}</h5>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="carousel-item active">
+                        <img src="{% static 'default_product_image.jpg' %}" class="d-block w-100 rounded"
+                            alt="No image available" style="height: 300px; object-fit: cover;">
+                        <div class="carousel-caption d-none d-md-block">
+                            <h5>No Image Available</h5>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <!-- Back Button -->
+                <div class="text-center mt-4">
+                    <a href="{% url 'products:products_list' %}" class="btn btn-info">
+                        <i class="mdi mdi-arrow-left-bold mr-2"></i>Back to Products
+                    </a>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Product Details -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Product Details</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <th>Description</th>
+                                <td>{{ product.description }}</td>
+                            </tr>
+                            <tr>
+                                <th>Category</th>
+                                <td>{{ product.category.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Supplier</th>
+                                <td>{{ product.supplier }}</td>
+                            </tr>
+                            <tr>
+                                <th>Status</th>
+                                <td>{{ product.status }}</td>
+                            </tr>
+                            <tr>
+                                <th>Cost Price</th>
+                                <td>${{ product.cost }}</td>
+                            </tr>
+                            <tr>
+                                <th>Selling Price</th>
+                                <td>${{ product.price }}</td>
+                            </tr>
+                            <tr>
+                                <th>Stock</th>
+                                <td>{{ product.inventory.quantity|default:0 }}</td>
+                            </tr>
+                            <tr>
+                                <th>Profit Margin</th>
+                                <td>{{ product.profit_margin }}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

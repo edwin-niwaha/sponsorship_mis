@@ -2,7 +2,7 @@
 <div class="toast-container position-fixed top-50 start-50 translate-middle p-3" style="z-index: 1000;">
   {% for message in messages %}
   <div class="toast {% if message.tags %} {{ message.tags }} {% endif %} fade show" role="alert" aria-live="assertive"
-    aria-atomic="true" data-autohide="true" data-delay="200">
+    aria-atomic="true" data-autohide="true" data-delay="300">
     <!-- added data-autohide and data-delay attributes -->
     <div class="toast-header">
       <strong class="me-auto">Notification</strong>
