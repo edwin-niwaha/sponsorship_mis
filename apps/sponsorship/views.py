@@ -85,7 +85,7 @@ def child_sponsorship(request):
     sponsors = Sponsor.objects.filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/sdms/sponsorship/child_sponsorship.html",
+        "sdms/sponsorship/child_sponsorship.html",
         {
             "form": form,
             "form_name": "Child Sponsorship",

@@ -26,6 +26,7 @@ class ChildForm(forms.ModelForm):
         # date_of_birth = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
         widgets = {
             "date_of_birth": forms.DateInput(attrs={"type": "date"}),
+            "registration_date": forms.DateInput(attrs={"type": "date"}),
             "siblings": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "background_info": forms.Textarea(
                 attrs={"class": "form-control", "rows": 3}

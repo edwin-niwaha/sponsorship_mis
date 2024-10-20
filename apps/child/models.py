@@ -63,7 +63,6 @@ class Child(models.Model):
     registration_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name="Date of Registration",
         default=datetime.date(2013, 1, 1),
         validators=[
             MinValueValidator(limit_value=datetime.date(year=2013, month=1, day=1)),

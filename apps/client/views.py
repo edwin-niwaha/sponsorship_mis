@@ -41,7 +41,7 @@ def client_list(request):
 
     return render(
         request,
-        "sdms/sdms/client/client_list.html",
+        "sdms/client/client_list.html",
         {"records": records, "table_title": "Clients List"},
     )
 
@@ -75,7 +75,7 @@ def register_client(request):
 
     return render(
         request,
-        "sdms/sdms/client/client_register.html",
+        "sdms/client/client_register.html",
         {"form_name": "Client Registration", "form": form},
     )
 
