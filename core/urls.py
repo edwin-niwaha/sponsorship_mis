@@ -53,6 +53,7 @@ urlpatterns = [
     path("client/", include("apps.client.urls")),
     path("reports/", include("apps.reports.urls")),
     path("dashboard/", include("apps.dashboard.urls")),
+    path("loans/", include("apps.loans.urls")),
     # Inventory ulrs
     path("customers/", include("apps.inventory.customers.urls")),
     path("products/", include("apps.inventory.products.urls")),

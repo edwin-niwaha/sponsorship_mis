@@ -6,13 +6,16 @@
 <!-- ============== dash ===================== -->
 <div>
     <div class="page-header flex-wrap">
-        <h3 class="mb-0">Welcome, <i style="color:#F79420">{{user.first_name.title}} {{user.last_name.title}} !</i>
+        {% comment %} <h3 class="mb-0">Welcome, <i style="color:#F79420">{{user.first_name.title}}
+                {{user.last_name.title}} !</i>
 
-        </h3>
-        <div class="d-flex">
+        </h3> {% endcomment %}
+        <h3 class="mb-0">Sponsorship Management Dashboard</h3>
+
+        {% comment %} <div class="d-flex">
             <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
                 <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
-        </div>
+        </div> {% endcomment %}
     </div>
     <hr class="bg-info" style="height: 3px;" />
 

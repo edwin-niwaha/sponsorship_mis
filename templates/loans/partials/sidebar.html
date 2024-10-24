@@ -1,0 +1,156 @@
+{% load static %}
+
+<nav class="sidebar sidebar-offcanvas" id="sidebar">
+    <div class="text-center sidebar-brand-wrapper d-flex align-items-center">
+        <a class="sidebar-brand brand-logo" href="{% url 'main-dashboard' %}" style="color:#127D61;">
+            <img src="{% static 'images/file.png' %}" height="30" width="30" alt="Brand Logo" loading="lazy" />
+        </a>
+    </div>
+
+    <ul class="nav">
+        <!-- Divider -->
+        <li>
+            <hr class="sidebar-divider my-3">
+        </li>
+
+        <!-- Home -->
+        <li class="nav-item">
+            <a class="nav-link" href="/">
+                <i class="mdi mdi-home menu-icon"></i>
+                <span class="menu-title">SDMS-HOME</span>
+            </a>
+        </li>
+
+        <!-- Dashboards -->
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#dashboards-menu" aria-expanded="false"
+                aria-controls="dashboards-menu">
+                <i class="mdi mdi-view-dashboard menu-icon"></i>
+                <span class="menu-title">DASHBOARDS</span>
+                <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="dashboards-menu">
+                <ul class="nav flex-column sub-menu">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'main-dashboard' %}">
+                            <i class="mdi mdi-lock-open menu-icon"></i> SPONSORSHIP
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'inventory-dashboard' %}">
+                            <i class="mdi mdi-warehouse menu-icon"></i> INVENTORY MGT
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'loans-dashboard' %}">
+                            <i class="mdi mdi-cash-multiple menu-icon"></i> LOAN MANAGER
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
+        <!-- Divider -->
+        <li>
+            <hr class="sidebar-divider my-3">
+        </li>
+        <!-- Clients -->
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'client_list' %}">
+                <i class="mdi mdi-account menu-icon"></i>
+                <span class="menu-title">Clients</span>
+            </a>
+        </li>
+        <!-- Loan Applications -->
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'loans:loan-applications' %}">
+                <i class="mdi mdi-file-document-box menu-icon"></i>
+                <span class="menu-title">Loan Applications</span>
+            </a>
+        </li>
+
+        <!-- Loan Disbursements -->
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'loans:disbursed-loans' %}">
+                <i class="mdi mdi-cash-register menu-icon"></i>
+                <span class="menu-title">Loan Disbursements</span>
+            </a>
+        </li>
+
+        <!-- Loan Payments -->
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="mdi mdi-credit-card menu-icon"></i>
+                <span class="menu-title">Loan Payments</span>
+            </a>
+        </li>
+        <!-- Chart of Accounts -->
+        <li class="nav-item">
+            <a class="nav-link" href="">
+                <i class="mdi mdi-account-cash menu-icon"></i>
+                <span class="menu-title">Chart of Accounts</span>
+            </a>
+        </li>
+        <!-- Divider -->
+        <li>
+            <hr class="sidebar-divider my-3">
+        </li>
+
+        <!-- Reports -->
+        {% if user.profile.role == 'administrator' %}
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#reports-menu" aria-expanded="false"
+                aria-controls="reports-menu">
+                <i class="mdi mdi-chart-bar menu-icon"></i>
+                <span class="menu-title">Reports</span>
+                <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="reports-menu">
+                <ul class="nav flex-column sub-menu">
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="mdi mdi-file-chart menu-icon"></i> Aging
+                            Report</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="mdi mdi-account-multiple menu-icon"></i>
+                            Arrears Report</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="mdi mdi-account-multiple menu-icon"></i>
+                            PAR Reports</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="mdi mdi-account-multiple menu-icon"></i>
+                            Audit Logs</a></li>
+                </ul>
+            </div>
+        </li>
+        {% else %}
+        <li class="nav-item">
+            <a class="nav-link" href="#" onclick="showMessageSettings(event)">
+                <i class="mdi mdi-chart-bar menu-icon"></i>
+                <span class="menu-title">Reports</span>
+            </a>
+        </li>
+        {% endif %}
+
+
+        <!-- Settings -->
+        {% if user.profile.role == 'administrator' %}
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#settings-menu" aria-expanded="false"
+                aria-controls="settings-menu">
+                <i class="mdi mdi-settings menu-icon"></i>
+                <span class="menu-title">Settings</span>
+                <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="settings-menu">
+                <ul class="nav flex-column sub-menu">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'import_client_data' %}">Import Clients</a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+        {% else %}
+        <li class="nav-item">
+            <a class="nav-link" href="#" onclick="showMessageSettings(event)">
+                <i class="mdi mdi-alert menu-icon"></i>
+                <span class="menu-title">Settings</span>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>

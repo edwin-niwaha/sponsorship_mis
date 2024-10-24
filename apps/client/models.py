@@ -5,6 +5,13 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 class Client(models.Model):
     # Basic info
+    reg_number = models.CharField(
+        max_length=10,
+        verbose_name="Registration ID",
+        null=True,
+        blank=True,
+        default="G01-001",
+    )
     full_name = models.CharField(
         max_length=50,
         verbose_name="Full Name",
@@ -19,13 +26,6 @@ class Client(models.Model):
         upload_to="client_uploads/",
         verbose_name="Upload Image(jpg, jpeg, png)",
         validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
-    )
-    reg_number = models.CharField(
-        max_length=10,
-        verbose_name="Registration ID",
-        null=True,
-        blank=True,
-        default="G01-001",
     )
     mobile_telephone = PhoneNumberField(
         verbose_name="Mobile Telephone", null=True, blank=True, default="+256999999999"

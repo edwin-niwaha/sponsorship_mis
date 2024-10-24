@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Avg
 from django.shortcuts import render
 from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
 from apps.users.decorators import admin_or_manager_or_staff_required
@@ -17,6 +17,7 @@ from django.db.models import Min, Max
 
 from apps.inventory.products.models import Product, Category
 from apps.inventory.sales.models import Sale, SaleDetail
+from apps.loans.models import Loan
 
 from .utils import (
     get_top_selling_products,
@@ -421,3 +422,14 @@ def sales_data_api(request):
 
     # Return the data as JSON
     return JsonResponse(data)
+
+
+# =================================== LOANS DASHBOARD ===================================
+@login_required
+@admin_or_manager_or_staff_required
+def loans_dashboard(request):
+    # Calculate key metrics for the dashboard
+
+    context = {}
+
+    return render(request, "main/loans_dashboard.html", context)

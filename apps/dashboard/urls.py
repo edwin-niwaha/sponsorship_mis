@@ -38,11 +38,13 @@ urlpatterns = [
     ),
     path("sponsorship-chart/", views.sponsorship_chart, name="sponsorship-chart"),
     # inventory urls
-    path("inventory/", views.inventory_dashboard, name="inventory-dashboard"),
+    path("ims/", views.inventory_dashboard, name="inventory-dashboard"),
     path(
         "monthly_earnings/",
         views.monthly_earnings_view,
         name="monthly_earnings_view",
     ),
     path("sales-data/", views.sales_data_api, name="sales-data-api"),
+    # loans urls
+    path("lms/", views.loans_dashboard, name="loans-dashboard"),
 ]

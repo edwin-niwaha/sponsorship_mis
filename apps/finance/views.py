@@ -116,7 +116,7 @@ def staff_sponsor_payment(request):
     sponsors = Sponsor.objects.filter(is_departed=False).order_by("id")
     return render(
         request,
-        "finance/staff_sponsor_payments.html",
+        "sdms/finance/staff_sponsor_payments.html",
         {
             "form": form,
             "form_name": "Staff-Sponsor Payments",

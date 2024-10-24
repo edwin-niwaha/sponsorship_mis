@@ -52,4 +52,5 @@ urlpatterns = [
         views.update_guardian_contacts,
         name="update_guardian_contacts",
     ),
+    path("birthdays/", views.birthday_list, name="birthday_list"),
 ]

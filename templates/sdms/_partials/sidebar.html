@@ -39,7 +39,7 @@
                     </li>
                     <!-- Loan Manager Dashboard -->
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'inventory-dashboard' %}">
+                        <a class="nav-link" href="{% url 'loans-dashboard' %}">
                             <i class="mdi mdi-cash-multiple menu-icon"></i> LOAN MANAGER
                         </a>
                     </li>
@@ -81,6 +81,9 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="{% url 'child_departure' %}" target="_self">Child Depature</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'birthday_list' %}" target="_self">Birthdays</a>
                     </li>
                 </ul>
             </div>
@@ -175,6 +178,14 @@
         </li>
 
         <li class="nav-item">
+            <a class="nav-link" href="{% url 'reports_dash' %}">
+                <i class="mdi mdi-chart-bar menu-icon"></i>
+                <span class="menu-title">Reports</span>
+            </a>
+            <hr />
+        </li>
+
+        <li class="nav-item">
             <a class="nav-link" data-bs-toggle="collapse" href="#extraMenu" aria-expanded="false"
                 aria-controls="extraMenu">
                 <i class="mdi mdi-folder-outline menu-icon"></i>
@@ -183,12 +194,6 @@
             </a>
             <div class="collapse" id="extraMenu">
                 <ul class="nav flex-column sub-menu">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'reports_dash' %}">
-                            <i class="mdi mdi-chart-bar menu-icon"></i>
-                            <span class="menu-title">Reports</span>
-                        </a>
-                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'client_list' %}">
                             <i class="mdi mdi-account-multiple-plus menu-icon"></i>
@@ -215,8 +220,6 @@
                     </li>
                 </ul>
             </div>
-        </li>
-        <li>
         </li>
 
         {% if user.profile.role == 'administrator' %}

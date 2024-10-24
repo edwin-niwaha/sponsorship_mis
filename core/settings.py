@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "apps.client",
     "apps.reports",
     "apps.dashboard",
+    "apps.loans",
     # =================================== INVENTORY APPS ===================================
     "apps.inventory.customers",
     "apps.inventory.supplier",

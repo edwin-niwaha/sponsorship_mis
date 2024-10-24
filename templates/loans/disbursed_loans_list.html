@@ -1,0 +1,108 @@
+{% extends 'loans/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header with Add Loan and Print button -->
+    <div class="row mb-3">
+        <div class="col-md-12 d-flex justify-content-between align-items-center">
+            <a href="{% url 'loans:disbursed-loans' %}" class="btn btn-dark ml-2">
+                <i class="mdi mdi-plus mr-2"></i>Add Loan
+            </a>
+            <button title="Print" type="button" class="btn btn-success ml-2" onclick="printDiv('printMe')">
+                <i class="mdi mdi-printer btn-icon-prepend"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Loan DataTable -->
+    <div id="printMe" class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h3>{{ table_title|upper }}</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                {% if disbursed_loans %}
+                <table class="my-table" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Loan ID</th>
+                            <th>Borrower</th>
+                            <th>Principal Amount</th>
+                            <th>Interest Rate (%)</th>
+                            <th>Start Date</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th class="text-center print-hide" colspan="2">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loan in disbursed_loans %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ loan.id }}</td>
+                            <td>{{ loan.borrower }}</td>
+                            <td>{{ loan.principal_amount }}</td>
+                            <td>{{ loan.interest_rate }}</td>
+                            <td>{{ loan.start_date }}</td>
+                            <td>{{ loan.due_date }}</td>
+                            <td>{{ loan.get_status_display }}</td>
+                            <td class="text-center print-hide">
+                                <!-- Update button -->
+                                <a href="" class="text-decoration-none"
+                                    onclick="return confirm('Are you sure you want to update this record?');">
+                                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="tooltip"
+                                        title="Update customer">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </a>
+                            </td>
+                            <td class="text-center print-hide">
+                                {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+                                <!-- Delete button and modal -->
+                                <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal"
+                                    data-bs-target="#deleteModal{{ loan.id }}" title="Delete customer">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+
+                                <!-- Delete Modal -->
+                                <div class="modal fade" id="deleteModal{{ loan.id }}" tabindex="-1"
+                                    aria-labelledby="deleteModalLabel{{ loan.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteModalLabel{{ loan.id }}">Delete Loan
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to delete loan ID <strong>{{ loan.id }}</strong>
+                                                for <h3>{{ loan.borrower }}</h3>?
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">Cancel</button>
+                                                <a href="" class="text-decoration-none">
+                                                    <button type="button" class="btn btn-danger">Delete</button>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-center">No records available.</p>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock content %}

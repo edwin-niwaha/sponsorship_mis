@@ -1,0 +1,102 @@
+{% extends 'loans/base.html' %}
+{% load static %}
+{% load humanize %}
+{% block content %}
+
+<!-- Horizontal Card Section -->
+<div class="container-fluid">
+    <div class="page-header flex-wrap">
+        <h3 class="mb-0">Loan Management Dashboard</h3>
+    </div>
+    <hr class="bg-info" style="height: 3px;" />
+
+    <!-- Content Row for Cards -->
+    <div class="row">
+        <!-- Total Loans Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-primary text-white shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold mb-1">Total Loans Issued</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ total_loans|intcomma }}</div>
+                        </div>
+                        <div>
+                            <i class="mdi mdi-account-cash mdi-36px"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Loans Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-success text-white shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold mb-1">Active Loans</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ active_loans|intcomma }}</div>
+                        </div>
+                        <div>
+                            <i class="mdi mdi-briefcase-check mdi-36px"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overdue Loans Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-danger text-white shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold mb-1">Overdue Loans</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ overdue_loans|intcomma }}</div>
+                        </div>
+                        <div>
+                            <i class="mdi mdi-alert-circle mdi-36px"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Repayments Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-warning text-white shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold mb-1">Total Repayments</div>
+                            <div class="h5 mb-0 font-weight-bold">UgX {{ total_repayments|floatformat:"2"|intcomma }}
+                            </div>
+                        </div>
+                        <div>
+                            <i class="mdi mdi-bank-transfer mdi-36px"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graph Card Section -->
+    <div class="row mb-4">
+        <div class="col-xl-12 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Loan Trends</h5>
+                    <div id="loanGraph" style="height: 400px;">
+                        <!-- Placeholder for the graph -->
+                        <canvas id="loanChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock content %}

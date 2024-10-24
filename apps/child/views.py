@@ -1,5 +1,6 @@
 import logging
-
+from django.db.models import F, Value, CharField
+from django.db.models.functions import ExtractMonth, Concat
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
@@ -832,4 +833,18 @@ def delete_confirmation(request):
         return HttpResponseRedirect(reverse("imported_data"))
 
 
-# =================================== More ===================================
+# =================================== Children birthdays ===================================
+@login_required
+@admin_or_manager_or_staff_required
+def birthday_list(request):
+    # Annotate the queryset with the birth month
+    children_with_birthday = Child.objects.annotate(
+        birth_month=ExtractMonth("date_of_birth"),
+        month_name=Concat(Value("Month: "), F("birth_month"), output_field=CharField()),
+    ).order_by("birth_month", "date_of_birth")
+
+    context = {
+        "table_title": "Children's Birthdays",
+        "children_with_birthday": children_with_birthday,
+    }
+    return render(request, "sdms/child/birthday_list.html", context)

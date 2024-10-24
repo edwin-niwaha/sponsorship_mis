@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container my-2">
+    <div id="printMe" class="tab-pane show active">
+        <header class="text-center mb-4">
+            <h3 class="text-primary">{{ table_title|upper }}</h3>
+        </header>
+        <hr class="bg-info" style="height: 3px;" />
+
+        <div class="table-responsive">
+            {% if children_with_birthday %}
+            <!-- Group children by birth_month -->
+            {% regroup children_with_birthday by birth_month as month_list %}
+            <table class="my-table" id="dataTable">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Reg.No</th>
+                        <th scope="col">Full Name</th>
+                        <th scope="col">Gender</th>
+                        <th scope="col">Date of Birth</th>
+                        <th scope="col">Age</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for month in month_list %}
+
+                    {% for child in month.list %}
+                    <tr>
+                        <th scope="row">{{ forloop.counter }}</th>
+                        <td>{{ child.prefixed_id }}</td>
+                        <td>{{ child.full_name }}</td>
+                        <td>{{ child.gender }}</td>
+                        <td>{{ child.date_of_birth|date:"d M, Y" }}</td>
+                        <td>{{ child.calculate_age }}</td>
+                    </tr>
+                    {% endfor %}
+
+                    <!-- Month Footer with Total Count -->
+                    <tr class="table-info">
+                        <td colspan="7" class="text-right font-italic">
+                            <strong>Total Children: {{ month.list|length }}</strong>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="alert alert-warning text-center" role="alert">
+                No children are listed.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock content %}
