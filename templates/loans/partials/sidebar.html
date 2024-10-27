@@ -63,7 +63,7 @@
         </li>
         <!-- Loan Applications -->
         <li class="nav-item">
-            <a class="nav-link" href="{% url 'loans:loan-applications' %}">
+            <a class="nav-link" href="{% url 'loans:loan_applications' %}">
                 <i class="mdi mdi-file-document-box menu-icon"></i>
                 <span class="menu-title">Loan Applications</span>
             </a>
@@ -71,7 +71,7 @@
 
         <!-- Loan Disbursements -->
         <li class="nav-item">
-            <a class="nav-link" href="{% url 'loans:disbursed-loans' %}">
+            <a class="nav-link" href="{% url 'loans:disbursed_loans' %}">
                 <i class="mdi mdi-cash-register menu-icon"></i>
                 <span class="menu-title">Loan Disbursements</span>
             </a>
@@ -86,7 +86,7 @@
         </li>
         <!-- Chart of Accounts -->
         <li class="nav-item">
-            <a class="nav-link" href="">
+            <a class="nav-link" href="{% url 'loans:chart_of_accounts_list' %}">
                 <i class="mdi mdi-account-cash menu-icon"></i>
                 <span class="menu-title">Chart of Accounts</span>
             </a>

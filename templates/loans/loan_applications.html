@@ -1,4 +1,6 @@
-{% extends 'loans/base.html' %}
+{% extends 'sdms/base_rpts.html' %}
+
+{% load humanize %}
 {% load static %}
 
 {% block content %}
@@ -26,44 +28,72 @@
                 <table class="my-table" id="dataTable">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>Loan ID</th>
+                            <th>ID</th>
                             <th>Borrower</th>
-                            <th>Principal Amount</th>
-                            <th>Interest Rate (%)</th>
-                            <th>Start Date</th>
-                            <th>Due Date</th>
+                            <th>Principal</th>
+                            <th>Period (Months)</th>
+                            <th>Rate (%)</th>
+                            <th>Method</th>
+                            <th>Start_Date</th>
+                            <th>Due_Date</th>
                             <th>Status</th>
-                            <th class="text-center print-hide" colspan="2">Actions</th>
+                            <th class="text-center print-hide" colspan="4">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for loan in loans %}
                         <tr>
-                            <td>{{ forloop.counter }}</td>
                             <td>{{ loan.id }}</td>
                             <td>{{ loan.borrower }}</td>
-                            <td>{{ loan.principal_amount }}</td>
-                            <td>{{ loan.interest_rate }}</td>
+                            <td class="text-right">{{ loan.principal_amount|floatformat:"2"|intcomma }}</td>
+                            <td>{{loan.loan_period_months}}</td>
+                            <td class="text-right">{{ loan.interest_rate }}</td>
+                            <td>{{ loan.interest_method }}</td>
                             <td>{{ loan.start_date }}</td>
                             <td>{{ loan.due_date }}</td>
-                            <td>{{ loan.get_status_display }}</td>
+                            <td>
+                                {% if loan.status == 'pending' %}
+                                <span class="badge badge-secondary">{{ loan.get_status_display }}</span>
+                                {% elif loan.status == 'approved' %}
+                                <span class="badge badge-primary">{{ loan.get_status_display }}</span>
+                                {% elif loan.status == 'closed' %}
+                                <span class="badge badge-success">{{ loan.get_status_display }}</span>
+                                {% elif loan.status == 'overdue' %}
+                                <span class="badge badge-warning">{{ loan.get_status_display }}</span>
+                                {% elif loan.status == 'repaid' %}
+                                <span class="badge badge-danger">{{ loan.get_status_display }}</span>
+                                {% else %}
+                                {{ loan.get_status_display }}
+                                {% endif %}
+                            </td>
+
+                            {% if loan.status == 'pending' %}
                             <td class="text-center print-hide">
-                                <!-- Update button -->
-                                <a href="" class="text-decoration-none"
-                                    onclick="return confirm('Are you sure you want to update this record?');">
-                                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="tooltip"
-                                        title="Update customer">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
+                                <a href="{% url 'loans:approve_loan' loan.id %}" class="btn btn-success btn-sm"
+                                    title="Approve Loan"
+                                    onclick="return confirm('Are you sure you want to approve this loan?');">
+                                    <i class="mdi mdi-check-circle"></i>
+                                </a>
+                            <td class="text-center print-hide">
+                                <a href="{% url 'loans:reject_loan' loan.id %}" class="btn btn-danger btn-sm"
+                                    title="Reject Loan"
+                                    onclick="return confirm('Are you sure you want to reject this loan?');">
+                                    <i class="mdi mdi-close-circle"></i>
+                                </a>
+                            </td>
+                            {% endif %}
+                            <td>
+                                <a href="{% url 'loans:repayment_schedule' loan.id %}" class="btn btn-info btn-sm"
+                                    title="View Repayment Schedule">
+                                    <i class="mdi mdi-calendar-text"></i>
                                 </a>
                             </td>
                             <td class="text-center print-hide">
                                 {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                                <!-- Delete button and modal -->
+                                <!-- Delete Button with Modal -->
                                 <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal"
-                                    data-bs-target="#deleteModal{{ loan.id }}" title="Delete customer">
-                                    <i class="bi bi-trash"></i>
+                                    data-bs-target="#deleteModal{{ loan.id }}" title="Delete Loan">
+                                    <i class="mdi mdi-trash-can"></i>
                                 </button>
 
                                 <!-- Delete Modal -->
@@ -84,8 +114,8 @@
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-secondary"
                                                     data-bs-dismiss="modal">Cancel</button>
-                                                <a href="" class="text-decoration-none">
-                                                    <button type="button" class="btn btn-danger">Delete</button>
+                                                <a href="{% url 'loans:delete_loan' loan.id %}" class="btn btn-danger">
+                                                    Delete
                                                 </a>
                                             </div>
                                         </div>
@@ -101,7 +131,6 @@
                 <p class="text-center">No records available.</p>
                 {% endif %}
             </div>
-
         </div>
     </div>
 </div>
