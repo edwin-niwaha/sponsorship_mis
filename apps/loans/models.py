@@ -85,7 +85,7 @@ class Loan(models.Model):
         related_name="loans",
     )
     principal_amount = models.DecimalField(
-        max_digits=12, decimal_places=2
+        max_digits=10, decimal_places=2
     )  # Total loan amount
     interest_rate = models.DecimalField(
         max_digits=5, decimal_places=2
