@@ -70,6 +70,7 @@ class Loan(models.Model):
         ("closed", "Closed"),
         ("overdue", "Overdue"),
         ("repaid", "Repaid"),
+        ("rejected", "Rejected"),
     ]
 
     # Interest calculation methods
@@ -79,32 +80,65 @@ class Loan(models.Model):
     ]
 
     # Fields
+    account = models.ForeignKey(
+        ChartOfAccounts,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="loans",
+    )
     borrower = models.ForeignKey(
         Client,
         on_delete=models.CASCADE,
         related_name="loans",
     )
     principal_amount = models.DecimalField(
-        max_digits=10, decimal_places=2
-    )  # Total loan amount
-    interest_rate = models.DecimalField(
-        max_digits=5, decimal_places=2
-    )  # Annual interest rate in percentage
-    start_date = models.DateField()  # Loan start date
-    loan_period_months = models.PositiveIntegerField()  # Duration of loan in months
-    due_date = models.DateField(blank=True, null=True)  # Loan due date
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default="pending"
-    )  # Current status
-    remaining_balance = models.DecimalField(
-        max_digits=10, decimal_places=2, blank=True, null=True
-    )  # Remaining balance
-    total_interest = models.DecimalField(
-        max_digits=10, decimal_places=2, blank=True, null=True
-    )  # Total interest amount
-    interest_method = models.CharField(
-        max_length=20, choices=INTEREST_METHOD_CHOICES, default="flat_rate"
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Principal Amount",  # Total loan amount
     )
+    interest_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        verbose_name="Annual Interest Rate (%)",  # Annual interest rate in percentage
+    )
+    start_date = models.DateField(verbose_name="Start Date")  # Loan start date
+    loan_period_months = models.PositiveIntegerField(
+        verbose_name="Loan Period (Months)"  # Duration of loan in months
+    )
+    due_date = models.DateField(
+        blank=True, null=True, verbose_name="Due Date"  # Loan due date
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="pending",
+        verbose_name="Current Status",  # Current status
+    )
+    remaining_balance = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        verbose_name="Remaining Balance",  # Remaining balance
+    )
+    total_interest = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        verbose_name="Total Interest Amount",  # Total interest amount
+    )
+    interest_method = models.CharField(
+        max_length=20,
+        choices=INTEREST_METHOD_CHOICES,
+        default="flat_rate",
+        verbose_name="Interest Calculation Method",
+    )
+
+    class Meta:
+        verbose_name = "Loan"
+        verbose_name_plural = "Loans"
 
     def clean(self):
         """Validate the loan period and due date."""
@@ -124,7 +158,6 @@ class Loan(models.Model):
         """Calculate total interest based on the interest method (flat or reducing)."""
         if self.interest_method == "flat_rate":
             # Flat rate total interest is constant based on principal amount and interest rate
-            # Total interest = Principal Amount * Interest Rate
             self.total_interest = (
                 self.principal_amount * (Decimal(self.interest_rate) / Decimal(100))
             ).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
@@ -160,13 +193,10 @@ class Loan(models.Model):
             )
 
         if self.interest_method == "flat_rate":
-            # Total interest paid over the entire loan period
             total_interest = (
                 self.principal_amount * Decimal(self.interest_rate) / Decimal(100)
             )
-            # Total payment over the loan period (principal + total interest)
             total_payment = self.principal_amount + total_interest
-            # Monthly payment
             return total_payment / self.loan_period_months
         elif self.interest_method == "reducing_rate":
             monthly_interest_rate = (
@@ -223,8 +253,6 @@ class Loan(models.Model):
     def calculate_interest_payment(self, current_balance):
         """Calculate interest payment for a specific month based on balance and interest method."""
         if self.interest_method == "flat_rate":
-            # For flat rate, the total interest is calculated once on the total principal amount
-            # This means it remains constant throughout the loan term
             total_interest = (
                 self.principal_amount * Decimal(self.interest_rate) / Decimal(100)
             )
@@ -232,7 +260,6 @@ class Loan(models.Model):
             return monthly_interest_payment  # Fixed interest payment each month for flat rate
 
         elif self.interest_method == "reducing_rate":
-            # Interest payment based on remaining balance
             monthly_rate = Decimal(self.interest_rate) / Decimal(100) / Decimal(12)
             return current_balance * monthly_rate
 
@@ -246,7 +273,19 @@ class Loan(models.Model):
             self.status = "overdue" if self.status == "approved" else self.status
 
     def save(self, *args, **kwargs):
-        """Override save to calculate due date, interest, and status before saving."""
+        """Override save to ensure the account is set, calculate due date, interest, and status before saving."""
+        if not self.account:
+            try:
+                self.account = ChartOfAccounts.objects.get(
+                    account_name="Loan Receivable"
+                )
+            except ChartOfAccounts.DoesNotExist:
+                raise ValidationError(
+                    "It seems that the default loan account is missing. "
+                    "Please contact support to ensure the 'Loan Receivable' exists in the system."
+                )
+
+        # Calculate due date, interest, and update status
         if not self.due_date:
             self.calculate_due_date()
         if self.remaining_balance is None:
@@ -254,11 +293,20 @@ class Loan(models.Model):
         if not self.total_interest:
             self.calculate_interest()
         self.update_status()
+
         super().save(*args, **kwargs)
 
     def __str__(self):
         """String representation of the Loan model."""
         return f"Loan {self.id} - {self.borrower} ({self.status})"
+
+    @property
+    def disbursement_date(self):
+        return (
+            self.loandisbursement.disbursement_date
+            if hasattr(self, "loandisbursement")
+            else None
+        )
 
 
 # =================================== LoanDisbursement Model ===================================
@@ -267,47 +315,93 @@ class LoanDisbursement(models.Model):
         Loan, on_delete=models.CASCADE, related_name="disbursements"
     )
     disbursement_date = models.DateField()
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
     account = models.ForeignKey(
         ChartOfAccounts, on_delete=models.CASCADE, related_name="disbursements"
     )
     payment_method = models.CharField(
-        max_length=20, choices=PAYMENT_METHOD_CHOICES, default="Cash"
+        max_length=20,
+        choices=[("Cash", "Cash"), ("Bank Transfer", "Bank Transfer")],
+        default="Cash",
+    )
+    description = models.CharField(
+        max_length=255, blank=True, null=True, default="Loan disbursement"
     )
 
-    def __str__(self):
-        return f"Disbursement {self.id} for Loan {self.loan.id}"
+    @property
+    def disbursed_amount(self):
+        """Return the principal amount from the associated Loan."""
+        return self.loan.principal_amount
 
     def save(self, *args, **kwargs):
-        self.full_clean()  # Validate before saving
+        # Ensure the loan has a specific account assigned
+        if not self.loan.account:
+            self.loan.account = ChartOfAccounts.objects.get(
+                name="Loan Receivable"  # Replace with actual account name if different
+            )
+            self.loan.save()
+
+        # Proceed with saving the disbursement and creating transactions
         super().save(*args, **kwargs)
         self.create_transaction_entries()
 
     def create_transaction_entries(self):
-        """Create transaction history entries for both the loan account and disbursement account."""
-        # Create lender's transaction entry (debit cash)
+        """Create transaction entries for both loan and disbursement accounts."""
+        if not self.account or not self.loan.account:
+            raise ValueError(
+                "Both disbursement and loan accounts must be set before creating transactions."
+            )
+
+        # Debit the Loan Receivable Account
         self.create_transaction(
-            account=self.account,
-            transaction_type="disbursement",
-            amount=self.amount,
+            account=self.loan.account,  # Loan Receivable account
+            transaction_type="debit",
+            amount=self.disbursed_amount,
+            description=self.description,
         )
 
-        # Create borrower's transaction entry (credit loan receivable)
+        # Credit the Cash (or Bank) Account
         self.create_transaction(
-            account=self.loan.account,
-            transaction_type="loan_receivable",
-            amount=self.amount,
+            account=self.account,  # Cash or Bank account
+            transaction_type="credit",
+            amount=self.disbursed_amount,
+            description=self.description,
         )
 
-    def create_transaction(self, account, transaction_type, amount):
-        """Helper method to create a transaction history entry."""
+    def create_transaction(self, account, transaction_type, amount, description):
+        """Helper to create a transaction history entry."""
         TransactionHistory.objects.create(
             loan=self.loan,
             transaction_date=self.disbursement_date,
             amount=amount,
             transaction_type=transaction_type,
             account=account,
+            description=description,  # Store the description
         )
+
+    def __str__(self):
+        return f"Disbursement {self.id} for Loan {self.loan.id}"
+
+
+# =================================== TransactionHistory Model ===================================
+class TransactionHistory(models.Model):
+    TRANSACTION_TYPE_CHOICES = [
+        ("credit", "Credit"),
+        ("debit", "Debit"),
+    ]
+
+    loan = models.ForeignKey(
+        Loan, on_delete=models.CASCADE, related_name="transactions"
+    )
+    transaction_date = models.DateField()
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES)
+    account = models.ForeignKey(
+        ChartOfAccounts, on_delete=models.CASCADE, related_name="transaction_history"
+    )
+    description = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"Transaction {self.id} - {self.transaction_type} {self.amount}"
 
 
 # =================================== Product Model ===================================
@@ -329,32 +423,6 @@ class LoanProduct(models.Model):
 
     def __str__(self):
         return f"Loan Product for Loan {self.loan.id} - {self.product.name}"
-
-
-# =================================== TransactionHistory Model ===================================
-class TransactionHistory(models.Model):
-    loan = models.ForeignKey(
-        Loan, on_delete=models.CASCADE, related_name="transactions"
-    )
-    transaction_date = models.DateField()
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    transaction_type = models.CharField(
-        max_length=20,
-        choices=[("disbursement", "Disbursement"), ("repayment", "Repayment")],
-    )
-    account = models.ForeignKey(
-        ChartOfAccounts, on_delete=models.CASCADE, related_name="transactions"
-    )
-
-    def __str__(self):
-        return (
-            f"Transaction {self.id} for Loan {self.loan.id} on {self.transaction_date}"
-        )
-
-    def clean(self):
-        # Ensure that the amount is positive
-        if self.amount <= 0:
-            raise ValidationError("Transaction amount must be greater than zero.")
 
 
 # =================================== LoanRepayment Model ===================================

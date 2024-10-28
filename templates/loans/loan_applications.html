@@ -31,12 +31,13 @@
                             <th>ID</th>
                             <th>Borrower</th>
                             <th>Principal</th>
-                            <th>Period (Months)</th>
+                            <th>Period</th>
                             <th>Rate (%)</th>
                             <th>Method</th>
-                            <th>Start_Date</th>
-                            <th>Due_Date</th>
+                            <th>Applied On</th>
+                            <th>Due Date</th>
                             <th>Status</th>
+                            <th>Disbursed On</th>
                             <th class="text-center print-hide" colspan="4">Actions</th>
                         </tr>
                     </thead>
@@ -46,25 +47,38 @@
                             <td>{{ loan.id }}</td>
                             <td>{{ loan.borrower }}</td>
                             <td class="text-right">{{ loan.principal_amount|floatformat:"2"|intcomma }}</td>
-                            <td>{{loan.loan_period_months}}</td>
+                            <td>{{ loan.loan_period_months }}</td>
                             <td class="text-right">{{ loan.interest_rate }}</td>
                             <td>{{ loan.interest_method }}</td>
-                            <td>{{ loan.start_date }}</td>
-                            <td>{{ loan.due_date }}</td>
+                            <td>{{ loan.start_date|date:"d/m/ Y" }}</td>
+                            <td>{{ loan.due_date|date:"d/m/ Y" }}</td>
                             <td>
                                 {% if loan.status == 'pending' %}
                                 <span class="badge badge-secondary">{{ loan.get_status_display }}</span>
                                 {% elif loan.status == 'approved' %}
                                 <span class="badge badge-primary">{{ loan.get_status_display }}</span>
+                                {% elif loan.status == 'disbursed' %}
+                                <span class="badge badge-info">{{ loan.get_status_display }}</span>
                                 {% elif loan.status == 'closed' %}
                                 <span class="badge badge-success">{{ loan.get_status_display }}</span>
                                 {% elif loan.status == 'overdue' %}
                                 <span class="badge badge-warning">{{ loan.get_status_display }}</span>
                                 {% elif loan.status == 'repaid' %}
                                 <span class="badge badge-danger">{{ loan.get_status_display }}</span>
+                                {% elif loan.status == 'rejected' %}
+                                <span class="badge badge-dark">{{ loan.get_status_display }}</span>
                                 {% else %}
                                 {{ loan.get_status_display }}
                                 {% endif %}
+                            </td>
+                            <td>
+                                {% with loan.disbursements.last as latest_disbursement %}
+                                {% if latest_disbursement %}
+                                {{ latest_disbursement.disbursement_date|date:"d/m/ Y" }}
+                                {% else %}
+                                N/A
+                                {% endif %}
+                                {% endwith %}
                             </td>
 
                             {% if loan.status == 'pending' %}
@@ -74,6 +88,7 @@
                                     onclick="return confirm('Are you sure you want to approve this loan?');">
                                     <i class="mdi mdi-check-circle"></i>
                                 </a>
+                            </td>
                             <td class="text-center print-hide">
                                 <a href="{% url 'loans:reject_loan' loan.id %}" class="btn btn-danger btn-sm"
                                     title="Reject Loan"

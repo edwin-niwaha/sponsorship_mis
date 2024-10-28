@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from datetime import timedelta
-import datetime
+from django.core.exceptions import ValidationError
+from datetime import timedelta, date
 from django.contrib import messages
 from .forms import LoanDisbursementForm, LoanApplicationForm, ChartOfAccountsForm
 from django.contrib.auth.decorators import login_required
@@ -12,6 +12,7 @@ from .models import (
     Loan,
     LoanDisbursement,
     LoanRepayment,
+    TransactionHistory,
 )
 from apps.users.decorators import (
     admin_or_manager_or_staff_required,
@@ -24,7 +25,8 @@ from apps.users.decorators import (
 @login_required
 @admin_or_manager_required
 def loan_applications(request):
-    loans = Loan.objects.all()
+    loans = Loan.objects.prefetch_related("disbursements").all()
+
     context = {
         "loans": loans,
         "table_title": "Loan Applications",
@@ -39,12 +41,19 @@ def loan_apply(request):
     form_title = "Apply for Loan"
     form = LoanApplicationForm(request.POST or None)
 
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(
-            request, "Loan application submitted successfully!", extra_tags="bg-success"
-        )
-        return redirect("loans:apply_for_loan")
+    if request.method == "POST":
+        if form.is_valid():
+            try:
+                form.save()  # This will call the overridden save method
+                messages.success(
+                    request,
+                    "Loan application submitted successfully!",
+                    extra_tags="bg-success",
+                )
+                return redirect("loans:apply_for_loan")
+            except ValidationError as e:
+                # Handle the ValidationError and provide feedback to the user
+                messages.error(request, str(e), extra_tags="bg-danger")
 
     context = {
         "form": form,
@@ -106,11 +115,38 @@ def repayment_schedule(request, loan_id):
 @login_required
 @admin_or_manager_required
 def disbursed_loans_view(request):
-    disbursed_loans = Loan.objects.filter(disbursements__isnull=False).distinct()
+    # Fetch disbursed loans along with their disbursement details
+    disbursed_loans = Loan.objects.filter(status="disbursed").prefetch_related(
+        "disbursements"
+    )
+
+    # Prepare a list to hold loan information including disbursement details
+    loans_with_disbursement_info = []
+
+    for loan in disbursed_loans:
+        for disbursement in loan.disbursements.all():
+            loans_with_disbursement_info.append(
+                {
+                    "loan_id": loan.id,
+                    "borrower": loan.borrower,
+                    "principal_amount": loan.principal_amount,
+                    "interest_rate": loan.interest_rate,
+                    "start_date": loan.start_date,
+                    "due_date": loan.due_date,
+                    "status": loan.get_status_display(),  # Correctly fetch the display name
+                    "disbursement_date": disbursement.disbursement_date,
+                    "account_number": (
+                        loan.account.account_number if loan.account else None
+                    ),
+                    "payment_method": disbursement.payment_method,
+                }
+            )
+
     context = {
-        "loans": disbursed_loans,
+        "loans_with_disbursement_info": loans_with_disbursement_info,
         "table_title": "Disbursed Loans",
     }
+
     return render(request, "loans/disbursed_loans_list.html", context)
 
 
@@ -290,3 +326,94 @@ def chart_of_account_delete_view(request, account_id):
         print(f"Error deleting account: {e}")
 
     return redirect("loans:chart_of_accounts_list")
+
+
+# =================================== ledger_report ist view ===================================
+def get_financial_year_dates():
+    """Returns the start and end dates for the current financial year."""
+    today = date.today()
+
+    # Check if today is after July 1st (start of the financial year)
+    if today.month >= 7:
+        start_date = date(today.year, 7, 1)  # July 1st of the current year
+        end_date = date(today.year + 1, 6, 30)  # June 30th of the next year
+    else:
+        start_date = date(today.year - 1, 7, 1)  # July 1st of the previous year
+        end_date = date(today.year, 6, 30)  # June 30th of the current year
+
+    return start_date, end_date
+
+
+@login_required
+@admin_or_manager_required
+def ledger_report_view(request):
+    selected_account_id = request.GET.get("account_id")  # Get selected account ID
+    ledger_data = []
+    accounts = ChartOfAccounts.objects.all()  # Fetch all accounts for the dropdown
+    total_debits = 0
+    total_credits = 0
+
+    # Get the start and end dates for the current financial year
+    financial_year_start, financial_year_end = get_financial_year_dates()
+
+    # Use query parameters or default to the financial year range
+    start_date = request.GET.get("start_date") or financial_year_start
+    end_date = request.GET.get("end_date") or financial_year_end
+
+    selected_account = None
+    opening_balance = 0
+
+    if selected_account_id:
+        selected_account = get_object_or_404(ChartOfAccounts, id=selected_account_id)
+
+        # Get transactions within the selected date range
+        ledger_data = TransactionHistory.objects.filter(
+            account=selected_account, transaction_date__range=[start_date, end_date]
+        ).order_by("transaction_date")
+
+        # Get opening balance by calculating the balance before the start_date
+        opening_balance_queryset = TransactionHistory.objects.filter(
+            account=selected_account, transaction_date__lt=start_date
+        )
+
+        # Calculate the opening balance as the sum of all prior debits and credits
+        for transaction in opening_balance_queryset:
+            if transaction.transaction_type == "debit":
+                opening_balance += transaction.amount
+            elif transaction.transaction_type == "credit":
+                opening_balance -= transaction.amount
+
+        # Calculate debits, credits, and running balance
+        running_balance = opening_balance
+        for transaction in ledger_data:
+            if transaction.transaction_type == "debit":
+                transaction.debit = transaction.amount
+                transaction.credit = 0
+                total_debits += transaction.amount
+            elif transaction.transaction_type == "credit":
+                transaction.debit = 0
+                transaction.credit = transaction.amount
+                total_credits += transaction.amount
+            else:
+                transaction.debit = 0
+                transaction.credit = 0
+
+            # Update running balance
+            running_balance += transaction.debit - transaction.credit
+            transaction.running_balance = running_balance
+
+    return render(
+        request,
+        "loans/ledger_report.html",
+        {
+            "ledger_data": ledger_data,
+            "accounts": accounts,
+            "selected_account": selected_account,
+            "selected_account_id": selected_account_id,
+            "start_date": start_date,
+            "end_date": end_date,
+            "total_debits": total_debits,
+            "total_credits": total_credits,
+            "opening_balance": opening_balance,  # Pass opening balance to template
+        },
+    )

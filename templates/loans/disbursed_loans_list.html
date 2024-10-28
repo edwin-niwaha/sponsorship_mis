@@ -1,15 +1,15 @@
-{% extends 'loans/base.html' %}
+{% extends 'sdms/base_rpts.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block content %}
 <div class="container-fluid">
-    <!-- Header with Add Loan and Print button -->
     <div class="row mb-3">
         <div class="col-md-12 d-flex justify-content-between align-items-center">
-            <a href="{% url 'loans:disburse_loan' %}" class="btn btn-dark ml-2">
+            <a href="{% url 'loans:disburse_loan' %}" class="btn btn-dark">
                 <i class="mdi mdi-plus mr-2"></i>Disburse Loan
             </a>
-            <button title="Print" type="button" class="btn btn-success ml-2" onclick="printDiv('printMe')">
+            <button title="Print" type="button" class="btn btn-success" onclick="printDiv('printMe')">
                 <i class="mdi mdi-printer btn-icon-prepend"></i>
             </button>
         </div>
@@ -18,81 +18,58 @@
     <!-- Loan DataTable -->
     <div id="printMe" class="card shadow mb-4">
         <div class="card-header py-3">
-            <h3>{{ table_title|upper }}</h3>
+            <h3 class="m-0">{{ table_title|upper }}</h3>
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                {% if disbursed_loans %}
-                <table class="my-table" id="dataTable">
+                {% if loans_with_disbursement_info %}
+                <table class="table table-striped table-bordered" id="dataTable">
                     <thead>
                         <tr>
                             <th>#</th>
                             <th>Loan ID</th>
                             <th>Borrower</th>
-                            <th>Principal Amount</th>
-                            <th>Interest Rate (%)</th>
-                            <th>Start Date</th>
+                            <th>Amount Issued</th>
+                            <th>Int. Rate (%)</th>
+                            <th>Applied On</th>
+                            <th>Disbursed On</th>
                             <th>Due Date</th>
                             <th>Status</th>
-                            <th class="text-center print-hide" colspan="2">Actions</th>
+                            <th>Account Code</th>
+                            <th>Pay Method</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for loan in disbursed_loans %}
+                        {% for loan_info in loans_with_disbursement_info %}
                         <tr>
                             <td>{{ forloop.counter }}</td>
-                            <td>{{ loan.id }}</td>
-                            <td>{{ loan.borrower }}</td>
-                            <td>{{ loan.principal_amount }}</td>
-                            <td>{{ loan.interest_rate }}</td>
-                            <td>{{ loan.start_date }}</td>
-                            <td>{{ loan.due_date }}</td>
-                            <td>{{ loan.get_status_display }}</td>
-                            <td class="text-center print-hide">
-                                <!-- Update button -->
-                                <a href="" class="text-decoration-none"
-                                    onclick="return confirm('Are you sure you want to update this record?');">
-                                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="tooltip"
-                                        title="Update customer">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                </a>
-                            </td>
-                            <td class="text-center print-hide">
-                                {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                                <!-- Delete button and modal -->
-                                <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal"
-                                    data-bs-target="#deleteModal{{ loan.id }}" title="Delete customer">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-
-                                <!-- Delete Modal -->
-                                <div class="modal fade" id="deleteModal{{ loan.id }}" tabindex="-1"
-                                    aria-labelledby="deleteModalLabel{{ loan.id }}" aria-hidden="true">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="deleteModalLabel{{ loan.id }}">Delete Loan
-                                                </h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                Are you sure you want to delete loan ID <strong>{{ loan.id }}</strong>
-                                                for <h3>{{ loan.borrower }}</h3>?
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary"
-                                                    data-bs-dismiss="modal">Cancel</button>
-                                                <a href="" class="text-decoration-none">
-                                                    <button type="button" class="btn btn-danger">Delete</button>
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <td>{{ loan_info.loan_id }}</td>
+                            <td>{{ loan_info.borrower }}</td>
+                            <td>{{ loan_info.principal_amount|floatformat:"2"|intcomma }}</td>
+                            <td>{{ loan_info.interest_rate }}</td>
+                            <td>{{ loan_info.start_date }}</td>
+                            <td>{{ loan_info.disbursement_date }}</td>
+                            <td>{{ loan_info.due_date }}</td>
+                            <td>
+                                {% if loan_info.status == "Pending" %}
+                                <span class="badge badge-warning">{{ loan_info.status }}</span>
+                                {% elif loan_info.status == "Approved" %}
+                                <span class="badge badge-info">{{ loan_info.status }}</span>
+                                {% elif loan_info.status == "Disbursed" %}
+                                <span class="badge badge-success">{{ loan_info.status }}</span>
+                                {% elif loan_info.status == "Closed" %}
+                                <span class="badge badge-secondary">{{ loan_info.status }}</span>
+                                {% elif loan_info.status == "Overdue" %}
+                                <span class="badge badge-danger">{{ loan_info.status }}</span>
+                                {% elif loan_info.status == "Repaid" %}
+                                <span class="badge badge-light">{{ loan_info.status }}</span>
+                                {% else %}
+                                <span class="badge badge-dark">Unknown</span>
                                 {% endif %}
                             </td>
+
+                            <td>{{ loan_info.account_number }}</td>
+                            <td>{{ loan_info.payment_method }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -101,7 +78,6 @@
                 <p class="text-center">No records available.</p>
                 {% endif %}
             </div>
-
         </div>
     </div>
 </div>

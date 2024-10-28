@@ -18,7 +18,7 @@ urlpatterns = [
     path("<int:loan_id>/reject/", views.reject_loan, name="reject_loan"),
     path("disburse/", views.disburse_loan, name="disburse_loan"),
     path("delete/<int:loan_id>/", views.delete_loan, name="delete_loan"),
-    # Loan repayment (commented out for future use)
+    # Loan repayment
     # path("<int:loan_id>/repayment/", views.loan_repayment_view, name="loan_repayment"),
     # Chart of accounts URLs
     path("accounts/add/", views.add_chart_of_account_view, name="add_chart_of_account"),
@@ -32,5 +32,11 @@ urlpatterns = [
         "accounts/delete/<str:account_id>/",
         views.chart_of_account_delete_view,
         name="chart_of_account_delete",
+    ),
+    path("ledger_report/", views.ledger_report_view, name="ledger_report"),
+    path(
+        "ledger_report/<int:account_id>/",
+        views.ledger_report_view,
+        name="ledger_report_with_id",
     ),
 ]

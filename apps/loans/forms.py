@@ -97,11 +97,11 @@ class LoanApplicationForm(forms.ModelForm):
 class LoanDisbursementForm(forms.ModelForm):
     loan = forms.ModelChoiceField(
         queryset=Loan.objects.filter(status="approved"),
-        widget=forms.Select(attrs={"class": "form-control"}),
         required=True,
         label="Select Loan",
+        widget=forms.Select(attrs={"class": "form-control"}),
     )
-    paying_account = forms.ModelChoiceField(
+    account = forms.ModelChoiceField(
         queryset=ChartOfAccounts.objects.filter(account_type="asset"),
         label="Paying Account",
         required=True,
@@ -112,8 +112,7 @@ class LoanDisbursementForm(forms.ModelForm):
         model = LoanDisbursement
         fields = [
             "disbursement_date",
-            "amount",
-            "paying_account",
+            "account",  # Maps directly to `account` in LoanDisbursement model
             "loan",
             "payment_method",
         ]
@@ -121,16 +120,15 @@ class LoanDisbursementForm(forms.ModelForm):
             "disbursement_date": forms.DateInput(
                 attrs={"type": "date", "class": "form-control"}
             ),
-            "amount": forms.NumberInput(
-                attrs={"step": "0.01", "class": "form-control"}
-            ),
             "payment_method": forms.Select(attrs={"class": "form-control"}),
         }
 
-    def clean_amount(self):
-        amount = self.cleaned_data.get("amount")
-        if amount <= 0:
-            raise forms.ValidationError(
-                "The disbursement amount must be greater than zero."
-            )
-        return amount
+    def clean(self):
+        cleaned_data = super().clean()
+        loan = cleaned_data.get("loan")
+
+        if loan:
+            disbursed_amount = loan.principal_amount  # Access the principal amount
+            # Additional validation logic can go here if necessary
+
+        return cleaned_data
