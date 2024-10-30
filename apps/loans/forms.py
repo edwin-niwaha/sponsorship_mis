@@ -1,7 +1,11 @@
 from django import forms
-from .models import LoanDisbursement, Loan, Product, ChartOfAccounts
+from .models import LoanDisbursement, Loan, ChartOfAccounts, LoanRepayment
 from apps.client.models import Client
 from django.utils import timezone
+
+# contants
+min_account_number = 1000
+max_account_number = 2000
 
 
 # =================================== ChartOfAccountsForm ===================================
@@ -102,7 +106,13 @@ class LoanDisbursementForm(forms.ModelForm):
         widget=forms.Select(attrs={"class": "form-control"}),
     )
     account = forms.ModelChoiceField(
-        queryset=ChartOfAccounts.objects.filter(account_type="asset"),
+        queryset=ChartOfAccounts.objects.filter(
+            account_type="asset",
+            account_number__range=(
+                min_account_number,
+                max_account_number,
+            ),  # Filter by account_number range
+        ),
         label="Paying Account",
         required=True,
         widget=forms.Select(attrs={"class": "form-control"}),
@@ -132,3 +142,54 @@ class LoanDisbursementForm(forms.ModelForm):
             # Additional validation logic can go here if necessary
 
         return cleaned_data
+
+
+# =================================== LoanRepaymentForm ===================================
+
+
+class LoanRepaymentForm(forms.ModelForm):
+    loan = forms.ModelChoiceField(
+        queryset=Loan.objects.filter(remaining_balance__gt=0),
+        label="Select Loan",
+        required=True,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    account = forms.ModelChoiceField(
+        queryset=ChartOfAccounts.objects.filter(
+            account_type="asset",
+            account_number__range=(
+                min_account_number,
+                max_account_number,
+            ),  # Filter by account_number range
+        ),
+        label="Paying Account",
+        required=True,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
+    class Meta:
+        model = LoanRepayment
+        fields = ["loan", "repayment_date", "amount", "account"]
+        widgets = {
+            "repayment_date": forms.DateInput(attrs={"type": "date"}),
+        }
+
+        def clean_amount(self):
+            amount = self.cleaned_data.get("amount")
+            loan = self.cleaned_data.get("loan")  # Access selected loan
+
+            if loan is not None:
+                # Get the remaining balance; if None, assume it as 0 for safety.
+                remaining_balance = (
+                    loan.remaining_balance if loan.remaining_balance is not None else 0
+                )
+
+                # Compare the repayment amount with the remaining balance
+                if amount > remaining_balance:
+                    raise forms.ValidationError(
+                        "Repayment amount cannot exceed the remaining balance."
+                    )
+            else:
+                raise forms.ValidationError("No loan selected.")
+
+            return amount

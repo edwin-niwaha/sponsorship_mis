@@ -23,7 +23,7 @@
         <div class="card-body">
             <div class="table-responsive">
                 {% if loans_with_disbursement_info %}
-                <table class="table table-striped table-bordered" id="dataTable">
+                <table class="my-table" id="dataTable">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -37,6 +37,7 @@
                             <th>Status</th>
                             <th>Account Code</th>
                             <th>Pay Method</th>
+                            <th class="text-center print-hide">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -70,6 +71,13 @@
 
                             <td>{{ loan_info.account_number }}</td>
                             <td>{{ loan_info.payment_method }}</td>
+                            <td>
+                                <!-- View Details Button with Icon -->
+                                <a href="{% url 'loans:loan_detail' loan_info.loan_id %}"
+                                    class="btn btn-primary btn-sm">
+                                    <i class="mdi mdi-information-outline"></i>
+                                </a>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -1,0 +1,76 @@
+{% extends 'loans/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-12 d-flex justify-content-between align-items-center">
+            <div>
+                <a href="{% url 'loans:disburse_loan' %}" class="btn btn-dark">
+                    <i class="mdi mdi-plus mr-2"></i> Disburse Loan
+                </a>
+                <a href="{% url 'loans:loan_repayment_create' %}" class="btn btn-dark">
+                    <i class="mdi mdi-plus mr-2"></i> Loan Repayment
+                </a>
+            </div>
+            <button title="Print" type="button" class="btn btn-success" onclick="printDiv('printMe')">
+                <i class="mdi mdi-printer btn-icon-prepend"></i> Print
+            </button>
+        </div>
+    </div>
+
+    <!-- Loan Details Card -->
+    <div id="printMe" class="card shadow mb-4">
+        <div class="card-header bg-primary text-white">
+            <h3 class="m-0">{{ form_title|upper }}</h3>
+        </div>
+        <div class="card-body">
+            <div class="loan-details mb-4">
+                <h5 class="font-weight-bold">Loan Information</h5>
+                <p><strong>Loan ID:</strong> {{ loan.id }}</p>
+                <p><strong>Principal Amount:</strong> {{ loan.principal_amount|floatformat:"2"|intcomma }}</p>
+                <p><strong>Remaining Balance:</strong> {{ loan.remaining_balance|floatformat:"2"|intcomma }}</p>
+                <p><strong>Due Date:</strong> {{ loan.due_date }}</p>
+                <p><strong>Status:</strong>
+                    {% if loan.status == "Repaid" %}
+                    <span class="badge badge-light">{{ loan.status }}</span>
+                    {% elif loan.status == "Overdue" %}
+                    <span class="badge badge-danger">{{ loan.status }}</span>
+                    {% elif loan.status == "Closed" %}
+                    <span class="badge badge-secondary">{{ loan.status }}</span>
+                    {% else %}
+                    <span class="badge badge-success">{{ loan.status }}</span>
+                    {% endif %}
+                </p>
+            </div>
+
+            <h5 class="font-weight-bold">Repayment History</h5>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Account</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for repayment in repayments %}
+                        <tr>
+                            <td>{{ repayment.repayment_date }}</td>
+                            <td>{{ repayment.amount|floatformat:"2"|intcomma }}</td>
+                            <td>{{ repayment.account }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center">No repayments recorded.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

@@ -1,8 +1,14 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.exceptions import ValidationError
 from datetime import timedelta, date
+from django.utils import timezone
 from django.contrib import messages
-from .forms import LoanDisbursementForm, LoanApplicationForm, ChartOfAccountsForm
+from .forms import (
+    LoanDisbursementForm,
+    LoanApplicationForm,
+    ChartOfAccountsForm,
+    LoanRepaymentForm,
+)
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from .models import (
@@ -200,7 +206,9 @@ def approve_loan(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
     loan.status = "approved"  # Change status to "approved" on approval
     loan.save()
-    messages.success(request, f"Loan {loan.id} approved successfully.")
+    messages.success(
+        request, f"Loan {loan.id} approved successfully.", extra_tags="bg-success"
+    )
     return redirect("loans:loan_applications")
 
 
@@ -237,6 +245,62 @@ def delete_loan(request, loan_id):
         print(f"Error deleting loan: {e}")
 
     return redirect("loans:loan_applications")
+
+
+# ===================================  loan_repayment_create_view ===================================
+@login_required
+@admin_or_manager_required
+def loan_repayment_create_view(request):
+    form_title = "Repay Loans"
+    if request.method == "POST":
+        form = LoanRepaymentForm(request.POST)
+        if form.is_valid():
+            repayment = form.save(commit=False)
+            repayment.loan = form.cleaned_data["loan"]
+            repayment.save()
+            messages.success(
+                request,
+                "Loan repayment submitted successfully.",
+                extra_tags="bg-success",
+            )
+            return redirect(
+                "loans:loan_detail", loan_id=repayment.loan.id
+            )  # Update with your loan detail view name
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = LoanRepaymentForm()
+
+    return render(
+        request,
+        "loans/loan_repayment_form.html",
+        {
+            "form": form,
+            "form_title": form_title,
+        },
+    )
+
+
+# ===================================  loan_detail_view  ===================================
+@login_required
+@admin_or_manager_required
+def loan_detail_view(request, loan_id):
+    loan = get_object_or_404(Loan, id=loan_id)
+    repayments = loan.repayments.all()  # Access repayments via related_name borrower
+
+    borrower_name = loan.borrower.full_name
+    # Update the title to include the borrower's name
+    form_title = f"Details for {borrower_name} Loan id: ({loan.id})"
+    return render(
+        request,
+        "loans/loan_detail.html",
+        {
+            "loan": loan,
+            "repayments": repayments,
+            "borrower_name": borrower_name,
+            "form_title": form_title,
+        },
+    )
 
 
 # =================================== Chart of Accounts List View ===================================
