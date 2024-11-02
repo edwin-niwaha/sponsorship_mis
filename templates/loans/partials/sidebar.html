@@ -65,7 +65,7 @@
         <li class="nav-item">
             <a class="nav-link" href="{% url 'loans:loan_applications' %}">
                 <i class="mdi mdi-file-document-box menu-icon"></i>
-                <span class="menu-title">Loan Applications</span>
+                <span class="menu-title">Applications</span>
             </a>
         </li>
 
@@ -73,7 +73,7 @@
         <li class="nav-item">
             <a class="nav-link" href="{% url 'loans:disbursed_loans' %}">
                 <i class="mdi mdi-cash-register menu-icon"></i>
-                <span class="menu-title">Loan Disbursements</span>
+                <span class="menu-title">Disbursements</span>
             </a>
         </li>
 
@@ -81,7 +81,7 @@
         <li class="nav-item">
             <a class="nav-link" href="{% url 'loans:loan_repayment_create' %}">
                 <i class="mdi mdi-credit-card menu-icon"></i>
-                <span class="menu-title">Loan Repayment</span>
+                <span class="menu-title">Repayment</span>
             </a>
         </li>
         <!-- Chart of Accounts -->
@@ -147,6 +147,8 @@
             <div class="collapse" id="settings-menu">
                 <ul class="nav flex-column sub-menu">
                     <li class="nav-item"><a class="nav-link" href="{% url 'import_client_data' %}">Import Clients</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'loans:import_coa_data' %}">Import Acounts</a>
                     </li>
                 </ul>
             </div>

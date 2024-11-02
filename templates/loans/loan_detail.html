@@ -26,25 +26,56 @@
             <h3 class="m-0">{{ form_title|upper }}</h3>
         </div>
         <div class="card-body">
+            <!-- Loan Information Section -->
             <div class="loan-details mb-4">
                 <h5 class="font-weight-bold">Loan Information</h5>
-                <p><strong>Loan ID:</strong> {{ loan.id }}</p>
-                <p><strong>Principal Amount:</strong> {{ loan.principal_amount|floatformat:"2"|intcomma }}</p>
-                <p><strong>Remaining Balance:</strong> {{ loan.remaining_balance|floatformat:"2"|intcomma }}</p>
-                <p><strong>Due Date:</strong> {{ loan.due_date }}</p>
-                <p><strong>Status:</strong>
-                    {% if loan.status == "Repaid" %}
-                    <span class="badge badge-light">{{ loan.status }}</span>
-                    {% elif loan.status == "Overdue" %}
-                    <span class="badge badge-danger">{{ loan.status }}</span>
-                    {% elif loan.status == "Closed" %}
-                    <span class="badge badge-secondary">{{ loan.status }}</span>
-                    {% else %}
-                    <span class="badge badge-success">{{ loan.status }}</span>
-                    {% endif %}
-                </p>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th scope="col">Field</th>
+                            <th scope="col">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Loan ID:</th>
+                            <td>{{ loan.id }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Remaining Principal:</th>
+                            <td>{{ loan.remaining_principal|floatformat:"2"|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Remaining Interest:</th>
+                            <td>{{ loan.remaining_interest|floatformat:"2"|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Total Remaining Balance:</th>
+                            <td>{{ loan.remaining_principal|add:loan.remaining_interest|floatformat:"2"|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Due Date:</th>
+                            <td>{{ loan.due_date }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Status:</th>
+                            <td>
+                                {% if loan.status == "Repaid" %}
+                                <span class="badge badge-light">{{ loan.status }}</span>
+                                {% elif loan.status == "Overdue" %}
+                                <span class="badge badge-danger">{{ loan.status }}</span>
+                                {% elif loan.status == "Closed" %}
+                                <span class="badge badge-secondary">{{ loan.status }}</span>
+                                {% else %}
+                                <span class="badge badge-success">{{ loan.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
+            <!-- Repayment History Section -->
             <h5 class="font-weight-bold">Repayment History</h5>
             <div class="table-responsive">
                 <table class="table table-striped table-bordered">
@@ -59,7 +90,7 @@
                         {% for repayment in repayments %}
                         <tr>
                             <td>{{ repayment.repayment_date }}</td>
-                            <td>{{ repayment.amount|floatformat:"2"|intcomma }}</td>
+                            <td>{{ repayment.amount_repaid|floatformat:"2"|intcomma }}</td>
                             <td>{{ repayment.account }}</td>
                         </tr>
                         {% empty %}

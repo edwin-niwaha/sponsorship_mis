@@ -27,15 +27,16 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Loan ID</th>
+                            <th>ID</th>
                             <th>Borrower</th>
-                            <th>Amount Issued</th>
-                            <th>Int. Rate (%)</th>
+                            <th>Amt_Issued</th>
+                            <th>Int_Receivable</th>
+                            <th>Rate(%)</th>
+                            <th>Period</th>
                             <th>Applied On</th>
                             <th>Disbursed On</th>
-                            <th>Due Date</th>
+                            <th>Due_Date</th>
                             <th>Status</th>
-                            <th>Account Code</th>
                             <th>Pay Method</th>
                             <th class="text-center print-hide">Actions</th>
                         </tr>
@@ -47,7 +48,10 @@
                             <td>{{ loan_info.loan_id }}</td>
                             <td>{{ loan_info.borrower }}</td>
                             <td>{{ loan_info.principal_amount|floatformat:"2"|intcomma }}</td>
+                            <td class="text-right">
+                                {{ loan_info.total_interest|floatformat:"2"|intcomma }}</td>
                             <td>{{ loan_info.interest_rate }}</td>
+                            <td>{{ loan_info.loan_period_months }}</td>
                             <td>{{ loan_info.start_date }}</td>
                             <td>{{ loan_info.disbursement_date }}</td>
                             <td>{{ loan_info.due_date }}</td>
@@ -69,7 +73,6 @@
                                 {% endif %}
                             </td>
 
-                            <td>{{ loan_info.account_number }}</td>
                             <td>{{ loan_info.payment_method }}</td>
                             <td>
                                 <!-- View Details Button with Icon -->

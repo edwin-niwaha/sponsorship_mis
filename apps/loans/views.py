@@ -1,13 +1,16 @@
+import logging
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.exceptions import ValidationError
 from datetime import timedelta, date
 from django.utils import timezone
 from django.contrib import messages
+from openpyxl import load_workbook
 from .forms import (
     LoanDisbursementForm,
     LoanApplicationForm,
     ChartOfAccountsForm,
     LoanRepaymentForm,
+    ImportCOAForm,
 )
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -25,6 +28,8 @@ from apps.users.decorators import (
     admin_or_manager_required,
     admin_required,
 )
+
+logger = logging.getLogger(__name__)
 
 
 # =================================== Loan Applications View ===================================
@@ -50,7 +55,7 @@ def loan_apply(request):
     if request.method == "POST":
         if form.is_valid():
             try:
-                form.save()  # This will call the overridden save method
+                form.save(user=request.user)  # Pass the current user to the save method
                 messages.success(
                     request,
                     "Loan application submitted successfully!",
@@ -58,7 +63,6 @@ def loan_apply(request):
                 )
                 return redirect("loans:apply_for_loan")
             except ValidationError as e:
-                # Handle the ValidationError and provide feedback to the user
                 messages.error(request, str(e), extra_tags="bg-danger")
 
     context = {
@@ -136,7 +140,9 @@ def disbursed_loans_view(request):
                     "loan_id": loan.id,
                     "borrower": loan.borrower,
                     "principal_amount": loan.principal_amount,
+                    "total_interest": loan.total_interest,
                     "interest_rate": loan.interest_rate,
+                    "loan_period_months": loan.loan_period_months,
                     "start_date": loan.start_date,
                     "due_date": loan.due_date,
                     "status": loan.get_status_display(),  # Correctly fetch the display name
@@ -204,8 +210,11 @@ def disburse_loan(request):
 @admin_or_manager_required
 def approve_loan(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
-    loan.status = "approved"  # Change status to "approved" on approval
+    loan.status = "approved"
+    loan.approved_date = timezone.now()
+    loan.approved_by = request.user
     loan.save()
+
     messages.success(
         request, f"Loan {loan.id} approved successfully.", extra_tags="bg-success"
     )
@@ -289,7 +298,6 @@ def loan_detail_view(request, loan_id):
     repayments = loan.repayments.all()  # Access repayments via related_name borrower
 
     borrower_name = loan.borrower.full_name
-    # Update the title to include the borrower's name
     form_title = f"Details for {borrower_name} Loan id: ({loan.id})"
     return render(
         request,
@@ -390,6 +398,131 @@ def chart_of_account_delete_view(request, account_id):
         print(f"Error deleting account: {e}")
 
     return redirect("loans:chart_of_accounts_list")
+
+
+# =================================== Process and Import Excel data ===================================
+@login_required
+@admin_required
+@transaction.atomic
+def import_coa_data(request):
+    if request.method == "POST":
+        form = ImportCOAForm(request.POST, request.FILES)
+        if form.is_valid():
+            excel_file = request.FILES.get("excel_file")
+            if excel_file and excel_file.name.endswith(".xlsx"):
+                try:
+                    # Call process_and_import_data function
+                    errors = process_and_import_data(excel_file)
+                    if errors:
+                        for error in errors:
+                            messages.error(request, error, extra_tags="bg-danger")
+                    else:
+                        messages.success(
+                            request,
+                            "Data imported successfully!",
+                            extra_tags="bg-success",
+                        )
+                except Exception as e:
+                    messages.error(
+                        request, f"Error importing data: {e}", extra_tags="bg-danger"
+                    )
+                return redirect("loans:chart_of_accounts_list")
+            else:
+                messages.error(
+                    request, "Please upload a valid Excel file.", extra_tags="bg-danger"
+                )
+    else:
+        form = ImportCOAForm()
+    return render(
+        request,
+        "loans/accounts_import.html",
+        {"form_name": "Import Accounts - Excel", "form": form},
+    )
+
+
+# Function to import Excel data
+# def process_and_import_data(excel_file):
+#     errors = []
+#     try:
+#         wb = load_workbook(excel_file)
+#         sheet = wb.active
+#         for row_num, row in enumerate(sheet.iter_rows(min_row=2), start=2):
+#             account_name = row[0].value
+#             account_type = row[1].value
+#             account_number = row[2].value
+#             description = row[3].value
+#             if account_name is not None:
+#                 try:
+#                     ChartOfAccounts.objects.create(
+#                         account_name=account_name,
+#                         account_type=account_type,
+#                         account_number=account_number,
+#                         description=description,
+#                     )
+#                 except Exception as e:
+#                     errors.append(f"Error on row {row_num}: {e}")
+#             else:
+#                 errors.append(f"Missing full name on row {row_num}")
+#     except Exception as e:
+#         errors.append(f"Failed to process the Excel file: {e}")
+#     return errors
+@transaction.atomic
+def process_and_import_data(excel_file):
+    errors = []
+    try:
+        wb = load_workbook(excel_file)
+        sheet = wb.active
+
+        for row_num, row in enumerate(sheet.iter_rows(min_row=2), start=2):
+            account_name = row[0].value
+            account_type = row[1].value
+            account_number = row[2].value
+            description = row[3].value
+
+            # Ensure account_number is treated as a string
+            if account_number is None:
+                errors.append(f"Missing account number on row {row_num}")
+                continue
+
+            # Convert to string, even if it's a number
+            account_number = str(account_number)
+
+            if account_name and account_type and account_number:
+                try:
+                    # Validate account type
+                    if (
+                        account_type
+                        not in dict(ChartOfAccounts.ACCOUNT_TYPE_CHOICES).keys()
+                    ):
+                        errors.append(
+                            f"Invalid account type '{account_type}' on row {row_num}"
+                        )
+                        continue
+
+                    # Validate that the account number is numeric
+                    if not account_number.isdigit():
+                        errors.append(
+                            f"Account number must be numeric on row {row_num}"
+                        )
+                        continue
+
+                    # Create the account
+                    ChartOfAccounts.objects.create(
+                        account_name=account_name,
+                        account_type=account_type,
+                        account_number=account_number,
+                        description=description,
+                    )
+                except Exception as e:
+                    errors.append(f"Error on row {row_num}: {e}")
+                    logger.error(f"Error on row {row_num}: {e}")
+            else:
+                errors.append(f"Missing required fields on row {row_num}")
+    except Exception as e:
+        errors.append(f"Failed to process the Excel file: {e}")
+        logger.error(f"Failed to process the Excel file: {e}")
+
+    return errors
 
 
 # =================================== ledger_report ist view ===================================

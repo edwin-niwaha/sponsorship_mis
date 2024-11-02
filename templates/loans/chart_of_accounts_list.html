@@ -1,20 +1,19 @@
-{% extends 'loans/base.html' %}
+{% extends 'sdms/base_rpts.html' %}
 {% load crispy_forms_tags %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="row mb-3">
         <div class="col-md-12 d-flex justify-content-between align-items-center">
-            <a href="{% url 'loans:add_chart_of_account' %}" class="btn btn-dark ml-2">
-                <i class="mdi mdi-plus mr-2"></i>
-                Add Account
+            <a href="{% url 'loans:add_chart_of_account' %}" class="btn btn-dark">
+                <i class="mdi mdi-plus mr-2"></i> Add Account
             </a>
-            <div class="d-flex">
-
-                <button title="Print" type="button" class="btn btn-success ml-2" onclick="printDiv('printMe')">
-                    <i class="mdi mdi-printer btn-icon-prepend"></i>
-                </button>
-            </div>
+            <a title="Bulk Import" class="btn btn-sm btn-success" href="{% url 'loans:import_coa_data' %}">
+                <i class="mdi mdi-upload btn-icon-prepend"></i>
+            </a>
+            <button title="Print" type="button" class="btn btn-success ml-2" onclick="printDiv('printMe')">
+                <i class="mdi mdi-printer btn-icon-prepend"></i>
+            </button>
         </div>
     </div>
 
@@ -28,7 +27,7 @@
                     <div class="table-responsive">
                         {% if accounts_by_type %}
                         {% for account_type, grouped_accounts in accounts_by_type.items %}
-                        <h4 class="mt-4">{{ account_type }}</h4>
+                        <h4 class="mt-2">{{ account_type }}</h4>
                         <table class="table table-bordered my-table" id="dataTable">
                             <thead class="thead-light">
                                 <tr>
@@ -61,7 +60,6 @@
                                             data-bs-target="#deleteModal{{ account.id }}" title="Delete Account">
                                             <i class="bi bi-trash"></i>
                                         </button>
-
                                         <!-- Delete Modal -->
                                         <div class="modal fade" id="deleteModal{{ account.id }}" tabindex="-1"
                                             aria-labelledby="deleteModalLabel{{ account.id }}" aria-hidden="true">
@@ -69,15 +67,14 @@
                                                 <div class="modal-content">
                                                     <div class="modal-header">
                                                         <h5 class="modal-title" id="deleteModalLabel{{ account.id }}">
-                                                            Delete Account
-                                                        </h5>
+                                                            Delete Account</h5>
                                                         <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                            aria-label="Close">X</button>
+                                                            aria-label="Close"></button>
                                                     </div>
                                                     <div class="modal-body">
-                                                        Are you sure you want to delete the account: <h3>
-                                                            {{ account.account_number }} - {{ account.account_name }}?
-                                                        </h3>
+                                                        Are you sure you want to delete the account:
+                                                        <strong>{{ account.account_number }} -
+                                                            {{ account.account_name }}</strong>?
                                                     </div>
                                                     <div class="modal-footer">
                                                         <button type="button" class="btn btn-secondary"

@@ -31,6 +31,7 @@
                             <th>ID</th>
                             <th>Borrower</th>
                             <th>Principal</th>
+                            <th>Interest Receivable</th>
                             <th>Period</th>
                             <th>Rate (%)</th>
                             <th>Method</th>
@@ -47,6 +48,7 @@
                             <td>{{ loan.id }}</td>
                             <td>{{ loan.borrower }}</td>
                             <td class="text-right">{{ loan.principal_amount|floatformat:"2"|intcomma }}</td>
+                            <td class="text-right">{{ loan.total_interest|floatformat:"2"|intcomma }}</td>
                             <td>{{ loan.loan_period_months }}</td>
                             <td class="text-right">{{ loan.interest_rate }}</td>
                             <td>{{ loan.interest_method }}</td>

@@ -38,6 +38,7 @@ urlpatterns = [
         views.chart_of_account_delete_view,
         name="chart_of_account_delete",
     ),
+    path("import-accounts/", views.import_coa_data, name="import_coa_data"),
     path("ledger_report/", views.ledger_report_view, name="ledger_report"),
     path(
         "ledger_report/<int:account_id>/",

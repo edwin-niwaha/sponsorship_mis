@@ -30,3 +30,6 @@ python manage.py test app_name.tests.test_file
 For example:
 
 python manage.py test child.tests.test_models
+
+DOMAIN NAME 
+sponsorwithpendeza.org

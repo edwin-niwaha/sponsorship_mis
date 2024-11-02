@@ -1,11 +1,13 @@
 from django import forms
+from django.db.models import F, Q
 from .models import LoanDisbursement, Loan, ChartOfAccounts, LoanRepayment
 from apps.client.models import Client
 from django.utils import timezone
+from decimal import Decimal, ROUND_DOWN
 
 # contants
-min_account_number = 1000
-max_account_number = 2000
+min_account_number = 1010
+max_account_number = 1020
 
 
 # =================================== ChartOfAccountsForm ===================================
@@ -44,6 +46,12 @@ class ChartOfAccountsForm(forms.ModelForm):
                 "Account name must be at least 3 characters long."
             )
         return account_name
+
+
+# =================================== ImportCOAForm ===================================
+class ImportCOAForm(forms.Form):
+    excel_file = forms.FileField()
+    excel_file.widget.attrs["class"] = "form-control-file"
 
 
 # =================================== LoanApplicationForm ===================================
@@ -96,6 +104,16 @@ class LoanApplicationForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["borrower"].queryset = Client.objects.all()
 
+    def save(self, commit=True, user=None):
+        loan = super().save(commit=False)
+        if user:
+            loan.created_by = (
+                user  # Set the created_by field to the user who is creating the loan
+            )
+        if commit:
+            loan.save()
+        return loan
+
 
 # =================================== LoanDisbursementForm ===================================
 class LoanDisbursementForm(forms.ModelForm):
@@ -111,7 +129,7 @@ class LoanDisbursementForm(forms.ModelForm):
             account_number__range=(
                 min_account_number,
                 max_account_number,
-            ),  # Filter by account_number range
+            ),
         ),
         label="Paying Account",
         required=True,
@@ -145,11 +163,11 @@ class LoanDisbursementForm(forms.ModelForm):
 
 
 # =================================== LoanRepaymentForm ===================================
-
-
 class LoanRepaymentForm(forms.ModelForm):
     loan = forms.ModelChoiceField(
-        queryset=Loan.objects.filter(remaining_balance__gt=0),
+        queryset=Loan.objects.filter(
+            Q(remaining_principal__gt=0) | Q(remaining_interest__gt=0)
+        ),
         label="Select Loan",
         required=True,
         widget=forms.Select(attrs={"class": "form-control"}),
@@ -157,10 +175,7 @@ class LoanRepaymentForm(forms.ModelForm):
     account = forms.ModelChoiceField(
         queryset=ChartOfAccounts.objects.filter(
             account_type="asset",
-            account_number__range=(
-                min_account_number,
-                max_account_number,
-            ),  # Filter by account_number range
+            account_number__range=(min_account_number, max_account_number),
         ),
         label="Paying Account",
         required=True,
@@ -169,27 +184,27 @@ class LoanRepaymentForm(forms.ModelForm):
 
     class Meta:
         model = LoanRepayment
-        fields = ["loan", "repayment_date", "amount", "account"]
+        fields = ["loan", "repayment_date", "amount_repaid", "account"]
         widgets = {
             "repayment_date": forms.DateInput(attrs={"type": "date"}),
         }
 
-        def clean_amount(self):
-            amount = self.cleaned_data.get("amount")
-            loan = self.cleaned_data.get("loan")  # Access selected loan
+    def clean_amount_repaid(self):
+        amount_repaid = self.cleaned_data.get("amount_repaid")
+        loan = self.cleaned_data.get("loan")  # Access selected loan
 
-            if loan is not None:
-                # Get the remaining balance; if None, assume it as 0 for safety.
-                remaining_balance = (
-                    loan.remaining_balance if loan.remaining_balance is not None else 0
+        if loan is not None:
+            # Calculate the total remaining balance as the sum of remaining principal and remaining interest
+            remaining_balance = (loan.remaining_principal or Decimal("0.00")) + (
+                loan.remaining_interest or Decimal("0.00")
+            )
+
+            # Compare the repayment amount_repaid with the remaining balance
+            if amount_repaid > remaining_balance:
+                raise forms.ValidationError(
+                    f"Repayment amount_repaid of {amount_repaid} cannot exceed the total remaining balance of {remaining_balance}"
                 )
+        else:
+            raise forms.ValidationError("No loan selected.")
 
-                # Compare the repayment amount with the remaining balance
-                if amount > remaining_balance:
-                    raise forms.ValidationError(
-                        "Repayment amount cannot exceed the remaining balance."
-                    )
-            else:
-                raise forms.ValidationError("No loan selected.")
-
-            return amount
+        return amount_repaid
