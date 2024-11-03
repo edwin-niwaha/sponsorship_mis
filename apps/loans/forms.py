@@ -166,10 +166,10 @@ class LoanDisbursementForm(forms.ModelForm):
 class LoanRepaymentForm(forms.ModelForm):
     loan = forms.ModelChoiceField(
         queryset=Loan.objects.filter(
-            Q(remaining_principal__gt=0) | Q(remaining_interest__gt=0)
+            Q(principal_amount__gt=0)
+            | Q(total_interest__gt=0)  # Adjust fields as necessary
         ),
         label="Select Loan",
-        required=True,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
     account = forms.ModelChoiceField(
@@ -178,33 +178,78 @@ class LoanRepaymentForm(forms.ModelForm):
             account_number__range=(min_account_number, max_account_number),
         ),
         label="Paying Account",
-        required=True,
         widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
+    principal_payment = forms.DecimalField(
+        label="Principal Payment",
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+        min_value=0,
+        decimal_places=2,
+        max_digits=15,
+        initial=0,
+    )
+
+    interest_payment = forms.DecimalField(
+        label="Interest Payment",
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+        min_value=0,
+        decimal_places=2,
+        max_digits=15,
+        initial=0,
     )
 
     class Meta:
         model = LoanRepayment
-        fields = ["loan", "repayment_date", "amount_repaid", "account"]
+        fields = [
+            "loan",
+            "repayment_date",
+            "principal_payment",
+            "interest_payment",
+            "account",
+        ]
         widgets = {
-            "repayment_date": forms.DateInput(attrs={"type": "date"}),
+            "repayment_date": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
         }
 
-    def clean_amount_repaid(self):
-        amount_repaid = self.cleaned_data.get("amount_repaid")
-        loan = self.cleaned_data.get("loan")  # Access selected loan
+    def clean(self):
+        cleaned_data = super().clean()
+        principal_payment = cleaned_data.get("principal_payment")
+        interest_payment = cleaned_data.get("interest_payment")
+        loan = cleaned_data.get("loan")
 
-        if loan is not None:
-            # Calculate the total remaining balance as the sum of remaining principal and remaining interest
-            remaining_balance = (loan.remaining_principal or Decimal("0.00")) + (
-                loan.remaining_interest or Decimal("0.00")
+        if not loan:
+            raise forms.ValidationError("Please select a loan.")
+
+        # Calculate remaining balances using the method from the Loan model
+        balances = loan.calculate_remaining_balances()
+        remaining_principal = balances[
+            "principal_balance"
+        ]  # Adjusted to match your return structure
+        remaining_interest = balances[
+            "interest_balance"
+        ]  # Adjusted to match your return structure
+
+        # Validate principal payment
+        if principal_payment and principal_payment > remaining_principal:
+            raise forms.ValidationError(
+                f"Principal payment of {principal_payment:,.2f} cannot exceed the remaining principal balance of {remaining_principal:,.2f}."
             )
 
-            # Compare the repayment amount_repaid with the remaining balance
-            if amount_repaid > remaining_balance:
-                raise forms.ValidationError(
-                    f"Repayment amount_repaid of {amount_repaid} cannot exceed the total remaining balance of {remaining_balance}"
-                )
-        else:
-            raise forms.ValidationError("No loan selected.")
+        # Validate interest payment
+        if interest_payment and interest_payment > remaining_interest:
+            raise forms.ValidationError(
+                f"Interest payment of {interest_payment:,.2f} cannot exceed the remaining interest balance of {remaining_interest:,.2f}."
+            )
 
-        return amount_repaid
+        # Optionally, validate that the total payment does not exceed the total balance
+        total_payment = (principal_payment or 0) + (interest_payment or 0)
+        total_remaining_balance = remaining_principal + remaining_interest
+        if total_payment > total_remaining_balance:
+            raise forms.ValidationError(
+                f"Total payment of {total_payment:,.2f} cannot exceed the total remaining balance of {total_remaining_balance:,.2f}."
+            )
+
+        return cleaned_data

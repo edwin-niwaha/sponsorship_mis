@@ -65,6 +65,254 @@ class ChartOfAccounts(models.Model):
 # =================================== Loan Model ===================================
 
 
+# class Loan(models.Model):
+#     # Loan status options
+#     STATUS_CHOICES = [
+#         ("pending", "Pending"),
+#         ("approved", "Approved"),
+#         ("disbursed", "Disbursed"),
+#         ("closed", "Closed"),
+#         ("overdue", "Overdue"),
+#         ("repaid", "Repaid"),
+#         ("rejected", "Rejected"),
+#     ]
+
+#     # Interest calculation methods
+#     INTEREST_METHOD_CHOICES = [
+#         ("flat_rate", "Flat Rate"),
+#         ("reducing_rate", "Reducing Rate"),
+#     ]
+
+#     # Fields
+#     account = models.ForeignKey(
+#         ChartOfAccounts,
+#         on_delete=models.SET_NULL,
+#         null=True,
+#         blank=True,
+#         related_name="loans",
+#     )
+#     borrower = models.ForeignKey(
+#         Client,
+#         on_delete=models.CASCADE,
+#         related_name="loans",
+#     )
+#     principal_amount = models.DecimalField(
+#         max_digits=15,
+#         decimal_places=2,
+#         verbose_name="Principal Amount",
+#     )
+#     interest_rate = models.DecimalField(
+#         max_digits=5,
+#         decimal_places=2,
+#         verbose_name="Annual Interest Rate (%)",
+#     )
+#     start_date = models.DateField(verbose_name="Start Date")
+#     loan_period_months = models.PositiveIntegerField(
+#         verbose_name="Loan Period (Months)"
+#     )
+#     due_date = models.DateField(blank=True, null=True, verbose_name="Due Date")
+#     status = models.CharField(
+#         max_length=20,
+#         choices=STATUS_CHOICES,
+#         default="pending",
+#         verbose_name="Current Status",
+#     )
+#     total_interest = models.DecimalField(
+#         max_digits=15,
+#         decimal_places=2,
+#         blank=True,
+#         null=True,
+#         verbose_name="Total Interest Amount",
+#     )
+#     interest_method = models.CharField(
+#         max_length=20,
+#         choices=INTEREST_METHOD_CHOICES,
+#         default="flat_rate",
+#         verbose_name="Interest Calculation Method",
+#     )
+#     approved_by = models.ForeignKey(
+#         User,
+#         on_delete=models.SET_NULL,
+#         null=True,
+#         blank=True,
+#         verbose_name="Approved By",
+#     )
+#     approved_date = models.DateField(
+#         blank=True, null=True, verbose_name="Approval Date"
+#     )
+#     created_by = models.ForeignKey(
+#         User,
+#         on_delete=models.SET_NULL,
+#         null=True,
+#         blank=True,
+#         related_name="loans_created",
+#         verbose_name="Created By",
+#     )
+#     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+#     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+#     class Meta:
+#         db_table = "loans"
+#         verbose_name = "Loan"
+#         verbose_name_plural = "Loans"
+
+#     def clean(self):
+#         """Validate the loan period and due date."""
+#         if self.due_date and self.due_date <= self.start_date:
+#             raise ValidationError("Due date must be after the start date.")
+#         if self.loan_period_months <= 0:
+#             raise ValidationError("Loan period must be a positive integer.")
+
+#     def calculate_due_date(self):
+#         """Calculate and set the due date based on the start date and loan period."""
+#         if self.start_date and self.loan_period_months:
+#             self.due_date = self.start_date + relativedelta(
+#                 months=self.loan_period_months
+#             )
+
+#     def calculate_interest(self):
+#         """Calculate total interest based on the interest method (flat or reducing)."""
+#         if self.interest_method == "flat_rate":
+#             self.total_interest = (
+#                 self.principal_amount * Decimal(self.interest_rate) / Decimal(100)
+#             ).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+#         elif self.interest_method == "reducing_rate":
+#             monthly_rate = Decimal(self.interest_rate) / Decimal(100) / Decimal(12)
+#             current_balance = self.principal_amount
+#             total_interest = Decimal(0)
+
+#             for month in range(self.loan_period_months):
+#                 interest_payment = (current_balance * monthly_rate).quantize(
+#                     Decimal("0.01"), rounding=ROUND_DOWN
+#                 )
+#                 total_interest += interest_payment
+#                 principal_payment = self.principal_amount / self.loan_period_months
+#                 current_balance -= principal_payment
+
+#             self.total_interest = total_interest.quantize(
+#                 Decimal("0.01"), rounding=ROUND_DOWN
+#             )
+
+#     def calculate_monthly_payment(self):
+#         """Calculate the monthly payment based on the interest method."""
+#         if self.interest_method == "flat_rate":
+#             total_payment = self.principal_amount + self.total_interest
+#             return total_payment / self.loan_period_months
+#         elif self.interest_method == "reducing_rate":
+#             monthly_interest_rate = (
+#                 Decimal(self.interest_rate) / Decimal(100) / Decimal(12)
+#             )
+#             return (self.principal_amount * monthly_interest_rate) / (
+#                 1 - (1 + monthly_interest_rate) ** -self.loan_period_months
+#             )
+
+#     def generate_payment_schedule(self):
+#         """Generate a detailed monthly payment schedule for the loan."""
+#         schedule = []
+#         monthly_payment = self.calculate_monthly_payment()
+#         monthly_principal_payment = self.principal_amount / self.loan_period_months
+#         current_balance = self.principal_amount
+
+#         for month in range(1, self.loan_period_months + 1):
+#             payment_due_date = self.start_date + relativedelta(months=month)
+#             interest_payment = self.calculate_interest_payment(current_balance)
+#             principal_payment = monthly_principal_payment
+
+#             if principal_payment > current_balance:
+#                 principal_payment = current_balance
+
+#             schedule.append(
+#                 {
+#                     "payment_due_date": payment_due_date,
+#                     "principal_payment": principal_payment,
+#                     "interest_payment": interest_payment,
+#                     "total_payment": principal_payment + interest_payment,
+#                     "remaining_balance": current_balance - principal_payment,
+#                 }
+#             )
+
+#             current_balance -= principal_payment
+
+#         if current_balance < 0:
+#             current_balance = 0
+#         if schedule:
+#             schedule[-1]["remaining_balance"] = current_balance
+
+#         return schedule
+
+#     def calculate_interest_payment(self, current_balance):
+#         """Calculate interest payment for a specific month based on balance and interest method."""
+#         if self.interest_method == "flat_rate":
+#             total_interest = (
+#                 self.principal_amount * Decimal(self.interest_rate) / Decimal(100)
+#             )
+#             return total_interest / self.loan_period_months
+#         elif self.interest_method == "reducing_rate":
+#             monthly_rate = Decimal(self.interest_rate) / Decimal(100) / Decimal(12)
+#             return current_balance * monthly_rate
+
+#     def calculate_remaining_balances(self):
+#         """Calculate remaining principal and interest based on total repayments."""
+#         # Get total principal repaid from repayments
+#         total_repaid = self.repayments.aggregate(total=Sum("principal_payment"))[
+#             "total"
+#         ] or Decimal("0.00")
+
+#         # Get total interest paid from repayments
+#         total_interest_paid = self.repayments.aggregate(total=Sum("interest_payment"))[
+#             "total"
+#         ] or Decimal("0.00")
+
+#         # Calculate remaining balances
+#         principal_balance = max(self.principal_amount - total_repaid, Decimal("0.00"))
+#         interest_balance = max(
+#             self.total_interest - total_interest_paid, Decimal("0.00")
+#         )
+
+#         return {
+#             "principal_balance": principal_balance,
+#             "interest_balance": interest_balance,
+#         }
+
+#     def update_status(self):
+#         """Update loan status based on remaining balance and due date."""
+#         if self.remaining_balance <= 0:
+#             self.status = "repaid"
+#         elif timezone.now().date() > self.due_date:
+#             self.status = "overdue" if self.status == "approved" else self.status
+
+#     def save(self, *args, **kwargs):
+#         """Override save to ensure the account is set, calculate due date, interest, and status before saving."""
+#         if not self.account:
+#             try:
+#                 self.account = ChartOfAccounts.objects.get(
+#                     account_number="1050"  # Loan Receivable
+#                 )
+#             except ChartOfAccounts.DoesNotExist:
+#                 raise ValidationError(
+#                     "It seems that the default loan account is missing. "
+#                     "Please contact support to ensure the 'Loan Receivable' exists in the system."
+#                 )
+
+#         if not self.due_date:
+#             self.calculate_due_date()
+#         if not self.total_interest:
+#             self.calculate_interest()
+#         self.update_status()
+
+#         super().save(*args, **kwargs)
+
+#     @property
+#     def remaining_balance(self):
+#         return (
+#             self.calculate_remaining_balances()["principal_balance"]
+#             + self.calculate_remaining_balances()["interest_balance"]
+#         )
+
+#     def __str__(self):
+#         return f"Loan {self.id} - {self.borrower} ({self.status})"
+
+
 class Loan(models.Model):
     # Loan status options
     STATUS_CHOICES = [
@@ -117,20 +365,6 @@ class Loan(models.Model):
         default="pending",
         verbose_name="Current Status",
     )
-    remaining_principal = models.DecimalField(
-        max_digits=15,
-        decimal_places=2,
-        blank=True,
-        null=True,
-        verbose_name="Remaining Principal Balance",
-    )
-    remaining_interest = models.DecimalField(
-        max_digits=15,
-        decimal_places=2,
-        blank=True,
-        null=True,
-        verbose_name="Remaining Interest Balance",
-    )
     total_interest = models.DecimalField(
         max_digits=15,
         decimal_places=2,
@@ -166,6 +400,7 @@ class Loan(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
 
     class Meta:
+        db_table = "loans"
         verbose_name = "Loan"
         verbose_name_plural = "Loans"
 
@@ -249,6 +484,7 @@ class Loan(models.Model):
         if current_balance < 0:
             current_balance = 0
         if schedule:
+
             schedule[-1]["remaining_balance"] = current_balance
 
         return schedule
@@ -264,45 +500,72 @@ class Loan(models.Model):
             monthly_rate = Decimal(self.interest_rate) / Decimal(100) / Decimal(12)
             return current_balance * monthly_rate
 
-    def update_status(self):
-        """Update loan status based on remaining balance and due date."""
-        if self.remaining_balance <= 0:
-            self.status = "repaid"
-        elif timezone.now().date() > self.due_date:
-            self.status = "overdue" if self.status == "approved" else self.status
+    def calculate_remaining_balances(self):
+        """Calculate remaining principal and interest based on total repayments."""
+        # Get total principal repaid from repayments
+        total_repaid = self.repayments.aggregate(total=Sum("principal_payment"))[
+            "total"
+        ] or Decimal("0.00")
+
+        # Get total interest paid from repayments
+        total_interest_paid = self.repayments.aggregate(total=Sum("interest_payment"))[
+            "total"
+        ] or Decimal("0.00")
+
+        # Calculate remaining balances
+        principal_balance = max(self.principal_amount - total_repaid, Decimal("0.00"))
+        interest_balance = max(
+            self.total_interest - total_interest_paid, Decimal("0.00")
+        )
+
+        return {
+            "principal_balance": principal_balance,
+            "interest_balance": interest_balance,
+        }
 
     def save(self, *args, **kwargs):
         """Override save to ensure the account is set, calculate due date, interest, and status before saving."""
         if not self.account:
             try:
                 self.account = ChartOfAccounts.objects.get(
-                    account_number="1050"  # Loan Receivable
-                )
+                    account_number="1050"
+                )  # Loan Receivable
             except ChartOfAccounts.DoesNotExist:
                 raise ValidationError(
-                    "It seems that the default loan account is missing. "
-                    "Please contact support to ensure the 'Loan Receivable' exists in the system."
+                    "Default loan account missing. Please contact support."
                 )
 
-        if not self.due_date:
-            self.calculate_due_date()
-        if not self.remaining_principal:
-            self.remaining_principal = self.principal_amount
-        if not self.remaining_interest:
-            self.calculate_interest()
-            self.remaining_interest = self.total_interest
-        self.update_status()
-
+        self.calculate_due_date()
+        self.calculate_interest()
         super().save(*args, **kwargs)
 
     @property
     def remaining_balance(self):
-        return (self.remaining_principal or Decimal(0)) + (
-            self.remaining_interest or Decimal(0)
-        )
+        return self.principal_amount - self.total_interest  # Simplified for example
 
     def __str__(self):
         return f"Loan {self.id} - {self.borrower} ({self.status})"
+
+
+# =================================== Product Model ===================================
+class Product(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    interest_rate = models.DecimalField(max_digits=5, decimal_places=2)
+    max_loan_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    min_loan_amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return self.name
+
+
+# =================================== LoanProduct Model ===================================
+class LoanProduct(models.Model):
+    loan = models.ForeignKey(Loan, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Loan Product for Loan {self.loan.id} - {self.product.name}"
 
 
 # =================================== LoanDisbursement Model ===================================
@@ -322,6 +585,12 @@ class LoanDisbursement(models.Model):
     description = models.CharField(
         max_length=255, blank=True, null=True, default="Loan disbursement"
     )
+
+    class Meta:
+        db_table = "loan_disbursements"
+        verbose_name = "Loan Disbursement"
+        verbose_name_plural = "Loan Disbursements"
+        ordering = ["disbursement_date"]
 
     @property
     def disbursed_amount(self):
@@ -436,17 +705,28 @@ class TransactionHistory(models.Model):
     )
     description = models.CharField(max_length=255, blank=True, null=True)
 
+    class Meta:
+        db_table = "transaction_histories"
+        ordering = ["-transaction_date"]
+        verbose_name = "Transaction History"
+        verbose_name_plural = "Transaction History"
+
     def __str__(self):
         return f"Transaction {self.id} - {self.transaction_type} {self.amount}"
 
 
 # =================================== LoanRepayment Model ===================================
+
+
 # class LoanRepayment(models.Model):
 #     loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name="repayments")
 #     repayment_date = models.DateField()
-#     amount = models.DecimalField(
-#         max_digits=10, decimal_places=2, default=Decimal("0.00")
-#     )  # Ensure default value
+#     principal_payment = models.DecimalField(
+#         max_digits=15, decimal_places=2, default=Decimal("0.00")
+#     )
+#     interest_payment = models.DecimalField(
+#         max_digits=15, decimal_places=2, default=Decimal("0.00")
+#     )
 #     account = models.ForeignKey(
 #         ChartOfAccounts, on_delete=models.CASCADE, related_name="repayments"
 #     )
@@ -454,264 +734,192 @@ class TransactionHistory(models.Model):
 #         max_length=255, blank=True, null=True, default="Loan payment"
 #     )
 
+#     @property
+#     def total_payment(self):
+#         """Calculate the total payment amount (principal + interest)."""
+#         return self.principal_payment + self.interest_payment
+
+#     class Meta:
+#         db_table = "loan_repayments"
+#         verbose_name = "Loan Repayment"
+#         verbose_name_plural = "Loan Repayments"
+#         ordering = ["-repayment_date"]
+
 #     def clean(self):
-#         # Ensure amount is not None and initialize if necessary
-#         if self.amount is None:
-#             self.amount = Decimal("0.00")
+#         """Validate repayment amount and ensure it does not exceed total loan balance."""
+#         loan = self.cleaned_data.get("loan")
 
-#         # Retrieve current balances or set them to zero if None
-#         remaining_principal = self.loan.remaining_principal or Decimal("0.00")
-#         remaining_interest = self.loan.remaining_interest or Decimal("0.00")
+#         if loan:
+#             # Calculate remaining balances
+#             balances = loan.calculate_remaining_balances()
+#             remaining_principal = balances[
+#                 "principal_balance"
+#             ]  # Adjusted based on your method's return structure
+#             remaining_interest = balances[
+#                 "interest_balance"
+#             ]  # Adjusted based on your method's return structure
 
-#         # Calculate total remaining balance
-#         total_remaining_balance = remaining_principal + remaining_interest
+#             total_balance = remaining_principal + remaining_interest
+#             total_payment = self.cleaned_data.get(
+#                 "principal_payment", 0
+#             ) + self.cleaned_data.get("interest_payment", 0)
 
-#         # Check if repayment amount exceeds the total remaining balance
-#         if self.amount > total_remaining_balance:
-#             raise ValidationError(
-#                 f"Repayment amount of {self.amount:,.2f} exceeds the total remaining balance of {total_remaining_balance:,.2f}."
-#             )
+#             if total_payment > total_balance:
+#                 raise ValidationError(
+#                     f"Repayment exceeds remaining balance of {total_balance:,.2f}"
+#                 )
 
-#         # Calculate the split of the payment between interest and principal
-#         principal_payment = min(remaining_principal, self.amount)
-#         interest_payment = self.amount - principal_payment
+#             if self.cleaned_data.get("principal_payment", 0) > remaining_principal:
+#                 raise ValidationError(
+#                     f"Principal payment of {self.cleaned_data.get('principal_payment'):,.2f} exceeds remaining principal balance."
+#                 )
 
-#         # If the payment is greater than the remaining interest, adjust the payments
-#         if interest_payment > remaining_interest:
-#             interest_payment = remaining_interest
-#             principal_payment = self.amount - interest_payment
+#             if self.cleaned_data.get("interest_payment", 0) > remaining_interest:
+#                 raise ValidationError(
+#                     f"Interest payment of {self.cleaned_data.get('interest_payment'):,.2f} exceeds remaining interest balance."
+#                 )
+#         else:
+#             raise ValidationError("Please select a loan.")
 
-#         # If principal payment exceeds remaining principal, adjust it
-#         if principal_payment > remaining_principal:
-#             principal_payment = remaining_principal
-
-#         # Optionally raise an error if the amounts don't match after adjustment
-#         if principal_payment + interest_payment != self.amount:
-#             raise ValidationError(
-#                 f"Repayment amount cannot be split correctly between principal and interest."
-#             )
-
-#         # Continue with further checks if necessary
+#         return self.cleaned_data
 
 #     def save(self, *args, **kwargs):
-#         self.full_clean()  # Validate before saving
-#         super().save(*args, **kwargs)
-#         self.create_repayment_transaction_entries()
-#         self.update_loan_balance_and_status()
+#         """Override save method to perform validation and balance update."""
+#         self.full_clean()  # Ensure all validations are run
+#         super().save(*args, **kwargs)  # Call the parent's save method
+#         self.create_transaction_entries()  # Record transactions
+#         self.update_loan_balance()  # Update the loan balance after saving
 
-#     def create_repayment_transaction_entries(self):
-#         """Create debit and credit entries for the loan repayment."""
-#         try:
-#             TransactionHistory.objects.bulk_create(
-#                 [
-#                     # Debit the payment account
-#                     TransactionHistory(
-#                         loan=self.loan,
-#                         transaction_date=self.repayment_date,
-#                         amount=self.amount,
-#                         transaction_type="debit",
-#                         account=self.account,
-#                         description=self.description,
-#                     ),
-#                     # Credit the loan account
-#                     TransactionHistory(
-#                         loan=self.loan,
-#                         transaction_date=self.repayment_date,
-#                         amount=self.amount,
-#                         transaction_type="credit",
-#                         account=self.loan.account,
-#                         description=self.description,
-#                     ),
-#                 ]
-#             )
-#         except Exception as e:
-#             raise ValidationError(f"Error creating transaction entries: {e}")
-
-#     def update_loan_balance_and_status(self):
-#         """Update the loan's remaining balance and status after repayment."""
-#         # Ensure remaining principal and interest are not None
-#         remaining_principal = self.loan.remaining_principal or Decimal("0.00")
-#         remaining_interest = self.loan.remaining_interest or Decimal("0.00")
-
-#         # Calculate the interest and principal components of the repayment
-#         interest_payment = self.calculate_interest_payment() or Decimal("0.00")
-
-#         principal_payment = self.amount - interest_payment
-
-#         # Limit principal payment to remaining principal if necessary
-#         if principal_payment > remaining_principal:
-#             principal_payment = remaining_principal
-
-#         # Update loan balances
-#         self.loan.remaining_principal = remaining_principal - principal_payment
-#         self.loan.remaining_interest = remaining_interest - interest_payment
-#         self.loan.remaining_interest = max(
-#             self.loan.remaining_interest, Decimal("0.00")
-#         )  # Avoid negative interest balance
-
-#         # Update loan status if fully repaid
-#         if self.loan.remaining_principal == Decimal(
-#             "0.00"
-#         ) and self.loan.remaining_interest == Decimal("0.00"):
-#             self.loan.status = "repaid"
-#         elif timezone.now().date() > self.loan.due_date:
-#             self.loan.status = "overdue"
-
-#         self.loan.save(
-#             update_fields=["remaining_principal", "remaining_interest", "status"]
+#     def create_transaction_entries(self):
+#         """Create entries for the repayment, including interest receivable if applicable."""
+#         # Create a transaction for the loan repayment
+#         self.create_transaction(
+#             self.account, "debit", self.total_payment, self.description
+#         )
+#         self.create_transaction(
+#             self.loan.account, "credit", self.total_payment, self.description
 #         )
 
-#     def calculate_interest_payment(self):
-#         """Calculate interest payment for the current repayment amount."""
-#         if self.loan.interest_method == "flat_rate":
-#             total_interest = (
-#                 self.loan.principal_amount
-#                 * Decimal(self.loan.interest_rate)
-#                 / Decimal(100)
+#         # Handle interest payment if applicable
+#         if self.interest_payment > 0:
+#             interest_receivable_account = self.get_interest_receivable_account()
+#             self.create_transaction(
+#                 account=interest_receivable_account,
+#                 transaction_type="credit",
+#                 amount=self.interest_payment,
+#                 description=f"Interest received for Loan {self.loan.id}",
 #             )
-#             return (
-#                 total_interest / self.loan.loan_period_months
-#             )  # Equal monthly interest
-#         elif self.loan.interest_method == "reducing_rate":
-#             return self.loan.calculate_interest_payment(self.loan.remaining_principal)
+
+#     def get_interest_receivable_account(self):
+#         """Retrieve the interest receivable account, or raise an error if not found."""
+#         return ChartOfAccounts.objects.get(account_number="1060")
+
+#     def create_transaction(self, account, transaction_type, amount, description):
+#         """Helper to create a transaction entry."""
+#         TransactionHistory.objects.create(
+#             loan=self.loan,
+#             transaction_date=self.repayment_date,
+#             amount=amount,
+#             transaction_type=transaction_type,
+#             account=account,
+#             description=description,
+#         )
 
 #     def __str__(self):
-#         return f"Repayment for Loan {self.loan.id} on {self.repayment_date} - Amount: {self.amount}"
+#         return f"Repayment for Loan {self.loan.id} on {self.repayment_date} - Total Payment: {self.total_payment}"
 
 
 class LoanRepayment(models.Model):
     loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name="repayments")
     repayment_date = models.DateField()
+    principal_payment = models.DecimalField(
+        max_digits=15, decimal_places=2, default=Decimal("0.00")
+    )
+    interest_payment = models.DecimalField(
+        max_digits=15, decimal_places=2, default=Decimal("0.00")
+    )
     account = models.ForeignKey(
         ChartOfAccounts, on_delete=models.CASCADE, related_name="repayments"
     )
-    payment_method = models.CharField(
-        max_length=20,
-        choices=[("Cash", "Cash"), ("Bank Transfer", "Bank Transfer")],
-        default="Cash",
-    )
-    amount_repaid = models.DecimalField(
-        max_digits=15, decimal_places=2, default=Decimal("0.00")
+    description = models.CharField(
+        max_length=255, blank=True, null=True, default="Loan payment"
     )
 
-    description = models.CharField(
-        max_length=255, blank=True, null=True, default="Loan repayment"
-    )
+    @property
+    def total_payment(self):
+        """Calculate the total payment amount (principal + interest)."""
+        return self.principal_payment + self.interest_payment
+
+    class Meta:
+        db_table = "loan_repayments"
+        verbose_name = "Loan Repayment"
+        verbose_name_plural = "Loan Repayments"
+        ordering = ["-repayment_date"]
 
     def clean(self):
-        if self.amount_repaid is None:
-            self.amount_repaid = Decimal("0.00")
+        """Validate repayment amount and ensure it does not exceed total loan balance."""
+        if not self.loan:
+            raise ValidationError("Please select a loan.")
+
+        # Calculate remaining balances
+        balances = self.loan.calculate_remaining_balances()
+        remaining_principal = balances[
+            "principal_balance"
+        ]  # Adjusted based on your method's return structure
+        remaining_interest = balances[
+            "interest_balance"
+        ]  # Adjusted based on your method's return structure
+
+        total_balance = remaining_principal + remaining_interest
+        total_payment = self.principal_payment + self.interest_payment
+
+        if total_payment > total_balance:
+            raise ValidationError(
+                f"Repayment exceeds remaining balance of {total_balance:,.2f}."
+            )
+
+        if self.principal_payment > remaining_principal:
+            raise ValidationError(
+                f"Principal payment of {self.principal_payment:,.2f} exceeds remaining principal balance."
+            )
+
+        if self.interest_payment > remaining_interest:
+            raise ValidationError(
+                f"Interest payment of {self.interest_payment:,.2f} exceeds remaining interest balance."
+            )
 
     def save(self, *args, **kwargs):
-        if not self.loan.account:
-            raise ValueError("Loan must have an account assigned before repayment.")
-
-        super().save(*args, **kwargs)
-        self.create_transaction_entries()
-        self.update_loan_balance_and_status()
+        """Override save method to perform validation and balance update."""
+        self.full_clean()  # Ensure all validations are run
+        super().save(*args, **kwargs)  # Call the parent's save method
+        self.create_transaction_entries()  # Record transactions
 
     def create_transaction_entries(self):
-        """Creates transaction entries for loan repayment."""
-        # Debit the payment account (Cash or Bank) for the repayment amount
+        """Create entries for the repayment, including interest receivable if applicable."""
+        # Create a transaction for the loan repayment
         self.create_transaction(
-            account=self.account,
-            transaction_type="debit",
-            amount=self.amount_repaid,
-            description=self.description,
+            self.account, "debit", self.total_payment, self.description
+        )
+        self.create_transaction(
+            self.loan.account, "credit", self.total_payment, self.description
         )
 
-        # Split repayment into principal and interest portions and credit the respective accounts
-        principal_payment = self.calculate_principal_payment()
-        interest_payment = self.amount_repaid - principal_payment
-
-        # Credit the loan receivable account for the principal portion
-        self.create_transaction(
-            account=self.loan.account,
-            transaction_type="credit",
-            amount=principal_payment,
-            description=self.description,
-        )
-
-        # Credit the interest receivable account for the interest portion, if applicable
-        if interest_payment > 0:
+        # Handle interest payment if applicable
+        if self.interest_payment > 0:
             interest_receivable_account = self.get_interest_receivable_account()
             self.create_transaction(
                 account=interest_receivable_account,
                 transaction_type="credit",
-                amount=interest_payment,
+                amount=self.interest_payment,
                 description=f"Interest received for Loan {self.loan.id}",
             )
 
     def get_interest_receivable_account(self):
-        """Retrieve or raise an error if the interest receivable account does not exist."""
-        try:
-            return ChartOfAccounts.objects.get(account_number="1060")
-        except ChartOfAccounts.DoesNotExist:
-            raise ValueError("Loan Interest Receivable account does not exist.")
-
-    def calculate_interest_payment(self):
-        """Calculate interest payment for a specific repayment based on balance and interest method."""
-        # Use the remaining principal for calculating interest on reducing rate loans
-        current_balance = self.loan.remaining_principal or Decimal("0.00")
-
-        if self.loan.interest_method == "flat_rate":
-            # Flat rate interest calculation
-            total_interest = (
-                self.loan.principal_amount
-                * Decimal(self.loan.interest_rate)
-                / Decimal(100)
-            )
-            # Distribute evenly over the loan period
-            return total_interest / Decimal(self.loan.loan_period_months)
-
-        elif self.loan.interest_method == "reducing_rate":
-            # Reducing balance interest calculation
-            monthly_rate = Decimal(self.loan.interest_rate) / Decimal(100) / Decimal(12)
-            return current_balance * monthly_rate
-
-        return Decimal("0.00")  # Default if no interest method is set
-
-    def update_loan_balance_and_status(self):
-        """Update the loan's remaining balance and status after repayment."""
-        remaining_principal = self.loan.remaining_principal or Decimal("0.00")
-        remaining_interest = self.loan.remaining_interest or Decimal("0.00")
-
-        # Calculate interest and principal portions
-        interest_payment = self.calculate_interest_payment()
-        principal_payment = self.amount_repaid - interest_payment
-
-        # Ensure we do not overpay principal
-        if principal_payment > remaining_principal:
-            principal_payment = remaining_principal
-
-        # Update the loan's balances
-        self.loan.remaining_principal = remaining_principal - principal_payment
-        self.loan.remaining_interest = max(
-            remaining_interest - interest_payment, Decimal("0.00")
-        )
-
-        # Update loan status if fully repaid
-        if self.loan.remaining_principal == Decimal(
-            "0.00"
-        ) and self.loan.remaining_interest == Decimal("0.00"):
-            self.loan.status = "repaid"
-        elif timezone.now().date() > self.loan.due_date:
-            self.loan.status = "overdue"
-
-        self.loan.save(
-            update_fields=["remaining_principal", "remaining_interest", "status"]
-        )
-
-    def calculate_principal_payment(self):
-        """Calculates the portion of the repayment that applies to principal."""
-        total_repaid = self.loan.repayments.aggregate(total=Sum("amount_repaid"))[
-            "total"
-        ] or Decimal("0.00")
-        remaining_principal = self.loan.principal_amount - total_repaid
-        return min(self.amount_repaid, remaining_principal)
+        """Retrieve the interest receivable account, or raise an error if not found."""
+        return ChartOfAccounts.objects.get(account_number="1060")
 
     def create_transaction(self, account, transaction_type, amount, description):
-        """Helper to create a transaction history entry."""
+        """Helper to create a transaction entry."""
         TransactionHistory.objects.create(
             loan=self.loan,
             transaction_date=self.repayment_date,
@@ -722,25 +930,4 @@ class LoanRepayment(models.Model):
         )
 
     def __str__(self):
-        return f"Repayment {self.id} for Loan {self.loan.id}"
-
-
-# =================================== Product Model ===================================
-class Product(models.Model):
-    name = models.CharField(max_length=255)
-    description = models.TextField()
-    interest_rate = models.DecimalField(max_digits=5, decimal_places=2)
-    max_loan_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    min_loan_amount = models.DecimalField(max_digits=10, decimal_places=2)
-
-    def __str__(self):
-        return self.name
-
-
-# =================================== LoanProduct Model ===================================
-class LoanProduct(models.Model):
-    loan = models.ForeignKey(Loan, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"Loan Product for Loan {self.loan.id} - {self.product.name}"
+        return f"Repayment for Loan {self.loan.id} on {self.repayment_date} - Total Payment: {self.total_payment}"

@@ -30,6 +30,11 @@
 </head>
 
 <body>
+    <!-- ========== Topbar Start ========== -->
+    {% block topbar %}
+    {% include 'accounts/_partials/navbar.html' %}
+    {% endblock topbar %}
+    <!-- ========== Topbar End ========== -->
 
     <!-- =============== Messages Start ================= -->
     {% include '_partials/messages.html' %}

@@ -43,15 +43,16 @@
                         </tr>
                         <tr>
                             <th scope="row">Remaining Principal:</th>
-                            <td>{{ loan.remaining_principal|floatformat:"2"|intcomma }}</td>
+                            <td>{{ loan.calculate_remaining_balances.principal_balance|floatformat:"2"|intcomma }}</td>
                         </tr>
                         <tr>
                             <th scope="row">Remaining Interest:</th>
-                            <td>{{ loan.remaining_interest|floatformat:"2"|intcomma }}</td>
+                            <td>{{ loan.calculate_remaining_balances.interest_balance|floatformat:"2"|intcomma }}</td>
                         </tr>
                         <tr>
                             <th scope="row">Total Remaining Balance:</th>
-                            <td>{{ loan.remaining_principal|add:loan.remaining_interest|floatformat:"2"|intcomma }}</td>
+                            <td>{{ loan.calculate_remaining_balances.principal_balance|add:loan.calculate_remaining_balances.interest_balance|floatformat:"2"|intcomma }}
+                            </td>
                         </tr>
                         <tr>
                             <th scope="row">Due Date:</th>
@@ -82,7 +83,8 @@
                     <thead class="thead-dark">
                         <tr>
                             <th>Date</th>
-                            <th>Amount</th>
+                            <th>Principal</th>
+                            <th>Interest</th>
                             <th>Account</th>
                         </tr>
                     </thead>
@@ -90,12 +92,13 @@
                         {% for repayment in repayments %}
                         <tr>
                             <td>{{ repayment.repayment_date }}</td>
-                            <td>{{ repayment.amount_repaid|floatformat:"2"|intcomma }}</td>
+                            <td>{{ repayment.principal_payment|floatformat:"2"|intcomma }}</td>
+                            <td>{{ repayment.interest_payment|floatformat:"2"|intcomma }}</td>
                             <td>{{ repayment.account }}</td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="3" class="text-center">No repayments recorded.</td>
+                            <td colspan="4" class="text-center">No repayments recorded.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

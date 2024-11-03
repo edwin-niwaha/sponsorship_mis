@@ -1,6 +1,7 @@
 import logging
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.exceptions import ValidationError
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from datetime import timedelta, date
 from django.utils import timezone
 from django.contrib import messages
@@ -34,15 +35,35 @@ logger = logging.getLogger(__name__)
 
 # =================================== Loan Applications View ===================================
 @login_required
-@admin_or_manager_required
+@admin_or_manager_or_staff_required
 def loan_applications(request):
-    loans = Loan.objects.prefetch_related("disbursements").all()
+    queryset = get_loan_queryset(request.GET.get("search"))
+    loans = paginate_queryset(queryset, request.GET.get("page"))
 
-    context = {
-        "loans": loans,
-        "table_title": "Loan Applications",
-    }
-    return render(request, "loans/loan_applications.html", context)
+    return render(
+        request,
+        "loans/loan_applications.html",
+        {"loans": loans, "table_title": "Loan Applications"},
+    )
+
+
+def get_loan_queryset(search_query):
+    queryset = Loan.objects.prefetch_related("disbursements").all().order_by("id")
+    if search_query:
+        queryset = queryset.filter(full_name__icontains=search_query)
+    return queryset
+
+
+def paginate_queryset(queryset, page_number):
+    paginator = Paginator(queryset, 25)  # Show 50 records per page
+    try:
+        return paginator.page(page_number)
+    except PageNotAnInteger:
+        return paginator.page(1)  # Return first page if page number is not an integer
+    except EmptyPage:
+        return paginator.page(
+            paginator.num_pages
+        )  # Return last page if page number is out of range
 
 
 # =================================== Loan Apply View ===================================
@@ -70,6 +91,40 @@ def loan_apply(request):
         "form_title": form_title,
     }
     return render(request, "loans/apply_for_loan.html", context)
+
+
+# @login_required
+# @admin_or_manager_required
+# def loan_apply(request):
+#     form_title = "Apply for Loan"
+#     form = LoanApplicationForm(request.POST or None)
+
+#     if request.method == "POST":
+#         if form.is_valid():
+#             try:
+#                 loan_instance = form.save(
+#                     commit=False
+#                 )  # Get the instance but don't save yet
+#                 loan_instance.created_by = (
+#                     request.user
+#                 )  # Set the user who created the loan
+#                 loan_instance.save()  # Now save the instance
+#                 messages.success(
+#                     request,
+#                     "Loan application submitted successfully!",
+#                     extra_tags="bg-success",
+#                 )
+#                 return redirect(
+#                     "loans:apply_for_loan"
+#                 )  # Adjust to the correct redirect URL
+#             except ValidationError as e:
+#                 messages.error(request, str(e), extra_tags="bg-danger")
+
+#     context = {
+#         "form": form,
+#         "form_title": form_title,
+#     }
+#     return render(request, "loans/apply_for_loan.html", context)
 
 
 # =================================== view_repayment_schedule View ===================================
@@ -125,37 +180,37 @@ def repayment_schedule(request, loan_id):
 @login_required
 @admin_or_manager_required
 def disbursed_loans_view(request):
-    # Fetch disbursed loans along with their disbursement details
-    disbursed_loans = Loan.objects.filter(status="disbursed").prefetch_related(
-        "disbursements"
-    )
+    # Fetch loans based on optional search filtering
+    queryset = get_loan_queryset(request.GET.get("search"))
 
-    # Prepare a list to hold loan information including disbursement details
-    loans_with_disbursement_info = []
+    # Filter for disbursed loans
+    disbursed_loans = queryset.all().prefetch_related("disbursements")
 
-    for loan in disbursed_loans:
-        for disbursement in loan.disbursements.all():
-            loans_with_disbursement_info.append(
-                {
-                    "loan_id": loan.id,
-                    "borrower": loan.borrower,
-                    "principal_amount": loan.principal_amount,
-                    "total_interest": loan.total_interest,
-                    "interest_rate": loan.interest_rate,
-                    "loan_period_months": loan.loan_period_months,
-                    "start_date": loan.start_date,
-                    "due_date": loan.due_date,
-                    "status": loan.get_status_display(),  # Correctly fetch the display name
-                    "disbursement_date": disbursement.disbursement_date,
-                    "account_number": (
-                        loan.account.account_number if loan.account else None
-                    ),
-                    "payment_method": disbursement.payment_method,
-                }
-            )
+    # Paginate the filtered loans
+    loans = paginate_queryset(disbursed_loans, request.GET.get("page"))
 
+    # Process each loan and its disbursements
+    loans_with_disbursement_info = [
+        {
+            "loan_id": loan.id,
+            "borrower": loan.borrower,
+            "principal_amount": loan.principal_amount,
+            "total_interest": loan.total_interest,
+            "interest_rate": loan.interest_rate,
+            "loan_period_months": loan.loan_period_months,
+            "start_date": loan.start_date,
+            "due_date": loan.due_date,
+            "status": loan.get_status_display(),
+            "disbursement_date": disbursement.disbursement_date,
+            "account_number": loan.account.account_number if loan.account else None,
+            "payment_method": disbursement.payment_method,
+        }
+        for loan in loans
+        for disbursement in loan.disbursements.all()
+    ]
     context = {
         "loans_with_disbursement_info": loans_with_disbursement_info,
+        "loans": loans,
         "table_title": "Disbursed Loans",
     }
 
@@ -291,19 +346,34 @@ def loan_repayment_create_view(request):
 
 
 # ===================================  loan_detail_view  ===================================
+
+
 @login_required
 @admin_or_manager_required
 def loan_detail_view(request, loan_id):
+    # Fetch the loan instance
     loan = get_object_or_404(Loan, id=loan_id)
-    repayments = loan.repayments.all()  # Access repayments via related_name borrower
 
+    # Call to calculate remaining balances
+    remaining_balances = loan.calculate_remaining_balances()
+
+    # Fetch all repayments associated with the loan
+    repayments = loan.repayments.all()  # Access repayments via related_name
+
+    # Get borrower's full name
     borrower_name = loan.borrower.full_name
+
+    # Set up the form title for the view
     form_title = f"Details for {borrower_name} Loan id: ({loan.id})"
+
+    # Render the loan detail template with necessary context
     return render(
         request,
         "loans/loan_detail.html",
         {
             "loan": loan,
+            "remaining_principal": remaining_balances["principal_balance"],
+            "remaining_interest": remaining_balances["interest_balance"],
             "repayments": repayments,
             "borrower_name": borrower_name,
             "form_title": form_title,
@@ -441,31 +511,6 @@ def import_coa_data(request):
 
 
 # Function to import Excel data
-# def process_and_import_data(excel_file):
-#     errors = []
-#     try:
-#         wb = load_workbook(excel_file)
-#         sheet = wb.active
-#         for row_num, row in enumerate(sheet.iter_rows(min_row=2), start=2):
-#             account_name = row[0].value
-#             account_type = row[1].value
-#             account_number = row[2].value
-#             description = row[3].value
-#             if account_name is not None:
-#                 try:
-#                     ChartOfAccounts.objects.create(
-#                         account_name=account_name,
-#                         account_type=account_type,
-#                         account_number=account_number,
-#                         description=description,
-#                     )
-#                 except Exception as e:
-#                     errors.append(f"Error on row {row_num}: {e}")
-#             else:
-#                 errors.append(f"Missing full name on row {row_num}")
-#     except Exception as e:
-#         errors.append(f"Failed to process the Excel file: {e}")
-#     return errors
 @transaction.atomic
 def process_and_import_data(excel_file):
     errors = []

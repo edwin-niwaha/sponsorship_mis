@@ -1,95 +1,158 @@
 {% extends 'sdms/base_rpts.html' %}
-{% load static %}
+
 {% load humanize %}
+{% load static %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row mb-3">
-        <div class="col-md-12 d-flex justify-content-between align-items-center">
-            <a href="{% url 'loans:disburse_loan' %}" class="btn btn-dark">
-                <i class="mdi mdi-plus mr-2"></i>Disburse Loan
-            </a>
-            <button title="Print" type="button" class="btn btn-success" onclick="printDiv('printMe')">
-                <i class="mdi mdi-printer btn-icon-prepend"></i>
-            </button>
-        </div>
-    </div>
+<div class="form-content my-5 p-4">
+    <div class="container-fluid">
+        <!-- Header with Add Loan and Print button -->
+        <div class="row mb-3">
+            <div class="col-md-12 d-flex justify-content-between align-items-center">
+                <a href="{% url 'loans:disburse_loan' %}" class="btn btn-dark ml-2">
+                    <i class="mdi mdi-plus mr-2"></i>Disburse Loan
+                </a>
 
-    <!-- Loan DataTable -->
-    <div id="printMe" class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h3 class="m-0">{{ table_title|upper }}</h3>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                {% if loans_with_disbursement_info %}
-                <table class="my-table" id="dataTable">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>ID</th>
-                            <th>Borrower</th>
-                            <th>Amt_Issued</th>
-                            <th>Int_Receivable</th>
-                            <th>Rate(%)</th>
-                            <th>Period</th>
-                            <th>Applied On</th>
-                            <th>Disbursed On</th>
-                            <th>Due_Date</th>
-                            <th>Status</th>
-                            <th>Pay Method</th>
-                            <th class="text-center print-hide">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for loan_info in loans_with_disbursement_info %}
-                        <tr>
-                            <td>{{ forloop.counter }}</td>
-                            <td>{{ loan_info.loan_id }}</td>
-                            <td>{{ loan_info.borrower }}</td>
-                            <td>{{ loan_info.principal_amount|floatformat:"2"|intcomma }}</td>
-                            <td class="text-right">
-                                {{ loan_info.total_interest|floatformat:"2"|intcomma }}</td>
-                            <td>{{ loan_info.interest_rate }}</td>
-                            <td>{{ loan_info.loan_period_months }}</td>
-                            <td>{{ loan_info.start_date }}</td>
-                            <td>{{ loan_info.disbursement_date }}</td>
-                            <td>{{ loan_info.due_date }}</td>
-                            <td>
-                                {% if loan_info.status == "Pending" %}
-                                <span class="badge badge-warning">{{ loan_info.status }}</span>
-                                {% elif loan_info.status == "Approved" %}
-                                <span class="badge badge-info">{{ loan_info.status }}</span>
-                                {% elif loan_info.status == "Disbursed" %}
-                                <span class="badge badge-success">{{ loan_info.status }}</span>
-                                {% elif loan_info.status == "Closed" %}
-                                <span class="badge badge-secondary">{{ loan_info.status }}</span>
-                                {% elif loan_info.status == "Overdue" %}
-                                <span class="badge badge-danger">{{ loan_info.status }}</span>
-                                {% elif loan_info.status == "Repaid" %}
-                                <span class="badge badge-light">{{ loan_info.status }}</span>
-                                {% else %}
-                                <span class="badge badge-dark">Unknown</span>
-                                {% endif %}
-                            </td>
+                <button title="Print" type="button" class="btn btn-success ml-2" onclick="printDiv('printMe')">
+                    <i class="mdi mdi-printer btn-icon-prepend"></i>
+                </button>
 
-                            <td>{{ loan_info.payment_method }}</td>
-                            <td>
-                                <!-- View Details Button with Icon -->
-                                <a href="{% url 'loans:loan_detail' loan_info.loan_id %}"
-                                    class="btn btn-primary btn-sm">
-                                    <i class="mdi mdi-information-outline"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p class="text-center">No records available.</p>
-                {% endif %}
             </div>
+        </div>
+
+        <!-- Loan DataTable -->
+        <div id="printMe" class="card shadow mb-4">
+            <div class="card-header py-3">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <h3 style="margin: 0;">{{ table_title|upper }}</h3>
+                    <form method="GET" action="{% url 'loans:disbursed_loans' %}"
+                        style="display: flex; align-items: center; flex-grow: 1; margin-left: 20px;">
+                        <div style="position: relative; width: 100%;">
+                            <input type="text" name="search" id="searchInput" onkeyup="searchTable()"
+                                placeholder="Search..."
+                                style="border-radius: 5px; height: 35px; padding-left: 30px; width: calc(100% - 40px); box-shadow: none; border: 1px solid #ced4da;">
+                            <span
+                                style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;">
+                                <i class="mdi mdi-magnify"></i>
+                            </span>
+                        </div>
+                        <button type="submit" class="btn btn-sm ml-3 btn-success" style="display: none;">Search</button>
+                    </form>
+                </div>
+
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    {% if loans_with_disbursement_info %}
+                    <table class="my-table" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>ID</th>
+                                <th>Borrower</th>
+                                <th>Amt_Issued</th>
+                                <th>Int_Receivable</th>
+                                <th>Rate(%)</th>
+                                <th>Period</th>
+                                <th>Applied On</th>
+                                <th>Disbursed On</th>
+                                <th>Due_Date</th>
+                                <th>Status</th>
+                                <th>Pay Method</th>
+                                <th class="text-center print-hide">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loan_info in loans_with_disbursement_info %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ loan_info.loan_id }}</td>
+                                <td>{{ loan_info.borrower }}</td>
+                                <td>{{ loan_info.principal_amount|floatformat:"2"|intcomma }}</td>
+                                <td class="text-right">
+                                    {{ loan_info.total_interest|floatformat:"2"|intcomma }}</td>
+                                <td>{{ loan_info.interest_rate }}</td>
+                                <td>{{ loan_info.loan_period_months }}</td>
+                                <td>{{ loan_info.start_date }}</td>
+                                <td>{{ loan_info.disbursement_date }}</td>
+                                <td>{{ loan_info.due_date }}</td>
+                                <td>
+                                    {% if loan_info.status == "Pending" %}
+                                    <span class="badge badge-warning">{{ loan_info.status }}</span>
+                                    {% elif loan_info.status == "Approved" %}
+                                    <span class="badge badge-info">{{ loan_info.status }}</span>
+                                    {% elif loan_info.status == "Disbursed" %}
+                                    <span class="badge badge-success">{{ loan_info.status }}</span>
+                                    {% elif loan_info.status == "Closed" %}
+                                    <span class="badge badge-secondary">{{ loan_info.status }}</span>
+                                    {% elif loan_info.status == "Overdue" %}
+                                    <span class="badge badge-danger">{{ loan_info.status }}</span>
+                                    {% elif loan_info.status == "Repaid" %}
+                                    <span class="badge badge-success">{{ loan_info.status }}</span>
+                                    {% else %}
+                                    <span class="badge badge-dark">Unknown</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>{{ loan_info.payment_method }}</td>
+                                <td>
+                                    <!-- View Details Button with Icon -->
+                                    <a href="{% url 'loans:loan_detail' loan_info.loan_id %}"
+                                        class="btn btn-primary btn-sm">
+                                        <i class="mdi mdi-information-outline"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-center">No records available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination links -->
+        <div class="pagination mt-4">
+            <span class="step-links">
+                {% if loans.has_previous %}
+                <a href="?page=1" title="First Page">
+                    <!-- First -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
+                        <path fill="#2375e1"
+                            d="M14 3.002a1 1 0 0 0-1.578-.816l-7 4.963a1 1 0 0 0-.007 1.628l7 5.037A1 1 0 0 0 14 13.003zM2 2.5a.5.5 0 0 1 1 0v11a.5.5 0 0 1-1 0z" />
+                    </svg>
+                </a>
+                <a href="?page={{ loans.previous_page_number }}" title="Previous Page">
+                    <!-- Previous -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
+                        <path fill="#2375e1" d="m4 10l9 9l1.4-1.5L7 10l7.4-7.5L13 1z" />
+                    </svg>
+                </a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ loans.number }} of {{ loans.paginator.num_pages }}.
+                </span>
+
+                {% if loans.has_next %}
+                <a href="?page={{ loans.next_page_number }}" title="Next Page">
+                    <!-- Next -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
+                        <path fill="#2375e1" d="M7 1l-1.4 1.5L13 10l-7.4 7.5L7 19l9-9z" />
+                    </svg>
+                </a>
+                <a href="?page={{ loans.paginator.num_pages }}" title="Last Page">
+                    <!-- Last -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
+                        <path fill="#2375e1"
+                            d="M2 3.002a1 1 0 0 1 1.578-.816l7 4.963a1 1 0 0 1 .007 1.628l-7 5.037A1 1 0 0 1 2 13.003zM14 2.5a.5.5 0 0 0-1 0v11a.5.5 0 0 0 1 0z" />
+                    </svg>
+                </a>
+                {% endif %}
+            </span>
         </div>
     </div>
 </div>
-{% endblock content %}
+{% endblock %}
