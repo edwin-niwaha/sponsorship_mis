@@ -425,64 +425,8 @@ def sales_data_api(request):
 
 
 # =================================== LOANS DASHBOARD ===================================
-
-
 @login_required
 @admin_or_manager_or_staff_required
-# def loans_dashboard(request):
-#     # Count loans by status
-#     new_loan_applications = Loan.objects.filter(status="pending").count()
-#     approved_loans = Loan.objects.filter(status="approved").count()
-#     closed_loans = Loan.objects.filter(status="closed").count()
-#     rejected_loans = Loan.objects.filter(status="rejected").count()
-#     loans_issued = Loan.objects.filter(status="disbursed").count()
-#     active_loans = Loan.objects.filter(status="disbursed").count()  # Adjust as needed
-#     overdue_loans = Loan.objects.filter(status="overdue").count()
-
-#     # Total repayments
-#     total_repayments = LoanRepayment.objects.aggregate(
-#         total_principal=Sum("principal_payment"),
-#         total_interest=Sum("interest_payment"),
-#     )
-
-#     # Calculate total repayments as a dictionary
-#     total_repayments_amount = {
-#         "total_principal": total_repayments["total_principal"] or 0,
-#         "total_interest": total_repayments["total_interest"] or 0,
-#         "total_amount": (total_repayments["total_principal"] or 0)
-#         + (total_repayments["total_interest"] or 0),
-#     }
-
-#     # Calculate total loan receivable and total interest receivable
-#     total_loans = Loan.objects.aggregate(
-#         total_loan_receivable=Sum(
-#             "principal_amount"
-#         ),  # Total principal amount of all loans
-#         total_interest_receivable=Sum(
-#             "total_interest"
-#         ),  # Total interest amount from loans
-#     )
-
-#     # Prepare the total loan amounts
-#     total_loans_amount = {
-#         "total_loan_receivable": total_loans["total_loan_receivable"] or 0,
-#         "total_interest_receivable": total_loans["total_interest_receivable"] or 0,
-#     }
-
-#     context = {
-#         "new_loan_applications": new_loan_applications,
-#         "approved_loans": approved_loans,
-#         "closed_loans": closed_loans,
-#         "rejected_loans": rejected_loans,
-#         "loans_issued": loans_issued,
-#         "active_loans": active_loans,
-#         "overdue_loans": overdue_loans,
-#         "total_repayments": total_repayments_amount,
-#         "total_loans": total_loans_amount,  # Add total loans to the context
-#     }
-
-
-#     return render(request, "main/loans_dashboard.html", context)
 def loans_dashboard(request):
     # Count loans by status
     new_loan_applications = Loan.objects.filter(status="pending").count()
@@ -508,7 +452,7 @@ def loans_dashboard(request):
     }
 
     # Calculate total loan receivable and total interest receivable
-    total_loans = Loan.objects.aggregate(
+    total_loans = Loan.objects.filter(status="disbursed").aggregate(
         total_loan_receivable=Sum(
             "principal_amount"
         ),  # Total principal amount of all loans
