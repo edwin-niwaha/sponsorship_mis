@@ -76,8 +76,22 @@ def loan_apply(request):
 
     if request.method == "POST":
         if form.is_valid():
+            borrower = form.cleaned_data.get("borrower")
+
+            # Check if the selected borrower has an active (running) loan balance
+            running_loan = Loan.objects.filter(
+                borrower=borrower, status="disbursed"
+            ).exists()
+            if running_loan:
+                messages.warning(
+                    request,
+                    f"{borrower} already has a running loan balance and cannot apply for a new loan.",
+                    extra_tags="bg-warning",
+                )
+                return redirect("loans:apply_for_loan")
+
             try:
-                form.save(user=request.user)  # Pass the current user to the save method
+                form.save()  # Save the loan application without passing the user
                 messages.success(
                     request,
                     "Loan application submitted successfully!",
@@ -250,7 +264,7 @@ def reject_loan(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id, status="pending")
     loan.status = "rejected"
     loan.save()
-    messages.info(request, f"Loan {loan.id} has been rejected.")
+    messages.info(request, f"Loan {loan.id} has been rejected.", extra_tags="bg-danger")
     return redirect("loans:loan_applications")
 
 
@@ -265,7 +279,7 @@ def delete_loan(request, loan_id):
         messages.success(
             request,
             f"Loan ID {loan.id} for {loan.borrower} deleted successfully!",
-            extra_tags="bg-success",
+            extra_tags="bg-danger",
         )
     except Exception as e:
         messages.error(
