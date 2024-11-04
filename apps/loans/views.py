@@ -3,6 +3,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.core.exceptions import ValidationError
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from datetime import timedelta, date
+from django.db.models import Sum
 from django.utils import timezone
 from django.contrib import messages
 from openpyxl import load_workbook
@@ -91,40 +92,6 @@ def loan_apply(request):
         "form_title": form_title,
     }
     return render(request, "loans/apply_for_loan.html", context)
-
-
-# @login_required
-# @admin_or_manager_required
-# def loan_apply(request):
-#     form_title = "Apply for Loan"
-#     form = LoanApplicationForm(request.POST or None)
-
-#     if request.method == "POST":
-#         if form.is_valid():
-#             try:
-#                 loan_instance = form.save(
-#                     commit=False
-#                 )  # Get the instance but don't save yet
-#                 loan_instance.created_by = (
-#                     request.user
-#                 )  # Set the user who created the loan
-#                 loan_instance.save()  # Now save the instance
-#                 messages.success(
-#                     request,
-#                     "Loan application submitted successfully!",
-#                     extra_tags="bg-success",
-#                 )
-#                 return redirect(
-#                     "loans:apply_for_loan"
-#                 )  # Adjust to the correct redirect URL
-#             except ValidationError as e:
-#                 messages.error(request, str(e), extra_tags="bg-danger")
-
-#     context = {
-#         "form": form,
-#         "form_title": form_title,
-#     }
-#     return render(request, "loans/apply_for_loan.html", context)
 
 
 # =================================== view_repayment_schedule View ===================================
@@ -360,6 +327,11 @@ def loan_detail_view(request, loan_id):
     # Fetch all repayments associated with the loan
     repayments = loan.repayments.all()  # Access repayments via related_name
 
+    # Calculate totals for principal and interest
+    totals = repayments.aggregate(
+        total_principal=Sum("principal_payment"), total_interest=Sum("interest_payment")
+    )
+
     # Get borrower's full name
     borrower_name = loan.borrower.full_name
 
@@ -376,6 +348,8 @@ def loan_detail_view(request, loan_id):
             "remaining_interest": remaining_balances["interest_balance"],
             "repayments": repayments,
             "borrower_name": borrower_name,
+            "total_principal": totals["total_principal"] or 0,
+            "total_interest": totals["total_interest"] or 0,
             "form_title": form_title,
         },
     )

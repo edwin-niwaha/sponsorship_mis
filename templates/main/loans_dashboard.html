@@ -6,11 +6,79 @@
 <!-- Horizontal Card Section -->
 <div class="container-fluid">
     <div class="page-header flex-wrap">
-        <h3 class="mb-0">Loan Management Dashboard</h3>
+        <h3 class="mb-0" style="text-transform: uppercase;">Loan Management Dashboard</h3>
     </div>
     <hr class="bg-info" style="height: 3px;" />
 
-    <!-- Content Row for Cards -->
+    <!-- Content Row for Cards - New Row with Different Colors -->
+    <div class="row">
+        <!-- New Loans Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-info text-white shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold mb-1">New Loans</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ new_loan_applications|intcomma }}</div>
+                        </div>
+                        <div>
+                            <i class="mdi mdi-account-plus mdi-36px"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Pending Approvals Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-success text-white shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold mb-1">Approved Loans</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ approved_loans|intcomma }}</div>
+                        </div>
+                        <div>
+                            <i class="mdi mdi-account-clock mdi-36px"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Closed Loans Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-dark text-white shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold mb-1">Closed Loans</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ closed_loans|intcomma }}</div>
+                        </div>
+                        <div>
+                            <i class="mdi mdi-account-cancel mdi-36px"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Rejected Loans Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-danger text-white shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold mb-1">Rejected Loans</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ rejected_loans|intcomma }}</div>
+                        </div>
+                        <div>
+                            <i class="mdi mdi-cancel mdi-36px"></i> <!-- Updated Icon -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row for Cards - Original Row -->
     <div class="row">
         <!-- Total Loans Card -->
         <div class="col-xl-3 col-md-6 mb-4">
@@ -19,7 +87,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <div class="text-xs font-weight-bold mb-1">Total Loans Issued</div>
-                            <div class="h5 mb-0 font-weight-bold">{{ total_loans|intcomma }}</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ loans_issued|intcomma }}</div>
                         </div>
                         <div>
                             <i class="mdi mdi-account-cash mdi-36px"></i>
@@ -28,7 +96,6 @@
                 </div>
             </div>
         </div>
-
         <!-- Active Loans Card -->
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card bg-success text-white shadow h-100 py-2">
@@ -45,7 +112,6 @@
                 </div>
             </div>
         </div>
-
         <!-- Overdue Loans Card -->
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card bg-danger text-white shadow h-100 py-2">
@@ -70,8 +136,8 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <div class="text-xs font-weight-bold mb-1">Total Repayments</div>
-                            <div class="h5 mb-0 font-weight-bold">UgX {{ total_repayments|floatformat:"2"|intcomma }}
-                            </div>
+                            <div class="h5 mb-0 font-weight-bold">UgX
+                                {{ total_repayments.total_amount|floatformat:"2"|intcomma }}</div>
                         </div>
                         <div>
                             <i class="mdi mdi-bank-transfer mdi-36px"></i>
@@ -81,6 +147,114 @@
             </div>
         </div>
     </div>
+
+    <!-- Additional Repayment Breakdown Row -->
+    <div class="row">
+        <!-- Total Principal Payments Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-success text-white shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold mb-1">Total Principal Payments</div>
+                            <div class="h5 mb-0 font-weight-bold">UgX
+                                {{ total_repayments.total_principal|floatformat:"2"|intcomma }}</div>
+                        </div>
+                        <div>
+                            <i class="mdi mdi-cash mdi-36px"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Total Interest Payments Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-warning text-white shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold mb-1">Total Interest Payments</div>
+                            <div class="h5 mb-0 font-weight-bold">UgX
+                                {{ total_repayments.total_interest|floatformat:"2"|intcomma }}</div>
+                        </div>
+                        <div>
+                            <i class="mdi mdi-cash-multiple mdi-36px"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Total Loan Receivable Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-info text-white shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold mb-1">Total Loan Receivable</div>
+                            <div class="h5 mb-0 font-weight-bold">UgX
+                                {{ total_loans.total_loan_receivable|floatformat:"2"|intcomma }}</div>
+                        </div>
+                        <div>
+                            <i class="mdi mdi-account-money mdi-36px"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Total Interest Receivable Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-light text-dark shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold mb-1">Total Interest Receivable</div>
+                            <div class="h5 mb-0 font-weight-bold">UgX
+                                {{ total_loans.total_interest_receivable|floatformat:"2"|intcomma }}</div>
+                        </div>
+                        <div>
+                            <i class="mdi mdi-interest mdi-36px"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Non-Performing Loans Ratio Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-danger text-white shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold mb-1">Non-Performing Loans Ratio</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ non_performing_loans_ratio|floatformat:"2" }}%
+                            </div>
+                        </div>
+                        <div>
+                            <i class="mdi mdi-alert-octagon mdi-36px"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Upcoming Payments Due Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-primary text-white shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs font-weight-bold mb-1">Upcoming Payments Due</div>
+                            <div class="h5 mb-0 font-weight-bold">UgX
+                                {{ upcoming_payments_due|floatformat:"2"|intcomma }}
+                            </div>
+                        </div>
+                        <div>
+                            <i class="mdi mdi-calendar-clock mdi-36px"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Graph Card Section -->
     <div class="row mb-4">

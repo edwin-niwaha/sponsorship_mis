@@ -30,12 +30,6 @@
             <div class="loan-details mb-4">
                 <h5 class="font-weight-bold">Loan Information</h5>
                 <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th scope="col">Field</th>
-                            <th scope="col">Details</th>
-                        </tr>
-                    </thead>
                     <tbody>
                         <tr>
                             <th scope="row">Loan ID:</th>
@@ -92,8 +86,8 @@
                         {% for repayment in repayments %}
                         <tr>
                             <td>{{ repayment.repayment_date }}</td>
-                            <td>{{ repayment.principal_payment|floatformat:"2"|intcomma }}</td>
-                            <td>{{ repayment.interest_payment|floatformat:"2"|intcomma }}</td>
+                            <td class="text-right">{{ repayment.principal_payment|floatformat:"2"|intcomma }}</td>
+                            <td class="text-right">{{ repayment.interest_payment|floatformat:"2"|intcomma }}</td>
                             <td>{{ repayment.account }}</td>
                         </tr>
                         {% empty %}
@@ -102,6 +96,16 @@
                         </tr>
                         {% endfor %}
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <td><strong>Total</strong></td>
+                            <td class="text-right"><strong>{{ total_principal|floatformat:"2"|intcomma }}</strong>
+                            </td>
+                            <td class="text-right"><strong>{{ total_interest|floatformat:"2"|intcomma }}</strong>
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>

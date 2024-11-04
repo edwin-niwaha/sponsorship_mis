@@ -64,7 +64,6 @@ class ChartOfAccounts(models.Model):
 
 # =================================== Loan Model ===================================
 
-
 # class Loan(models.Model):
 #     # Loan status options
 #     STATUS_CHOICES = [
@@ -716,119 +715,6 @@ class TransactionHistory(models.Model):
 
 
 # =================================== LoanRepayment Model ===================================
-
-
-# class LoanRepayment(models.Model):
-#     loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name="repayments")
-#     repayment_date = models.DateField()
-#     principal_payment = models.DecimalField(
-#         max_digits=15, decimal_places=2, default=Decimal("0.00")
-#     )
-#     interest_payment = models.DecimalField(
-#         max_digits=15, decimal_places=2, default=Decimal("0.00")
-#     )
-#     account = models.ForeignKey(
-#         ChartOfAccounts, on_delete=models.CASCADE, related_name="repayments"
-#     )
-#     description = models.CharField(
-#         max_length=255, blank=True, null=True, default="Loan payment"
-#     )
-
-#     @property
-#     def total_payment(self):
-#         """Calculate the total payment amount (principal + interest)."""
-#         return self.principal_payment + self.interest_payment
-
-#     class Meta:
-#         db_table = "loan_repayments"
-#         verbose_name = "Loan Repayment"
-#         verbose_name_plural = "Loan Repayments"
-#         ordering = ["-repayment_date"]
-
-#     def clean(self):
-#         """Validate repayment amount and ensure it does not exceed total loan balance."""
-#         loan = self.cleaned_data.get("loan")
-
-#         if loan:
-#             # Calculate remaining balances
-#             balances = loan.calculate_remaining_balances()
-#             remaining_principal = balances[
-#                 "principal_balance"
-#             ]  # Adjusted based on your method's return structure
-#             remaining_interest = balances[
-#                 "interest_balance"
-#             ]  # Adjusted based on your method's return structure
-
-#             total_balance = remaining_principal + remaining_interest
-#             total_payment = self.cleaned_data.get(
-#                 "principal_payment", 0
-#             ) + self.cleaned_data.get("interest_payment", 0)
-
-#             if total_payment > total_balance:
-#                 raise ValidationError(
-#                     f"Repayment exceeds remaining balance of {total_balance:,.2f}"
-#                 )
-
-#             if self.cleaned_data.get("principal_payment", 0) > remaining_principal:
-#                 raise ValidationError(
-#                     f"Principal payment of {self.cleaned_data.get('principal_payment'):,.2f} exceeds remaining principal balance."
-#                 )
-
-#             if self.cleaned_data.get("interest_payment", 0) > remaining_interest:
-#                 raise ValidationError(
-#                     f"Interest payment of {self.cleaned_data.get('interest_payment'):,.2f} exceeds remaining interest balance."
-#                 )
-#         else:
-#             raise ValidationError("Please select a loan.")
-
-#         return self.cleaned_data
-
-#     def save(self, *args, **kwargs):
-#         """Override save method to perform validation and balance update."""
-#         self.full_clean()  # Ensure all validations are run
-#         super().save(*args, **kwargs)  # Call the parent's save method
-#         self.create_transaction_entries()  # Record transactions
-#         self.update_loan_balance()  # Update the loan balance after saving
-
-#     def create_transaction_entries(self):
-#         """Create entries for the repayment, including interest receivable if applicable."""
-#         # Create a transaction for the loan repayment
-#         self.create_transaction(
-#             self.account, "debit", self.total_payment, self.description
-#         )
-#         self.create_transaction(
-#             self.loan.account, "credit", self.total_payment, self.description
-#         )
-
-#         # Handle interest payment if applicable
-#         if self.interest_payment > 0:
-#             interest_receivable_account = self.get_interest_receivable_account()
-#             self.create_transaction(
-#                 account=interest_receivable_account,
-#                 transaction_type="credit",
-#                 amount=self.interest_payment,
-#                 description=f"Interest received for Loan {self.loan.id}",
-#             )
-
-#     def get_interest_receivable_account(self):
-#         """Retrieve the interest receivable account, or raise an error if not found."""
-#         return ChartOfAccounts.objects.get(account_number="1060")
-
-#     def create_transaction(self, account, transaction_type, amount, description):
-#         """Helper to create a transaction entry."""
-#         TransactionHistory.objects.create(
-#             loan=self.loan,
-#             transaction_date=self.repayment_date,
-#             amount=amount,
-#             transaction_type=transaction_type,
-#             account=account,
-#             description=description,
-#         )
-
-#     def __str__(self):
-#         return f"Repayment for Loan {self.loan.id} on {self.repayment_date} - Total Payment: {self.total_payment}"
-
-
 class LoanRepayment(models.Model):
     loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name="repayments")
     repayment_date = models.DateField()
