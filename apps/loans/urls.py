@@ -26,6 +26,8 @@ urlpatterns = [
     ),
     path("<int:loan_id>/", views.loan_detail_view, name="loan_detail"),
     path("loan-aging-report/", views.loan_aging_report, name="loan_aging_report"),
+    path("loan-arrears-report/", views.loan_arrears_report, name="loan-arrears-report"),
+    path("loan-portfolio/", views.loan_portfolio_report, name="loan_portfolio_report"),
     # Chart of accounts URLs
     path("accounts/add/", views.add_chart_of_account_view, name="add_chart_of_account"),
     path("accounts/", views.chart_of_accounts_list_view, name="chart_of_accounts_list"),

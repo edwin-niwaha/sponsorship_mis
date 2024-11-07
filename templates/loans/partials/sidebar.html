@@ -114,15 +114,18 @@
             </a>
             <div class="collapse" id="reports-menu">
                 <ul class="nav flex-column sub-menu">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'loans:loan_portfolio_report' %}"><i
+                                class="mdi mdi-clipboard-text menu-icon"></i> Loan Portfolio</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'loans:loan_aging_report' %}"><i
-                                class="mdi mdi-file-chart menu-icon"></i> Aging
-                            Report</a></li>
+                                class="mdi mdi-file-chart menu-icon"></i> Aging Report</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'loans:loan-arrears-report' %}"><i
+                                class="mdi mdi-account-multiple menu-icon"></i> Arrears Report</a></li>
                     <li class="nav-item"><a class="nav-link" href="#"><i class="mdi mdi-account-multiple menu-icon"></i>
-                            Arrears Report</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#"><i class="mdi mdi-account-multiple menu-icon"></i>
-                            PAR</a></li>
+                            PAR</a>
+                    </li>
                 </ul>
             </div>
+
         </li>
         {% else %}
         <li class="nav-item">

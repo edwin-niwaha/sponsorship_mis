@@ -649,110 +649,7 @@ def ledger_report_view(request):
     )
 
 
-# =================================== Loan Arrears Report view ===================================
-# @login_required
-# @admin_or_manager_required
-# def loan_aging_report(request):
-#     today = timezone.now().date()
-
-#     # Define aging buckets with readable names
-#     aging_buckets = {
-#         "0-30 Days(WATCH)": [],
-#         "31-60 Days(SUBSTANDARD)": [],
-#         "61-90 Days(SUBSTANDARD)": [],
-#         "91-120 Days(DOUBTFULL)": [],
-#         "121-180 Days(DOUBTFULL)": [],
-#         "181-365 Days(LOSS)": [],
-#         "Over 365 Days(LOSS)": [],
-#     }
-
-#     # Fetch and categorize disbursed loans
-#     disbursed_loans = (
-#         Loan.objects.filter(
-#             status="disbursed", due_date__isnull=False, due_date__lt=today
-#         )
-#         .annotate(
-#             total_repayment=Sum(
-#                 F("repayments__principal_payment") + F("repayments__interest_payment")
-#             ),
-#             calculated_interest=Sum("repayments__interest_payment"),
-#         )
-#         .select_related("borrower")  # Ensure you're using the correct related name
-#         .values(
-#             "id",
-#             "borrower__full_name",  # Correctly accessing the borrower's name
-#             "principal_amount",
-#             "start_date",  # Assuming this field exists in your Loan model
-#             "due_date",
-#             "principal_amount",
-#             "interest_rate",
-#             "loan_period_months",
-#         )
-#     )
-
-#     for loan in disbursed_loans:
-#         loan_id = loan["id"]
-#         borrower = loan["borrower__full_name"]  # Accessing the borrower's full name
-#         start_date = loan["start_date"]  # Fetching loan start date
-#         due_date = loan["due_date"]
-#         principal_amount = loan["principal_amount"]
-#         interest_rate = loan["interest_rate"]
-#         loan_period_months = loan["loan_period_months"]
-
-#         # Call to calculate remaining balances for the loan
-#         remaining_balances = Loan.objects.get(id=loan_id).calculate_remaining_balances()
-#         remaining_principal = remaining_balances["principal_balance"]
-#         remaining_interest = remaining_balances["interest_balance"]
-
-#         days_overdue = (today - due_date).days
-
-#         # Sort loans into the correct aging bucket
-#         loan_info = {
-#             "loan_id": loan_id,
-#             "borrower": borrower,
-#             "outstanding_balance": remaining_principal
-#             + remaining_interest,  # Total Outstanding Balance
-#             "start_date": start_date,
-#             "due_date": due_date,
-#             "principal_amount": principal_amount,
-#             "days_overdue": days_overdue,
-#             "principal_due": remaining_principal,
-#             "interest_due": remaining_interest,
-#             "interest_rate": interest_rate,
-#             "loan_period_months": loan_period_months,
-#         }
-
-#         if 0 < days_overdue <= 30:
-#             aging_buckets["0-30 Days"].append(loan_info)
-#         elif 31 <= days_overdue <= 60:
-#             aging_buckets["31-60 Days"].append(loan_info)
-#         elif 61 <= days_overdue <= 90:
-#             aging_buckets["61-90 Days"].append(loan_info)
-#         elif 91 <= days_overdue <= 120:
-#             aging_buckets["91-120 Days"].append(loan_info)
-#         elif 121 <= days_overdue <= 180:
-#             aging_buckets["121-180 Days"].append(loan_info)
-#         elif 181 <= days_overdue <= 365:
-#             aging_buckets["181-365 Days"].append(loan_info)
-#         else:
-#             aging_buckets["Over 365 Days"].append(loan_info)
-
-#     # Pass the aging data to the template
-#     return render(
-#         request,
-#         "loans/loan_aging_report.html",
-#         {
-#             "aging_buckets": aging_buckets,
-#             "table_title": "Loan Aging Report",
-#         },
-#     )
-
-from django.db.models import Sum, F
-from django.utils import timezone
-from django.shortcuts import render
-from .models import Loan
-
-
+# =================================== Loan Aging Report view ===================================
 @login_required
 @admin_or_manager_required
 def loan_aging_report(request):
@@ -836,5 +733,168 @@ def loan_aging_report(request):
         {
             "aging_buckets": aging_buckets,
             "table_title": "Loan Aging Report",
+        },
+    )
+
+
+# =================================== Loan Arrears Report view ===================================
+@login_required
+@admin_or_manager_required
+def loan_arrears_report(request):
+    today = timezone.now().date()
+
+    # Define arrears categories with human-readable names
+    arrears_categories = {
+        "0-30 Days (WATCH)": [],
+        "31-60 Days (SUBSTANDARD)": [],
+        "61-90 Days (SUBSTANDARD)": [],
+        "91-120 Days (DOUBTFUL)": [],
+        "121-180 Days (DOUBTFUL)": [],
+        "181-365 Days (LOSS)": [],
+        "Over 365 Days (LOSS)": [],
+    }
+
+    # Fetch and categorize overdue loans
+    overdue_loans = (
+        Loan.objects.filter(
+            status="disbursed", due_date__isnull=False, due_date__lt=today
+        )
+        .annotate(
+            total_repayment=Sum(
+                F("repayments__principal_payment") + F("repayments__interest_payment")
+            ),
+            calculated_interest=Sum("repayments__interest_payment"),
+        )
+        .select_related("borrower")
+        .values(
+            "id",
+            "borrower__full_name",
+            "principal_amount",
+            "start_date",
+            "due_date",
+            "interest_rate",
+            "loan_period_months",
+        )
+    )
+
+    # Process each loan to calculate overdue balances and categorize by days overdue
+    for loan in overdue_loans:
+        loan_id = loan["id"]
+        borrower = loan["borrower__full_name"]
+        principal_amount = loan["principal_amount"]
+        start_date = loan["start_date"]
+        due_date = loan["due_date"]
+        interest_rate = loan["interest_rate"]
+        loan_period_months = loan["loan_period_months"]
+
+        # Fetch remaining balances
+        remaining_balances = Loan.objects.get(id=loan_id).calculate_remaining_balances()
+        remaining_principal = remaining_balances["principal_balance"]
+        remaining_interest = remaining_balances["interest_balance"]
+
+        # Calculate days overdue
+        days_overdue = (today - due_date).days
+
+        # Determine the arrears category and loan status
+        if 0 < days_overdue <= 30:
+            category = "0-30 Days (WATCH)"
+            status = "Watch"
+        elif 31 <= days_overdue <= 60:
+            category = "31-60 Days (SUBSTANDARD)"
+            status = "Substandard"
+        elif 61 <= days_overdue <= 90:
+            category = "61-90 Days (SUBSTANDARD)"
+            status = "Substandard"
+        elif 91 <= days_overdue <= 120:
+            category = "91-120 Days (DOUBTFUL)"
+            status = "Doubtful"
+        elif 121 <= days_overdue <= 180:
+            category = "121-180 Days (DOUBTFUL)"
+            status = "Doubtful"
+        elif 181 <= days_overdue <= 365:
+            category = "181-365 Days (LOSS)"
+            status = "Loss"
+        else:
+            category = "Over 365 Days (LOSS)"
+            status = "Loss"
+
+        # Build the loan information dictionary
+        loan_info = {
+            "loan_id": loan_id,
+            "borrower": borrower,
+            "principal_amount": principal_amount,
+            "start_date": start_date,
+            "due_date": due_date,
+            "interest_rate": interest_rate,
+            "loan_period_months": loan_period_months,
+            "days_overdue": days_overdue,
+            "principal_due": remaining_principal,
+            "interest_due": remaining_interest,
+            "outstanding_balance": remaining_principal + remaining_interest,
+            "status": status,
+        }
+
+        # Append loan to the appropriate arrears category
+        arrears_categories[category].append(loan_info)
+
+    # Render the report to the template
+    return render(
+        request,
+        "loans/loan_arrears_report.html",
+        {
+            "arrears_categories": arrears_categories,
+            "table_title": "Loan Arrears Report",
+        },
+    )
+
+
+# =================================== loan_portfolio_report view ===================================
+@login_required
+@admin_or_manager_required
+@login_required
+def loan_portfolio_report(request):
+    today = timezone.now().date()
+
+    # Fetch loans from the database
+    loans = Loan.objects.all()  # Adjust the query if needed
+
+    loan_data = []
+
+    for loan in loans:
+        # Call to calculate remaining balances for the loan
+        remaining_balances = loan.calculate_remaining_balances()
+        remaining_principal = remaining_balances["principal_balance"]
+        remaining_interest = remaining_balances["interest_balance"]
+
+        # Calculate the number of days overdue, if any
+        if loan.due_date and loan.due_date < today:
+            days_overdue = (today - loan.due_date).days
+        else:
+            days_overdue = (
+                0  # Set to 0 if the due date is in the future or loan is on time
+            )
+
+        # Add data to the loan_info list
+        loan_info = {
+            "loan_id": loan.id,
+            "borrower": loan.borrower.full_name,
+            "principal_amount": loan.principal_amount,
+            "interest_rate": loan.interest_rate,
+            "loan_period_months": loan.loan_period_months,
+            "remaining_principal": remaining_principal,
+            "remaining_interest": remaining_interest,
+            "total_remaining_balance": remaining_principal + remaining_interest,
+            "start_date": loan.start_date,
+            "due_date": loan.due_date,
+            "days_overdue": days_overdue,
+        }
+        loan_data.append(loan_info)
+
+    return render(
+        request,
+        "loans/loan_portfolio_report.html",
+        {
+            "loan_data": loan_data,
+            "table_title": "Loan Portfolio Report",
         },
     )

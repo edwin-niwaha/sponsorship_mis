@@ -1,0 +1,71 @@
+{% extends 'sdms/base_rpts.html' %}
+{% load crispy_forms_tags %}
+{% load humanize %}
+
+{% block content %}
+<div class="form-content my-5 p-4">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between mb-3">
+            <a href="{% url 'loans-dashboard' %}" class="btn btn-info">
+                <i class="mdi mdi-arrow-left-bold"></i> Go Back
+            </a>
+            <button title="Print" class="btn btn-success" onclick="printDiv('printMe')">
+                <i class="mdi mdi-printer"></i> Print
+            </button>
+        </div>
+
+        <div id="printMe" class="card">
+            <div class="card-header bg-secondary text-white">
+                <h3>{{ table_title|upper }}</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    {% for category, loans in arrears_categories.items %}
+                    <h4 class="mt-4">{{ category }} ({{ loans|length }} Loans)</h4>
+                    {% if loans %}
+                    <table class="my-table" id="dataTable">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Borrower</th>
+                                <th>Principal Amount</th>
+                                <th>Interest Rate (%)</th>
+                                <th>Period (Months)</th>
+                                <th>Issue Date</th>
+                                <th>Maturity Date</th>
+                                <th>Days Overdue</th>
+                                <th>Overdue Principal</th>
+                                <th>Overdue Interest</th>
+                                <th>Total Outstanding Balance</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loan in loans %}
+                            <tr>
+                                <td>{{ loan.loan_id }}</td>
+                                <td>{{ loan.borrower }}</td>
+                                <td>{{ loan.principal_amount|floatformat:"2"|intcomma }}</td>
+                                <td>{{ loan.interest_rate }}</td>
+                                <td>{{ loan.loan_period_months }}</td>
+                                <td>{{ loan.start_date|date:"d/m/Y" }}</td>
+                                <td>{{ loan.due_date|date:"d/m/Y" }}</td>
+                                <td>{{ loan.days_overdue }}</td>
+                                <td>{{ loan.principal_due|floatformat:"2"|intcomma }}</td>
+                                <td>{{ loan.interest_due|floatformat:"2"|intcomma }}</td>
+                                <td>{{ loan.outstanding_balance|floatformat:"2"|intcomma }}</td>
+                                <td>{{ loan.status }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted">No loans in this category.</p>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
