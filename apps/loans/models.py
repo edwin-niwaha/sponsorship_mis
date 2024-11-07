@@ -80,7 +80,7 @@ class Loan(models.Model):
     # Interest calculation methods
     INTEREST_METHOD_CHOICES = [
         ("flat_rate", "Flat Rate"),
-        ("reducing_rate", "Reducing Rate"),
+        # ("reducing_rate", "Reducing Rate"),
     ]
 
     # Fields
@@ -342,7 +342,8 @@ class LoanDisbursement(models.Model):
     loan = models.ForeignKey(
         Loan, on_delete=models.CASCADE, related_name="disbursements"
     )
-    disbursement_date = models.DateField()
+    # disbursement_date = models.DateField()
+    disbursement_date = models.DateField(default=timezone.now)
     account = models.ForeignKey(
         ChartOfAccounts, on_delete=models.CASCADE, related_name="disbursements"
     )

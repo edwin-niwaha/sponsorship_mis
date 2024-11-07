@@ -59,10 +59,10 @@
                                 <th>Period</th>
                                 <th>Rate (%)</th>
                                 <th>Method</th>
-                                <th>Applied On</th>
+                                <th>Start Date</th>
                                 <th>Due Date</th>
                                 <th>Status</th>
-                                <th>Disbursed On</th>
+                                {% comment %} <th>Disbursed On</th> {% endcomment %}
                                 <th class="text-center print-hide" colspan="4">Actions</th>
                             </tr>
                         </thead>
@@ -95,11 +95,11 @@
                                         class="badge badge-dark">{{ loan.get_status_display }}</span>
                                     {% else %}{{ loan.get_status_display }}{% endif %}
                                 </td>
-                                <td>
+                                {% comment %} <td>
                                     {% with loan.disbursements.last as latest_disbursement %}
                                     {% if latest_disbursement %}{{ latest_disbursement.disbursement_date|date:"d/m/Y" }}{% else %}N/A{% endif %}
                                     {% endwith %}
-                                </td>
+                                </td> {% endcomment %}
 
                                 {% if loan.status == 'pending' %}
                                 <td class="text-center print-hide">

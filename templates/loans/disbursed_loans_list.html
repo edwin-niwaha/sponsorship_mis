@@ -54,8 +54,8 @@
                                 <th>Int_Receivable</th>
                                 <th>Rate(%)</th>
                                 <th>Period</th>
-                                <th>Applied On</th>
-                                <th>Disbursed On</th>
+                                <th>Start Date</th>
+                                {% comment %} <th>Disbursed On</th> {% endcomment %}
                                 <th>Due_Date</th>
                                 <th>Status</th>
                                 <th>Pay Method</th>
@@ -74,7 +74,7 @@
                                 <td>{{ loan_info.interest_rate }}</td>
                                 <td>{{ loan_info.loan_period_months }}</td>
                                 <td>{{ loan_info.start_date }}</td>
-                                <td>{{ loan_info.disbursement_date }}</td>
+                                {% comment %} <td>{{ loan_info.disbursement_date }}</td> {% endcomment %}
                                 <td>{{ loan_info.due_date }}</td>
                                 <td>
                                     {% if loan_info.status == "Pending" %}

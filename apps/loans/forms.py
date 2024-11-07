@@ -139,7 +139,6 @@ class LoanDisbursementForm(forms.ModelForm):
     class Meta:
         model = LoanDisbursement
         fields = [
-            "disbursement_date",
             "account",  # Maps directly to `account` in LoanDisbursement model
             "loan",
             "payment_method",
