@@ -2,7 +2,7 @@ import logging
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.exceptions import ValidationError
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 from django.db.models import Sum, F
 from django.utils import timezone
 from django.contrib import messages
@@ -851,7 +851,6 @@ def loan_arrears_report(request):
 # =================================== loan_portfolio_report view ===================================
 @login_required
 @admin_or_manager_required
-@login_required
 def loan_portfolio_report(request):
     today = timezone.now().date()
 
@@ -898,3 +897,86 @@ def loan_portfolio_report(request):
             "table_title": "Loan Portfolio Report",
         },
     )
+
+
+# =================================== portfolio_at_risk view ===================================
+
+
+@login_required
+@admin_or_manager_required
+def portfolio_at_risk(request):
+    # Fetch all loans
+    loans = Loan.objects.all().order_by("id")
+
+    # Get today's date to calculate overdue days
+    today = timezone.now().date()
+
+    # Initialize values for PAR calculations
+    total_outstanding_loans = 0
+    total_past_due_30 = 0
+    total_past_due_60 = 0
+    total_past_due_90 = 0
+
+    loan_data = []
+
+    # Calculate days overdue, remaining principal, interest, and PAR totals for each loan
+    for loan in loans:
+        # Call to calculate remaining balances for the loan
+        remaining_balances = (
+            loan.calculate_remaining_balances()
+        )  # Make sure this method is defined in the model
+        remaining_principal = remaining_balances["principal_balance"]
+        remaining_interest = remaining_balances["interest_balance"]
+
+        # Calculate the number of days overdue, if any
+        if loan.due_date and loan.due_date < today:
+            days_overdue = (today - loan.due_date).days
+        else:
+            days_overdue = (
+                0  # Set to 0 if the due date is in the future or loan is on time
+            )
+
+        # Add data to loan_data list
+        loan_info = {
+            "loan_id": loan.id,
+            "borrower": loan.borrower.full_name,  # Assuming Loan has a ForeignKey to a Borrower model
+            "principal_amount": loan.principal_amount,
+            "interest_rate": loan.interest_rate,
+            "loan_period_months": loan.loan_period_months,
+            "remaining_principal": remaining_principal,
+            "remaining_interest": remaining_interest,
+            "total_remaining_balance": remaining_principal + remaining_interest,
+            "start_date": loan.start_date,
+            "due_date": loan.due_date,
+            "days_overdue": days_overdue,
+        }
+
+        # Add the loan_info to the total outstanding loan amounts
+        total_outstanding_loans += remaining_principal + remaining_interest
+        if days_overdue >= 30:
+            total_past_due_30 += remaining_principal + remaining_interest
+        if days_overdue >= 60:
+            total_past_due_60 += remaining_principal + remaining_interest
+        if days_overdue >= 90:
+            total_past_due_90 += remaining_principal + remaining_interest
+
+        loan_data.append(loan_info)
+
+    # Calculate PAR for different overdue periods
+    if total_outstanding_loans > 0:
+        par_30 = (total_past_due_30 / total_outstanding_loans) * 100
+        par_60 = (total_past_due_60 / total_outstanding_loans) * 100
+        par_90 = (total_past_due_90 / total_outstanding_loans) * 100
+    else:
+        par_30 = par_60 = par_90 = 0
+
+    # Prepare context for the report
+    context = {
+        "par_30": par_30,
+        "par_60": par_60,
+        "par_90": par_90,
+        "loan_data": loan_data,  # Use loan_data in the context
+        "table_title": "Loan Portfolio at Risk Report",
+    }
+
+    return render(request, "loans/portfolio_at_risk_report.html", context)

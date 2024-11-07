@@ -5,12 +5,12 @@
 {% block content %}
 <div class="form-content my-5 p-4">
     <div class="container-fluid">
+        <!-- Row for the header buttons -->
         <div class="row mb-3">
             <div class="col-md-12 d-flex justify-content-between align-items-center">
                 <a href="{% url 'loans-dashboard' %}">
                     <button type="button" class="btn btn-info font-weight-bold">
-                        <i class="mdi mdi-arrow-left-bold mr-2"></i>
-                        Go Back
+                        <i class="mdi mdi-arrow-left-bold mr-2"></i> Go Back
                     </button>
                 </a>
                 <button title="Print" type="button" class="btn btn-success" onclick="printDiv('printMe')">
@@ -19,23 +19,22 @@
             </div>
         </div>
 
+        <!-- Row for the table -->
         <div class="row">
             <div class="col-md-12">
                 <div id="printMe" class="card">
                     <div class="card-header bg-secondary text-white">
-                        <h3 class="mb-0">{{ table_title|upper }}</h3>
+                        <h3 class="mb-0">{{ table_title }}</h3>
                     </div>
                     <div class="card-body">
+                        <!-- Table responsive wrapper -->
                         <div class="table-responsive">
                             <table class="my-table" id="dataTable">
                                 <thead class="thead-dark">
                                     <tr>
-                                        <th>ID</th>
+                                        <th>Loan ID</th>
                                         <th>Borrower</th>
                                         <th>Principal</th>
-                                        <th>Rate(%)</th>
-                                        <th>Period (Months)</th>
-                                        <th>Start Date</th>
                                         <th>Due Date</th>
                                         <th>Days Overdue</th>
                                         <th>Remaining Principal</th>
@@ -46,12 +45,9 @@
                                 <tbody>
                                     {% for loan in loan_data %}
                                     <tr>
-                                        <td>{{ loan.loan_id|default:"N/A" }}</td>
-                                        <td>{{ loan.borrower|default:"N/A" }}</td>
+                                        <td>{{ loan.loan_id }}</td>
+                                        <td>{{ loan.borrower }}</td>
                                         <td>{{ loan.principal_amount|floatformat:"2"|intcomma }}</td>
-                                        <td>{{ loan.interest_rate|default:"N/A" }}</td>
-                                        <td>{{ loan.loan_period_months|default:"N/A" }}</td>
-                                        <td>{{ loan.start_date|date:"d/m/Y" }}</td>
                                         <td>{{ loan.due_date|date:"d/m/Y" }}</td>
                                         <td>
                                             {% if loan.days_overdue > 0 %}
@@ -60,13 +56,21 @@
                                             0
                                             {% endif %}
                                         </td>
-                                        <td>{{ loan.remaining_principal|floatformat:"2"|intcomma|default:"0" }}</td>
-                                        <td>{{ loan.remaining_interest|floatformat:"2"|intcomma|default:"0" }}</td>
-                                        <td>{{ loan.total_remaining_balance|floatformat:"2"|intcomma|default:"0" }}</td>
+                                        <td>{{ loan.remaining_principal|floatformat:"2"|intcomma }}</td>
+                                        <td>{{ loan.remaining_interest|floatformat:"2"|intcomma }}</td>
+                                        <td>{{ loan.total_remaining_balance|floatformat:"2"|intcomma }}</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- PAR Summary Section -->
+                        <div class="mt-4">
+                            <h4>PAR (Portfolio At Risk)</h4>
+                            <p><strong>PAR 30:</strong> {{ par_30|floatformat:"2" }}%</p>
+                            <p><strong>PAR 60:</strong> {{ par_60|floatformat:"2" }}%</p>
+                            <p><strong>PAR 90:</strong> {{ par_90|floatformat:"2" }}%</p>
                         </div>
                     </div>
                 </div>
