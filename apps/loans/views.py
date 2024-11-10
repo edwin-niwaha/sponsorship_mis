@@ -260,6 +260,39 @@ def approve_loan(request, loan_id):
     return redirect("loans:loan_applications")
 
 
+# =================================== Approve All Loans View ===================================
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from .models import Loan
+
+
+@login_required
+@admin_or_manager_required
+def approve_all_loans(request):
+    # Filter for loans that are pending approval
+    pending_loans = Loan.objects.filter(status="pending")
+
+    if not pending_loans.exists():
+        messages.info(request, "No pending loans to approve.", extra_tags="bg-info")
+        return redirect("loans:loan_applications")
+
+    # Approve each loan
+    for loan in pending_loans:
+        loan.status = "approved"
+        loan.approved_date = timezone.now()
+        loan.approved_by = request.user
+        loan.save()
+
+    messages.success(
+        request,
+        f"All pending loans have been approved successfully.",
+        extra_tags="bg-success",
+    )
+    return redirect("loans:loan_applications")
+
+
 # =================================== Reject Loan View ===================================
 @login_required
 @admin_or_manager_required

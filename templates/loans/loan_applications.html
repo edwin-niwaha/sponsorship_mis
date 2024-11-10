@@ -1,213 +1,197 @@
 {% extends 'sdms/base_rpts.html' %}
-
 {% load humanize %}
 {% load static %}
-
 {% block content %}
-<div class="form-content my-5 p-4">
+  <div class="form-content my-5 p-4">
     <div class="container-fluid">
-        <!-- Header with Add Loan and Print button -->
-        <div class="row mb-3">
-            <div class="col-md-12 d-flex justify-content-between align-items-center">
-                <a href="{% url 'loans:apply_for_loan' %}" class="btn btn-dark ml-2">
-                    <i class="mdi mdi-plus mr-2"></i>Add Loan
-                </a>
-                <!-- Disburse Button -->
-                <a href="{% url 'loans:disburse_loan' %}" class="btn btn-warning ml-2">
-                    <i class="mdi mdi-cash-multiple mr-2"></i>Disburse
-                </a>
-
-
-                <button title="Print" type="button" class="btn btn-success ml-2" onclick="printDiv('printMe')">
-                    <i class="mdi mdi-printer btn-icon-prepend"></i>
-                </button>
-
-            </div>
+      <!-- Header with Add Loan and Print button -->
+      <div class="row mb-3">
+        <div class="col-md-12 d-flex justify-content-between align-items-center">
+          <a href="{% url 'loans:apply_for_loan' %}" class="btn btn-dark ml-2"><i class="mdi mdi-plus mr-2"></i>Add Loan</a>
+          <!-- Disburse Button -->
+          <a href="{% url 'loans:disburse_loan' %}" class="btn btn-warning ml-2"><i class="mdi mdi-cash-multiple mr-2"></i>Disburse</a>
+          <form action="{% url 'loans:approve_all_loans' %}" method="post" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">Approve All Loans</button>
+          </form>
+          <button title="Print" type="button" class="btn btn-success ml-2" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
         </div>
+      </div>
+      <!-- Loan DataTable -->
 
-        <!-- Loan DataTable -->
-        <div id="printMe" class="card shadow mb-4">
-            <div class="card-header py-3">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <h3 style="margin: 0;">{{ table_title|upper }}</h3>
-                    <form method="GET" action="{% url 'loans:loan_applications' %}"
-                        style="display: flex; align-items: center; flex-grow: 1; margin-left: 20px;">
-                        <div style="position: relative; width: 100%;">
-                            <input type="text" name="search" id="searchInput" onkeyup="searchTable()"
-                                placeholder="Search..."
-                                style="border-radius: 5px; height: 35px; padding-left: 30px; width: calc(100% - 40px); box-shadow: none; border: 1px solid #ced4da;">
-                            <span
-                                style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;">
-                                <i class="mdi mdi-magnify"></i>
-                            </span>
-                        </div>
-                        <button type="submit" class="btn btn-sm ml-3 btn-success" style="display: none;">Search</button>
-                    </form>
-                </div>
-
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    {% if loans %}
-                    <table class="my-table" id="dataTable">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Borrower</th>
-                                <th>Principal</th>
-                                <th>Interest Receivable</th>
-                                <th>Period</th>
-                                <th>Rate (%)</th>
-                                <th>Method</th>
-                                <th>Start Date</th>
-                                <th>Due Date</th>
-                                <th>Status</th>
-                                {% comment %} <th>Disbursed On</th> {% endcomment %}
-                                <th class="text-center print-hide" colspan="4">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for loan in loans %}
-                            <tr>
-                                <td>{{ loan.id }}</td>
-                                <td>{{ loan.borrower }}</td>
-                                <td class="text-right">{{ loan.principal_amount|floatformat:"2"|intcomma }}</td>
-                                <td class="text-right">{{ loan.total_interest|floatformat:"2"|intcomma }}</td>
-                                <td>{{ loan.loan_period_months }}</td>
-                                <td class="text-right">{{ loan.interest_rate }}</td>
-                                <td>{{ loan.interest_method }}</td>
-                                <td>{{ loan.start_date|date:"d/m/Y" }}</td>
-                                <td>{{ loan.due_date|date:"d/m/Y" }}</td>
-                                <td>
-                                    {% if loan.status == 'pending' %}<span
-                                        class="badge badge-secondary">{{ loan.get_status_display }}</span>
-                                    {% elif loan.status == 'approved' %}<span
-                                        class="badge badge-primary">{{ loan.get_status_display }}</span>
-                                    {% elif loan.status == 'disbursed' %}<span
-                                        class="badge badge-info">{{ loan.get_status_display }}</span>
-                                    {% elif loan.status == 'closed' %}<span
-                                        class="badge badge-success">{{ loan.get_status_display }}</span>
-                                    {% elif loan.status == 'overdue' %}<span
-                                        class="badge badge-warning">{{ loan.get_status_display }}</span>
-                                    {% elif loan.status == 'repaid' %}<span
-                                        class="badge badge-danger">{{ loan.get_status_display }}</span>
-                                    {% elif loan.status == 'rejected' %}<span
-                                        class="badge badge-dark">{{ loan.get_status_display }}</span>
-                                    {% else %}{{ loan.get_status_display }}{% endif %}
-                                </td>
-                                {% comment %} <td>
-                                    {% with loan.disbursements.last as latest_disbursement %}
-                                    {% if latest_disbursement %}{{ latest_disbursement.disbursement_date|date:"d/m/Y" }}{% else %}N/A{% endif %}
-                                    {% endwith %}
-                                </td> {% endcomment %}
-
-                                {% if loan.status == 'pending' %}
-                                <td class="text-center print-hide">
-                                    <a href="{% url 'loans:approve_loan' loan.id %}" class="btn btn-success btn-sm"
-                                        title="Approve Loan"
-                                        onclick="return confirm('Are you sure you want to approve this loan?');">
-                                        <i class="mdi mdi-check-circle"></i>
-                                    </a>
-                                </td>
-                                <td class="text-center print-hide">
-                                    <a href="{% url 'loans:reject_loan' loan.id %}" class="btn btn-danger btn-sm"
-                                        title="Reject Loan"
-                                        onclick="return confirm('Are you sure you want to reject this loan?');">
-                                        <i class="mdi mdi-close-circle"></i>
-                                    </a>
-                                </td>
-                                {% endif %}
-                                <td>
-                                    <a href="{% url 'loans:repayment_schedule' loan.id %}" class="btn btn-info btn-sm"
-                                        title="View Repayment Schedule">
-                                        <i class="mdi mdi-calendar-text"></i>
-                                    </a>
-                                </td>
-                                <td class="text-center print-hide">
-                                    {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                                    <!-- Delete Button with Modal -->
-                                    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal"
-                                        data-bs-target="#deleteModal{{ loan.id }}" title="Delete Loan">
-                                        <i class="mdi mdi-trash-can"></i>
-                                    </button>
-
-                                    <!-- Delete Modal -->
-                                    <div class="modal fade" id="deleteModal{{ loan.id }}" tabindex="-1"
-                                        aria-labelledby="deleteModalLabel{{ loan.id }}" aria-hidden="true">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title" id="deleteModalLabel{{ loan.id }}">Delete
-                                                        Loan</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                        aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    Are you sure you want to delete loan ID
-                                                    <strong>{{ loan.id }}</strong> for <h3>{{ loan.borrower }}</h3>?
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary"
-                                                        data-bs-dismiss="modal">Cancel</button>
-                                                    <a href="{% url 'loans:delete_loan' loan.id %}"
-                                                        class="btn btn-danger">Delete</a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    {% else %}
-                    <p class="text-center">No records available.</p>
-                    {% endif %}
-                </div>
-            </div>
+      <div id="printMe" class="card shadow mb-4">
+        <div class="card-header py-3">
+          <div style="display: flex;
+                            align-items: center;
+                            justify-content: space-between">
+            <h3 style="margin: 0">{{ table_title|upper }}</h3>
+            <form method="GET" action="{% url 'loans:loan_applications' %}" style="display: flex;
+                                 align-items: center;
+                                 flex-grow: 1;
+                                 margin-left: 20px">
+              <div style="position: relative; width: 100%">
+                <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..." style="border-radius: 5px;
+                                          height: 35px;
+                                          padding-left: 30px;
+                                          width: calc(100% - 40px);
+                                          box-shadow: none;
+                                          border: 1px solid #ced4da" />
+                <span style="position: absolute;
+                                         left: 10px;
+                                         top: 50%;
+                                         transform: translateY(-50%);
+                                         pointer-events: none"><i class="mdi mdi-magnify"></i></span>
+              </div>
+              <button type="submit" class="btn btn-sm ml-3 btn-success" style="display: none">Search</button>
+            </form>
+          </div>
         </div>
-
-        <!-- Pagination links -->
-        <div class="pagination mt-4">
-            <span class="step-links">
-                {% if loans.has_previous %}
-                <a href="?page=1" title="First Page">
-                    <!-- First -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
-                        <path fill="#2375e1"
-                            d="M14 3.002a1 1 0 0 0-1.578-.816l-7 4.963a1 1 0 0 0-.007 1.628l7 5.037A1 1 0 0 0 14 13.003zM2 2.5a.5.5 0 0 1 1 0v11a.5.5 0 0 1-1 0z" />
-                    </svg>
-                </a>
-                <a href="?page={{ loans.previous_page_number }}" title="Previous Page">
-                    <!-- Previous -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-                        <path fill="#2375e1" d="m4 10l9 9l1.4-1.5L7 10l7.4-7.5L13 1z" />
-                    </svg>
-                </a>
-                {% endif %}
-
-                <span class="current">
-                    Page {{ loans.number }} of {{ loans.paginator.num_pages }}.
-                </span>
-
-                {% if loans.has_next %}
-                <a href="?page={{ loans.next_page_number }}" title="Next Page">
-                    <!-- Next -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-                        <path fill="#2375e1" d="M7 1l-1.4 1.5L13 10l-7.4 7.5L7 19l9-9z" />
-                    </svg>
-                </a>
-                <a href="?page={{ loans.paginator.num_pages }}" title="Last Page">
-                    <!-- Last -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
-                        <path fill="#2375e1"
-                            d="M2 3.002a1 1 0 0 1 1.578-.816l7 4.963a1 1 0 0 1 .007 1.628l-7 5.037A1 1 0 0 1 2 13.003zM14 2.5a.5.5 0 0 0-1 0v11a.5.5 0 0 0 1 0z" />
-                    </svg>
-                </a>
-                {% endif %}
-            </span>
+        <div class="card-body">
+          <div class="table-responsive">
+            {% if loans %}
+              <table class="my-table" id="dataTable">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Borrower</th>
+                    <th>Principal</th>
+                    <th>Interest Receivable</th>
+                    <th>Period</th>
+                    <th>Rate (%)</th>
+                    <th>Method</th>
+                    <th>Start Date</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    {% comment %}
+                    <th>Disbursed On</th>
+                    {% endcomment %}
+                    <th class="text-center print-hide" colspan="4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for loan in loans %}
+                    <tr>
+                      <td>{{ loan.id }}</td>
+                      <td>{{ loan.borrower }}</td>
+                      <td class="text-right">{{ loan.principal_amount|floatformat:'2'|intcomma }}</td>
+                      <td class="text-right">{{ loan.total_interest|floatformat:'2'|intcomma }}</td>
+                      <td>{{ loan.loan_period_months }}</td>
+                      <td class="text-right">{{ loan.interest_rate }}</td>
+                      <td>{{ loan.interest_method }}</td>
+                      <td>{{ loan.start_date|date:'d/m/Y' }}</td>
+                      <td>{{ loan.due_date|date:'d/m/Y' }}</td>
+                      <td>
+                        {% if loan.status == 'pending' %}
+                          <span class="badge badge-secondary">{{ loan.get_status_display }}</span>
+                        {% elif loan.status == 'approved' %}
+                          <span class="badge badge-primary">{{ loan.get_status_display }}</span>
+                        {% elif loan.status == 'disbursed' %}
+                          <span class="badge badge-info">{{ loan.get_status_display }}</span>
+                        {% elif loan.status == 'closed' %}
+                          <span class="badge badge-success">{{ loan.get_status_display }}</span>
+                        {% elif loan.status == 'overdue' %}
+                          <span class="badge badge-warning">{{ loan.get_status_display }}</span>
+                        {% elif loan.status == 'repaid' %}
+                          <span class="badge badge-danger">{{ loan.get_status_display }}</span>
+                        {% elif loan.status == 'rejected' %}
+                          <span class="badge badge-dark">{{ loan.get_status_display }}</span>
+                        {% else %}
+                          {{ loan.get_status_display }}
+                        {% endif %}
+                      </td>
+                      {% comment %}
+                      <td>
+                        {% with latest_disbursement=loan.disbursements.last %}
+                          {% if latest_disbursement %}
+                            {{ latest_disbursement.disbursement_date|date:'d/m/Y' }}
+                          {% else %}
+                            N/A
+                          {% endif %}
+                        {% endwith %}
+                      </td>
+                      {% endcomment %}
+                      {% if loan.status == 'pending' %}
+                        <td class="text-center print-hide">
+                          <a href="{% url 'loans:approve_loan' loan.id %}" class="btn btn-success btn-sm" title="Approve Loan" onclick="return confirm('Are you sure you want to approve this loan?');"><i class="mdi mdi-check-circle"></i></a>
+                        </td>
+                        <td class="text-center print-hide">
+                          <a href="{% url 'loans:reject_loan' loan.id %}" class="btn btn-danger btn-sm" title="Reject Loan" onclick="return confirm('Are you sure you want to reject this loan?');"><i class="mdi mdi-close-circle"></i></a>
+                        </td>
+                      {% endif %}
+                      <td>
+                        <a href="{% url 'loans:repayment_schedule' loan.id %}" class="btn btn-info btn-sm" title="View Repayment Schedule"><i class="mdi mdi-calendar-text"></i></a>
+                      </td>
+                      <td class="text-center print-hide">
+                        {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+                          <!-- Delete Button with Modal -->
+                          <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ loan.id }}" title="Delete Loan"><i class="mdi mdi-trash-can"></i></button>
+                          <!-- Delete Modal -->
+                          <div class="modal fade" id="deleteModal{{ loan.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ loan.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                              <div class="modal-content">
+                                <div class="modal-header">
+                                  <h5 class="modal-title" id="deleteModalLabel{{ loan.id }}">Delete Loan</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                  Are you sure you want to delete loan ID
+                                  <strong>{{ loan.id }}</strong> for
+                                  <h3>{{ loan.borrower }}</h3>
+                                  ?
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                  <a href="{% url 'loans:delete_loan' loan.id %}" class="btn btn-danger">Delete</a>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <p class="text-center">No records available.</p>
+            {% endif %}
+          </div>
         </div>
+      </div>
+      <!-- Pagination links -->
+      <div class="pagination mt-4">
+        <span class="step-links">
+          {% if loans.has_previous %}
+            <a href="?page=1" title="First Page">
+              <!-- First -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
+                <path fill="#2375e1" d="M14 3.002a1 1 0 0 0-1.578-.816l-7 4.963a1 1 0 0 0-.007 1.628l7 5.037A1 1 0 0 0 14 13.003zM2 2.5a.5.5 0 0 1 1 0v11a.5.5 0 0 1-1 0z" />
+              </svg>
+            </a>
+            <a href="?page={{ loans.previous_page_number }}" title="Previous Page">
+              <!-- Previous -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
+                <path fill="#2375e1" d="m4 10l9 9l1.4-1.5L7 10l7.4-7.5L13 1z" />
+              </svg>
+            </a>
+          {% endif %}
+          <span class="current">Page {{ loans.number }} of {{ loans.paginator.num_pages }}.</span>
+          {% if loans.has_next %}
+            <a href="?page={{ loans.next_page_number }}" title="Next Page">
+              <!-- Next -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
+                <path fill="#2375e1" d="M7 1l-1.4 1.5L13 10l-7.4 7.5L7 19l9-9z" />
+              </svg>
+            </a>
+            <a href="?page={{ loans.paginator.num_pages }}" title="Last Page">
+              <!-- Last -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
+                <path fill="#2375e1" d="M2 3.002a1 1 0 0 1 1.578-.816l7 4.963a1 1 0 0 1 .007 1.628l-7 5.037A1 1 0 0 1 2 13.003zM14 2.5a.5.5 0 0 0-1 0v11a.5.5 0 0 0 1 0z" />
+              </svg>
+            </a>
+          {% endif %}
+        </span>
+      </div>
     </div>
-</div>
+  </div>
 {% endblock %}

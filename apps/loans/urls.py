@@ -15,6 +15,7 @@ urlpatterns = [
     ),
     # Loan management URLs
     path("<int:loan_id>/approve/", views.approve_loan, name="approve_loan"),
+    path("approve-all-loans/", views.approve_all_loans, name="approve_all_loans"),
     path("<int:loan_id>/reject/", views.reject_loan, name="reject_loan"),
     path("disburse/", views.disburse_loan, name="disburse_loan"),
     path("delete/<int:loan_id>/", views.delete_loan, name="delete_loan"),
