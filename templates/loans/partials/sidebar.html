@@ -84,13 +84,6 @@
                 <span class="menu-title">Repayment</span>
             </a>
         </li>
-        <!-- Chart of Accounts -->
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'loans:chart_of_accounts_list' %}">
-                <i class="mdi mdi-account-cash menu-icon"></i>
-                <span class="menu-title">Chart of Accounts</span>
-            </a>
-        </li>
         <li class="nav-item">
             <a class="nav-link" href="{% url 'loans:ledger_report' %}">
                 <i class="mdi mdi-book-open menu-icon"></i>
@@ -149,12 +142,29 @@
             </a>
             <div class="collapse" id="settings-menu">
                 <ul class="nav flex-column sub-menu">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'import_client_data' %}">Import Clients</a>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'loans:chart_of_accounts_list' %}">
+                            <i class="mdi mdi-account-cash menu-icon"></i> Chart of Accounts
+                        </a>
                     </li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'loans:import_coa_data' %}">Import Acounts</a>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'import_client_data' %}">
+                            <i class="mdi mdi-account-group menu-icon"></i> Import Clients
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'loans:import_coa_data' %}">
+                            <i class="mdi mdi-file-import menu-icon"></i> Import Accounts
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'loans:import_loan_data' %}">
+                            <i class="mdi mdi-file-import menu-icon"></i> Import Loans
+                        </a>
                     </li>
                 </ul>
             </div>
+
         </li>
         {% else %}
         <li class="nav-item">

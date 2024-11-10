@@ -13,6 +13,7 @@ from .forms import (
     ChartOfAccountsForm,
     LoanRepaymentForm,
     ImportCOAForm,
+    ImportLoansForm,
 )
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -30,6 +31,8 @@ from apps.users.decorators import (
     admin_or_manager_required,
     admin_required,
 )
+
+from apps.client.models import Client
 
 logger = logging.getLogger(__name__)
 
@@ -900,8 +903,6 @@ def loan_portfolio_report(request):
 
 
 # =================================== portfolio_at_risk view ===================================
-
-
 @login_required
 @admin_or_manager_required
 def portfolio_at_risk(request):
@@ -980,3 +981,102 @@ def portfolio_at_risk(request):
     }
 
     return render(request, "loans/portfolio_at_risk_report.html", context)
+
+
+# =================================== import_loan_data view ===================================
+@login_required
+@admin_required
+@transaction.atomic
+def import_loan_data(request):
+    if request.method == "POST":
+        form = ImportLoansForm(request.POST, request.FILES)
+        if form.is_valid():
+            excel_file = request.FILES.get("excel_file")
+            if excel_file and excel_file.name.endswith(".xlsx"):
+                try:
+                    # Call process_and_import_data function
+                    errors = process_and_import_data(excel_file)
+                    if errors:
+                        for error in errors:
+                            messages.error(request, error, extra_tags="bg-danger")
+                            logger.error(f"Import error: {error}")  # Log each error
+                    else:
+                        messages.success(
+                            request,
+                            "Data imported successfully!",
+                            extra_tags="bg-success",
+                        )
+                except Exception as e:
+                    error_message = f"Error importing data: {e}"
+                    messages.error(request, error_message, extra_tags="bg-danger")
+                    logger.error(error_message, exc_info=True)  # Log the exception
+                return redirect("loans:loan_applications")
+            else:
+                messages.error(
+                    request, "Please upload a valid Excel file.", extra_tags="bg-danger"
+                )
+    else:
+        form = ImportLoansForm()
+    return render(
+        request,
+        "loans/import_loans.html",
+        {"form_name": "Import Loans - Excel", "form": form},
+    )
+
+
+def process_and_import_data(excel_file):
+    errors = []
+    try:
+        wb = load_workbook(excel_file)
+        sheet = wb.active  # Use the active sheet
+
+        for row_num, row in enumerate(sheet.iter_rows(min_row=2), start=2):
+            reg_number = row[0].value
+            full_name = row[1].value
+            picture = row[2].value
+            mobile_telephone = row[3].value
+            principal_amount = row[4].value
+            interest_rate = row[5].value
+            start_date = row[6].value
+            loan_period_months = row[7].value
+            status = row[8].value
+            interest_method = row[9].value
+
+            if full_name:
+                try:
+                    client, created = Client.objects.get_or_create(
+                        reg_number=reg_number,
+                        defaults={
+                            "full_name": full_name,
+                            "picture": picture,
+                            "mobile_telephone": mobile_telephone,
+                        },
+                    )
+                    Loan.objects.create(
+                        borrower=client,
+                        principal_amount=principal_amount,
+                        interest_rate=interest_rate,
+                        start_date=start_date,
+                        loan_period_months=loan_period_months,
+                        status=status,
+                        interest_method=interest_method,
+                    )
+                except Exception as e:
+                    error_message = f"Error on row {row_num}: {e}"
+                    errors.append(error_message)
+                    logger.error(
+                        error_message, exc_info=True
+                    )  # Log each row-specific error
+            else:
+                error_message = f"Missing full name on row {row_num}"
+                errors.append(error_message)
+                logger.warning(error_message)  # Log a warning for missing full name
+
+    except Exception as e:
+        error_message = f"Failed to process the Excel file: {e}"
+        errors.append(error_message)
+        logger.error(
+            error_message, exc_info=True
+        )  # Log the exception for file processing failure
+
+    return errors

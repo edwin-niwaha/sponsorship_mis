@@ -19,6 +19,34 @@
             </div>
         </div>
 
+        <!-- Row for displaying PAR percentages in cards -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card text-white bg-primary">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">PAR 30</h5>
+                        <p class="card-text display-4">{{ par_30|floatformat:"2" }}%</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-warning">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">PAR 60</h5>
+                        <p class="card-text display-4">{{ par_60|floatformat:"2" }}%</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-danger">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">PAR 90</h5>
+                        <p class="card-text display-4">{{ par_90|floatformat:"2" }}%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Row for the table -->
         <div class="row">
             <div class="col-md-12">
@@ -63,14 +91,6 @@
                                     {% endfor %}
                                 </tbody>
                             </table>
-                        </div>
-
-                        <!-- PAR Summary Section -->
-                        <div class="mt-4">
-                            <h4>PAR (Portfolio At Risk)</h4>
-                            <p><strong>PAR 30:</strong> {{ par_30|floatformat:"2" }}%</p>
-                            <p><strong>PAR 60:</strong> {{ par_60|floatformat:"2" }}%</p>
-                            <p><strong>PAR 90:</strong> {{ par_90|floatformat:"2" }}%</p>
                         </div>
                     </div>
                 </div>

@@ -5,6 +5,7 @@ from apps.client.models import Client
 from django.utils import timezone
 from decimal import Decimal, ROUND_DOWN
 
+
 # contants
 min_account_number = 1010
 max_account_number = 1020
@@ -252,3 +253,9 @@ class LoanRepaymentForm(forms.ModelForm):
             )
 
         return cleaned_data
+
+
+# Import form
+class ImportLoansForm(forms.Form):
+    excel_file = forms.FileField()
+    excel_file.widget.attrs["class"] = "form-control-file"

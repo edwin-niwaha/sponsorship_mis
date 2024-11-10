@@ -31,6 +31,7 @@ urlpatterns = [
     path(
         "portfolio-at-risk/", views.portfolio_at_risk, name="portfolio_at_risk_report"
     ),
+    path("import/", views.import_loan_data, name="import_loan_data"),
     # Chart of accounts URLs
     path("accounts/add/", views.add_chart_of_account_view, name="add_chart_of_account"),
     path("accounts/", views.chart_of_accounts_list_view, name="chart_of_accounts_list"),

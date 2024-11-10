@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
     "django.contrib.humanize",
+    "django_select2",
     # =================================== PROJECT APPLICATIONS ===================================
     "apps.users",
     "apps.child",
