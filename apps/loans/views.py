@@ -9,6 +9,7 @@ from django.contrib import messages
 from openpyxl import load_workbook
 from .forms import (
     LoanDisbursementForm,
+    LoanAllDisbursementForm,
     LoanApplicationForm,
     ChartOfAccountsForm,
     LoanRepaymentForm,
@@ -244,6 +245,44 @@ def disburse_loan(request):
     )
 
 
+# =================================== Disburse All Loans View ===================================
+@login_required
+@admin_or_manager_required
+def disburse_all_loans(request):
+    # Get all approved loans
+    approved_loans = Loan.objects.filter(status="approved")
+    
+    # Ensure there are approved loans to disburse
+    if not approved_loans:
+        messages.warning(request, "No approved loans available for disbursement.", extra_tags="bg-warning")
+        return redirect("loans:disbursed_loans")  # Redirect to a loan list or another appropriate page
+    
+    form_title = "Disburse All Approved Loans"
+    form = LoanAllDisbursementForm(request.POST or None)
+
+    if request.method == "POST":
+        if form.is_valid():
+            # Call the custom save method and pass approved loans
+            disbursed_count = form.save(approved_loans)
+
+            # Show a message with how many loans were disbursed
+            messages.success(request, f"{disbursed_count} loans have been successfully disbursed.", extra_tags="bg-success")
+            return redirect("loans:disburse_all_loans")
+
+        else:
+            messages.error(request, "There was an error with your submission. Please check the form.", extra_tags="bg-danger")
+
+    return render(
+        request,
+        "loans/disburse_loan.html",
+        {
+            "form_title": form_title,
+            "form": form,
+        },
+    )
+
+
+
 # =================================== Approve Loan View ===================================
 @login_required
 @admin_or_manager_required
@@ -261,13 +300,6 @@ def approve_loan(request, loan_id):
 
 
 # =================================== Approve All Loans View ===================================
-from django.shortcuts import redirect
-from django.contrib import messages
-from django.utils import timezone
-from django.contrib.auth.decorators import login_required
-from .models import Loan
-
-
 @login_required
 @admin_or_manager_required
 def approve_all_loans(request):
@@ -505,8 +537,8 @@ def import_coa_data(request):
             excel_file = request.FILES.get("excel_file")
             if excel_file and excel_file.name.endswith(".xlsx"):
                 try:
-                    # Call process_and_import_data function
-                    errors = process_and_import_data(excel_file)
+                    # Call process_and_import_accounts_data function
+                    errors = process_and_import_accounts_data(excel_file)
                     if errors:
                         for error in errors:
                             messages.error(request, error, extra_tags="bg-danger")
@@ -536,7 +568,7 @@ def import_coa_data(request):
 
 # Function to import Excel data
 @transaction.atomic
-def process_and_import_data(excel_file):
+def process_and_import_accounts_data(excel_file):
     errors = []
     try:
         wb = load_workbook(excel_file)
@@ -1027,8 +1059,8 @@ def import_loan_data(request):
             excel_file = request.FILES.get("excel_file")
             if excel_file and excel_file.name.endswith(".xlsx"):
                 try:
-                    # Call process_and_import_data function
-                    errors = process_and_import_data(excel_file)
+                    # Call process_and_import_loan_data function
+                    errors = process_and_import_loan_data(excel_file)
                     if errors:
                         for error in errors:
                             messages.error(request, error, extra_tags="bg-danger")
@@ -1057,7 +1089,7 @@ def import_loan_data(request):
     )
 
 
-def process_and_import_data(excel_file):
+def process_and_import_loan_data(excel_file):
     errors = []
     try:
         wb = load_workbook(excel_file)

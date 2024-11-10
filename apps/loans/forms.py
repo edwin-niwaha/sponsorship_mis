@@ -161,6 +161,83 @@ class LoanDisbursementForm(forms.ModelForm):
 
         return cleaned_data
 
+# =================================== LoanAllDisbursementForm ===================================
+
+# class LoanAllDisbursementForm(forms.ModelForm):
+#     account = forms.ModelChoiceField(
+#         queryset=ChartOfAccounts.objects.filter(
+#             account_type="asset",
+#             account_number__range=(
+#                 min_account_number,
+#                 max_account_number,
+#             ),
+#         ),
+#         label="Paying Account",
+#         required=True,
+#         widget=forms.Select(attrs={"class": "form-control"}),
+#     )
+#     class Meta:
+#         model = LoanDisbursement
+#         fields = ['account', 'payment_method']  # Only these fields for mass disbursement
+#         widgets = {
+#             "payment_method": forms.Select(attrs={"class": "form-control"}),
+#         }
+
+#     def save(self, approved_loans):
+#         """
+#         Custom save method to handle disbursement of all loans at once
+#         """
+#         for loan in approved_loans:
+#             disbursement = super().save(commit=False)
+#             disbursement.loan = loan  # Assign the loan to each disbursement
+#             disbursement.save()
+
+#             # Update the loan status to "disbursed"
+#             loan.status = "disbursed"
+#             loan.save()
+
+class LoanAllDisbursementForm(forms.ModelForm):
+    account = forms.ModelChoiceField(
+        queryset=ChartOfAccounts.objects.filter(
+            account_type="asset",
+            account_number__range=(min_account_number, max_account_number),
+        ),
+        label="Paying Account",
+        required=True,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
+    class Meta:
+        model = LoanDisbursement
+        fields = ['account', 'payment_method']
+        widgets = {
+            "payment_method": forms.Select(attrs={"class": "form-control"}),
+        }
+
+    def save(self, approved_loans):
+        """
+        Custom save method to handle disbursement of all loans at once
+        """
+        # Track how many records were disbursed
+        disbursed_count = 0
+
+        for loan in approved_loans:
+            # Create a new LoanDisbursement instance for each loan
+            disbursement = LoanDisbursement(
+                loan=loan,
+                account=self.cleaned_data['account'],
+                payment_method=self.cleaned_data['payment_method'],
+                disbursement_date=timezone.now()  # You can adjust the date as needed
+            )
+            disbursement.save()  # Save the disbursement record
+            disbursed_count += 1
+
+            # Update the loan status to "disbursed"
+            loan.status = "disbursed"
+            loan.save()
+
+        return disbursed_count  # Return how many records were saved
+
 
 # =================================== LoanRepaymentForm ===================================
 class LoanRepaymentForm(forms.ModelForm):
