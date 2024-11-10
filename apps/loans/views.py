@@ -250,7 +250,8 @@ def disburse_loan(request):
 @admin_or_manager_required
 def disburse_all_loans(request):
     # Get all approved loans
-    approved_loans = Loan.objects.filter(status="approved")
+    # approved_loans = Loan.objects.filter(status="approved")
+    approved_loans = Loan.objects.filter(status__in=["overdue", "approved"])
     
     # Ensure there are approved loans to disburse
     if not approved_loans:
@@ -1145,3 +1146,14 @@ def process_and_import_loan_data(excel_file):
         )  # Log the exception for file processing failure
 
     return errors
+
+# =================================== loan_reports_dashboard view ===================================
+@login_required
+def loan_reports_dashboard(request):
+    """
+    Renders the reports dashboard with report cards for users with the 'administrator' role.
+    """
+    context = {
+        'form_title': 'Reports Dashboard [loans]'  # Add the title here
+    }
+    return render(request, 'loans/loan_reports.html', context)

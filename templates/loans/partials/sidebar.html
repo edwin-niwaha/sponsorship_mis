@@ -63,17 +63,17 @@
         </li>
         <!-- Loan Applications -->
         <li class="nav-item">
-            <a class="nav-link" href="{% url 'loans:loan_applications' %}">
+            <a class="nav-link" href="{% url 'loans:apply_for_loan' %}">
                 <i class="mdi mdi-file-document-box menu-icon"></i>
-                <span class="menu-title">Applications</span>
+                <span class="menu-title">Loan Apply</span>
             </a>
         </li>
 
         <!-- Loan Disbursements -->
         <li class="nav-item">
-            <a class="nav-link" href="{% url 'loans:disbursed_loans' %}">
+            <a class="nav-link" href="{% url 'loans:disburse_loan' %}">
                 <i class="mdi mdi-cash-register menu-icon"></i>
-                <span class="menu-title">Disbursements</span>
+                <span class="menu-title">Disburse Loan</span>
             </a>
         </li>
 
@@ -81,7 +81,7 @@
         <li class="nav-item">
             <a class="nav-link" href="{% url 'loans:loan_repayment_create' %}">
                 <i class="mdi mdi-credit-card menu-icon"></i>
-                <span class="menu-title">Repayment</span>
+                <span class="menu-title">Loan Repay</span>
             </a>
         </li>
         <li class="nav-item">
@@ -96,39 +96,12 @@
             <hr class="sidebar-divider my-3">
         </li>
 
-        <!-- Reports -->
-        {% if user.profile.role == 'administrator' %}
         <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#reports-menu" aria-expanded="false"
-                aria-controls="reports-menu">
-                <i class="mdi mdi-chart-bar menu-icon"></i>
-                <span class="menu-title">Reports</span>
-                <i class="menu-arrow"></i>
-            </a>
-            <div class="collapse" id="reports-menu">
-                <ul class="nav flex-column sub-menu">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'loans:loan_portfolio_report' %}"><i
-                                class="mdi mdi-clipboard-text menu-icon"></i> Loan Portfolio</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'loans:loan_aging_report' %}"><i
-                                class="mdi mdi-file-chart menu-icon"></i> Aging Report</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'loans:loan-arrears-report' %}"><i
-                                class="mdi mdi-account-multiple menu-icon"></i> Arrears Report</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'loans:portfolio_at_risk_report' %}"><i
-                                class="mdi mdi-account-multiple menu-icon"></i>
-                            PAR</a>
-                    </li>
-                </ul>
-            </div>
-
-        </li>
-        {% else %}
-        <li class="nav-item">
-            <a class="nav-link" href="#" onclick="showMessageSettings(event)">
+            <a class="nav-link" href="{% url 'loans:loan_reports_dashboard' %}">
                 <i class="mdi mdi-chart-bar menu-icon"></i>
                 <span class="menu-title">Reports</span>
             </a>
         </li>
-        {% endif %}
 
 
         <!-- Settings -->

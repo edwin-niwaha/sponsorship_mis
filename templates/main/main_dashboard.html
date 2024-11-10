@@ -2,308 +2,288 @@
 {% load static %}
 
 {% block content %}
-
-<!-- ============== dash ===================== -->
-<div>
+  <!-- ============== dash ===================== -->
+  <div>
     <div class="page-header flex-wrap">
-        {% comment %} <h3 class="mb-0">Welcome, <i style="color:#F79420">{{user.first_name.title}}
-                {{user.last_name.title}} !</i>
+      {% comment %} <h3 class="mb-0">
+        Welcome, <i style="color:#F79420">
+          {{ user.first_name.title }}
+          {{ user.last_name.title }} !
+        </i>
+      </h3> {% endcomment %}
+      <h3 class="mb-0" style="text-transform: uppercase;">Sponsorship Management Dashboard</h3>
 
-        </h3> {% endcomment %}
-        <h3 class="mb-0">Sponsorship Management Dashboard</h3>
-
-        {% comment %} <div class="d-flex">
-            <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
-                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
-        </div> {% endcomment %}
+      {% comment %} <div class="d-flex">
+        <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
+      </div> {% endcomment %}
     </div>
     <hr class="bg-info" style="height: 3px;" />
 
     <div id="printMe" class="row">
-        <div class="col-xl-3 col-lg-12 stretch-card grid-margin">
-            <div class="row">
-                <div class="col-xl-12 col-md-6 stretch-card grid-margin grid-margin-sm-0 pb-sm-3">
-                    <div class="card bg-warning">
-                        <div class="card-body px-3 py-4">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="color-card">
-                                    <p class="mb-0 color-card-head">Total Sponsors</p>
-                                    <h2 class="text-white"> {{sponsors_count}} <span class="h5"></span>
-                                    </h2>
-                                </div>
-                                <i class="card-icon-indicator mdi mdi-account-convert bg-inverse-icon-warning"></i>
-                            </div>
-                            <h6 class="text-white"></h6>
-                        </div>
-                    </div>
+      <div class="col-xl-3 col-lg-12 stretch-card grid-margin">
+        <div class="row">
+          <div class="col-xl-12 col-md-6 stretch-card grid-margin grid-margin-sm-0 pb-sm-3">
+            <div class="card bg-warning">
+              <div class="card-body px-3 py-4">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="color-card">
+                    <p class="mb-0 color-card-head">Total Sponsors</p>
+                    <h2 class="text-white">{{ sponsors_count }} <span class="h5"></span></h2>
+                  </div>
+                  <i class="card-icon-indicator mdi mdi-account-convert bg-inverse-icon-warning"></i>
                 </div>
-                <div class="col-xl-12 col-md-6 stretch-card grid-margin grid-margin-sm-0 pb-sm-3">
-                    <div class="card bg-danger">
-                        <div class="card-body px-3 py-4">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="color-card">
-                                    <p class="mb-0 color-card-head">Total Children</p>
-                                    <h2 class="text-white"> {{children_count}} <span class="h5"></span>
-                                    </h2>
-                                </div>
-                                <i class="card-icon-indicator mdi mdi-account bg-inverse-icon-danger"></i>
-                            </div>
-                            <h6 class="text-white"></h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-12 col-md-6 stretch-card grid-margin grid-margin-sm-0 pb-sm-3 pb-lg-0 pb-xl-3">
-                    <div class="card bg-success">
-                        <div class="card-body px-3 py-4">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="color-card">
-                                    <p class="mb-0 color-card-head">Sponsored</p>
-                                    <h2 class="text-white"> {{sponsored_count}} <span class="h5"></span>
-                                    </h2>
-                                </div>
-                                <i class="card-icon-indicator mdi mdi-briefcase-outline bg-inverse-icon-primary"></i>
-                            </div>
-                            <h6 class="text-white"></h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-12 col-md-6 stretch-card pb-sm-3 pb-lg-0">
-                    <div class="card bg-warning">
-                        <div class="card-body px-3 py-4">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="color-card">
-                                    <p class="mb-0 color-card-head">Non-Sponsored</p>
-                                    <h2 class="text-white">{{non_sponsored_count}} </h2>
-                                </div>
-                                <i class="card-icon-indicator mdi mdi-account-circle bg-inverse-icon-success"></i>
-                            </div>
-                            <h6 class="text-white"></h6>
-                        </div>
-                    </div>
-                </div>
-
+                <h6 class="text-white"></h6>
+              </div>
             </div>
+          </div>
+          <div class="col-xl-12 col-md-6 stretch-card grid-margin grid-margin-sm-0 pb-sm-3">
+            <div class="card bg-danger">
+              <div class="card-body px-3 py-4">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="color-card">
+                    <p class="mb-0 color-card-head">Total Children</p>
+                    <h2 class="text-white">{{ children_count }} <span class="h5"></span></h2>
+                  </div>
+                  <i class="card-icon-indicator mdi mdi-account bg-inverse-icon-danger"></i>
+                </div>
+                <h6 class="text-white"></h6>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-12 col-md-6 stretch-card grid-margin grid-margin-sm-0 pb-sm-3 pb-lg-0 pb-xl-3">
+            <div class="card bg-success">
+              <div class="card-body px-3 py-4">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="color-card">
+                    <p class="mb-0 color-card-head">Sponsored</p>
+                    <h2 class="text-white">{{ sponsored_count }} <span class="h5"></span></h2>
+                  </div>
+                  <i class="card-icon-indicator mdi mdi-briefcase-outline bg-inverse-icon-primary"></i>
+                </div>
+                <h6 class="text-white"></h6>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-12 col-md-6 stretch-card pb-sm-3 pb-lg-0">
+            <div class="card bg-warning">
+              <div class="card-body px-3 py-4">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="color-card">
+                    <p class="mb-0 color-card-head">Non-Sponsored</p>
+                    <h2 class="text-white">{{ non_sponsored_count }}</h2>
+                  </div>
+                  <i class="card-icon-indicator mdi mdi-account-circle bg-inverse-icon-success"></i>
+                </div>
+                <h6 class="text-white"></h6>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Container for the main content -->
+      <div class="col-xl-9 stretch-card grid-margin">
+        <div class="card">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-sm-12">
+                <!-- Title with dynamic year -->
+                <h5 class="alert alert-primary text-primary">Sponsorship Survey - Jan 2017 - <span id="currentYear"></span></h5>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-sm-12">
+                <!-- Chart section -->
+                <h2 class="text-center mb-4">Child Sponsorship Categories</h2>
+                <hr class="bg-info" style="height: 1px;" />
+                <canvas id="sponsorshipChart" width="100%"></canvas>
+                <hr class="bg-info" style="height: 3px;" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- JavaScript to dynamically update the year -->
+      <script>
+        document.addEventListener('DOMContentLoaded', function () {
+          document.getElementById('currentYear').textContent = new Date().getFullYear()
+        })
+      </script>
+
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-sm-12">
+            <section>
+              <h2 class="text-center mb-4">Number of sponsors registered over time</h2>
+              <canvas id="sponsorsChart" width="100%"></canvas>
+            </section>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-sm-12">
+            <section>
+              <h2 class="text-center mb-4">Number of children registered over time</h2>
+              <canvas id="childrenChart" width="100%"></canvas>
+            </section>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-sm-12">
+            <hr class="bg-info" style="height: 3px;" />
+            <section>
+              <h2 class="text-center mb-4">Number of sponsors registered against children over time</h2>
+              <hr class="bg-info" style="height: 1px;" />
+              <canvas id="dataChart" width="100%"></canvas>
+              <div id="errorDisplay" style="color: red; margin-top: 20px;"></div>
+            </section>
+          </div>
         </div>
 
-        <!-- Container for the main content -->
-        <div class="col-xl-9 stretch-card grid-margin">
-            <div class="card">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <!-- Title with dynamic year -->
-                            <h5 class="alert alert-primary text-primary">
-                                Sponsorship Survey - Jan 2017 - <span id="currentYear"></span>
-                            </h5>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <!-- Chart section -->
-                            <h2 class="text-center mb-4">Child Sponsorship Categories</h2>
-                            <hr class="bg-info" style="height: 1px;" />
-                            <canvas id="sponsorshipChart" width="100%"></canvas>
-                            <hr class="bg-info" style="height: 3px;" />
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="row">
+          <div class="col-sm-12">
+            <hr class="bg-info" style="height: 3px;" />
+            <section>
+              <h2 class="text-center mb-4">Registered children birthdays distribution by month</h2>
+              {% comment %} <canvas id="pieChart"></canvas> {% endcomment %}
+            </section>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-sm-12">
+            <section>
+              <canvas id="birthdayChart"></canvas>
+            </section>
+          </div>
         </div>
 
-        <!-- JavaScript to dynamically update the year -->
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                document.getElementById('currentYear').textContent = new Date().getFullYear();
-            });
-        </script>
-
-
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-sm-12">
-                    <section>
-                        <h2 class="text-center mb-4">Number of sponsors registered over time
-                        </h2>
-                        <canvas id="sponsorsChart" width="100%"></canvas>
-                    </section>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-sm-12">
-                    <section>
-                        <h2 class="text-center mb-4">Number of children registered over time
-                        </h2>
-                        <canvas id="childrenChart" width="100%"></canvas>
-                    </section>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-sm-12">
-                    <hr class="bg-info" style="height: 3px;" />
-                    <section>
-                        <h2 class="text-center mb-4">Number of sponsors registered against children over time</h2>
-                        <hr class="bg-info" style="height: 1px;" />
-                        <canvas id="dataChart" width="100%"></canvas>
-                        <div id="errorDisplay" style="color: red; margin-top: 20px;"></div>
-                    </section>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-sm-12">
-                    <hr class="bg-info" style="height: 3px;" />
-                    <section>
-                        <h2 class="text-center mb-4">Registered children birthdays distribution by month
-                        </h2>
-                        {% comment %} <canvas id="pieChart"></canvas> {% endcomment %}
-                    </section>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-sm-12">
-                    <section>
-                        <canvas id="birthdayChart"></canvas>
-                    </section>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-sm-12">
-                    <hr class="bg-info" style="height: 3px;" />
-
-                    <section>
-                        <h2 class="text-center mb-4">Sponsor contributions for children collected over the years(UgX)
-                        </h2>
-                        <canvas id="paymentsChart" width="100%"></canvas>
-                    </section>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-sm-12">
-                    <hr class="bg-info" style="height: 3px;" />
-
-                    <section>
-                        <h2 class="text-center mb-4">Sponsor contributions for staff collected over the
-                            years(UgX)
-                        </h2>
-                        <canvas id="StaffpaymentsChart" width="100%"></canvas>
-                    </section>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-sm-12">
-                    <!-- Display sponsor to child ratio -->
-                    <h1 class="text-center mb-4">Top Sponsors</h1>
-                    <hr class="bg-info" style="height: 1px;" />
-                    <section>
-                        <h5 class="alert alert-success" style="color: teal;">Sponsor : Child</h5>
-                        {% if top_sponsors_with_counts %}
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 60%;">Sponsor</th>
-                                        <th>Sponsored Children</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for sponsor, count in top_sponsors_with_counts %}
-                                    <tr>
-                                        <td>{{ sponsor }}</td>
-                                        <td>{{ count }}</td>
-                                    </tr>
-                                    {% empty %}
-                                    <tr>
-                                        <td colspan="2">No top sponsors available.</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        {% else %}
-                        <div class="alert alert-danger">No top sponsors available.</div>
-                        {% endif %}
-                    </section>
-
-                    <hr class="bg-info" style="height: 3px;" />
-
-                    <!-- Display child to sponsor ratio -->
-                    <section class="pt-1">
-                        <h5 class="alert alert-success" style="color: teal;">Child : Sponsor</h5>
-                        {% if top_children_with_counts %}
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 60%;">Child</th>
-                                        <th>Sponsors</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for child, count in top_children_with_counts %}
-                                    <tr>
-                                        <td>{{ child }}</td>
-                                        <td>{{ count }}</td>
-                                    </tr>
-                                    {% empty %}
-                                    <tr>
-                                        <td colspan="2">
-                                            <div class="alert alert-danger">No sponsored children available.
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        {% else %}
-                        <p></p>
-                        <div class="alert alert-danger">No sponsored children available.</div>
-                        {% endif %}
-                    </section>
-
-                    <hr class="bg-info" style="height: 3px;" />
-                    <!-- Display sponsor to staff ratio -->
-                    <section>
-                        <h5 class="alert alert-success" style="color: teal;">Staff : Sponsor
-                        </h5>
-                        {% if top_staff_with_counts %}
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 60%;">Staff</th>
-                                        <th>Sponsors</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for staff, count in top_staff_with_counts %}
-                                    <tr>
-                                        <td>{{ staff }}</td>
-                                        <td>{{ count }}</td>
-                                    </tr>
-                                    {% empty %}
-                                    <tr>
-                                        <td colspan="2">No top sponsors available..
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        {% else %}
-                        <div class="alert alert-danger">No top sponsors available.
-                        </div>
-                        {% endif %}
-                    </section>
-                </div>
-            </div>
+        <div class="row">
+          <div class="col-sm-12">
             <hr class="bg-info" style="height: 3px;" />
 
+            <section>
+              <h2 class="text-center mb-4">Sponsor contributions for children collected over the years(UgX)</h2>
+              <canvas id="paymentsChart" width="100%"></canvas>
+            </section>
+          </div>
         </div>
+        <div class="row">
+          <div class="col-sm-12">
+            <hr class="bg-info" style="height: 3px;" />
+
+            <section>
+              <h2 class="text-center mb-4">Sponsor contributions for staff collected over the years(UgX)</h2>
+              <canvas id="StaffpaymentsChart" width="100%"></canvas>
+            </section>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-sm-12">
+            <!-- Display sponsor to child ratio -->
+            <h1 class="text-center mb-4">Top Sponsors</h1>
+            <hr class="bg-info" style="height: 1px;" />
+            <section>
+              <h5 class="alert alert-success" style="color: teal;">Sponsor : Child</h5>
+              {% if top_sponsors_with_counts %}
+                <div class="table-responsive">
+                  <table class="table table-striped">
+                    <thead>
+                      <tr>
+                        <th style="width: 60%;">Sponsor</th>
+                        <th>Sponsored Children</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for sponsor, count in top_sponsors_with_counts %}
+                        <tr>
+                          <td>{{ sponsor }}</td>
+                          <td>{{ count }}</td>
+                        </tr>
+                      {% empty %}
+                        <tr>
+                          <td colspan="2">No top sponsors available.</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <div class="alert alert-danger">No top sponsors available.</div>
+              {% endif %}
+            </section>
+
+            <hr class="bg-info" style="height: 3px;" />
+
+            <!-- Display child to sponsor ratio -->
+            <section class="pt-1">
+              <h5 class="alert alert-success" style="color: teal;">Child : Sponsor</h5>
+              {% if top_children_with_counts %}
+                <div class="table-responsive">
+                  <table class="table table-striped">
+                    <thead>
+                      <tr>
+                        <th style="width: 60%;">Child</th>
+                        <th>Sponsors</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for child, count in top_children_with_counts %}
+                        <tr>
+                          <td>{{ child }}</td>
+                          <td>{{ count }}</td>
+                        </tr>
+                      {% empty %}
+                        <tr>
+                          <td colspan="2">
+                            <div class="alert alert-danger">No sponsored children available.</div>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <p></p>
+                <div class="alert alert-danger">No sponsored children available.</div>
+              {% endif %}
+            </section>
+
+            <hr class="bg-info" style="height: 3px;" />
+            <!-- Display sponsor to staff ratio -->
+            <section>
+              <h5 class="alert alert-success" style="color: teal;">Staff : Sponsor</h5>
+              {% if top_staff_with_counts %}
+                <div class="table-responsive">
+                  <table class="table table-striped">
+                    <thead>
+                      <tr>
+                        <th style="width: 60%;">Staff</th>
+                        <th>Sponsors</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for staff, count in top_staff_with_counts %}
+                        <tr>
+                          <td>{{ staff }}</td>
+                          <td>{{ count }}</td>
+                        </tr>
+                      {% empty %}
+                        <tr>
+                          <td colspan="2">No top sponsors available..</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <div class="alert alert-danger">No top sponsors available.</div>
+              {% endif %}
+            </section>
+          </div>
+        </div>
+        <hr class="bg-info" style="height: 3px;" />
+      </div>
     </div>
-
-</div>
-<!-- ============================================= -->
-
-{% endblock content %}
+  </div>
+  <!-- ============================================= -->
+{% endblock %}

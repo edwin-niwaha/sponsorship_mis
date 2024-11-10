@@ -275,37 +275,94 @@ class Loan(models.Model):
             "interest_balance": interest_balance,
         }
 
+    # def update_status(self):
+    #     """Update loan status based on computed remaining balance and due date."""
+    #     # Calculate total remaining balance
+    #     balances = self.calculate_remaining_balances()
+    #     total_remaining_balance = (
+    #         balances["principal_balance"] + balances["interest_balance"]
+    #     )
+
+    #     # Update status based on the computed remaining balance and due date
+    #     if total_remaining_balance <= 0:
+    #         self.status = "repaid"
+    #     elif timezone.now().date() > self.due_date:
+    #         self.status = "overdue" if self.status == "approved" else self.status
+
+    #     # Save status update
+    #     self.save(update_fields=["status"])
+
+
     def update_status(self):
-        """Update loan status based on computed remaining balance and due date."""
+        """Update loan status based on current status, balance, and due date."""
         # Calculate total remaining balance
         balances = self.calculate_remaining_balances()
         total_remaining_balance = (
             balances["principal_balance"] + balances["interest_balance"]
         )
 
-        # Update status based on the computed remaining balance and due date
-        if total_remaining_balance <= 0:
-            self.status = "repaid"
-        elif timezone.now().date() > self.due_date:
-            self.status = "overdue" if self.status == "approved" else self.status
+        # Status transitions based on remaining balance, due date, and current status
+        if self.status in ["closed", "repaid", "rejected"]:
+            # No changes for final statuses
+            return
 
-        # Save status update
+        if total_remaining_balance <= 0:
+            # If fully repaid, set status to "repaid"
+            self.status = "repaid"
+        elif self.due_date and timezone.now().date() > self.due_date:
+            # If due date has passed and balance remains, set to "overdue"
+            if self.status in ["approved", "disbursed"]:
+                self.status = "overdue"
+        elif self.status == "pending":
+            # "pending" remains until manually approved
+            pass
+        elif self.status == "approved":
+            # If approved but not disbursed, check for overdue
+            if self.due_date and timezone.now().date() > self.due_date:
+                self.status = "overdue"
+
+        # Save the updated status
         self.save(update_fields=["status"])
 
+
+    # def save(self, *args, **kwargs):
+    #     """Override save to ensure the account is set, calculate due date, interest, and status before saving."""
+    #     if not self.account:
+    #         try:
+    #             self.account = ChartOfAccounts.objects.get(
+    #                 account_number="1050"
+    #             )  # Loan Receivable
+    #         except ChartOfAccounts.DoesNotExist:
+    #             raise ValidationError(
+    #                 "Default loan account missing. Please contact support."
+    #             )
+
+    #     self.calculate_due_date()
+    #     self.calculate_interest()
+    #     self.update_status()
+    #     super().save(*args, **kwargs)
+    
     def save(self, *args, **kwargs):
-        """Override save to ensure the account is set, calculate due date, interest, and status before saving."""
+        """Override save to ensure account setup and perform initial calculations before saving."""
+        # First save to ensure primary key is generated
+        if not self.pk:
+            super().save(*args, **kwargs)
+        
+        # Set the default account only after the first save, when pk is available
         if not self.account:
             try:
-                self.account = ChartOfAccounts.objects.get(
-                    account_number="1050"
-                )  # Loan Receivable
+                self.account = ChartOfAccounts.objects.get(account_number="1050")  # Loan Receivable
             except ChartOfAccounts.DoesNotExist:
-                raise ValidationError(
-                    "Default loan account missing. Please contact support."
-                )
-
+                raise ValidationError("Default loan account missing. Please contact support.")
+        
+        # Recalculate due date and interest
         self.calculate_due_date()
         self.calculate_interest()
+        
+        # Update status based on remaining balance and due date
+        self.update_status()
+        
+        # Final save with all fields updated
         super().save(*args, **kwargs)
 
     @property

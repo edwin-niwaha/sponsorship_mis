@@ -8,8 +8,7 @@
       <div class="row mb-3">
         <div class="col-md-12 d-flex justify-content-between align-items-center">
           <a href="{% url 'loans:apply_for_loan' %}" class="btn btn-dark ml-2"><i class="mdi mdi-plus mr-2"></i>Add Loan</a>
-          <!-- Disburse Button -->
-          <a href="{% url 'loans:disburse_loan' %}" class="btn btn-warning ml-2"><i class="mdi mdi-cash-multiple mr-2"></i>Disburse</a>
+
           <form action="{% url 'loans:approve_all_loans' %}" method="post" class="d-inline">
             {% csrf_token %}
             <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure you want to proceed?') && validateForm()">Approve All Loans</button>

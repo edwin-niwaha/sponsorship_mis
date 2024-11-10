@@ -1,0 +1,124 @@
+{% extends 'loans/base.html' %}
+
+{% block content %}
+  <style>
+    .fixed-card-height {
+      height: 100px; /* Adjust as needed */
+    }
+  </style>
+
+  <div class="container mt-2">
+    <h2 class="text-center mb-4">{{ form_title|upper }}</h2>
+    <hr class="bg-info" style="height: 3px;" />
+
+    <div class="row">
+      {% if user.profile.role == 'administrator' %}
+        <!-- Loan Portfolio Card -->
+        <div class="col-md-3 mb-4">
+          <a href="{% url 'loans:loan_portfolio_report' %}" class="text-decoration-none">
+            <div class="card shadow-sm border-0 fixed-card-height">
+              <div class="card-body text-center d-flex flex-column justify-content-center">
+                <i class="mdi mdi-clipboard-text mdi-36px mb-3 text-primary"></i>
+                <h5 class="card-title">Loan Portfolio</h5>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <!-- Aging Report Card -->
+        <div class="col-md-3 mb-4">
+          <a href="{% url 'loans:loan_aging_report' %}" class="text-decoration-none">
+            <div class="card shadow-sm border-0 fixed-card-height">
+              <div class="card-body text-center d-flex flex-column justify-content-center">
+                <i class="mdi mdi-file-chart mdi-36px mb-3 text-success"></i>
+                <h5 class="card-title">Aging Report</h5>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <!-- Arrears Report Card -->
+        <div class="col-md-3 mb-4">
+          <a href="{% url 'loans:loan-arrears-report' %}" class="text-decoration-none">
+            <div class="card shadow-sm border-0 fixed-card-height">
+              <div class="card-body text-center d-flex flex-column justify-content-center">
+                <i class="mdi mdi-account-multiple mdi-36px mb-3 text-danger"></i>
+                <h5 class="card-title">Arrears Report</h5>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <!-- Portfolio at Risk (PAR) Card -->
+        <div class="col-md-3 mb-4">
+          <a href="{% url 'loans:portfolio_at_risk_report' %}" class="text-decoration-none">
+            <div class="card shadow-sm border-0 fixed-card-height">
+              <div class="card-body text-center d-flex flex-column justify-content-center">
+                <i class="mdi mdi-account-multiple mdi-36px mb-3 text-warning"></i>
+                <h5 class="card-title">PAR</h5>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <!-- New Cards Row -->
+        <div class="row mt-4">
+          <!-- Loan Applications Card -->
+          <div class="col-md-3 mb-4">
+            <a href="{% url 'loans:loan_applications' %}" class="text-decoration-none">
+              <div class="card shadow-sm border-0 fixed-card-height">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                  <i class="mdi mdi-file-document-box mdi-36px mb-3 text-info"></i>
+                  <h5 class="card-title">Loan Applications</h5>
+                </div>
+              </div>
+            </a>
+          </div>
+
+          <!-- Loan Disbursements Card -->
+          <div class="col-md-3 mb-4">
+            <a href="{% url 'loans:disbursed_loans' %}" class="text-decoration-none">
+              <div class="card shadow-sm border-0 fixed-card-height">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                  <i class="mdi mdi-cash-multiple mdi-36px mb-3 text-success"></i>
+                  <h5 class="card-title">Loan Disbursements</h5>
+                </div>
+              </div>
+            </a>
+          </div>
+
+          <!-- Non-Performing Loans Card -->
+          <div class="col-md-3 mb-4">
+            <a href="#" class="text-decoration-none">
+              <div class="card shadow-sm border-0 fixed-card-height">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                  <i class="mdi mdi-alert mdi-36px mb-3 text-danger"></i>
+                  <h5 class="card-title">Non-Performing Loans</h5>
+                </div>
+              </div>
+            </a>
+          </div>
+
+          <!-- Chart of Accounts Card -->
+          <div class="col-md-3 mb-4">
+            <a href="{% url 'loans:chart_of_accounts_list' %}" class="text-decoration-none">
+              <div class="card shadow-sm border-0 fixed-card-height">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                  <i class="mdi mdi-account-cash mdi-36px mb-3 text-primary"></i>
+                  <h5 class="card-title">Chart of Accounts</h5>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+      {% else %}
+        <!-- Restricted Access Message -->
+        <div class="col-md-12">
+          <div class="alert alert-warning text-center">
+            <i class="mdi mdi-alert-circle-outline"></i> You do not have access to view reports.
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
