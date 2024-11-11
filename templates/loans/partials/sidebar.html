@@ -61,33 +61,61 @@
                 <span class="menu-title">Clients</span>
             </a>
         </li>
-        <!-- Loan Applications -->
+
+        <!-- LOANS Menu -->
+
         <li class="nav-item">
-            <a class="nav-link" href="{% url 'loans:apply_for_loan' %}">
-                <i class="mdi mdi-file-document-box menu-icon"></i>
-                <span class="menu-title">Loan Apply</span>
+            <a class="nav-link" data-toggle="collapse" href="#loansMenu" aria-expanded="false"
+                aria-controls="loansMenu">
+                <i class="mdi mdi-bank menu-icon"></i>
+                <span class="menu-title">LOANS</span>
+                <i class="menu-arrow"></i>
             </a>
+            <div class="collapse" id="loansMenu">
+                <ul class="nav flex-column sub-menu">
+                    <!-- Loan Applications -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'loans:apply_for_loan' %}">
+                            <i class="mdi mdi-file-document-box menu-icon"></i>
+                            <span class="menu-title">Loan Apply</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'loans:loan_applications' %}">
+                            <i class="mdi mdi-format-list-bulleted menu-icon"></i>
+                            <span class="menu-title">Applications</span>
+                        </a>
+                    </li>
+
+                    <!-- Loan Disbursements -->
+                     
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'loans:disburse_loan' %}">
+                            <i class="mdi mdi-cash-register menu-icon"></i>
+                            <span class="menu-title">Disburse Loan</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'loans:disbursed_loans' %}">
+                            <i class="mdi mdi-file-check menu-icon"></i>
+                            <span class="menu-title">Disbursed</span>
+                        </a>
+                    </li>
+                    <!-- Loan Payments -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'loans:loan_repayment_create' %}">
+                            <i class="mdi mdi-credit-card menu-icon"></i>
+                            <span class="menu-title">Loan Repay</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </li>
 
-        <!-- Loan Disbursements -->
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'loans:disburse_loan' %}">
-                <i class="mdi mdi-cash-register menu-icon"></i>
-                <span class="menu-title">Disburse Loan</span>
-            </a>
-        </li>
-
-        <!-- Loan Payments -->
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'loans:loan_repayment_create' %}">
-                <i class="mdi mdi-credit-card menu-icon"></i>
-                <span class="menu-title">Loan Repay</span>
-            </a>
-        </li>
         <li class="nav-item">
             <a class="nav-link" href="{% url 'loans:ledger_report' %}">
                 <i class="mdi mdi-book-open menu-icon"></i>
-                All Legders
+                <span class="menu-title">All Legders</span>
             </a>
         </li>
 

@@ -292,6 +292,23 @@ class Loan(models.Model):
     #     # Save status update
     #     self.save(update_fields=["status"])
 
+    # def save(self, *args, **kwargs):
+        """Override save to ensure the account is set, calculate due date, interest, and status before saving."""
+        if not self.account:
+            try:
+                self.account = ChartOfAccounts.objects.get(
+                    account_number="1050"
+                )  # Loan Receivable
+            except ChartOfAccounts.DoesNotExist:
+                raise ValidationError(
+                    "Default loan account missing. Please contact support."
+                )
+
+        self.calculate_due_date()
+        self.calculate_interest()
+        self.update_status()
+        super().save(*args, **kwargs)
+    
 
     def update_status(self):
         """Update loan status based on current status, balance, and due date."""
@@ -321,47 +338,29 @@ class Loan(models.Model):
             if self.due_date and timezone.now().date() > self.due_date:
                 self.status = "overdue"
 
-        # Save the updated status
-        self.save(update_fields=["status"])
-
-
-    # def save(self, *args, **kwargs):
-    #     """Override save to ensure the account is set, calculate due date, interest, and status before saving."""
-    #     if not self.account:
-    #         try:
-    #             self.account = ChartOfAccounts.objects.get(
-    #                 account_number="1050"
-    #             )  # Loan Receivable
-    #         except ChartOfAccounts.DoesNotExist:
-    #             raise ValidationError(
-    #                 "Default loan account missing. Please contact support."
-    #             )
-
-    #     self.calculate_due_date()
-    #     self.calculate_interest()
-    #     self.update_status()
-    #     super().save(*args, **kwargs)
-    
     def save(self, *args, **kwargs):
         """Override save to ensure account setup and perform initial calculations before saving."""
-        # First save to ensure primary key is generated
-        if not self.pk:
-            super().save(*args, **kwargs)
+        # Check if this is the first time the object is being saved (object doesn't have a primary key yet)
+        is_new_instance = self.pk is None
         
+        if is_new_instance:
+            super().save(*args, **kwargs)  # Save initially to generate primary key
+
         # Set the default account only after the first save, when pk is available
         if not self.account:
             try:
                 self.account = ChartOfAccounts.objects.get(account_number="1050")  # Loan Receivable
             except ChartOfAccounts.DoesNotExist:
                 raise ValidationError("Default loan account missing. Please contact support.")
-        
+
         # Recalculate due date and interest
         self.calculate_due_date()
         self.calculate_interest()
-        
-        # Update status based on remaining balance and due date
-        self.update_status()
-        
+
+        # Update status based on remaining balance and due date, but only if it's not a new instance
+        if not is_new_instance:
+            self.update_status()
+
         # Final save with all fields updated
         super().save(*args, **kwargs)
 

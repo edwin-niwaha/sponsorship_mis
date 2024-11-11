@@ -1,6 +1,7 @@
 import logging
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from datetime import timedelta, date, datetime
 from django.db.models import Sum, F
@@ -84,7 +85,7 @@ def loan_apply(request):
 
             # Check if the selected borrower has an active (running) loan balance
             running_loan = Loan.objects.filter(
-                borrower=borrower, status="disbursed"
+                borrower=borrower, status__in=["overdue", "disbursed"]
             ).exists()
             if running_loan:
                 messages.warning(
@@ -396,8 +397,6 @@ def loan_repayment_create_view(request):
 
 
 # ===================================  loan_detail_view  ===================================
-
-
 @login_required
 @admin_or_manager_required
 def loan_detail_view(request, loan_id):
@@ -738,7 +737,10 @@ def loan_aging_report(request):
     # Fetch and categorize disbursed loans
     disbursed_loans = (
         Loan.objects.filter(
-            status="disbursed", due_date__isnull=False, due_date__lt=today
+            # status="disbursed", 
+            status__in=["overdue", "disbursed"],
+            due_date__isnull=False, 
+            due_date__lt=today
         )
         .annotate(
             total_paid=Sum(
@@ -826,7 +828,10 @@ def loan_arrears_report(request):
     # Fetch and categorize overdue loans
     overdue_loans = (
         Loan.objects.filter(
-            status="disbursed", due_date__isnull=False, due_date__lt=today
+            # status="disbursed", 
+            status__in=["overdue", "disbursed"],
+            due_date__isnull=False, 
+            due_date__lt=today
         )
         .annotate(
             total_repayment=Sum(
@@ -1048,11 +1053,35 @@ def portfolio_at_risk(request):
 
     return render(request, "loans/portfolio_at_risk_report.html", context)
 
+# =================================== non_performing_loans view ===================================
 
+def non_performing_loans(request):
+    # Get today's date
+    today = timezone.now().date()
+
+    # Filter for loans that are overdue or past due and not yet repaid
+    non_performing_loans = Loan.objects.filter(
+        status="overdue"
+    ) | Loan.objects.filter(
+        due_date__lt=today, status__in=["disbursed", "approved"]
+    )
+
+    # Calculate days overdue for each loan
+    for loan in non_performing_loans:
+        if loan.due_date and loan.due_date < today:
+            loan.days_overdue = (today - loan.due_date).days
+        else:
+            loan.days_overdue = 0
+
+    context = {
+        'non_performing_loans': non_performing_loans,
+        'today': today,  # Pass today's date to the template if needed
+        'table_title': "Non-Performing Loans",  # Title for the form
+    }
+    return render(request, 'loans/non_performing_loans.html', context)
 # =================================== import_loan_data view ===================================
 @login_required
 @admin_required
-@transaction.atomic
 def import_loan_data(request):
     if request.method == "POST":
         form = ImportLoansForm(request.POST, request.FILES)
@@ -1089,7 +1118,6 @@ def import_loan_data(request):
         {"form_name": "Import Loans - Excel", "form": form},
     )
 
-
 def process_and_import_loan_data(excel_file):
     errors = []
     try:
@@ -1105,8 +1133,8 @@ def process_and_import_loan_data(excel_file):
             interest_rate = row[5].value
             start_date = row[6].value
             loan_period_months = row[7].value
-            status = row[8].value
-            interest_method = row[9].value
+            # status = row[8].value
+            interest_method = row[8].value
 
             if full_name:
                 try:
@@ -1124,7 +1152,7 @@ def process_and_import_loan_data(excel_file):
                         interest_rate=interest_rate,
                         start_date=start_date,
                         loan_period_months=loan_period_months,
-                        status=status,
+                        # status=status,
                         interest_method=interest_method,
                     )
                 except Exception as e:
