@@ -1,7 +1,7 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms import model_to_dict
-from django.core.exceptions import ValidationError
-from django.core.validators import FileExtensionValidator
+
 from apps.inventory.supplier.models import Supplier
 
 # Define choices for product status

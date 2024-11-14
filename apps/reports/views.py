@@ -1,18 +1,17 @@
 from collections import defaultdict
-from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.shortcuts import render
-from django.db.models import Sum
+
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db.models import Sum
+from django.shortcuts import render
 
 from apps.child.models import Child
-from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
-from apps.sponsor.models import Sponsor
-from apps.staff.models import Staff
 from apps.finance.models import ChildPayments, StaffPayments
+from apps.sponsor.models import Sponsor
+from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
+from apps.staff.models import Staff
 from apps.users.decorators import (
     admin_or_manager_or_staff_required,
-    admin_or_manager_required,
-    admin_required,
 )
 
 # =================================== Helper Functions ===================================

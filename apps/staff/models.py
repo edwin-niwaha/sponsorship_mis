@@ -7,7 +7,6 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 # =================================== STAFF MODEL ===================================
 class Staff(models.Model):
-
     GENDER_CHOICES = (
         ("", "--choose gender--"),
         ("Male", "Male"),

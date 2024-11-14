@@ -1,8 +1,9 @@
+import os
+
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.db import models
 from PIL import Image
-from django.core.exceptions import ValidationError
-import os
 
 
 # =================================== Profile Model  ===================================
@@ -98,7 +99,7 @@ class Ebook(models.Model):
 def validate_file_extension(value):
     ext = os.path.splitext(value.name)[1]
     valid_extensions = [".pdf", ".xls", ".xlsx"]
-    if not ext.lower() in valid_extensions:
+    if ext.lower() not in valid_extensions:
         raise ValidationError(
             "Unsupported file extension. Only PDF and Excel files are allowed."
         )

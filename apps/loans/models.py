@@ -1,10 +1,12 @@
-from django.core.exceptions import ValidationError
+from decimal import ROUND_DOWN, Decimal
+
 from dateutil.relativedelta import relativedelta
-from decimal import Decimal, ROUND_DOWN
-from django.utils import timezone
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Sum
-from django.contrib.auth.models import User
+from django.utils import timezone
+
 from apps.client.models import Client
 
 PAYMENT_METHOD_CHOICES = [
@@ -209,7 +211,7 @@ class Loan(models.Model):
     def generate_payment_schedule(self):
         """Generate a detailed monthly payment schedule for the loan."""
         schedule = []
-        monthly_payment = self.calculate_monthly_payment()
+        self.calculate_monthly_payment()
         monthly_principal_payment = self.principal_amount / self.loan_period_months
         current_balance = self.principal_amount
 
@@ -236,7 +238,6 @@ class Loan(models.Model):
         if current_balance < 0:
             current_balance = 0
         if schedule:
-
             schedule[-1]["remaining_balance"] = current_balance
 
         return schedule
@@ -275,24 +276,24 @@ class Loan(models.Model):
             "interest_balance": interest_balance,
         }
 
-    # def update_status(self):
-    #     """Update loan status based on computed remaining balance and due date."""
-    #     # Calculate total remaining balance
-    #     balances = self.calculate_remaining_balances()
-    #     total_remaining_balance = (
-    #         balances["principal_balance"] + balances["interest_balance"]
-    #     )
+        # def update_status(self):
+        #     """Update loan status based on computed remaining balance and due date."""
+        #     # Calculate total remaining balance
+        #     balances = self.calculate_remaining_balances()
+        #     total_remaining_balance = (
+        #         balances["principal_balance"] + balances["interest_balance"]
+        #     )
 
-    #     # Update status based on the computed remaining balance and due date
-    #     if total_remaining_balance <= 0:
-    #         self.status = "repaid"
-    #     elif timezone.now().date() > self.due_date:
-    #         self.status = "overdue" if self.status == "approved" else self.status
+        #     # Update status based on the computed remaining balance and due date
+        #     if total_remaining_balance <= 0:
+        #         self.status = "repaid"
+        #     elif timezone.now().date() > self.due_date:
+        #         self.status = "overdue" if self.status == "approved" else self.status
 
-    #     # Save status update
-    #     self.save(update_fields=["status"])
+        #     # Save status update
+        #     self.save(update_fields=["status"])
 
-    # def save(self, *args, **kwargs):
+        # def save(self, *args, **kwargs):
         """Override save to ensure the account is set, calculate due date, interest, and status before saving."""
         if not self.account:
             try:
@@ -308,7 +309,6 @@ class Loan(models.Model):
         self.calculate_interest()
         self.update_status()
         super().save(*args, **kwargs)
-    
 
     def update_status(self):
         """Update loan status based on current status, balance, and due date."""
@@ -342,16 +342,20 @@ class Loan(models.Model):
         """Override save to ensure account setup and perform initial calculations before saving."""
         # Check if this is the first time the object is being saved (object doesn't have a primary key yet)
         is_new_instance = self.pk is None
-        
+
         if is_new_instance:
             super().save(*args, **kwargs)  # Save initially to generate primary key
 
         # Set the default account only after the first save, when pk is available
         if not self.account:
             try:
-                self.account = ChartOfAccounts.objects.get(account_number="1050")  # Loan Receivable
+                self.account = ChartOfAccounts.objects.get(
+                    account_number="1050"
+                )  # Loan Receivable
             except ChartOfAccounts.DoesNotExist:
-                raise ValidationError("Default loan account missing. Please contact support.")
+                raise ValidationError(
+                    "Default loan account missing. Please contact support."
+                )
 
         # Recalculate due date and interest
         self.calculate_due_date()

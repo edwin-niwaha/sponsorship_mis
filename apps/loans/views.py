@@ -1,40 +1,37 @@
 import logging
-from django.shortcuts import render, get_object_or_404, redirect
-from django.core.exceptions import ValidationError
-from django.db import IntegrityError
-from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from datetime import timedelta, date, datetime
-from django.db.models import Sum, F
-from django.utils import timezone
+from datetime import date
+
 from django.contrib import messages
-from openpyxl import load_workbook
-from .forms import (
-    LoanDisbursementForm,
-    LoanAllDisbursementForm,
-    LoanApplicationForm,
-    ChartOfAccountsForm,
-    LoanRepaymentForm,
-    ImportCOAForm,
-    ImportLoansForm,
-)
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from .models import (
-    LoanProduct,
-    Product,
-    ChartOfAccounts,
-    Loan,
-    LoanDisbursement,
-    LoanRepayment,
-    TransactionHistory,
-)
+from django.db.models import F, Sum
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from openpyxl import load_workbook
+
+from apps.client.models import Client
 from apps.users.decorators import (
     admin_or_manager_or_staff_required,
     admin_or_manager_required,
     admin_required,
 )
 
-from apps.client.models import Client
+from .forms import (
+    ChartOfAccountsForm,
+    ImportCOAForm,
+    ImportLoansForm,
+    LoanAllDisbursementForm,
+    LoanApplicationForm,
+    LoanDisbursementForm,
+    LoanRepaymentForm,
+)
+from .models import (
+    ChartOfAccounts,
+    Loan,
+    TransactionHistory,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -253,12 +250,18 @@ def disburse_all_loans(request):
     # Get all approved loans
     # approved_loans = Loan.objects.filter(status="approved")
     approved_loans = Loan.objects.filter(status__in=["overdue", "approved"])
-    
+
     # Ensure there are approved loans to disburse
     if not approved_loans:
-        messages.warning(request, "No approved loans available for disbursement.", extra_tags="bg-warning")
-        return redirect("loans:disbursed_loans")  # Redirect to a loan list or another appropriate page
-    
+        messages.warning(
+            request,
+            "No approved loans available for disbursement.",
+            extra_tags="bg-warning",
+        )
+        return redirect(
+            "loans:disbursed_loans"
+        )  # Redirect to a loan list or another appropriate page
+
     form_title = "Disburse All Approved Loans"
     form = LoanAllDisbursementForm(request.POST or None)
 
@@ -268,11 +271,19 @@ def disburse_all_loans(request):
             disbursed_count = form.save(approved_loans)
 
             # Show a message with how many loans were disbursed
-            messages.success(request, f"{disbursed_count} loans have been successfully disbursed.", extra_tags="bg-success")
+            messages.success(
+                request,
+                f"{disbursed_count} loans have been successfully disbursed.",
+                extra_tags="bg-success",
+            )
             return redirect("loans:disburse_all_loans")
 
         else:
-            messages.error(request, "There was an error with your submission. Please check the form.", extra_tags="bg-danger")
+            messages.error(
+                request,
+                "There was an error with your submission. Please check the form.",
+                extra_tags="bg-danger",
+            )
 
     return render(
         request,
@@ -282,7 +293,6 @@ def disburse_all_loans(request):
             "form": form,
         },
     )
-
 
 
 # =================================== Approve Loan View ===================================
@@ -321,7 +331,7 @@ def approve_all_loans(request):
 
     messages.success(
         request,
-        f"All pending loans have been approved successfully.",
+        "All pending loans have been approved successfully.",
         extra_tags="bg-success",
     )
     return redirect("loans:loan_applications")
@@ -737,10 +747,10 @@ def loan_aging_report(request):
     # Fetch and categorize disbursed loans
     disbursed_loans = (
         Loan.objects.filter(
-            # status="disbursed", 
+            # status="disbursed",
             status__in=["overdue", "disbursed"],
-            due_date__isnull=False, 
-            due_date__lt=today
+            due_date__isnull=False,
+            due_date__lt=today,
         )
         .annotate(
             total_paid=Sum(
@@ -828,10 +838,10 @@ def loan_arrears_report(request):
     # Fetch and categorize overdue loans
     overdue_loans = (
         Loan.objects.filter(
-            # status="disbursed", 
+            # status="disbursed",
             status__in=["overdue", "disbursed"],
-            due_date__isnull=False, 
-            due_date__lt=today
+            due_date__isnull=False,
+            due_date__lt=today,
         )
         .annotate(
             total_repayment=Sum(
@@ -1053,16 +1063,16 @@ def portfolio_at_risk(request):
 
     return render(request, "loans/portfolio_at_risk_report.html", context)
 
+
 # =================================== non_performing_loans view ===================================
+
 
 def non_performing_loans(request):
     # Get today's date
     today = timezone.now().date()
 
     # Filter for loans that are overdue or past due and not yet repaid
-    non_performing_loans = Loan.objects.filter(
-        status="overdue"
-    ) | Loan.objects.filter(
+    non_performing_loans = Loan.objects.filter(status="overdue") | Loan.objects.filter(
         due_date__lt=today, status__in=["disbursed", "approved"]
     )
 
@@ -1074,11 +1084,13 @@ def non_performing_loans(request):
             loan.days_overdue = 0
 
     context = {
-        'non_performing_loans': non_performing_loans,
-        'today': today,  # Pass today's date to the template if needed
-        'table_title': "Non-Performing Loans",  # Title for the form
+        "non_performing_loans": non_performing_loans,
+        "today": today,  # Pass today's date to the template if needed
+        "table_title": "Non-Performing Loans",  # Title for the form
     }
-    return render(request, 'loans/non_performing_loans.html', context)
+    return render(request, "loans/non_performing_loans.html", context)
+
+
 # =================================== import_loan_data view ===================================
 @login_required
 @admin_required
@@ -1117,6 +1129,7 @@ def import_loan_data(request):
         "loans/import_loans.html",
         {"form_name": "Import Loans - Excel", "form": form},
     )
+
 
 def process_and_import_loan_data(excel_file):
     errors = []
@@ -1175,13 +1188,12 @@ def process_and_import_loan_data(excel_file):
 
     return errors
 
+
 # =================================== loan_reports_dashboard view ===================================
 @login_required
 def loan_reports_dashboard(request):
     """
     Renders the reports dashboard with report cards for users with the 'administrator' role.
     """
-    context = {
-        'form_title': 'Reports Dashboard [loans]'  # Add the title here
-    }
-    return render(request, 'loans/loan_reports.html', context)
+    context = {"form_title": "Reports Dashboard [loans]"}  # Add the title here
+    return render(request, "loans/loan_reports.html", context)

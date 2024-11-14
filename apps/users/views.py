@@ -24,6 +24,7 @@ from apps.users.decorators import (
 
 from .forms import (
     ContactForm,
+    DocumentForm,
     EbookForm,
     LoginForm,
     PolicyForm,
@@ -31,15 +32,14 @@ from .forms import (
     UpdateProfileAllForm,
     UpdateProfileForm,
     UpdateUserForm,
-    DocumentForm,
 )
 from .models import (
+    Contact,
+    DocumentUpload,
     Ebook,
     Policy,
     PolicyRead,
     Profile,
-    Contact,
-    DocumentUpload,
 )
 
 
@@ -317,7 +317,6 @@ def update_policy(request, pk, template_name="accounts/policy_upload.html"):
             )
             return redirect("policy_list")
     else:
-
         form = PolicyForm(instance=policy)
 
     context = {"form_name": "POLICY UPDATE", "form": form}

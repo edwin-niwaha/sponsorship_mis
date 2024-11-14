@@ -33,3 +33,11 @@ python manage.py test child.tests.test_models
 
 DOMAIN NAME 
 sponsorwithpendeza.org
+
+LINTING
+ruff check .
+ruff check . --fix
+
+Format using black
+black .
+

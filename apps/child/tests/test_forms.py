@@ -51,7 +51,6 @@ class ChildFormTest(TestCase):
 
 
 class ChildProfilePictureFormTests(TestCase):
-
     def setUp(self):
         self.form_class = ChildProfilePictureForm
 
@@ -129,7 +128,6 @@ class ChildCorrespondenceFormTests(TestCase):
 
 # =================================== TEST CHILD DEPATURE ===================================
 class ChildIncidentFormTests(TestCase):
-
     def test_invalid_file_type(self):
         # Create a fake text file (not a PDF)
         text_file = InMemoryUploadedFile(

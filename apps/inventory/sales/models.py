@@ -1,8 +1,10 @@
-from django.db import models
+from decimal import Decimal
+
 import django.utils.timezone
+from django.db import models
+
 from apps.inventory.customers.models import Customer
 from apps.inventory.products.models import Product
-
 
 PAYMENT_METHOD_CHOICES = [
     ("CREDIT_CARD", "Credit Card"),
@@ -75,6 +77,10 @@ class SaleDetail(models.Model):
 
     class Meta:
         db_table = "SaleDetails"
+
+    def calculate_profit(self):
+        # Convert price to Decimal to ensure compatibility with cost, then calculate profit
+        return (Decimal(self.price) - self.product.cost) * self.quantity
 
     def __str__(self) -> str:
         return (

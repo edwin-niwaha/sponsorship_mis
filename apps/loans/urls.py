@@ -1,4 +1,5 @@
 from django.urls import path
+
 from . import views
 
 app_name = "loans"
@@ -8,7 +9,7 @@ urlpatterns = [
     path("apply/", views.loan_apply, name="apply_for_loan"),
     path("applications/", views.loan_applications, name="loan_applications"),
     path("disbursed/", views.disbursed_loans_view, name="disbursed_loans"),
-    path('disburse_all_loans/', views.disburse_all_loans, name='disburse_all_loans'),
+    path("disburse_all_loans/", views.disburse_all_loans, name="disburse_all_loans"),
     path(
         "loan/<int:loan_id>/repayment-schedule/",
         views.repayment_schedule,
@@ -33,7 +34,9 @@ urlpatterns = [
     path(
         "portfolio-at-risk/", views.portfolio_at_risk, name="portfolio_at_risk_report"
     ),
-     path('loans/non-performing/', views.non_performing_loans, name='non_performing_loans'),
+    path(
+        "loans/non-performing/", views.non_performing_loans, name="non_performing_loans"
+    ),
     path("import/", views.import_loan_data, name="import_loan_data"),
     # Chart of accounts URLs
     path("accounts/add/", views.add_chart_of_account_view, name="add_chart_of_account"),
@@ -55,5 +58,5 @@ urlpatterns = [
         views.ledger_report_view,
         name="ledger_report_with_id",
     ),
-    path('loans-dash/', views.loan_reports_dashboard, name='loan_reports_dashboard'),
+    path("loans-dash/", views.loan_reports_dashboard, name="loan_reports_dashboard"),
 ]

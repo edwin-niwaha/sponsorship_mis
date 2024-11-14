@@ -1,48 +1,89 @@
 import json
 import logging
-from django.http import JsonResponse
-from django.db import transaction
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_GET
-from django.http import HttpResponse
-from django.shortcuts import render, redirect, get_object_or_404
-from core.wsgi import *
-from xhtml2pdf import pisa
-from django.template.loader import get_template
+from django.db import transaction
 from django.db.models import Sum
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+
 from apps.inventory.customers.models import Customer
 from apps.inventory.products.models import Product
-from .models import Sale, SaleDetail
 
 # Import custom decorators
 from apps.users.decorators import (
     admin_or_manager_or_staff_required,
-    admin_or_manager_required,
     admin_required,
 )
+from core.wsgi import *
+
+from .models import Sale, SaleDetail
 
 logger = logging.getLogger(__name__)
 
 
 # =================================== Sale list view ===================================
+# @login_required
+# @admin_or_manager_or_staff_required
+# def sales_list_view(request):
+#     sales = Sale.objects.all().select_related("customer").prefetch_related("items").order_by("id")
+#     grand_total = sales.aggregate(Sum("grand_total"))["grand_total__sum"] or 0
+#     total_items = sum(sale.sum_items() for sale in sales)  # As before, calling method
+
+#     context = {
+#         "table_title": "sales",
+#         "sales": sales,
+#         "grand_total": grand_total,
+#         "total_items": total_items,
+#     }
+
+#     return render(request, "inventory/sales/sales.html", context=context)
+
+
 @login_required
 @admin_or_manager_or_staff_required
 def sales_list_view(request):
+    # Fetch all sales, including customer and product inventory details
     sales = (
         Sale.objects.all()
         .select_related("customer")
-        .prefetch_related("items")
+        .prefetch_related("items__product__inventory")
         .order_by("id")
     )
-    grand_total = sales.aggregate(Sum("grand_total"))["grand_total__sum"] or 0
-    total_items = sum(sale.sum_items() for sale in sales)  # As before, calling method
 
+    # Calculate grand total for all sales
+    grand_total = sales.aggregate(Sum("grand_total"))["grand_total__sum"] or 0
+
+    # Calculate total items sold across all sales
+    total_items = sum(sale.sum_items() for sale in sales)
+
+    # Initialize totals for profit and stock balance
+    total_profit = 0
+    sales_with_details = []
+
+    # Iterate over each sale to calculate profit and stock balance
+    for sale in sales:
+        sale_profit = sum(item.calculate_profit() for item in sale.items.all())
+
+        # Attach the calculated profit and stock balance to the sale instance
+        sale.profit = sale_profit
+
+        # Add to overall totals
+        total_profit += sale_profit
+
+        # Add the sale to the list with details
+        sales_with_details.append(sale)
+
+    # Context to pass to the template
     context = {
-        "table_title": "sales",
-        "sales": sales,
-        "grand_total": grand_total,
-        "total_items": total_items,
+        "table_title": "Sales List",  # Title for the table
+        "sales": sales_with_details,  # List of sales with detailed info
+        "grand_total": grand_total,  # Total grand total for all sales
+        "total_items": total_items,  # Total number of items sold across all sales
+        "total_profit": total_profit,  # Total profit from all sales
     }
 
     return render(request, "inventory/sales/sales.html", context=context)

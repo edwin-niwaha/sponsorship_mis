@@ -1,10 +1,10 @@
 from django import forms
-from django.db.models import F, Q
-from .models import LoanDisbursement, Loan, ChartOfAccounts, LoanRepayment
-from apps.client.models import Client
+from django.db.models import Q
 from django.utils import timezone
-from decimal import Decimal, ROUND_DOWN
 
+from apps.client.models import Client
+
+from .models import ChartOfAccounts, Loan, LoanDisbursement, LoanRepayment
 
 # contants
 min_account_number = 1010
@@ -156,10 +156,11 @@ class LoanDisbursementForm(forms.ModelForm):
         loan = cleaned_data.get("loan")
 
         if loan:
-            disbursed_amount = loan.principal_amount  # Access the principal amount
+            pass  # Access the principal amount
             # Additional validation logic can go here if necessary
 
         return cleaned_data
+
 
 # =================================== LoanAllDisbursementForm ===================================
 
@@ -196,6 +197,7 @@ class LoanDisbursementForm(forms.ModelForm):
 #             loan.status = "disbursed"
 #             loan.save()
 
+
 class LoanAllDisbursementForm(forms.ModelForm):
     account = forms.ModelChoiceField(
         queryset=ChartOfAccounts.objects.filter(
@@ -209,7 +211,7 @@ class LoanAllDisbursementForm(forms.ModelForm):
 
     class Meta:
         model = LoanDisbursement
-        fields = ['account', 'payment_method']
+        fields = ["account", "payment_method"]
         widgets = {
             "payment_method": forms.Select(attrs={"class": "form-control"}),
         }
@@ -225,9 +227,9 @@ class LoanAllDisbursementForm(forms.ModelForm):
             # Create a new LoanDisbursement instance for each loan
             disbursement = LoanDisbursement(
                 loan=loan,
-                account=self.cleaned_data['account'],
-                payment_method=self.cleaned_data['payment_method'],
-                disbursement_date=timezone.now()  # You can adjust the date as needed
+                account=self.cleaned_data["account"],
+                payment_method=self.cleaned_data["payment_method"],
+                disbursement_date=timezone.now(),  # You can adjust the date as needed
             )
             disbursement.save()  # Save the disbursement record
             disbursed_count += 1

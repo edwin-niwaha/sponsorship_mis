@@ -1,7 +1,7 @@
-from apps.users.models import Profile, Contact
-from apps.inventory.products.models import Product
-from django.contrib.auth.decorators import login_required
 from django.db.models import F
+
+from apps.inventory.products.models import Product
+from apps.users.models import Contact, Profile
 
 
 def guest_profiles_context(request):

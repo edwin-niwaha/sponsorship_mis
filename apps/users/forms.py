@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
 
-from .models import Contact, Ebook, Policy, Profile, DocumentUpload
+from .models import Contact, DocumentUpload, Ebook, Policy, Profile
 
 
 # =================================== Register  ===================================
@@ -155,7 +155,6 @@ class UpdateProfileForm(forms.ModelForm):
 
 
 class UpdateProfileAllForm(forms.ModelForm):
-
     class Meta:
         model = Profile
         fields = ["role"]

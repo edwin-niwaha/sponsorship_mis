@@ -18,7 +18,6 @@ from ..models import (
 
 # =================================== TEST CHILD MODEL ===================================
 class ChildModelTest(TestCase):
-
     @classmethod
     def setUpTestData(cls):
         cls.valid_image = SimpleUploadedFile(
@@ -157,7 +156,6 @@ class ChildModelTest(TestCase):
 
 # =================================== TEST CHILD PROFILE PICTURES MODEL ===================================
 class ChildProfilePictureModelTest(TestCase):
-
     def setUp(self):
         # Create a test Child instance
         self.child = Child.objects.create(
@@ -195,7 +193,6 @@ class ChildProfilePictureModelTest(TestCase):
 
 # =================================== TEST CHILD PROGRESS MODEL ===================================
 class ChildProgressModelTest(TestCase):
-
     def setUp(self):
         # Create a test Child instance
         self.child = Child.objects.create(
@@ -298,7 +295,6 @@ class ChildProgressModelTest(TestCase):
 
 # =================================== TEST CHILD CORRESPONDENCE MODEL ===================================
 class ChildCorrespondenceModelTest(TestCase):
-
     def setUp(self):
         self.child = Child.objects.create(
             full_name="John Doe",
@@ -378,7 +374,6 @@ class ChildCorrespondenceModelTest(TestCase):
 
 # =================================== TEST CHILD INCIDENT MODEL ===================================
 class IncidentModelTest(TestCase):
-
     def setUp(self):
         # Create a Child instance
         self.child = Child.objects.create(

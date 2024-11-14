@@ -1,23 +1,20 @@
+import json
+from datetime import date, timedelta
+
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Sum, Avg
+from django.db.models import Count, F, FloatField, Sum
+from django.db.models.functions import Coalesce, ExtractYear
+from django.http import JsonResponse
 from django.shortcuts import render
+
+from apps.child.models import Child
+from apps.finance.models import ChildPayments, StaffPayments
+from apps.inventory.products.models import Category, Product
+from apps.inventory.sales.models import Sale
+from apps.loans.models import Loan, LoanRepayment
+from apps.sponsor.models import Sponsor
 from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
 from apps.users.decorators import admin_or_manager_or_staff_required
-from apps.child.models import Child
-from apps.sponsor.models import Sponsor
-from apps.finance.models import ChildPayments, StaffPayments
-from apps.users.models import Profile
-import json
-from django.http import JsonResponse
-from django.db.models.functions import ExtractYear
-from datetime import date, timedelta
-from django.db.models import Sum, FloatField, F
-from django.db.models.functions import Coalesce
-from django.db.models import Min, Max
-
-from apps.inventory.products.models import Product, Category
-from apps.inventory.sales.models import Sale, SaleDetail
-from apps.loans.models import Loan, LoanRepayment
 
 from .utils import (
     get_top_selling_products,
@@ -161,7 +158,7 @@ def get_sponsors_data(request):
     except Sponsor.DoesNotExist:
         return JsonResponse({"error": "No sponsor data found"}, status=404)
 
-    except Exception as e:
+    except Exception:
         # Log the exception here if logging is set up
         return JsonResponse(
             {"error": "An error occurred while fetching the data"}, status=500
@@ -187,7 +184,7 @@ def get_children_data(request):
     except Child.DoesNotExist:
         return JsonResponse({"error": "No children data found"}, status=404)
 
-    except Exception as e:
+    except Exception:
         # Log the exception here if logging is set up
         return JsonResponse(
             {"error": "An error occurred while fetching the data"}, status=500
@@ -228,7 +225,7 @@ def get_combined_data(request):
     except Child.DoesNotExist:
         return JsonResponse({"error": "No children data found"}, status=404)
 
-    except Exception as e:
+    except Exception:
         # Log the exception here if logging is set up
         return JsonResponse(
             {"error": "An error occurred while fetching the data"}, status=500

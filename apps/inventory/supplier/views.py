@@ -1,14 +1,15 @@
-from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from .models import Supplier
-from .forms import SupplierForm
+from django.shortcuts import get_object_or_404, redirect, render
+
 from apps.users.decorators import (
     admin_or_manager_or_staff_required,
-    admin_or_manager_required,
     admin_required,
 )
+
+from .forms import SupplierForm
+from .models import Supplier
 
 
 # =================================== supplier list view ===================================

@@ -1,13 +1,14 @@
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.management import call_command
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from openpyxl import load_workbook
-
-from django.core.management import call_command
 
 from apps.users.decorators import (
     admin_or_manager_or_staff_required,
@@ -20,8 +21,6 @@ from .models import (
     Sponsor,
     SponsorDeparture,
 )
-
-import logging
 
 logger = logging.getLogger(__name__)
 
