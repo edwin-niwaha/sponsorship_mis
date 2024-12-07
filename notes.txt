@@ -34,6 +34,9 @@ python manage.py test child.tests.test_models
 DOMAIN NAME 
 sponsorwithpendeza.org
 
+Before deploy
+python manage.py collectstatic
+
 LINTING
 ruff check .
 ruff check . --fix
