@@ -1,6 +1,8 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms import model_to_dict
+from django.core.validators import FileExtensionValidator
+from cloudinary.models import CloudinaryField
 
 from apps.inventory.supplier.models import Supplier
 
@@ -96,7 +98,8 @@ class ProductImage(models.Model):
     product = models.ForeignKey(
         Product, related_name="images", on_delete=models.CASCADE
     )
-    image = models.ImageField(upload_to="product_images/", verbose_name="Product Image")
+    # image = models.ImageField(upload_to="product_images/", verbose_name="Product Image")
+    image = CloudinaryField("image", blank=True, null=True)
     is_default = models.BooleanField(default=False, verbose_name="Is Default")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated at")

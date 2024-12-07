@@ -2,106 +2,115 @@
 {% load static %}
 
 {% block content %}
-<div class="container-fluid">
+  <div class="container-fluid">
     <div class="row mb-3">
-        <div class="col-md-12 d-flex justify-content-between align-items-center">
-            <a href="{% url 'supplier:supplier_add' %}" class="btn btn-dark ml-2">
-                <i class="mdi mdi-plus mr-2"></i>
-                Add Supplier
-            </a>
-            <div class="d-flex">
-                <button title="Print" type="button" class="btn btn-success ml-2" onclick="printDiv('printMe')">
-                    <i class="mdi mdi-printer btn-icon-prepend"></i>
-                </button>
-            </div>
+      <div class="col-md-12 d-flex justify-content-between align-items-center">
+        <a href="{% url 'supplier:supplier_add' %}" class="btn btn-dark ml-2">
+          <i class="mdi mdi-plus mr-2"></i>
+          Add Supplier
+        </a>
+        <div class="d-flex">
+          <button title="Print" type="button" class="btn btn-success ml-2" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
         </div>
+      </div>
     </div>
 
     <!-- DataTable -->
     <div id="printMe" class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h3>{{ table_title|upper }}</h3>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="my-table" id="dataTable">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>Contact Name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Address</th>
-                            <th class="print-hide" colspan="3" class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for supplier in suppliers %}
-                        <tr>
-                            <td>{{ forloop.counter }}</td>
-                            <td>{{ supplier.name }}</td>
-                            <td>{{ supplier.contact_name }}</td>
-                            <td>{{ supplier.email }}</td>
-                            <td>{{ supplier.phone }}</td>
-                            <td>{{ supplier.address }}</td>
-                            <td class="text-center print-hide">
-                                <!-- Update button -->
-                                <a href="{% url 'supplier:supplier_update' supplier.id %}" class="text-decoration-none"
-                                    onclick="return confirm('Are you sure you want to update this record?');">
-                                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="tooltip"
-                                        title="Update supplier">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                </a>
-                            </td>
-                            <td class="text-center print-hide">
-                                {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                                <!-- Delete button and modal -->
-                                <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal"
-                                    data-bs-target="#deleteModal{{ supplier.id }}" title="Delete supplier">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+      <div class="card-header py-3">
+        <h3>{{ table_title|upper }}</h3>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="my-table" id="dataTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Contact Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th class="print-hide" colspan="3" class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for supplier in suppliers %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>{{ supplier.name }}</td>
+                  <td>{{ supplier.contact_name }}</td>
+                  <td>{{ supplier.email }}</td>
+                  <td>{{ supplier.phone }}</td>
+                  <td>{{ supplier.address }}</td>
+                  <td class="text-center print-hide">
+                    <!-- Update button -->
+                    <a href="{% url 'supplier:supplier_update' supplier.id %}" class="text-decoration-none" onclick="return confirm('Are you sure you want to update this record?');"><button type="button" class="btn btn-warning btn-sm" data-bs-toggle="tooltip" title="Update supplier"><i class="bi bi-pencil"></i></button></a>
+                  </td>
+                  <td class="text-center print-hide">
+                    {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+                      <!-- Delete button and modal -->
+                      <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ supplier.id }}" title="Delete supplier"><i class="bi bi-trash"></i></button>
 
-                                <!-- Delete Modal -->
-                                <div class="modal fade" id="deleteModal{{ supplier.id }}" tabindex="-1"
-                                    aria-labelledby="deleteModalLabel{{ supplier.id }}" aria-hidden="true">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="deleteModalLabel{{ supplier.id }}">Delete
-                                                    Supplier
-                                                </h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                    aria-label="Close">X</button>
-                                            </div>
-                                            <div class="modal-body">
-                                                Are you sure you want to delete the Supplier
-                                                : <h3>
-                                                    {{ supplier.name }}?
-                                                </h3>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                                    Cancel
-                                                </button>
-                                                <a href="{% url 'supplier:supplier_delete' supplier.id %}"
-                                                    class="text-decoration-none">
-                                                    <button type="button" class="btn btn-danger">Delete</button>
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                      <!-- Delete Modal -->
+                      <div class="modal fade" id="deleteModal{{ supplier.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ supplier.id }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title" id="deleteModalLabel{{ supplier.id }}">Delete Supplier</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">X</button>
+                            </div>
+                            <div class="modal-body">
+                              Are you sure you want to delete the Supplier : <h3>{{ supplier.name }}?</h3>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                              <a href="{% url 'supplier:supplier_delete' supplier.id %}" class="text-decoration-none"><button type="button" class="btn btn-danger">Delete</button></a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
 
+          <div class="d-flex justify-content-between align-items-center mt-4">
+            <div>
+              <span>Showing {{ suppliers.start_index }} to {{ suppliers.end_index }} of {{ suppliers.paginator.count }} suppliers</span>
             </div>
+            <nav aria-label="Page navigation">
+              <ul class="pagination justify-content-end">
+                {% if suppliers.has_previous %}
+                  <li class="page-item">
+                    <a class="page-link" href="?page={{ suppliers.previous_page_number }}" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a>
+                  </li>
+                {% endif %}
+
+                {% for num in suppliers.paginator.page_range %}
+                  {% if suppliers.number == num %}
+                    <li class="page-item active">
+                      <a class="page-link">{{ num }}</a>
+                    </li>
+                  {% elif num > suppliers.number|add:'-3' and num < suppliers.number|add:'3' %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                  {% endif %}
+                {% endfor %}
+
+                {% if suppliers.has_next %}
+                  <li class="page-item">
+                    <a class="page-link" href="?page={{ suppliers.next_page_number }}" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>
+                  </li>
+                {% endif %}
+              </ul>
+            </nav>
+          </div>
         </div>
+      </div>
     </div>
-</div>
-{% endblock content %}
+  </div>
+{% endblock %}

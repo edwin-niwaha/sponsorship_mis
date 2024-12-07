@@ -337,7 +337,7 @@ def delete_sponsors(request):
         return HttpResponseRedirect(reverse("imported_sponsors"))
 
 
-# ===================================  'Update all phone numbers to include a prefix + sign' ===================================
+# ===================================  'Update a prefix + sign' ===================================
 @login_required
 @admin_required
 def update_sponsor_contacts(request):

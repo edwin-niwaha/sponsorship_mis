@@ -1,0 +1,118 @@
+{% extends 'sdms/base_rpts.html' %}
+{% load static %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+  <div class="form-content my-5 p-4">
+    <div class="container-fluid">
+      <div class="card shadow-sm">
+        <!-- Card Header -->
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <!-- Back Button -->
+          <a href="{% url 'inventory-dashboard' %}" class="btn btn-info font-weight-bold"><i class="mdi mdi-arrow-left-bold mr-2"></i> Go back</a>
+
+          <!-- Filter Form -->
+          <form method="GET" action="{% url 'sales:sales_report' %}" class="mb-0 d-flex align-items-center">
+            <div class="row mb-0">
+              <div class="col-md-6">{{ form.start_date|as_crispy_field }}</div>
+              <div class="col-md-6">{{ form.end_date|as_crispy_field }}</div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3 ml-2">Filter</button>
+          </form>
+
+          <!-- Print Button -->
+          <button title="Print" type="button" class="btn btn-success ml-2" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i> Print</button>
+        </div>
+
+        <!-- Card Body -->
+        <div id="printMe" class="card-body">
+          <!-- Report Header -->
+          <div class="report-header text-center my-2">
+            <h5>
+              {{ table_title|upper }}
+              FROM <span class="text-primary">{{ start_date }}</span> TO
+              <span class="text-primary">{{ end_date }}</span>
+            </h5>
+          </div>
+
+          <!-- Data Table -->
+          <div id="printMe" class="card shadow mb-4">
+            <div class="card-header py-3">
+              <h3>{{ table_title|upper }}</h3>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="my-table" id="dataTable">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>S.ID</th>
+                      <th>Date</th>
+                      <th>Customer</th>
+                      <th>Product</th>
+                      <th class="text-center">Sold</th>
+                      <th class="text-center">Sales Revenue</th>
+                      <th class="text-center">Net Profit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for s in sales %}
+                      <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ s.id }}</td>
+                        <td>{{ s.trans_date }}</td>
+                        <td>{{ s.customer.first_name }}</td>
+                        <td>
+                          <ul class="list-group list-group-flush">
+                            {% for detail in s.items.all %}
+                              <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div>
+                                  <strong>{{ detail.quantity }}x</strong>
+                                  {{ detail.product.name }}
+                                </div>
+                                <div class="text-end">
+                                  <small class="text-muted">
+                                    Cost:
+                                    {{ detail.product.cost|floatformat:'2'|intcomma }}
+                                  </small><br />
+                                  <small class="text-muted">Price: {{ detail.product.price|floatformat:'2'|intcomma }}</small>
+                                </div>
+                              </li>
+                            {% empty %}
+                              <li class="list-group-item text-danger">No items available.</li>
+                            {% endfor %}
+                          </ul>
+                        </td>
+
+                        <td class="text-center">{{ s.sum_items }}</td>
+                        <td class="text-right">{{ s.grand_total|floatformat:'2'|intcomma }}</td>
+                        <td class="text-right">{{ s.profit|floatformat:'2'|intcomma }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colspan="4" class="text-right">
+                        <strong>Total</strong>
+                      </td>
+                      <td class="text-center">
+                        <strong>{{ total_items }}</strong>
+                      </td>
+                      <td class="text-right">
+                        <strong>{{ grand_total|floatformat:'2'|intcomma }}</strong>
+                      </td>
+                      <td class="text-right">
+                        <strong>{{ total_profit|floatformat:'2'|intcomma }}</strong>
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

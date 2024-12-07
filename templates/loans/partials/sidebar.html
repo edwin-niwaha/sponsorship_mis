@@ -58,7 +58,13 @@
         <li class="nav-item">
             <a class="nav-link" href="{% url 'client_list' %}">
                 <i class="mdi mdi-account menu-icon"></i>
-                <span class="menu-title">Clients</span>
+                <span class="menu-title">Main Clients</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'client_list' %}">
+                <i class="mdi mdi-account-multiple menu-icon"></i>
+                <span class="menu-title">7 Hills Clients</span>
             </a>
         </li>
 
@@ -88,7 +94,7 @@
                     </li>
 
                     <!-- Loan Disbursements -->
-                     
+
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'loans:disburse_loan' %}">
                             <i class="mdi mdi-cash-register menu-icon"></i>

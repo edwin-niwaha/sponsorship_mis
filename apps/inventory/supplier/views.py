@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -11,14 +12,22 @@ from apps.users.decorators import (
 from .forms import SupplierForm
 from .models import Supplier
 
-
 # =================================== supplier list view ===================================
+
+
 @login_required
 @admin_or_manager_or_staff_required
 def supplier_list(request):
     suppliers = Supplier.objects.all()
+    # Pagination setup
+    paginator = Paginator(suppliers, 25)  # Display 25 suppliers per page
+    page_number = request.GET.get("page")  # Get the page number from the query string
+    page_obj = paginator.get_page(page_number)  # Get the current page
+
     return render(
-        request, "inventory/supplier/suppliers.html", {"suppliers": suppliers}
+        request,
+        "inventory/supplier/suppliers.html",
+        {"suppliers": page_obj},  # Pass the paginated object to the template
     )
 
 

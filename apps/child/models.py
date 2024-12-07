@@ -1,5 +1,6 @@
 import datetime
 from datetime import date
+from cloudinary.models import CloudinaryField
 
 from django.core.validators import (
     FileExtensionValidator,
@@ -69,11 +70,18 @@ class Child(models.Model):
             MaxValueValidator(limit_value=datetime.date.today()),
         ],
     )
-    picture = models.ImageField(
-        default="default.jpg",
-        upload_to="current_child_profiles/",
-        verbose_name="Upload Image(jpg, jpeg, png)",
+    # picture = models.ImageField(
+    #     default="default.jpg",
+    #     upload_to="current_child_profiles/",
+    #     verbose_name="Upload Image(jpg, jpeg, png)",
+    #     validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
+    # )
+
+    picture = CloudinaryField(
+        "child_picture",
         validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
+        null=True,
+        blank=True,
     )
     weight = models.DecimalField(
         max_digits=5,
@@ -257,15 +265,21 @@ class ChildProfilePicture(models.Model):
         related_name="profile_picture",
         verbose_name="Child",
     )
-    picture = models.ImageField(
-        default="current_child_profiles/default.jpg",
-        upload_to="current_child_profiles/",
-        blank=True,
-        null=True,
-        verbose_name="Upload Image(jpg, jpeg, png)",
-        validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
-    )
+    # picture = models.ImageField(
+    #     default="current_child_profiles/default.jpg",
+    #     upload_to="current_child_profiles/",
+    #     blank=True,
+    #     null=True,
+    #     verbose_name="Upload Image(jpg, jpeg, png)",
+    #     validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
+    # )
 
+    picture = CloudinaryField(
+        "child_picture",
+        validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
+        null=True,
+        blank=True,
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name="Uploaded at")
     is_current = models.BooleanField(default=False, verbose_name="Is Current Picture")
 

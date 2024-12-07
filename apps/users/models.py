@@ -1,12 +1,44 @@
 import os
-
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+import requests
+from io import BytesIO
+from cloudinary.uploader import upload
+from cloudinary.models import CloudinaryField
+from django.core.files.uploadedfile import InMemoryUploadedFile
+
 from django.db import models
 from PIL import Image
 
-
 # =================================== Profile Model  ===================================
+# class Profile(models.Model):
+#     ROLE_CHOICES = (
+#         ("administrator", "Administrator"),
+#         ("manager", "Manager"),
+#         ("staff", "Staff"),
+#         ("guest", "Guest"),
+#     )
+
+#     user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+#     role = models.CharField(max_length=15, choices=ROLE_CHOICES, default="guest")
+#     avatar = models.ImageField(default="default.jpg", upload_to="profile_images")
+#     bio = models.TextField()
+
+#     def __str__(self):
+#         return self.user.username
+
+#     # resizing images
+#     def save(self, *args, **kwargs):
+#         super().save()
+
+#         img = Image.open(self.avatar.path)
+
+#         if img.height > 100 or img.width > 100:
+#             new_img = (100, 100)
+#             img.thumbnail(new_img)
+#             img.save(self.avatar.path)
+
 class Profile(models.Model):
     ROLE_CHOICES = (
         ("administrator", "Administrator"),
@@ -16,24 +48,47 @@ class Profile(models.Model):
     )
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-
     role = models.CharField(max_length=15, choices=ROLE_CHOICES, default="guest")
-    avatar = models.ImageField(default="default.jpg", upload_to="profile_images")
+    avatar = CloudinaryField("avatar", default="default.jpg")
     bio = models.TextField()
 
     def __str__(self):
         return self.user.username
 
-    # resizing images
     def save(self, *args, **kwargs):
-        super().save()
+        if isinstance(self.avatar, CloudinaryField):
+            # If the avatar is already a Cloudinary resource
+            response = requests.get(self.avatar.url)
+            if response.status_code == 200:
+                img = Image.open(BytesIO(response.content))
 
-        img = Image.open(self.avatar.path)
+                # Resize if necessary
+                if img.height > 100 or img.width > 100:
+                    output = BytesIO()
+                    img.thumbnail((100, 100))
+                    img.save(output, format=img.format)
+                    output.seek(0)
 
-        if img.height > 100 or img.width > 100:
-            new_img = (100, 100)
-            img.thumbnail(new_img)
-            img.save(self.avatar.path)
+                    # Re-upload resized image to Cloudinary
+                    upload_result = upload(output, folder="profile_images")
+                    self.avatar = upload_result["public_id"]
+
+        elif isinstance(self.avatar, InMemoryUploadedFile):
+            # If a new file is being uploaded
+            img = Image.open(self.avatar)
+
+            # Resize if necessary
+            if img.height > 100 or img.width > 100:
+                output = BytesIO()
+                img.thumbnail((100, 100))
+                img.save(output, format=img.format)
+                output.seek(0)
+
+                # Upload resized image to Cloudinary
+                upload_result = upload(output, folder="profile_images")
+                self.avatar = upload_result["public_id"]
+
+        super().save(*args, **kwargs)
 
 
 # =================================== Contact Model  ===================================

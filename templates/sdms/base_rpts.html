@@ -1,8 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
@@ -10,30 +9,44 @@
     <link rel="stylesheet" href="{% static 'assets/css/style.css' %}" />
     <link rel="shortcut icon" href="{% static 'images/file.png' %}" />
 
-    <!--HTMX Data tables CSS-->
+    <!-- HTMX Data tables CSS -->
     <link rel="stylesheet" href="{% static 'css/htmx_table.css' %}" />
 
-    <!-- CSS for Searchable dropdown-->
+    <!-- CSS for Searchable dropdown -->
     <link rel="stylesheet" href="{% static 'css/chosen.css' %}" />
 
-    <!--Icons-->
+    <!-- Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
 
-    <!--Css for base_rpts-->
-    <link rel="stylesheet" type="text/css" href="{% static 'css/base_rpts.css' %}">
+    <!-- Include Bootstrap CSS Pagination -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 
-    <!-- CSS for Searchable dropdown-->
+    <!-- Css for base_rpts -->
+    <link rel="stylesheet" type="text/css" href="{% static 'css/base_rpts.css' %}" />
+
+    <!-- CSS for Searchable dropdown -->
     <link rel="stylesheet" href="{% static 'css/chosen.css' %}" />
 
-    <title>{% block title %}Child Sponsorship Software{% endblock %}</title>
+    <title>
+      {% block title %}
+        Child Sponsorship Software
+      {% endblock %}
+    </title>
 
-</head>
+    <style>
+      @media print {
+        .print-hide {
+          display: none;
+        }
+      }
+    </style>
+  </head>
 
-<body>
+  <body>
     <!-- ========== Topbar Start ========== -->
     {% block topbar %}
-    {% include 'accounts/_partials/navbar.html' %}
-    {% endblock topbar %}
+      {% include 'accounts/_partials/navbar.html' %}
+    {% endblock %}
     <!-- ========== Topbar End ========== -->
 
     <!-- =============== Messages Start ================= -->
@@ -42,39 +55,43 @@
 
     <!-- Main Content -->
     <div class="container-fluid">
-        <!-- Your existing content here -->
+      <!-- Your existing content here -->
     </div>
 
-    {% block content %}{% endblock %}
+    {% block content %}
 
-    <!-- Print js-->
+    {% endblock %}
+
+    <!-- Print js -->
     <script type="text/javascript" src="{% static 'js/print.js' %}"></script>
 
     <!-- JS Lib to covert html to excel -->
     <script type="text/javascript" src="https://unpkg.com/xlsx@0.15.1/dist/xlsx.full.min.js"></script>
 
-    <!--Search table-->
+    <!-- Search table -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script type="text/javascript" src="{% static 'js/search_tbl.js' %}"></script>
 
     <!-- Scripts: Bootstraps, HTMX, and custom JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
     <script src="https://unpkg.com/htmx.org@1.6.1/dist/htmx.min.js"></script>
+
+    <!-- Include Bootstrap JS Pagination -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'js/htmx.js' %}"></script>
 
-    <!-- JS for Searchable dropdown-->
+    <!-- JS for Searchable dropdown -->
     <script type="text/javascript" src="{% static 'js/chosen.jquery.js' %}"></script>
     <script type="text/javascript">
-        $(".chzn-select").chosen();
-        $(".chzn-select-deselect").chosen({
-            allow_single_deselect: true
-        });
+      $('.chzn-select').chosen()
+      $('.chzn-select-deselect').chosen({
+        allow_single_deselect: true
+      })
     </script>
 
-    <!--btn click event-->
+    <!-- btn click event -->
     <script type="text/javascript" src="{% static 'js/btn_click.js' %}"></script>
-    <!--disabled btn-->
+    <!-- disabled btn -->
     <script type="text/javascript" src="{% static 'js/disabled_btn.js' %}"></script>
-</body>
-
+  </body>
 </html>

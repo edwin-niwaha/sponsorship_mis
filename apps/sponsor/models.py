@@ -1,13 +1,9 @@
-# Standard Library Imports
 import datetime
-
 from django.core.validators import MaxValueValidator, MinValueValidator
-
 # Third-party Imports
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
-
 
 # sponsorship_type constants
 class SponsorshipType:

@@ -1,7 +1,7 @@
 from django.core.validators import FileExtensionValidator, RegexValidator
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
-
+from cloudinary.models import CloudinaryField
 
 class Client(models.Model):
     # Basic info
@@ -21,11 +21,17 @@ class Client(models.Model):
             )
         ],
     )
-    picture = models.ImageField(
-        default="default.jpg",
-        upload_to="client_uploads/",
-        verbose_name="Upload Image(jpg, jpeg, png)",
+    # picture = models.ImageField(
+    #     default="default.jpg",
+    #     upload_to="client_uploads/",
+    #     verbose_name="Upload Image(jpg, jpeg, png)",
+    #     validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
+    # )
+    picture = CloudinaryField(
+        "client_uploads",
         validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
+        null=True,
+        blank=True,
     )
     mobile_telephone = PhoneNumberField(
         verbose_name="Mobile Telephone", null=True, blank=True, default="+256999999999"

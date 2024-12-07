@@ -25,28 +25,6 @@ class CategoryForm(forms.ModelForm):
         }
 
 
-# =================================== Inventory form ===================================
-class InventoryForm(forms.ModelForm):
-    class Meta:
-        model = Inventory
-        fields = ["quantity", "low_stock_threshold"]
-        widgets = {
-            "quantity": forms.NumberInput(
-                attrs={"class": "form-control", "placeholder": "Enter stock quantity"}
-            ),
-            "low_stock_threshold": forms.NumberInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "Enter low stock threshold",
-                }
-            ),
-        }
-        labels = {
-            "quantity": "Stock Quantity",
-            "low_stock_threshold": "Low Stock Threshold",
-        }
-
-
 # =================================== product form ===================================
 class ProductForm(forms.ModelForm):
     class Meta:

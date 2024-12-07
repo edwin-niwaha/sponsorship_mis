@@ -56,7 +56,4 @@ urlpatterns = [
         views.inventory_delete_view,
         name="inventory_delete",
     ),
-    path(
-        "product-sales-report/", views.product_sales_report, name="product_sales_report"
-    ),
 ]

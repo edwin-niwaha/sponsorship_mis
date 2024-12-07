@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -18,9 +19,14 @@ from .models import Customer
 @admin_or_manager_or_staff_required
 def customers_list_view(request):
     customers = Customer.objects.all().order_by("id")
+    # Add pagination
+    paginator = Paginator(customers, 25)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
     context = {
         "active_icon": "customers",
-        "customers": customers,
+        "customers": page_obj,
         "table_title": "Customers",
     }
     return render(request, "inventory/customers/customers.html", context)
@@ -85,19 +91,6 @@ def customers_update_view(request, customer_id):
     if request.method == "POST":
         form = CustomerForm(request.POST, instance=customer)
         if form.is_valid():
-            # Check if a customer with the same email exists, excluding the current customer
-            if (
-                Customer.objects.exclude(id=customer_id)
-                .filter(email=form.cleaned_data["email"])
-                .exists()
-            ):
-                messages.error(
-                    request,
-                    "A customer with this email already exists!",
-                    extra_tags="bg-warning",
-                )
-                return redirect("customers:customers_update", customer_id=customer_id)
-
             try:
                 # Save the updated customer
                 form.save()

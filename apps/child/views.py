@@ -780,7 +780,7 @@ def import_details(request):
     )
 
 
-# ===================================  'Update all phone numbers to include a prefix + sign' ===================================
+# ===================================  'Update include a prefix + sign' ===================================
 @login_required
 @admin_required
 def update_guardian_contacts(request):

@@ -1,4 +1,5 @@
 import datetime
+from cloudinary.models import CloudinaryField
 
 from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.db import models
@@ -29,11 +30,17 @@ class Staff(models.Model):
 
     first_name = models.CharField(max_length=25, null=True, verbose_name="First Name")
     last_name = models.CharField(max_length=25, null=True, verbose_name="Last Name")
-    picture = models.ImageField(
-        default="default.jpg",
-        upload_to="staff_profiles/",
-        verbose_name="Upload Image(jpg, jpeg, png)",
+    # picture = models.ImageField(
+    #     default="default.jpg",
+    #     upload_to="staff_profiles/",
+    #     verbose_name="Upload Image(jpg, jpeg, png)",
+    #     validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
+    # )
+    picture = CloudinaryField(
+        "staff_profiles",
         validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
+        null=True,
+        blank=True,
     )
     gender = models.CharField(
         max_length=6, choices=GENDER_CHOICES, blank=False, verbose_name="Gender"
