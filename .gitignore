@@ -4,13 +4,13 @@ __pycache__/
 *$py.class
 
 # migrations is optional
-**/migrations
+# **/migrations
 
 # Development db
 db.sqlite3
 
 # Ignore media files
-/media/*
+# /media/*
 
 # C extensions
 *.so
