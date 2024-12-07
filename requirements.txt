@@ -45,6 +45,7 @@ EditorConfig==0.12.4
 et-xmlfile==1.1.0
 filelock==3.13.1
 flake8==7.1.0
+gunicorn==23.0.0
 html5lib==1.1
 humanize==4.9.0
 idna==3.6
