@@ -3,6 +3,7 @@ from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 from cloudinary.models import CloudinaryField
 
+
 class Client(models.Model):
     # Basic info
     reg_number = models.CharField(

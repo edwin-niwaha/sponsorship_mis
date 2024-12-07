@@ -1,4 +1,3 @@
-
 import os
 from pathlib import Path
 import dj_database_url
@@ -126,7 +125,6 @@ DATABASES = {
 }
 
 
-
 # =================================== PASSWORD VALIDATION ===================================
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
@@ -209,7 +207,6 @@ SOCIAL_AUTH_GITHUB_SECRET = str(os.getenv("GITHUB_SECRET"))
 # social auth configs for google
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = str(os.getenv("GOOGLE_KEY"))
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = str(os.getenv("GOOGLE_SECRET"))
-
 
 
 # =================================== EMAIL CONFIGURATIONS ===================================

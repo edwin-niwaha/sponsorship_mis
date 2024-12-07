@@ -425,12 +425,16 @@ class ChildCorrespondence(models.Model):
         choices=SOURCE_CHOICES,
         verbose_name="Select the source of correspondence",
     )
-    attachment = models.FileField(
-        upload_to="correspondence_attachments/",
-        blank=True,
-        null=True,
-        verbose_name="Attachment",
+    # attachment = models.FileField(
+    #     upload_to="correspondence_attachments/",
+    #     blank=True,
+    #     null=True,
+    #     verbose_name="Attachment",
+    # )
+    attachment = CloudinaryField(
+        "correspondence_attachments", resource_type="auto", null=True, blank=True
     )
+
     comment = models.CharField(
         max_length=100, blank=True, null=True, verbose_name="Any comment?"
     )
@@ -475,12 +479,16 @@ class ChildIncident(models.Model):
     )
     reported_by = models.CharField(max_length=25, verbose_name="Reported By")
     followed_up_by = models.CharField(max_length=25, verbose_name="Followed Up By")
-    attachment = models.FileField(
-        upload_to="incident_attachments/",
-        blank=True,
-        null=True,
-        verbose_name="Attachment",
+    # attachment = models.FileField(
+    #     upload_to="incident_attachments/",
+    #     blank=True,
+    #     null=True,
+    #     verbose_name="Attachment",
+    # )
+    attachment = CloudinaryField(
+        "incident_attachments", resource_type="auto", null=True, blank=True
     )
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated at")
 

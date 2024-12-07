@@ -1,0 +1,108 @@
+Steps for Deploying a Django Project on Railway.app
+
+1. **Install Dependencies**
+Run the following commands to install the required packages:
+```bash
+pip install dj-database-url cloudinary psycopg2-binary whitenoise gunicorn
+```
+
+2. **Update `.env` File**
+Ensure your `.env` file contains the following:
+```env
+DATABASE_URL=<your_database_url_from_railway>
+DEBUG=False
+SECRET_KEY=<your_secret_key>
+CLOUDINARY_URL=<your_cloudinary_url>
+```
+
+3. **Configure Cloudinary**
+Install Cloudinary and update your settings and models:
+```bash
+pip install cloudinary
+```
+
+- **Add Cloudinary to `settings.py`**:
+```python
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+INSTALLED_APPS += [
+    'cloudinary',
+]
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
+}
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+```
+
+- **Update models to use Cloudinary**:
+```python
+from cloudinary.models import CloudinaryField
+
+class YourModel(models.Model):
+    image = CloudinaryField('image')
+```
+
+4. **Set Up PostgreSQL**
+- **Update `DATABASES` in `settings.py`**:
+```python
+import dj_database_url
+import os
+
+DATABASES = {
+    'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
+}
+```
+
+- **Add `DATABASE_URL` to `.env`**:
+```env
+DATABASE_URL=<your_postgresql_url>
+```
+
+5. **Static File Handling with WhiteNoise**
+- **Install WhiteNoise**:
+```bash
+pip install whitenoise
+```
+
+- **Update `MIDDLEWARE` in `settings.py`**:
+```python
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    # Other middleware...
+]
+```
+
+- **Configure `STATIC` settings**:
+```python
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+```
+
+6. **Prepare the Application**
+Run the following commands to prepare your application:
+```bash
+python manage.py createsuperuser
+python manage.py makemigrations
+python manage.py migrate
+python manage.py collectstatic
+```
+
+7. **Deploy on Railway**
+1. Visit the [Railway dashboard](https://railway.app/dashboard).
+2. Create a new project and link it to your GitHub repository.
+3. Add the following environment variables in the Railway dashboard:
+   - `DATABASE_URL`
+   - `SECRET_KEY`
+   - `DEBUG=False`
+   - `CLOUDINARY_URL`
+4. Deploy the project.
+
+8. **Run the Application**
+Railway automatically assigns a domain for your project. Visit the provided URL to confirm the deployment.
