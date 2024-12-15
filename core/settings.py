@@ -199,6 +199,9 @@ MEDIA_URL = f"https://res.cloudinary.com/{CLOUDINARY_CLOUD_NAME}/"
 LOGIN_REDIRECT_URL = "/"
 LOGIN_URL = "login"
 
+SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = 'https://sponsorwithpendeza.up.railway.app/oauth/complete/google/'
+
+
 # =================================== SOCIIAL AUTH CONFIGURATIONS ===================================
 # social auth configs for github
 SOCIAL_AUTH_GITHUB_KEY = str(os.getenv("GITHUB_KEY"))
