@@ -34,8 +34,26 @@
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-center">
               <div>
-                <div class="text-xs font-weight-bold mb-1">Earnings (Annual)</div>
+                <div class="text-xs font-weight-bold mb-1">Revenue (Annual)</div>
                 <div class="h5 mb-0 font-weight-bold">UgX {{ annual_earnings|floatformat:'2'|intcomma }}</div>
+              </div>
+              <div>
+                <i class="mdi mdi-cash-multiple mdi-36px"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Profit Card -->
+      <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card bg-warning text-white shadow h-100 py-2">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="text-xs font-weight-bold mb-1">Net Profit</div>
+                <hr class="bg-white" style="height: 1px;" />
+                <div class="h5 mb-0 font-weight-bold">UgX: {{ total_profit|floatformat:'2'|intcomma }}</div>
               </div>
               <div>
                 <i class="mdi mdi-cash-multiple mdi-36px"></i>
@@ -51,30 +69,12 @@
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-center">
               <div>
-                <div class="text-xs font-weight-bold mb-1">Products Registered</div>
+                <div class="text-xs font-weight-bold mb-1">Products ({{ products }})</div>
                 <hr class="bg-white" style="height: 1px;" />
-                <div class="h5 mb-0 font-weight-bold">{{ products }}</div>
+                <div class="text-xs font-weight-bold mb-1">Categories ({{ categories }})</div>
               </div>
               <div>
                 <i class="mdi mdi-package-variant mdi-36px"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Categories Card -->
-      <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card bg-warning text-white shadow h-100 py-2">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <div class="text-xs font-weight-bold mb-1">Products Categories</div>
-                <hr class="bg-white" style="height: 1px;" />
-                <div class="h5 mb-0 font-weight-bold">{{ categories }}</div>
-              </div>
-              <div>
-                <i class="mdi mdi-tag mdi-36px"></i>
               </div>
             </div>
           </div>
@@ -97,17 +97,173 @@
                   <div class="col-md-4 mb-4">
                     <div class="card h-100 border-light"
                       style="background-color: {% if forloop.counter0 == 0 %}
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                          #d4edda
+
+
+
+
+
+
+
+
+
+
+
+
+
                       {% elif forloop.counter0 == 1 %}
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                          #cce5ff
+
+
+
+
+
+
+
+
+
+
+
+
+
                       {% elif forloop.counter0 == 2 %}
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                          #fff3cd
+
+
+
+
+
+
+
+
+
+
+
+
+
                       {% elif forloop.counter0 == 3 %}
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                          #f8d7da
+
+
+
+
+
+
+
+
+
+
+
+
+
                       {% elif forloop.counter0 == 4 %}
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                          #f0f8ff
+
+
+
+
+
+
+
+
+
+
+
+
+
                       {% else %}
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                          #ffeeba
+
+
+
+
+
+
+
+
+
+
+
+
+
                       {% endif %};">
                       <div class="card-body">
                         <h5 class="card-title font-weight-bold">{{ product.name }}</h5>

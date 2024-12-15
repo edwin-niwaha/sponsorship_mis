@@ -15,6 +15,20 @@
       </div>
     </div>
 
+    <!-- Search Form -->
+    <div class="row mb-3">
+      <div class="col-md-12">
+        <form method="get" action="{% url 'supplier:supplier_list' %}">
+          <div class="input-group">
+            <input type="text" class="form-control" name="search" value="{{ search_query }}" placeholder="Suppliers" />
+            <div class="input-group-append">
+              <button class="btn btn-primary" type="submit"><i class="mdi mdi-magnify"></i> Search</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- DataTable -->
     <div id="printMe" class="card shadow mb-4">
       <div class="card-header py-3">
@@ -85,7 +99,7 @@
               <ul class="pagination justify-content-end">
                 {% if suppliers.has_previous %}
                   <li class="page-item">
-                    <a class="page-link" href="?page={{ suppliers.previous_page_number }}" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a>
+                    <a class="page-link" href="?page={{ suppliers.previous_page_number }}&search={{ search_query }}" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a>
                   </li>
                 {% endif %}
 
@@ -96,14 +110,14 @@
                     </li>
                   {% elif num > suppliers.number|add:'-3' and num < suppliers.number|add:'3' %}
                     <li class="page-item">
-                      <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                      <a class="page-link" href="?page={{ num }}&search={{ search_query }}">{{ num }}</a>
                     </li>
                   {% endif %}
                 {% endfor %}
 
                 {% if suppliers.has_next %}
                   <li class="page-item">
-                    <a class="page-link" href="?page={{ suppliers.next_page_number }}" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>
+                    <a class="page-link" href="?page={{ suppliers.next_page_number }}&search={{ search_query }}" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>
                   </li>
                 {% endif %}
               </ul>

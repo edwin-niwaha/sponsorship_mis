@@ -18,9 +18,19 @@ from .models import Customer
 @login_required
 @admin_or_manager_or_staff_required
 def customers_list_view(request):
+    # Query all customers
     customers = Customer.objects.all().order_by("id")
+
+    # Search functionality: filter by first_name or last_name
+    search_query = request.GET.get("search", "")  # Default to empty string if no search
+    if search_query:
+        # Search in both first_name and last_name
+        customers = customers.filter(
+            first_name__icontains=search_query
+        ) | customers.filter(last_name__icontains=search_query)
+
     # Add pagination
-    paginator = Paginator(customers, 25)
+    paginator = Paginator(customers, 25)  # Show 25 customers per page
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
@@ -28,7 +38,9 @@ def customers_list_view(request):
         "active_icon": "customers",
         "customers": page_obj,
         "table_title": "Customers",
+        "search_query": search_query,  # Pass search query to template for persistence
     }
+
     return render(request, "inventory/customers/customers.html", context)
 
 

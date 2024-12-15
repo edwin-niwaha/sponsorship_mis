@@ -85,9 +85,7 @@ class Contact(models.Model):
 class Policy(models.Model):
     title = models.CharField(max_length=50)
     # upload = models.FileField(upload_to="policies/", blank=True, null=True)
-    upload = CloudinaryField("policies", resource_type="auto",
-                                 null=True, 
-                                 blank=True)
+    upload = CloudinaryField("policies", resource_type="auto", null=True, blank=True)
 
     is_valid = models.BooleanField(
         default=False,

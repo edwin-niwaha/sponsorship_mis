@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import get_template
@@ -28,51 +28,46 @@ logger = logging.getLogger(__name__)
 
 
 # =================================== Sale list view ===================================
+
+
 @login_required
 @admin_or_manager_or_staff_required
 def sales_list_view(request):
-    # Fetch all sales, including customer and product inventory details
+    # Annotate sales with calculated profit
     sales = (
         Sale.objects.all()
         .select_related("customer")
-        .prefetch_related("items__product__inventory")
+        .prefetch_related("items__product")
+        .annotate(
+            profit=Sum(
+                ExpressionWrapper(
+                    F("items__price") - F("items__product__cost"),
+                    output_field=DecimalField(),
+                )
+                * F("items__quantity")
+            )
+        )
         .order_by("id")
     )
 
-    # Add pagination
-    paginator = Paginator(sales, 25)  # Show 10 sales per page
+    paginator = Paginator(sales, 10)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    # Calculate grand total for all sales
+    # Calculate aggregated totals
     grand_total = sales.aggregate(Sum("grand_total"))["grand_total__sum"] or 0
-
-    # Calculate total items sold across all sales
     total_items = sum(sale.sum_items() for sale in sales)
+    total_profit = sales.aggregate(Sum("profit"))["profit__sum"] or 0
 
-    # Initialize totals for profit and stock balance
-    total_profit = 0
-    sales_with_details = []
-
-    # Iterate over each sale to calculate profit
-    for sale in sales:
-        sale_profit = sum(item.calculate_profit() for item in sale.items.all())
-        sale.profit = sale_profit  # Attach calculated profit to sale instance
-        total_profit += sale_profit
-
-        # Add the sale to the list with details
-        sales_with_details.append(sale)
-
-    # Context to pass to the template
     context = {
-        "table_title": "Sales List",  # Title for the table
-        "sales": page_obj,  # Paginated sales
-        "grand_total": grand_total,  # Total grand total for all sales
-        "total_items": total_items,  # Total number of items sold across all sales
-        "total_profit": total_profit,  # Total profit from all sales
+        "table_title": "Sales List",
+        "sales": page_obj,
+        "grand_total": grand_total,
+        "total_items": total_items,
+        "total_profit": total_profit,
     }
 
-    return render(request, "inventory/sales/sales.html", context=context)
+    return render(request, "inventory/sales/sales.html", context)
 
 
 # =================================== Sale add view ===================================

@@ -2,7 +2,8 @@ import json
 from datetime import date, timedelta
 
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, F, FloatField, Sum
+from django.db.models import Count, FloatField, Sum, F, ExpressionWrapper, DecimalField
+from django.db.models.functions import Coalesce, Cast
 from django.db.models.functions import Coalesce, ExtractYear
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -10,7 +11,7 @@ from django.shortcuts import render
 from apps.child.models import Child
 from apps.finance.models import ChildPayments, StaffPayments
 from apps.inventory.products.models import Category, Product
-from apps.inventory.sales.models import Sale
+from apps.inventory.sales.models import Sale, SaleDetail
 from apps.loans.models import Loan, LoanRepayment
 from apps.sponsor.models import Sponsor
 from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
@@ -343,6 +344,12 @@ def inventory_dashboard(request):
         total=Coalesce(Sum("inventory__quantity"), 0)
     )["total"]
 
+    # Calculate total profit from all sales
+    total_profit = sum(
+        sum(detail.calculate_profit() for detail in sale.items.all())
+        for sale in Sale.objects.all()
+    )
+
     context = {
         "products": Product.objects.filter(status="ACTIVE").count(),
         "total_stock": total_stock,
@@ -353,6 +360,7 @@ def inventory_dashboard(request):
         "total_sales_today": total_sales_today,
         "total_sales_week": total_sales_week,
         "total_sales_month": total_sales_month,
+        "total_profit": format(total_profit, ".2f"),
         "top_products": top_products,
     }
 

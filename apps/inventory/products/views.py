@@ -2,8 +2,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from django.db.models import F, Sum
-from django.http import HttpResponseRedirect
+from django.db.models import F, Sum, Q
+from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
@@ -29,11 +29,43 @@ from .models import Category, Inventory, Product, ProductImage
 @login_required
 @admin_or_manager_or_staff_required
 def categories_list_view(request):
+    # Get search query from the request
+    search_query = request.GET.get("search", "")
+
+    # Filter categories based on the search query
+    if search_query:
+        categories = Category.objects.filter(
+            Q(name__icontains=search_query) | Q(description__icontains=search_query)
+        )
+    else:
+        categories = Category.objects.all()
+
+    # If no categories are found, handle empty case
+    if not categories.exists():
+        context = {
+            "active_icon": "products_categories",
+            "categories": [],
+            "search_query": search_query,
+            "error_message": "No categories available for the given search criteria.",
+        }
+        return render(request, "inventory/products/categories.html", context)
+
+    # Pagination setup
+    paginator = Paginator(categories, 10)  # Show 10 categories per page
+    page_number = request.GET.get("page")
+
+    try:
+        page_obj = paginator.get_page(page_number)
+    except:
+        raise Http404("Page not found")
+
     context = {
         "active_icon": "products_categories",
-        "categories": Category.objects.all(),
+        "categories": page_obj,
+        "search_query": search_query,  # Pass search query to keep in the input
     }
-    return render(request, "inventory/products/categories.html", context=context)
+
+    return render(request, "inventory/products/categories.html", context)
 
 
 # =================================== categories add view ===================================
@@ -162,10 +194,44 @@ def categories_delete_view(request, category_id):
 @login_required
 @admin_or_manager_or_staff_required
 def products_list_view(request):
-    # Fetch all products
-    products = Product.objects.all()
+    # Get search query from the request
+    search_query = request.GET.get("search", "")
 
-    # Calculate total price and total cost without using inventory quantity
+    # Filter products based on search query
+    if search_query:
+        # Adjust the filter to handle ForeignKey relationships
+        products = Product.objects.filter(
+            Q(name__icontains=search_query)
+            | Q(category__name__icontains=search_query)  # Filter by category name
+            | Q(supplier__name__icontains=search_query)  # Filter by supplier name
+        )
+    else:
+        products = Product.objects.all()
+
+    # If no products are found, handle empty case
+    if not products.exists():
+        context = {
+            "products": [],
+            "total_price": 0,
+            "total_cost": 0,
+            "total_stock": 0,
+            "table_title": "Products",
+            "search_query": search_query,
+            "error_message": "No products available for the given search criteria.",
+        }
+        return render(request, "inventory/products/products.html", context)
+
+    # Pagination setup
+    paginator = Paginator(products, 10)  # Show 10 products per page
+    page_number = request.GET.get("page")
+
+    try:
+        page_obj = paginator.get_page(page_number)
+    except:
+        # If the page number is invalid, raise 404 error
+        raise Http404("Page not found")
+
+    # Calculate totals
     total_price = products.aggregate(total_price=Sum("price"))["total_price"] or 0
     total_cost = products.aggregate(total_cost=Sum("cost"))["total_cost"] or 0
     total_stock = (
@@ -173,11 +239,12 @@ def products_list_view(request):
     )
 
     context = {
-        "products": products,
+        "products": page_obj,
         "total_price": total_price,
         "total_cost": total_cost,
         "total_stock": total_stock,
         "table_title": "Products",
+        "search_query": search_query,  # Pass search query to keep in the input
     }
 
     return render(request, "inventory/products/products.html", context=context)
@@ -450,13 +517,13 @@ def inventory_list_view(request):
     # Query Inventory and include related Product details
     queryset = Inventory.objects.select_related("product").all()
 
-    # Search functionality: filter by product name
-    search_query = request.GET.get("search")
+    # Search functionality: filter by product name if search_query is provided
+    search_query = request.GET.get("search", "")  # Default to empty string if no search
     if search_query:
         queryset = queryset.filter(product__name__icontains=search_query)
 
     # Pagination
-    paginator = Paginator(queryset, 50)  # 50 items per page
+    paginator = Paginator(queryset, 10)  # 10 items per page
     page = request.GET.get("page")
 
     try:
@@ -469,6 +536,7 @@ def inventory_list_view(request):
     context = {
         "inventories": inventories,
         "table_title": "Inventory List",
+        "search_query": search_query,  # Pass search query to the template
     }
     return render(request, "inventory/products/inventory_list.html", context)
 

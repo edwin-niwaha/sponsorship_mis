@@ -15,19 +15,56 @@ from .models import Supplier
 # =================================== supplier list view ===================================
 
 
+# @login_required
+# @admin_or_manager_or_staff_required
+# def supplier_list(request):
+#     suppliers = Supplier.objects.all()
+#     # Pagination setup
+#     paginator = Paginator(suppliers, 10)  # Display 10 suppliers per page
+#     page_number = request.GET.get("page")  # Get the page number from the query string
+#     page_obj = paginator.get_page(page_number)  # Get the current page
+
+#     return render(
+#         request,
+#         "inventory/supplier/suppliers.html",
+#         {"suppliers": page_obj},  # Pass the paginated object to the template
+#     )
+
+from django.core.paginator import Paginator
+from django.db.models import Q
+
+
 @login_required
 @admin_or_manager_or_staff_required
 def supplier_list(request):
-    suppliers = Supplier.objects.all()
+    search_query = request.GET.get(
+        "search", ""
+    )  # Get the search query from the GET request
+
+    # Filter suppliers based on search query
+    if search_query:
+        suppliers = Supplier.objects.filter(
+            Q(name__icontains=search_query)
+            | Q(contact_name__icontains=search_query)
+            | Q(email__icontains=search_query)
+            | Q(phone__icontains=search_query)
+            | Q(address__icontains=search_query)
+        )
+    else:
+        suppliers = Supplier.objects.all()
+
     # Pagination setup
-    paginator = Paginator(suppliers, 25)  # Display 25 suppliers per page
+    paginator = Paginator(suppliers, 10)  # Display 10 suppliers per page
     page_number = request.GET.get("page")  # Get the page number from the query string
     page_obj = paginator.get_page(page_number)  # Get the current page
 
     return render(
         request,
         "inventory/supplier/suppliers.html",
-        {"suppliers": page_obj},  # Pass the paginated object to the template
+        {
+            "suppliers": page_obj,
+            "search_query": search_query,
+        },  # Pass search query to the template
     )
 
 

@@ -58,7 +58,7 @@ def get_loan_queryset(search_query):
 
 
 def paginate_queryset(queryset, page_number):
-    paginator = Paginator(queryset, 25)  # Show 50 records per page
+    paginator = Paginator(queryset, 10)  # Show 10 records per page
     try:
         return paginator.page(page_number)
     except PageNotAnInteger:
