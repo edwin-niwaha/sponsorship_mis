@@ -199,7 +199,7 @@ MEDIA_URL = f"https://res.cloudinary.com/{CLOUDINARY_CLOUD_NAME}/"
 LOGIN_REDIRECT_URL = "/"
 LOGIN_URL = "login"
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = 'https://sponsorwithpendeza.up.railway.app/oauth/complete/google/'
+SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = 'https://sponsorwithpendeza.up.railway.app/oauth/complete/google-oauth2/'
 
 
 # =================================== SOCIIAL AUTH CONFIGURATIONS ===================================
