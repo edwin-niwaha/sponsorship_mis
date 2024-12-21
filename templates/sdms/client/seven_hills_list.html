@@ -12,18 +12,12 @@
 
         <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success" onclick="Export2Doc('printMe');"><i class="mdi mdi-file-word btn-icon-prepend"></i></button>
 
-        <a title="Register Client" class="btn btn-sm ml-3 btn-success" href="{% url 'register_client' %}"><i class="mdi mdi-account-plus btn-icon-prepend"></i></a>
+        <a title="Register Client" class="btn btn-sm ml-3 btn-success" href="{% url 'seven_hills_registration' %}"><i class="mdi mdi-account-plus btn-icon-prepend"></i></a>
 
-        <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'client_list' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
-        <a title="Bulk Import" class="btn btn-sm ml-3 btn-success" href="{% url 'import_client_data' %}"><i class="mdi mdi-upload btn-icon-prepend"></i></a>
-
-        <form action="{% url 'delete_confirm' %}" method="post">
-          {% csrf_token %}
-          <button title="Delete All" class="btn btn-sm ml-3 btn-danger btn-sm" type="submit" onclick="return confirm('Are you sure about this? all records will be deleted permanently');"><i class="mdi mdi-cancel btn-icon-prepend"></i></button>
-        </form>
+        <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'seven_hills_list' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
       </div>
     </div>
-    <form method="GET" action="{% url 'client_list' %}">
+    <form method="GET" action="{% url 'seven_hills_list' %}">
       <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..." style="border-radius: 5px; height: 35px;" />
       <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
     </form>
@@ -37,9 +31,9 @@
             <tr>
               <th scope="col">#</th>
               <th scope="col">Reg.No</th>
-              <th scope="col">Picture</th>
-              <th scope="col">Client Name</th>
-              <th scope="col">Telephone</th>
+              <th scope="col">Full Name</th>
+              <th scope="col">Gender</th>
+              <th scope="col">Reg Date</th>
               <th scope="col" colspan="2">Action</th>
             </tr>
           </thead>
@@ -47,29 +41,27 @@
             {% for client in records %}
               <tr>
                 <th scope="row">{{ forloop.counter }}.</th>
-                <td>{{ client.reg_number }}</td>
-                <td>
-                  {% if client.picture %}
-                    <a title="Click to update picture" href="{% url 'update_picture' %}" onclick="return confirm('Are you sure you want to update client picture? ');"><img class="rounded-circle account-img" height="50" width="50" src="{{ client.picture.url }}" alt="" /></a>
-                  {% else %}
-                    No Picture!
-                  {% endif %}
-                </td>
+                <td>{{ client.prefixed_id }}</td>
                 <td>{{ client.full_name }}</td>
-                <td>{{ client.mobile_telephone }}</td>
+                <td>{{ client.gender }}</td>
+                <td>{{ client.registration_date }}</td>
+
                 <td>
                   {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
-                    <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_client' client.id %}"><i class="bi bi-pencil"></i></a>
+                    <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_seven_hills' client.id %}"><i class="bi bi-pencil"></i></a>
                   {% else %}
                     <button class="btn btn-primary btn-sm" onclick="showNoPermissionMessage('edit')"><i class="bi bi-pencil"></i></button>
                   {% endif %}
                 </td>
                 <td>
                   {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                    <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_client' client.id %}" onclick="return confirm('Are you sure about this? This record will be deleted permanently.');"><i class="bi bi-trash"></i></a>
+                    <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_seven_hills' client.id %}" onclick="return confirm('Are you sure about this? This record will be deleted permanently.');"><i class="bi bi-trash"></i></a>
                   {% else %}
                     <button class="btn btn-danger btn-sm disabled" onclick="showNoPermissionMessage('delete')"><i class="bi bi-trash"></i></button>
                   {% endif %}
+                </td>
+                <td>
+                  <a class="btn btn-info btn-sm" title="View Details" href="{% url 'seven_hills_details' client.id %}"><i class="bi bi-eye"></i></a>
                 </td>
               </tr>
             {% endfor %}

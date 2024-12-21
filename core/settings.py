@@ -20,7 +20,8 @@ SECRET_KEY = os.environ.get("SECRET_KEY", False)
 SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
 
 # Production settings
-DEBUG = False
+# DEBUG = False
+DEBUG = True
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sponsorwithpendeza.up.railway.app"]
 CSRF_TRUSTED_ORIGINS = ["https://sponsorwithpendeza.up.railway.app"]
 
@@ -104,25 +105,25 @@ WSGI_APPLICATION = "core.wsgi.application"
 
 ############################### LOCAL DATABASE CONFIGURATION ###############################
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "NAME": os.environ.get("DB_NAME", "default_db_name"),
-#         "USER": os.environ.get("DB_USER", "default_user"),
-#         "PASSWORD": os.environ.get("DB_PASSWORD", "default_password"),
-#         "HOST": os.environ.get("DB_HOST", "localhost"),
-#         "PORT": os.environ.get("DB_PORT", "5432"),
-#     }
-# }
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("DB_NAME", "default_db_name"),
+        "USER": os.environ.get("DB_USER", "default_user"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", "default_password"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", "5432"),
+    }
+}
 
 ############################### ONLINE DATABASE CONFIGURATION ###############################
 
 # Database configuration (PostgreSQL)
-DATABASES = {
-    "default": dj_database_url.config(
-        default=os.getenv("DATABASE_URL", None)  # Use DATABASE_URL if provided
-    )
-}
+# DATABASES = {
+#     "default": dj_database_url.config(
+#         default=os.getenv("DATABASE_URL", None)  # Use DATABASE_URL if provided
+#     )
+# }
 
 
 # =================================== PASSWORD VALIDATION ===================================
@@ -199,7 +200,9 @@ MEDIA_URL = f"https://res.cloudinary.com/{CLOUDINARY_CLOUD_NAME}/"
 LOGIN_REDIRECT_URL = "/"
 LOGIN_URL = "login"
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = 'https://sponsorwithpendeza.up.railway.app/oauth/complete/google-oauth2/'
+SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = (
+    "https://sponsorwithpendeza.up.railway.app/oauth/complete/google-oauth2/"
+)
 
 
 # =================================== SOCIIAL AUTH CONFIGURATIONS ===================================

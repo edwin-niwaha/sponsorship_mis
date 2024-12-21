@@ -1,185 +1,164 @@
 {% load static %}
 
 <nav class="sidebar sidebar-offcanvas" id="sidebar">
-    <div class="text-center sidebar-brand-wrapper d-flex align-items-center">
-        <a class="sidebar-brand brand-logo" href="{% url 'main-dashboard' %}" style="color:#127D61;">
-            <img src="{% static 'images/file.png' %}" height="30" width="30" alt="Brand Logo" loading="lazy" />
+  <div class="text-center sidebar-brand-wrapper d-flex align-items-center">
+    <a class="sidebar-brand brand-logo" href="{% url 'main-dashboard' %}" style="color:#127D61;"><img src="{% static 'images/file.png' %}" height="30" width="30" alt="Brand Logo" loading="lazy" /></a>
+  </div>
+
+  <ul class="nav">
+    <!-- Divider -->
+    <li>
+      <hr class="sidebar-divider my-3" />
+    </li>
+
+    <!-- Home -->
+    <li class="nav-item">
+      <a class="nav-link" href="/">
+        <i class="mdi mdi-home menu-icon"></i>
+        <span class="menu-title">SDMS-HOME</span>
+      </a>
+    </li>
+
+    <!-- Dashboards -->
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="collapse" href="#dashboards-menu" aria-expanded="false" aria-controls="dashboards-menu">
+        <i class="mdi mdi-view-dashboard menu-icon"></i>
+        <span class="menu-title">DASHBOARDS</span>
+        <i class="menu-arrow"></i>
+      </a>
+      <div class="collapse" id="dashboards-menu">
+        <ul class="nav flex-column sub-menu">
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'main-dashboard' %}"><i class="mdi mdi-lock-open menu-icon"></i> SPONSORSHIP</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'inventory-dashboard' %}"><i class="mdi mdi-warehouse menu-icon"></i> INVENTORY MGT</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'loans-dashboard' %}"><i class="mdi mdi-cash-multiple menu-icon"></i> LOAN MANAGER</a>
+          </li>
+        </ul>
+      </div>
+    </li>
+
+    <!-- Divider -->
+    <li>
+      <hr class="sidebar-divider my-3" />
+    </li>
+    <!-- Clients -->
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'client_list' %}">
+        <i class="mdi mdi-account menu-icon"></i>
+        <span class="menu-title">Main Clients</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'seven_hills_list' %}">
+        <i class="mdi mdi-account-multiple menu-icon"></i>
+        <span class="menu-title">7 Hills Clients</span>
+      </a>
+    </li>
+
+    <!-- LOANS Menu -->
+
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="collapse" href="#loansMenu" aria-expanded="false" aria-controls="loansMenu">
+        <i class="mdi mdi-bank menu-icon"></i>
+        <span class="menu-title">LOANS</span>
+        <i class="menu-arrow"></i>
+      </a>
+      <div class="collapse" id="loansMenu">
+        <ul class="nav flex-column sub-menu">
+          <!-- Loan Applications -->
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'loans:apply_for_loan' %}">
+              <i class="mdi mdi-file-document-box menu-icon"></i>
+              <span class="menu-title">Loan Apply</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'loans:loan_applications' %}">
+              <i class="mdi mdi-format-list-bulleted menu-icon"></i>
+              <span class="menu-title">Applications</span>
+            </a>
+          </li>
+
+          <!-- Loan Disbursements -->
+
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'loans:disburse_loan' %}">
+              <i class="mdi mdi-cash-register menu-icon"></i>
+              <span class="menu-title">Disburse Loan</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'loans:disbursed_loans' %}">
+              <i class="mdi mdi-file-check menu-icon"></i>
+              <span class="menu-title">Disbursed</span>
+            </a>
+          </li>
+          <!-- Loan Payments -->
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'loans:loan_repayment_create' %}">
+              <i class="mdi mdi-credit-card menu-icon"></i>
+              <span class="menu-title">Loan Repay</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'loans:ledger_report' %}">
+        <i class="mdi mdi-book-open menu-icon"></i>
+        <span class="menu-title">All Legders</span>
+      </a>
+    </li>
+
+    <!-- Divider -->
+    <li>
+      <hr class="sidebar-divider my-3" />
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'loans:loan_reports_dashboard' %}">
+        <i class="mdi mdi-chart-bar menu-icon"></i>
+        <span class="menu-title">Reports</span>
+      </a>
+    </li>
+
+    <!-- Settings -->
+    {% if user.profile.role == 'administrator' %}
+      <li class="nav-item">
+        <a class="nav-link" data-toggle="collapse" href="#settings-menu" aria-expanded="false" aria-controls="settings-menu">
+          <i class="mdi mdi-settings menu-icon"></i>
+          <span class="menu-title">Settings</span>
+          <i class="menu-arrow"></i>
         </a>
-    </div>
-
-    <ul class="nav">
-        <!-- Divider -->
-        <li>
-            <hr class="sidebar-divider my-3">
-        </li>
-
-        <!-- Home -->
-        <li class="nav-item">
-            <a class="nav-link" href="/">
-                <i class="mdi mdi-home menu-icon"></i>
-                <span class="menu-title">SDMS-HOME</span>
-            </a>
-        </li>
-
-        <!-- Dashboards -->
-        <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#dashboards-menu" aria-expanded="false"
-                aria-controls="dashboards-menu">
-                <i class="mdi mdi-view-dashboard menu-icon"></i>
-                <span class="menu-title">DASHBOARDS</span>
-                <i class="menu-arrow"></i>
-            </a>
-            <div class="collapse" id="dashboards-menu">
-                <ul class="nav flex-column sub-menu">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'main-dashboard' %}">
-                            <i class="mdi mdi-lock-open menu-icon"></i> SPONSORSHIP
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'inventory-dashboard' %}">
-                            <i class="mdi mdi-warehouse menu-icon"></i> INVENTORY MGT
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'loans-dashboard' %}">
-                            <i class="mdi mdi-cash-multiple menu-icon"></i> LOAN MANAGER
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </li>
-
-        <!-- Divider -->
-        <li>
-            <hr class="sidebar-divider my-3">
-        </li>
-        <!-- Clients -->
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'client_list' %}">
-                <i class="mdi mdi-account menu-icon"></i>
-                <span class="menu-title">Main Clients</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'client_list' %}">
-                <i class="mdi mdi-account-multiple menu-icon"></i>
-                <span class="menu-title">7 Hills Clients</span>
-            </a>
-        </li>
-
-        <!-- LOANS Menu -->
-
-        <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#loansMenu" aria-expanded="false"
-                aria-controls="loansMenu">
-                <i class="mdi mdi-bank menu-icon"></i>
-                <span class="menu-title">LOANS</span>
-                <i class="menu-arrow"></i>
-            </a>
-            <div class="collapse" id="loansMenu">
-                <ul class="nav flex-column sub-menu">
-                    <!-- Loan Applications -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'loans:apply_for_loan' %}">
-                            <i class="mdi mdi-file-document-box menu-icon"></i>
-                            <span class="menu-title">Loan Apply</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'loans:loan_applications' %}">
-                            <i class="mdi mdi-format-list-bulleted menu-icon"></i>
-                            <span class="menu-title">Applications</span>
-                        </a>
-                    </li>
-
-                    <!-- Loan Disbursements -->
-
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'loans:disburse_loan' %}">
-                            <i class="mdi mdi-cash-register menu-icon"></i>
-                            <span class="menu-title">Disburse Loan</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'loans:disbursed_loans' %}">
-                            <i class="mdi mdi-file-check menu-icon"></i>
-                            <span class="menu-title">Disbursed</span>
-                        </a>
-                    </li>
-                    <!-- Loan Payments -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'loans:loan_repayment_create' %}">
-                            <i class="mdi mdi-credit-card menu-icon"></i>
-                            <span class="menu-title">Loan Repay</span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'loans:ledger_report' %}">
-                <i class="mdi mdi-book-open menu-icon"></i>
-                <span class="menu-title">All Legders</span>
-            </a>
-        </li>
-
-        <!-- Divider -->
-        <li>
-            <hr class="sidebar-divider my-3">
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'loans:loan_reports_dashboard' %}">
-                <i class="mdi mdi-chart-bar menu-icon"></i>
-                <span class="menu-title">Reports</span>
-            </a>
-        </li>
-
-
-        <!-- Settings -->
-        {% if user.profile.role == 'administrator' %}
-        <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#settings-menu" aria-expanded="false"
-                aria-controls="settings-menu">
-                <i class="mdi mdi-settings menu-icon"></i>
-                <span class="menu-title">Settings</span>
-                <i class="menu-arrow"></i>
-            </a>
-            <div class="collapse" id="settings-menu">
-                <ul class="nav flex-column sub-menu">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'loans:chart_of_accounts_list' %}">
-                            <i class="mdi mdi-account-cash menu-icon"></i> Chart of Accounts
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'import_client_data' %}">
-                            <i class="mdi mdi-account-group menu-icon"></i> Import Clients
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'loans:import_coa_data' %}">
-                            <i class="mdi mdi-file-import menu-icon"></i> Import Accounts
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'loans:import_loan_data' %}">
-                            <i class="mdi mdi-file-import menu-icon"></i> Import Loans
-                        </a>
-                    </li>
-                </ul>
-            </div>
-
-        </li>
-        {% else %}
-        <li class="nav-item">
-            <a class="nav-link" href="#" onclick="showMessageSettings(event)">
-                <i class="mdi mdi-alert menu-icon"></i>
-                <span class="menu-title">Settings</span>
-            </a>
-        </li>
-        {% endif %}
-    </ul>
+        <div class="collapse" id="settings-menu">
+          <ul class="nav flex-column sub-menu">
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'loans:chart_of_accounts_list' %}"><i class="mdi mdi-account-cash menu-icon"></i> Chart of Accounts</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'import_client_data' %}"><i class="mdi mdi-account-group menu-icon"></i> Import Clients</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'loans:import_coa_data' %}"><i class="mdi mdi-file-import menu-icon"></i> Import Accounts</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'loans:import_loan_data' %}"><i class="mdi mdi-file-import menu-icon"></i> Import Loans</a>
+            </li>
+          </ul>
+        </div>
+      </li>
+    {% else %}
+      <li class="nav-item">
+        <a class="nav-link" href="#" onclick="showMessageSettings(event)">
+          <i class="mdi mdi-alert menu-icon"></i>
+          <span class="menu-title">Settings</span>
+        </a>
+      </li>
+    {% endif %}
+  </ul>
 </nav>

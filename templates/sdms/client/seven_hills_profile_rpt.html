@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <div class="page-header flex-wrap">
+      <h3 class="mb-0">{{ table_title|upper }}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
+
+      <div class="d-flex">
+        <button title="Print PDF" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
+
+        <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success" onclick="ExportToExcel('xlsx')"><i class="mdi mdi-file-excel btn-icon-prepend"></i></button>
+
+        <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success" onclick="Export2Doc('printMe');"><i class="mdi mdi-file-word btn-icon-prepend"></i></button>
+
+        <a title="Register Child" class="btn btn-sm ml-3 btn-success" href="{% url 'seven_hills_registration' %}"><i class="mdi mdi-account-plus btn-icon-prepend"></i></a>
+        <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'seven_hills_list' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
+      </div>
+    </div>
+    <hr />
+    <div id="printMe" class="tab-pane show active">
+      <header style="text-align: center;">
+        <i style="font-size: 2em; font-family: 'Lucida Calligraphy', 'Lucida Sans Unicode', sans-serif;" class="text-success">{{ record.full_name }}</i> -
+        <i style="font-size: 2em;">Profile</i>
+      </header>
+      <table class="my-table">
+        <tr>
+          <td class="text-white bg-info" colspan="4">
+            <b>Basic Info</b>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <i class="text-info">Registration Date:</i> {{ record.registration_date }}
+          </td>
+          <td colspan="2">
+            <i class="text-info">Full Name:</i> {{ record.full_name }}
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <i class="text-info">Gender:</i> {{ record.get_gender_display }}
+          </td>
+          <td colspan="2">
+            <i class="text-info">Date of Birth:</i> {{ record.date_of_birth }}
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <i class="text-info">Age Bracket:</i> {{ record.get_age_bracket_display }}
+          </td>
+          <td colspan="2">
+            <i class="text-info">Marital Status:</i> {{ record.get_marital_status_display }}
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <i class="text-info">Spouse Name:</i> {{ record.spouse_name }}
+          </td>
+          <td colspan="2">
+            <i class="text-info">Spouse Contact:</i> {{ record.spouse_contact }}
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <i class="text-info">Number of Children:</i> {{ record.number_of_children }}
+          </td>
+          <td colspan="2">
+            <i class="text-info">Children Age Brackets:</i> {{ record.children_age_brackets }}
+          </td>
+        </tr>
+        <tr>
+          <td class="text-white bg-info" colspan="4">
+            <b>Contact Details</b>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <i class="text-info">Email:</i> {{ record.email }}
+          </td>
+          <td colspan="2">
+            <i class="text-info">Telephone 1:</i> {{ record.telephone_1 }}
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <i class="text-info">Telephone 2:</i> {{ record.telephone_2 }}
+          </td>
+          <td colspan="2">
+            <i class="text-info">Residence:</i> {{ record.residence }}
+          </td>
+        </tr>
+        <tr>
+          <td class="text-white bg-info" colspan="4">
+            <b>Next of Kin</b>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <i class="text-info">Name:</i> {{ record.next_of_kin }}
+          </td>
+          <td colspan="2">
+            <i class="text-info">Telephone 1:</i> {{ record.next_of_kin_telephone_1 }}
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <i class="text-info">Telephone 2:</i> {{ record.next_of_kin_telephone_2 }}
+          </td>
+          <td colspan="2">
+            <i class="text-info">Relationship:</i> {{ record.relationship_with_next_of_kin }}
+          </td>
+        </tr>
+        <tr>
+          <td class="text-white bg-info" colspan="4">
+            <b>Additional Information</b>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <i class="text-info">Savings Frequency:</i> {{ record.get_savings_frequency_display }}
+          </td>
+          <td colspan="2">
+            <i class="text-info">Min Savings Amount:</i> {{ record.min_savings_amount }}
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <i class="text-info">Services Interested:</i> {{ record.get_services_interested_display }}
+          </td>
+          <td colspan="2">
+            <i class="text-info">Ministry Groups:</i> {{ record.get_ministry_groups_display }}
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <i class="text-info">Recommended By:</i> {{ record.recommended_by }}
+          </td>
+          <td colspan="2">
+            <i class="text-info">Preferred Contact Method:</i> {{ record.preferred_contact_method }}
+          </td>
+        </tr>
+        <tr>
+          <td colspan="4">
+            <i class="text-info">Additional Comments:</i> {{ record.additional_comments }}
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+{% endblock %}

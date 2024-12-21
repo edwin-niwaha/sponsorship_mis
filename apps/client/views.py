@@ -7,14 +7,18 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from openpyxl import load_workbook
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from apps.users.decorators import (
     admin_or_manager_or_staff_required,
     admin_or_manager_required,
     admin_required,
 )
 
-from .forms import ClientForm, ImportClientsForm
-from .models import Client
+from .forms import ClientForm, ImportClientsForm, SevenHillsRegistrationForm
+from .models import Client, SevenHillsRegistration
 
 
 # =================================== Fetch and display all clients details ===================================
@@ -27,7 +31,7 @@ def client_list(request):
     if search_query:
         queryset = queryset.filter(full_name__icontains=search_query)
 
-    paginator = Paginator(queryset, 50)  # Show 50 records per page
+    paginator = Paginator(queryset, 20)  # Show 20 records per page
     page = request.GET.get("page")
 
     try:
@@ -84,7 +88,7 @@ def register_client(request):
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
-def update_client(request, pk, template_name="sdms/client/client_register.html"):
+def update_client(request, pk, template_name="sdms/client/client_update.html"):
     try:
         client_record = Client.objects.get(pk=pk)
     except Client.DoesNotExist:
@@ -196,3 +200,124 @@ def delete_confirm(request):
         Client.objects.all().delete()
         messages.info(request, "All records deleted!", extra_tags="bg-danger")
         return HttpResponseRedirect(reverse("client_list"))
+
+
+# =================================== seven_hills registration ===================================
+@login_required
+@admin_or_manager_or_staff_required
+@transaction.atomic
+def seven_hills_registration_view(request):
+    if request.method == "POST":
+        form = SevenHillsRegistrationForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request, "Record saved successfully!", extra_tags="bg-success"
+            )
+            return redirect("seven_hills_registration")
+        else:
+            # Display error messages if the form is invalid
+            messages.error(
+                request,
+                "There was an error saving the record. Please check the form for errors.",
+                extra_tags="bg-danger",
+            )
+    else:
+        form = SevenHillsRegistrationForm()
+
+    context = {
+        "form_name": "Seven Hills Registration",
+        "form": form,
+    }
+
+    return render(request, "sdms/client/seven_hills_register.html", context)
+
+
+# =================================== Fetch and display all Seven Hills Registration details ===================================
+@login_required
+@admin_or_manager_or_staff_required
+def seven_hills_list(request):
+    # Fetch all records
+    queryset = SevenHillsRegistration.objects.all().order_by("id")
+
+    # Apply search filter
+    search_query = request.GET.get("search")
+    if search_query:
+        queryset = queryset.filter(full_name__icontains=search_query)
+        if not queryset.exists():
+            messages.info(request, "No results found for your search.")
+
+    # Paginate the filtered queryset
+    paginator = Paginator(queryset, 20)  # Show 20 records per page
+    page = request.GET.get("page")
+
+    try:
+        records = paginator.page(page)
+    except PageNotAnInteger:
+        records = paginator.page(1)
+    except EmptyPage:
+        records = paginator.page(paginator.num_pages)
+
+    # Pass both the full queryset and paginated records to the template
+    return render(
+        request,
+        "sdms/client/seven_hills_list.html",
+        {
+            "records": records,  # Paginated records for display
+            "table_title": "Seven Hills Members List",
+            "queryset": queryset,  # Full queryset if needed elsewhere
+        },
+    )
+
+
+# =================================== Update Seven Hills data ===================================
+@login_required
+@admin_or_manager_or_staff_required
+@transaction.atomic
+def update_seven_hills(
+    request, pk, template_name="sdms/client/seven_hills_update.html"
+):
+    try:
+        record = SevenHillsRegistration.objects.get(pk=pk)
+    except SevenHillsRegistration.DoesNotExist:
+        messages.error(request, "Record not found!", extra_tags="bg-danger")
+        return redirect("seven_hills_list")  # Or a relevant error page
+
+    if request.method == "POST":
+        form = SevenHillsRegistrationForm(request.POST, request.FILES, instance=record)
+        if form.is_valid():
+            form.save()
+
+            messages.success(
+                request, "Record updated successfully!", extra_tags="bg-success"
+            )
+            return redirect("seven_hills_list")
+    else:
+        # Pre-populate the form with existing data
+        form = SevenHillsRegistrationForm(instance=record)
+
+    context = {"form_name": "Seven Hills Update", "form": form}
+    return render(request, template_name, context)
+
+
+# =================================== Delete selected Seven Hills ===================================
+@login_required
+@admin_or_manager_required
+@transaction.atomic
+def delete_seven_hills(request, pk):
+    records = SevenHillsRegistration.objects.get(id=pk)
+    records.delete()
+    messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
+    return HttpResponseRedirect(reverse("seven_hills_list"))
+
+
+# =================================== Fetch and display selected member details ===================================
+@login_required
+@admin_or_manager_or_staff_required
+def seven_hills_details(request, pk):
+    record = SevenHillsRegistration.objects.get(pk=pk)
+    age = record.calculate_age()
+
+    context = {"table_title": "Profile Report", "record": record, "age": age}
+    return render(request, "sdms/client/seven_hills_profile_rpt.html", context)
