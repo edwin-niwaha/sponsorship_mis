@@ -77,12 +77,8 @@ class Child(models.Model):
     #     validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
     # )
 
-    picture = CloudinaryField(
-        "child_picture",
-        validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
-        null=True,
-        blank=True,
-    )
+    picture = CloudinaryField("child_picture", blank=True, null=True)
+
     weight = models.DecimalField(
         max_digits=5,
         decimal_places=2,

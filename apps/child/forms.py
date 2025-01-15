@@ -58,21 +58,12 @@ class ChildForm(forms.ModelForm):
         super(ChildForm, self).clean()
 
         full_name = self.cleaned_data.get("full_name")
-        preferred_name = self.cleaned_data.get("preferred_name")
-
+        
         if len(full_name) < 3:
             self.add_error(
                 "full_name", "Can not save first name less than 3 characters long"
             )
             self.fields["full_name"].widget.attrs.update(
-                {"class": "form-control  is-invalid"}
-            )
-
-        if len(preferred_name) < 3:
-            self.add_error(
-                "preferred_name", "Can not save last name less than 3 characters long"
-            )
-            self.fields["preferred_name"].widget.attrs.update(
                 {"class": "form-control  is-invalid"}
             )
 
