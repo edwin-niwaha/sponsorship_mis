@@ -204,7 +204,6 @@ def delete_confirm(request):
 
 # =================================== seven_hills registration ===================================
 @login_required
-@admin_or_manager_or_staff_required
 @transaction.atomic
 def seven_hills_registration_view(request):
     if request.method == "POST":
@@ -236,7 +235,6 @@ def seven_hills_registration_view(request):
 
 # =================================== Fetch and display all Seven Hills Registration details ===================================
 @login_required
-@admin_or_manager_or_staff_required
 def seven_hills_list(request):
     # Fetch all records
     queryset = SevenHillsRegistration.objects.all().order_by("id")
@@ -273,7 +271,6 @@ def seven_hills_list(request):
 
 # =================================== Update Seven Hills data ===================================
 @login_required
-@admin_or_manager_or_staff_required
 @transaction.atomic
 def update_seven_hills(
     request, pk, template_name="sdms/client/seven_hills_update.html"
@@ -314,7 +311,6 @@ def delete_seven_hills(request, pk):
 
 # =================================== Fetch and display selected member details ===================================
 @login_required
-@admin_or_manager_or_staff_required
 def seven_hills_details(request, pk):
     record = SevenHillsRegistration.objects.get(pk=pk)
     age = record.calculate_age()

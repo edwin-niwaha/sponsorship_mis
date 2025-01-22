@@ -22,8 +22,31 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
 # Production settings
 DEBUG = False
 # DEBUG = True
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sponsorwithpendeza.up.railway.app"]
-CSRF_TRUSTED_ORIGINS = ["https://sponsorwithpendeza.up.railway.app"]
+BASE_DOMAIN = "sponsorwithpendeza.up.railway.app"
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", BASE_DOMAIN]
+
+
+############################### GENERAL SITE SETTINGS ###############################
+
+# Base domain and site details
+SITE_URL = f"https://{BASE_DOMAIN}"
+SITE_NAME = "Sponsorship Database"
+
+# Allowed hosts and trusted origins
+CSRF_TRUSTED_ORIGINS = [SITE_URL]
+
+# Security settings
+SECURE_SSL_REDIRECT = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Cookie configuration
+SESSION_COOKIE_DOMAIN = f".{BASE_DOMAIN}"
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_DOMAIN = f".{BASE_DOMAIN}"
+
+############################### CORS CONFIGURATION ###############################
+
+CORS_ALLOWED_ORIGINS = [SITE_URL]
 
 
 # =================================== APPLICATION DEFINITION ===================================
