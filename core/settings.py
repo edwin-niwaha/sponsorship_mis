@@ -21,30 +21,27 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
 
 # Production settings
 DEBUG = False
-# DEBUG = True
-BASE_DOMAIN = "sponsorwithpendeza.up.railway.app"
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", BASE_DOMAIN]
-
 
 ############################### GENERAL SITE SETTINGS ###############################
 
 # Base domain and site details
-SITE_URL = f"https://{BASE_DOMAIN}"
 SITE_NAME = "Sponsorship Database"
+BASE_DOMAIN = "sponsorwithpendeza.up.railway.app"
+SITE_URL = f"https://{BASE_DOMAIN}"
 
 # Allowed hosts and trusted origins
-CSRF_TRUSTED_ORIGINS = [SITE_URL]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", BASE_DOMAIN]
+CSRF_TRUSTED_ORIGINS = ["https://sponsorwithpendeza.up.railway.app", "http://localhost", "http://127.0.0.1"]
 
-# Security settings
-SECURE_SSL_REDIRECT = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Cookie configuration
-SESSION_COOKIE_DOMAIN = f".{BASE_DOMAIN}"
-CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_DOMAIN = f".{BASE_DOMAIN}"
+# Security settings --comment in dev
+SECURE_SSL_REDIRECT = True  # Redirect HTTP to HTTPS
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO","https",)  # Trust proxy's HTTPS header
+CSRF_COOKIE_SECURE = True  # Secure CSRF cookies
+SESSION_COOKIE_DOMAIN = f".{BASE_DOMAIN}"  # Domain for session cookies
+CSRF_COOKIE_DOMAIN = f".{BASE_DOMAIN}"  # Domain for CSRF cookies
 
-############################### CORS CONFIGURATION ###############################
+############################## CORS CONFIGURATION ###############################
 
 CORS_ALLOWED_ORIGINS = [SITE_URL]
 
@@ -245,6 +242,12 @@ EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = str(os.getenv("EMAIL_USER"))
 EMAIL_HOST_PASSWORD = str(os.getenv("EMAIL_PASS"))
+
+# Users emails
+BOO_EMAIL = str(os.getenv("BOO_EMAIL"))
+HOF_EMAIL = str(os.getenv("HOF_EMAIL"))
+ED_EMAIL = str(os.getenv("ED_EMAIL"))
+ACCOUNTANT_EMAIL = str(os.getenv("ACCOUNTANT_EMAIL"))
 
 SESSION_COOKIE_AGE = 3600  # 60 * 60 Session duration in seconds
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Expire session when browser closes

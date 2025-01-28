@@ -1,6 +1,7 @@
 from django import forms
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.timezone import now
 
 from apps.client.models import Client
 
@@ -66,6 +67,7 @@ class LoanApplicationForm(forms.ModelForm):
             "start_date",
             "loan_period_months",
             "interest_method",
+            "reason_for_approval",
         ]
         widgets = {
             "borrower": forms.Select(attrs={"class": "form-control"}),
@@ -99,6 +101,13 @@ class LoanApplicationForm(forms.ModelForm):
                     "min": 1,
                 }
             ),
+            "reason_for_approval": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Enter reason for approval",
+                    "rows": 3,
+                }
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -115,7 +124,16 @@ class LoanApplicationForm(forms.ModelForm):
             loan.save()
         return loan
 
-
+class LoanRejectionForm(forms.Form):
+    reason_for_rejection = forms.CharField(
+        max_length=100,
+        widget=forms.Textarea(attrs={
+            "class": "form-control",
+            "placeholder": "Enter reason for rejection",
+            "rows": 3,
+        }),
+        label="Reason for Rejection",
+    )
 # =================================== LoanDisbursementForm ===================================
 class LoanDisbursementForm(forms.ModelForm):
     loan = forms.ModelChoiceField(
@@ -136,7 +154,14 @@ class LoanDisbursementForm(forms.ModelForm):
         required=True,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
-
+    disbursement_date = forms.DateField(
+        label="Disbursement Date",
+        required=True,
+        widget=forms.DateInput(
+            attrs={"class": "form-control", "type": "date"}
+        ),
+        initial=now().date(),  # Default to today's date
+    )
     class Meta:
         model = LoanDisbursement
         fields = [
@@ -163,41 +188,6 @@ class LoanDisbursementForm(forms.ModelForm):
 
 
 # =================================== LoanAllDisbursementForm ===================================
-
-# class LoanAllDisbursementForm(forms.ModelForm):
-#     account = forms.ModelChoiceField(
-#         queryset=ChartOfAccounts.objects.filter(
-#             account_type="asset",
-#             account_number__range=(
-#                 min_account_number,
-#                 max_account_number,
-#             ),
-#         ),
-#         label="Paying Account",
-#         required=True,
-#         widget=forms.Select(attrs={"class": "form-control"}),
-#     )
-#     class Meta:
-#         model = LoanDisbursement
-#         fields = ['account', 'payment_method']  # Only these fields for mass disbursement
-#         widgets = {
-#             "payment_method": forms.Select(attrs={"class": "form-control"}),
-#         }
-
-#     def save(self, approved_loans):
-#         """
-#         Custom save method to handle disbursement of all loans at once
-#         """
-#         for loan in approved_loans:
-#             disbursement = super().save(commit=False)
-#             disbursement.loan = loan  # Assign the loan to each disbursement
-#             disbursement.save()
-
-#             # Update the loan status to "disbursed"
-#             loan.status = "disbursed"
-#             loan.save()
-
-
 class LoanAllDisbursementForm(forms.ModelForm):
     account = forms.ModelChoiceField(
         queryset=ChartOfAccounts.objects.filter(
@@ -229,7 +219,7 @@ class LoanAllDisbursementForm(forms.ModelForm):
                 loan=loan,
                 account=self.cleaned_data["account"],
                 payment_method=self.cleaned_data["payment_method"],
-                disbursement_date=timezone.now(),  # You can adjust the date as needed
+                # disbursement_date=timezone.now(),  # You can adjust the date as needed
             )
             disbursement.save()  # Save the disbursement record
             disbursed_count += 1

@@ -3,6 +3,8 @@ from decimal import ROUND_DOWN, Decimal
 from dateutil.relativedelta import relativedelta
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.db.models import Sum
 from django.utils import timezone
@@ -77,6 +79,11 @@ class Loan(models.Model):
         ("overdue", "Overdue"),
         ("repaid", "Repaid"),
         ("rejected", "Rejected"),
+        ("ed_rejected", "ED Rejected"),
+        ("hof_rejected", "HOF Rejected"),
+        ("boo_approved", "BOO Approved"),  # New status
+        ("hof_approved", "HOF Approved"),  # New status
+        ("ed_approved", "ED Approved"),   # New status
     ]
 
     # Interest calculation methods
@@ -107,8 +114,17 @@ class Loan(models.Model):
         max_digits=5,
         decimal_places=2,
         verbose_name="Annual Interest Rate (%)",
+        validators=[
+            MinValueValidator(0),  # Ensures the value is not negative
+            MaxValueValidator(30),  # Ensures the value does not exceed 30
+        ]
     )
     start_date = models.DateField(verbose_name="Start Date")
+    disbursement_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Disbursement Date"
+    )
     loan_period_months = models.PositiveIntegerField(
         verbose_name="Loan Period (Months)"
     )
@@ -132,15 +148,37 @@ class Loan(models.Model):
         default="flat_rate",
         verbose_name="Interest Calculation Method",
     )
-    approved_by = models.ForeignKey(
+    approved_by_boo = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name="Approved By",
+        related_name="loans_boo_approved",
+        verbose_name="BOO Approved By",
+    )
+    approved_by_hof = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="loans_hof_approved",
+        verbose_name="HOF Approved By",
+    )
+    approved_by_ed = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="loans_ed_approved",
+        verbose_name="ED Approved By",
     )
     approved_date = models.DateField(
         blank=True, null=True, verbose_name="Approval Date"
+    )
+    reason_for_rejection = models.TextField(null=True, blank=True)
+    reason_for_approval = models.TextField(max_length=100,
+        blank=False, null=False, verbose_name="Reason for Approval",
+        default="Approval granted based on the borrower's "
     )
     created_by = models.ForeignKey(
         User,
@@ -160,15 +198,16 @@ class Loan(models.Model):
 
     def clean(self):
         """Validate the loan period and due date."""
-        if self.due_date and self.due_date <= self.start_date:
+        if self.due_date and self.due_date <= self.disbursement_date:
             raise ValidationError("Due date must be after the start date.")
+        
         if self.loan_period_months <= 0:
             raise ValidationError("Loan period must be a positive integer.")
 
     def calculate_due_date(self):
         """Calculate and set the due date based on the start date and loan period."""
-        if self.start_date and self.loan_period_months:
-            self.due_date = self.start_date + relativedelta(
+        if self.disbursement_date and self.loan_period_months:
+            self.due_date = self.disbursement_date + relativedelta(
                 months=self.loan_period_months
             )
 
@@ -216,7 +255,7 @@ class Loan(models.Model):
         current_balance = self.principal_amount
 
         for month in range(1, self.loan_period_months + 1):
-            payment_due_date = self.start_date + relativedelta(months=month)
+            payment_due_date = self.disbursement_date + relativedelta(months=month)
             interest_payment = self.calculate_interest_payment(current_balance)
             principal_payment = monthly_principal_payment
 
@@ -294,21 +333,21 @@ class Loan(models.Model):
         #     self.save(update_fields=["status"])
 
         # def save(self, *args, **kwargs):
-        """Override save to ensure the account is set, calculate due date, interest, and status before saving."""
-        if not self.account:
-            try:
-                self.account = ChartOfAccounts.objects.get(
-                    account_number="1050"
-                )  # Loan Receivable
-            except ChartOfAccounts.DoesNotExist:
-                raise ValidationError(
-                    "Default loan account missing. Please contact support."
-                )
+        # """Override save to ensure the account is set, calculate due date, interest, and status before saving."""
+        # if not self.account:
+        #     try:
+        #         self.account = ChartOfAccounts.objects.get(
+        #             account_number="1050"
+        #         )  # Loan Receivable
+        #     except ChartOfAccounts.DoesNotExist:
+        #         raise ValidationError(
+        #             "Default loan account missing. Please contact support."
+        #         )
 
-        self.calculate_due_date()
-        self.calculate_interest()
-        self.update_status()
-        super().save(*args, **kwargs)
+        # self.calculate_due_date()
+        # self.calculate_interest()
+        # self.update_status()
+        # super().save(*args, **kwargs)
 
     def update_status(self):
         """Update loan status based on current status, balance, and due date."""
@@ -402,8 +441,7 @@ class LoanDisbursement(models.Model):
     loan = models.ForeignKey(
         Loan, on_delete=models.CASCADE, related_name="disbursements"
     )
-    # disbursement_date = models.DateField()
-    disbursement_date = models.DateField(default=timezone.now)
+    # disbursement_date = models.DateField(default=timezone.now)
     account = models.ForeignKey(
         ChartOfAccounts, on_delete=models.CASCADE, related_name="disbursements"
     )
@@ -420,7 +458,6 @@ class LoanDisbursement(models.Model):
         db_table = "loan_disbursements"
         verbose_name = "Loan Disbursement"
         verbose_name_plural = "Loan Disbursements"
-        ordering = ["disbursement_date"]
 
     @property
     def disbursed_amount(self):
@@ -506,7 +543,7 @@ class LoanDisbursement(models.Model):
         """Helper to create a transaction history entry."""
         TransactionHistory.objects.create(
             loan=self.loan,
-            transaction_date=self.disbursement_date,
+            transaction_date=self.loan.disbursement_date,
             amount=amount,
             transaction_type=transaction_type,
             account=account,

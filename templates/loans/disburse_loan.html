@@ -12,12 +12,12 @@
           </button>
         </a>
         <!-- Add button to disburse all loans -->
-        <a href="{% url 'loans:disburse_all_loans' %}">
+        {% comment %} <a href="{% url 'loans:disburse_all_loans' %}">
           <button type="button" class="btn btn-success font-weight-bold">
             <i class="mdi mdi-check-all mr-2"></i>
             Disburse All Loans
           </button>
-        </a>
+        </a> {% endcomment %}
         <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'loans:disbursed_loans' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
       </div>
     </div>

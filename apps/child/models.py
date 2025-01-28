@@ -121,7 +121,7 @@ class Child(models.Model):
     )
 
     father_description = models.TextField(
-        max_length=100,
+        max_length=200,
         null=True,
         blank=True,
         verbose_name="if not what happened/if alive what is happening?",
@@ -135,7 +135,7 @@ class Child(models.Model):
         verbose_name="is the mother alive?",
     )
     mother_description = models.TextField(
-        max_length=100,
+        max_length=200,
         null=True,
         blank=True,
         verbose_name="if not what happened/if alive what is happening?",
@@ -467,7 +467,7 @@ class ChildIncident(models.Model):
         ],
     )
     description = models.TextField(
-        max_length=100, verbose_name="Description of the Incident"
+        max_length=200, verbose_name="Description of the Incident"
     )
     action_taken = models.CharField(max_length=100, verbose_name="Action Taken")
     results = models.CharField(

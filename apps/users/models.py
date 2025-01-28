@@ -19,6 +19,9 @@ class Profile(models.Model):
         ("manager", "Manager"),
         ("staff", "Staff"),
         ("guest", "Guest"),
+        ("boo", "Business Operations Officer"),
+        ("hof", "Head of Finance"),
+        ("ed", "Executive Director"),
     )
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)

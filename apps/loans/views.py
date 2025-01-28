@@ -1,5 +1,11 @@
 import logging
+from django.utils.timezone import now
+from django.conf import settings
 from datetime import date
+from django.core.mail import EmailMultiAlternatives
+from django.core.mail import send_mail
+from django.core.mail import EmailMessage
+from django.utils.html import strip_tags
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -26,6 +32,7 @@ from .forms import (
     LoanApplicationForm,
     LoanDisbursementForm,
     LoanRepaymentForm,
+    LoanRejectionForm,
 )
 from .models import (
     ChartOfAccounts,
@@ -69,16 +76,84 @@ def paginate_queryset(queryset, page_number):
         )  # Return last page if page number is out of range
 
 
+
 # =================================== Loan Apply View ===================================
+
+def send_loan_application_email(recipient_name, recipient_email, application_id, is_applicant=True):
+    """
+    Sends an email notification for loan application status or request for officer approval.
+
+    Args:
+        recipient_name (str): Name of the recipient.
+        recipient_email (str): Email address of the recipient.
+        application_id (str): Unique ID of the loan application.
+        is_applicant (bool): True if the email is for the applicant, False for the officer.
+
+    Returns:
+        bool: True if the email was sent successfully, False otherwise.
+    """
+    applicant_dashboard_url = "https://sponsorwithpendeza.up.railway.app/loans/applications/"
+    officer_review_url = "https://sponsorwithpendeza.up.railway.app/loans/applications/"
+    subject = "Your Loan Application Submitted" if is_applicant else "New Loan Application for Review"
+
+    if is_applicant:
+        email_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; color: #333;">
+            <div style="max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #2E86C1; text-align: center;">Loan Application Submitted</h2>
+                <p>Hello <strong>{recipient_name}</strong>,</p>
+                <p>Your loan application ID is <strong>{application_id}</strong>. You can view the status of your application by clicking the button below:</p>
+                <div style="text-align: center; margin: 20px 0;">
+                    <a href="{applicant_dashboard_url}" style="background-color: #2E86C1; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 5px;">View Application Status</a>
+                </div>
+                <p>Thank you for choosing Pendeza Uganda for your financial needs!</p>
+                <p style="color: #888;">- Pendeza Uganda - Finance Department</p>
+            </div>
+        </body>
+        </html>
+        """
+    else:
+        email_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; color: #333;">
+            <div style="max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #C0392B; text-align: center;">Loan Application Approval Needed</h2>
+                <p>Hello <strong>{recipient_name}</strong>,</p>
+                <p>A new loan application with ID <strong>{application_id}</strong> is awaiting your review. Please review and process the application by clicking the button below:</p>
+                <div style="text-align: center; margin: 20px 0;">
+                    <a href="{officer_review_url}" style="background-color: #C0392B; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 5px;">Review Application</a>
+                </div>
+                <p>Thank you for your prompt attention to this matter.</p>
+                <p style="color: #888;">- Pendeza Uganda - Finance Department</p>
+            </div>
+        </body>
+        </html>
+        """
+
+    from_email = getattr(settings, "EMAIL_HOST_USER", None)
+    to = [recipient_email]
+
+    try:
+        email = EmailMultiAlternatives(subject, strip_tags(email_body), from_email, to)
+        email.attach_alternative(email_body, "text/html")
+        email.send()
+        return True
+    except Exception as e:
+        logger.error(f"Error sending email to {recipient_email}: {str(e)}")
+        return False
+
+
 @login_required
-@admin_or_manager_required
+# @admin_or_manager_required
 def loan_apply(request):
-    form_title = "Apply for Loan"
+    form_title = "Loan Application Form"
     form = LoanApplicationForm(request.POST or None)
 
     if request.method == "POST":
         if form.is_valid():
             borrower = form.cleaned_data.get("borrower")
+            logged_in_user = request.user
 
             # Check if the selected borrower has an active (running) loan balance
             running_loan = Loan.objects.filter(
@@ -93,7 +168,28 @@ def loan_apply(request):
                 return redirect("loans:apply_for_loan")
 
             try:
-                form.save()  # Save the loan application without passing the user
+                # application = form.save()  # Save the loan application without passing the user
+                application = form.save(commit=False)  # Save the loan application without committing
+                application.disbursement_date = now()  # Set the default disbursement date
+                application.save()  # Save the loan application to the database
+
+                # Send email to the logged-in user applying on behalf of the borrower
+                send_loan_application_email(
+                    recipient_name=logged_in_user.username,
+                    recipient_email=logged_in_user.email,
+                    application_id=application.id,
+                    is_applicant=True,
+                )
+
+                # Send email to the loan officer for approval
+                boo_email = settings.BOO_EMAIL
+                send_loan_application_email(
+                    recipient_name="Loan Officer",
+                    recipient_email=boo_email,
+                    application_id=application.id,
+                    is_applicant=False,
+                )
+
                 messages.success(
                     request,
                     "Loan application submitted successfully!",
@@ -108,7 +204,6 @@ def loan_apply(request):
         "form_title": form_title,
     }
     return render(request, "loans/apply_for_loan.html", context)
-
 
 # =================================== view_repayment_schedule View ===================================
 def repayment_schedule(request, loan_id):
@@ -184,7 +279,7 @@ def disbursed_loans_view(request):
             "start_date": loan.start_date,
             "due_date": loan.due_date,
             "status": loan.get_status_display(),
-            "disbursement_date": disbursement.disbursement_date,
+            "disbursement_date": loan.disbursement_date,
             "account_number": loan.account.account_number if loan.account else None,
             "payment_method": disbursement.payment_method,
         }
@@ -215,8 +310,13 @@ def disburse_loan(request):
             disbursement.loan = loan  # Associate with the selected loan
             disbursement.save()  # Save the disbursement, triggering transaction creation
 
-            # Update loan status
-            loan.status = "disbursed"
+            # Get the disbursement_date from the form
+            disbursement_date = form.cleaned_data.get("disbursement_date")
+
+            # Set the disbursement_date on the related Loan model
+            loan.disbursement_date = disbursement_date  # Update loan's disbursement_date
+            
+            loan.status = "disbursed" # Update loan status
             loan.save()  # Save the updated loan status
 
             messages.success(
@@ -296,18 +396,134 @@ def disburse_all_loans(request):
 
 
 # =================================== Approve Loan View ===================================
+
 @login_required
-@admin_or_manager_required
 def approve_loan(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
-    loan.status = "approved"
-    loan.approved_date = timezone.now()
-    loan.approved_by = request.user
-    loan.save()
+    current_user = request.user
 
-    messages.success(
-        request, f"Loan {loan.id} approved successfully.", extra_tags="bg-success"
-    )
+    if loan.status == "pending" and current_user.profile.role == "boo":
+        loan.status = "boo_approved"
+        loan.approved_by_boo = current_user
+        loan.save()
+
+        # Notify HOF with an HTML email
+        subject = f"Loan {loan.id} Approved by BOO"
+        message = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                    <h2 style="color: #2c3e50; text-align: center;">Loan Approval Notification</h2>
+                    <p style="font-size: 16px; color: #34495e; line-height: 1.6;">Dear HOF,</p>
+                    <p style="font-size: 16px; color: #34495e; line-height: 1.6;">
+                        Loan <strong style="color: #e74c3c;">{loan.id}</strong> for <strong style="color: #e74c3c;">{loan.borrower.full_name}</strong> 
+                        (Amount: <strong style="color: #e74c3c;">UGX {loan.principal_amount:,.2f}</strong>) has been approved by 
+                        <strong style="color: #e74c3c;">{current_user.username}</strong>. 
+                        Please review for HOF approval.
+                    </p>
+                    <p style="text-align: center;">
+                        <a href="{request.build_absolute_uri(f'/loans/applications/')}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-size: 16px; display: inline-block; margin-top: 20px;">
+                            Approve Loan
+                        </a>
+                    </p>
+                </div>
+            </body>
+        </html>
+        """
+
+        email = EmailMessage(
+            subject=subject,
+            body=message,
+            from_email=settings.EMAIL_HOST_USER,
+            to=[settings.HOF_EMAIL],
+        )
+        email.content_subtype = "html"
+        email.send()
+
+        messages.success(request, f"Loan {loan.id} approved by BOO.", extra_tags="bg-success")
+
+    elif loan.status == "boo_approved" and current_user.profile.role == "hof":
+        loan.status = "hof_approved"
+        loan.approved_by_hof = current_user
+        loan.save()
+
+        # Notify BOO and ED with an HTML email
+        subject = f"Loan {loan.id} Approved by HOF"
+        message = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                    <h2 style="color: #2c3e50; text-align: center;">Loan Approval Notification</h2>
+                    <p style="font-size: 16px; color: #34495e; line-height: 1.6;">Dear ED,</p>
+                    <p style="font-size: 16px; color: #34495e; line-height: 1.6;">
+                        Loan <strong style="color: #e74c3c;">{loan.id}</strong> for <strong style="color: #e74c3c;">{loan.borrower.full_name}</strong> 
+                        (Amount: <strong style="color: #e74c3c;">UGX {loan.principal_amount:,.2f}</strong>) has been approved by 
+                        <strong style="color: #e74c3c;">{current_user.username}</strong>. 
+                        Please review for ED approval.
+                    </p>
+                    <p style="text-align: center;">
+                        <a href="{request.build_absolute_uri(f'/loans/applications/')}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-size: 16px; display: inline-block; margin-top: 20px;">
+                            Approve Loan
+                        </a>
+                    </p>
+                </div>
+            </body>
+        </html>
+        """
+        email = EmailMessage(
+            subject=subject,
+            body=message,
+            from_email=settings.EMAIL_HOST_USER,
+            # to=[settings.BOO_EMAIL, settings.ED_EMAIL],
+            to=[settings.ED_EMAIL],
+        )
+        email.content_subtype = "html"
+        email.send()
+
+        messages.success(request, f"Loan {loan.id} approved by HOF.", extra_tags="bg-success")
+
+    elif loan.status == "hof_approved" and current_user.profile.role == "ed":
+        loan.status = "approved"
+        loan.approved_by_ed = current_user
+        loan.approved_date = timezone.now()
+        loan.save()
+
+        # Notify BOO, HOF, and Accountant with an HTML email
+        subject = f"Loan {loan.id} Fully Approved by ED"
+        message = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                    <h2 style="color: #2c3e50; text-align: center;">Loan Approval Notification</h2>
+                    <p style="font-size: 16px; color: #34495e;">Dear Team,</p>
+                    <p style="font-size: 16px; color: #34495e;">We are pleased to inform you that the loan <strong style="color: #e74c3c;">{loan.id}</strong> for <strong style="color: #e74c3c;">{loan.borrower.full_name}</strong> (Amount: <strong style="color: #e74c3c;">UGX {loan.principal_amount:,.2f}</strong>) has been fully approved by <strong style="color: #e74c3c;">{current_user.username}</strong>.</p>
+                    <p style="font-size: 16px; color: #34495e;">Please proceed with the disbursement of the loan.</p>
+                    <p style="text-align: center;">
+                        <a href="{request.build_absolute_uri(f'/loans/disburse/')}" style="background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Go on and Disburse the Loan</a>
+                    </p>
+                </div>
+            </body>
+        </html>
+        """
+        email = EmailMessage(
+            subject=subject,
+            body=message,
+            from_email=settings.EMAIL_HOST_USER,
+            to=[settings.BOO_EMAIL, settings.HOF_EMAIL, settings.ACCOUNTANT_EMAIL],
+        )
+        email.content_subtype = "html"
+        email.send()
+
+        messages.success(request, f"Loan {loan.id} fully approved by ED.", extra_tags="bg-success")
+
+    else:
+        messages.error(
+            request,
+            "You are not authorized to approve this loan at this stage.",
+            extra_tags="bg-danger",
+        )
+        return redirect("loans:loan_applications")
+
     return redirect("loans:loan_applications")
 
 
@@ -338,16 +554,106 @@ def approve_all_loans(request):
 
 
 # =================================== Reject Loan View ===================================
+# @login_required
+# @admin_or_manager_required
+# def reject_loan(request, loan_id):
+#     loan = get_object_or_404(Loan, id=loan_id, status="pending")
+#     loan.status = "rejected"
+#     loan.reason_for_rejection = "Please review this loan"
+#     loan.save()
+#     messages.info(request, f"Loan {loan.id} has been rejected.", extra_tags="bg-danger")
+#     return redirect("loans:loan_applications")
+
+
 @login_required
 @admin_or_manager_required
 def reject_loan(request, loan_id):
-    loan = get_object_or_404(Loan, id=loan_id, status="pending")
-    loan.status = "rejected"
+    loan = get_object_or_404(Loan, id=loan_id)
+
+    # Check if the loan is already approved
+    if loan.status == "approved":
+        messages.error(request, f"Loan {loan.id} cannot be rejected because it is already approved.", extra_tags="bg-warning")
+        return redirect("loans:loan_applications")
+
+    # Define the rejection process based on the current loan status
+    rejection_status = None
+    rejection_reason = "Please review this loan"
+
+    if loan.status == "boo_approved":
+        rejection_status = "hof_rejected"
+    elif loan.status == "hof_approved":
+        rejection_status = "ed_rejected"
+    else:
+        messages.error(request, f"Loan {loan.id} cannot be rejected because its status is {loan.status}.", extra_tags="bg-warning")
+        return redirect("loans:loan_applications")
+
+    # Update loan status and reason for rejection
+    loan.status = rejection_status
+    loan.reason_for_rejection = rejection_reason
     loan.save()
+
+    # Send appropriate email notifications
+    if rejection_status == "hof_rejected":
+        send_email_to_boo(loan)
+    elif rejection_status == "ed_rejected":
+        send_email_to_boo_and_hof(loan)
+
+    # Display success message
     messages.info(request, f"Loan {loan.id} has been rejected.", extra_tags="bg-danger")
+    
     return redirect("loans:loan_applications")
 
+# def send_email_to_boo(loan):
+#     # Replace with actual email sending logic
+#     subject = f"Loan {loan.id} Rejected by HOF"
+#     message = f"The loan with ID {loan.id} has been rejected by HOF."
+#     recipient_list = [settings.BOO_EMAIL]
+#     send_mail(subject, message, settings.EMAIL_HOST_USER, recipient_list)
 
+# def send_email_to_boo_and_hof(loan):
+#     # Replace with actual email sending logic
+#     subject = f"Loan {loan.id} Rejected by ED"
+#     message = f"The loan with ID {loan.id} has been rejected by ED."
+#     recipient_list = [settings.BOO_EMAIL, settings.HOF_EMAIL]
+#     send_mail(subject, message, settings.EMAIL_HOST_USER, recipient_list)
+
+
+def send_email_to_boo(loan):
+    subject = f"Loan {loan.id} Rejected by HOF"
+    message = f"""
+    <html>
+        <body style="font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                <h2 style="color: #2c3e50; text-align: center;">Loan Rejection Notification</h2>
+                <p style="font-size: 16px; color: #34495e;">Dear Team,</p>
+                <p style="font-size: 16px; color: #34495e;">The loan <strong style="color: #e74c3c;">{loan.id}</strong> for <strong style="color: #e74c3c;">{loan.borrower.full_name}</strong> (Amount: <strong style="color: #e74c3c;">UGX {loan.principal_amount:,.2f}</strong>) has been rejected by the Head of Finance.</p>
+                <p style="font-size: 16px; color: #34495e;">Please review the loan details and take appropriate actions.</p>
+            </div>
+        </body>
+    </html>
+    """
+    email = EmailMessage(subject, message, settings.EMAIL_HOST_USER, [settings.BOO_EMAIL])
+    email.content_subtype = "html"
+    email.send()
+
+def send_email_to_boo_and_hof(loan):
+    subject = f"Loan {loan.id} Rejected by ED"
+    message = f"""
+    <html>
+        <body style="font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                <h2 style="color: #2c3e50; text-align: center;">Loan Rejection Notification</h2>
+                <p style="font-size: 16px; color: #34495e;">Dear Team,</p>
+                <p style="font-size: 16px; color: #34495e;">The loan <strong style="color: #e74c3c;">{loan.id}</strong> for <strong style="color: #e74c3c;">{loan.borrower.full_name}</strong> (Amount: <strong style="color: #e74c3c;">UGX {loan.principal_amount:,.2f}</strong>) has been rejected by the Executive Director.</p>
+                <p style="font-size: 16px; color: #34495e;">Please review the loan details and take appropriate actions.</p>
+            </div>
+        </body>
+    </html>
+    """
+    email = EmailMessage(subject, message, settings.EMAIL_HOST_USER, [settings.BOO_EMAIL, settings.HOF_EMAIL])
+    email.content_subtype = "html"
+    email.send()
+    
 # =================================== Delete Loan View ===================================
 @login_required
 @admin_or_manager_required
