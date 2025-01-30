@@ -1,5 +1,6 @@
+from django.conf import settings
 from decimal import ROUND_DOWN, Decimal
-
+from datetime import date
 from dateutil.relativedelta import relativedelta
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -89,9 +90,15 @@ class Loan(models.Model):
     # Interest calculation methods
     INTEREST_METHOD_CHOICES = [
         ("flat_rate", "Flat Rate"),
-        # ("reducing_rate", "Reducing Rate"),
+        #
+        #  ("reducing_rate", "Reducing Rate"),
     ]
-
+    # Loan purpose options
+    LOAN_PURPOSE_CHOICES = [
+        ("business", "Business"),
+        ("school_fees", "School Fees"),
+        ("investment", "Investment"),
+    ]
     # Fields
     account = models.ForeignKey(
         ChartOfAccounts,
@@ -148,6 +155,12 @@ class Loan(models.Model):
         default="flat_rate",
         verbose_name="Interest Calculation Method",
     )
+    loan_purpose = models.CharField(
+        max_length=20,
+        choices=LOAN_PURPOSE_CHOICES,
+        default="business",
+        verbose_name="Loan Purpose",
+    )
     approved_by_boo = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -180,6 +193,8 @@ class Loan(models.Model):
         blank=False, null=False, verbose_name="Reason for Approval",
         default="Approval granted based on the borrower's "
     )
+    applied_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="applied_loans")
+    applied_by_role = models.CharField(max_length=15, blank=True, null=True)    
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -197,6 +212,10 @@ class Loan(models.Model):
         verbose_name_plural = "Loans"
 
     def clean(self):
+        # Ensure the start date is not in the future
+        if self.start_date > date.today():
+            raise ValidationError({"start_date": "Start date cannot be in the future."})
+        
         """Validate the loan period and due date."""
         if self.due_date and self.due_date <= self.disbursement_date:
             raise ValidationError("Due date must be after the start date.")

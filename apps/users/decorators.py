@@ -28,7 +28,7 @@ def admin_required(view_func):
 
 def admin_or_manager_required(view_func):
     """Decorator to require the user to be an administrator or manager."""
-    return role_required(["administrator", "manager", "ed"])(view_func)
+    return role_required(["administrator", "manager", "ed", "hof"])(view_func)
 
 
 def admin_or_manager_or_staff_required(view_func):

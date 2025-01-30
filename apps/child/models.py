@@ -1,5 +1,6 @@
 import datetime
 from datetime import date
+from django.core.exceptions import ValidationError
 from cloudinary.models import CloudinaryField
 
 from django.core.validators import (
@@ -56,26 +57,12 @@ class Child(models.Model):
         null=True,
         blank=True,
         verbose_name="Date of Birth",
-        validators=[
-            MinValueValidator(limit_value=datetime.date(year=1900, month=1, day=1)),
-            MaxValueValidator(limit_value=datetime.date.today()),
-        ],
     )
     registration_date = models.DateField(
         null=True,
         blank=True,
-        default=datetime.date(2013, 1, 1),
-        validators=[
-            MinValueValidator(limit_value=datetime.date(year=2013, month=1, day=1)),
-            MaxValueValidator(limit_value=datetime.date.today()),
-        ],
+        verbose_name="Registration Date",
     )
-    # picture = models.ImageField(
-    #     default="default.jpg",
-    #     upload_to="current_child_profiles/",
-    #     verbose_name="Upload Image(jpg, jpeg, png)",
-    #     validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
-    # )
 
     picture = CloudinaryField("child_picture", blank=True, null=True)
 
@@ -221,6 +208,18 @@ class Child(models.Model):
         db_table = "child_info"
         verbose_name = "Child Bio Data"
         verbose_name_plural = "Children Bio Data"
+
+    def clean(self):
+        # Validate that date_of_birth is not in the future
+        if self.date_of_birth and self.date_of_birth > datetime.date.today():
+            raise ValidationError({"date_of_birth": "Date of birth cannot be in the future."})
+
+        # Validate that registration_date is not in the future
+        if self.registration_date and self.registration_date > datetime.date.today():
+            raise ValidationError({"registration_date": "Registration date cannot be in the future."})
+
+        # Call the parent clean method to ensure other validations still work
+        super().clean()
 
     def __str__(self):
         return self.full_name

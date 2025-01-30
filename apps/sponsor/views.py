@@ -52,7 +52,7 @@ def sponsor_list(request):
     return render(
         request,
         "sdms/sponsor/sponsor_details.html",
-        {"records": records, "table_title": "Sponsors List"},
+        {"records": records, "table_title": "Sponsors List", "search_query": search_query,},
     )
 
 

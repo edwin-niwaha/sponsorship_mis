@@ -1,5 +1,6 @@
 import datetime
 from datetime import date
+from django.core.exceptions import ValidationError
 from django.core.validators import (
     FileExtensionValidator,
     RegexValidator,
@@ -65,10 +66,7 @@ class SevenHillsRegistration(models.Model):
         null=True,
         blank=True,
         verbose_name="Date of Birth",
-        validators=[
-            MinValueValidator(limit_value=datetime.date(year=1900, month=1, day=1)),
-            MaxValueValidator(limit_value=datetime.date.today()),
-        ],
+        default=None,
     )
 
     AGE_BRACKET_CHOICES = [
@@ -163,6 +161,14 @@ class SevenHillsRegistration(models.Model):
     preferred_contact_method = models.CharField(max_length=255, blank=True, null=True)
     additional_comments = models.TextField(blank=True, null=True)
     agrees_to_photo_use = models.BooleanField(default=False)
+
+    def clean(self):
+        # Validate that date_of_birth is not in the future
+        if self.date_of_birth and self.date_of_birth > datetime.date.today():
+            raise ValidationError({"date_of_birth": "Date of birth cannot be in the future."})
+        
+        # Call the parent clean method to ensure other validations still work
+        super().clean()
 
     def __str__(self):
         return f"{self.full_name}"

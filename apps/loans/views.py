@@ -44,42 +44,51 @@ logger = logging.getLogger(__name__)
 
 
 # =================================== Loan Applications View ===================================
+
 @login_required
-@admin_or_manager_or_staff_required
 def loan_applications(request):
-    queryset = get_loan_queryset(request.GET.get("search"))
-    loans = paginate_queryset(queryset, request.GET.get("page"))
+    user = request.user
+    search_query = request.GET.get("search")
+    page = request.GET.get("page")
 
-    return render(
-        request,
-        "loans/loan_applications.html",
-        {"loans": loans, "table_title": "Loan Applications"},
-    )
+    # Get all loan applications based on search criteria
+    queryset = get_loan_queryset(search_query)
 
+    # Apply role-based filtering for staff or guest
+    if user.profile.role in ["staff", "guest"]:
+        queryset = queryset.filter(applied_by=user)
+
+    # Paginate the results
+    loans = paginate_queryset(queryset, page)
+
+    context = {
+        "loans": loans,
+        "table_title": "Loan Applications",
+        "search_query": search_query,  # Pass search query for input retention
+    }
+
+    return render(request, "loans/loan_applications.html", context)
 
 def get_loan_queryset(search_query):
     queryset = Loan.objects.prefetch_related("disbursements").all().order_by("id")
     if search_query:
-        queryset = queryset.filter(full_name__icontains=search_query)
+        queryset = queryset.filter(borrower__full_name__icontains=search_query)
     return queryset
 
-
 def paginate_queryset(queryset, page_number):
-    paginator = Paginator(queryset, 10)  # Show 10 records per page
+    paginator = Paginator(queryset, 50)
     try:
         return paginator.page(page_number)
     except PageNotAnInteger:
         return paginator.page(1)  # Return first page if page number is not an integer
     except EmptyPage:
-        return paginator.page(
-            paginator.num_pages
-        )  # Return last page if page number is out of range
+        return paginator.page(paginator.num_pages)  # Return last page if page number is out of range
 
 
 
 # =================================== Loan Apply View ===================================
 
-def send_loan_application_email(recipient_name, recipient_email, application_id, is_applicant=True):
+def send_loan_application_email(recipient_name, client_name, recipient_email, application_id, is_applicant=True):
     """
     Sends an email notification for loan application status or request for officer approval.
 
@@ -101,18 +110,19 @@ def send_loan_application_email(recipient_name, recipient_email, application_id,
         <html>
         <body style="font-family: Arial, sans-serif; color: #333;">
             <div style="max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-                <h2 style="color: #2E86C1; text-align: center;">Loan Application Submitted</h2>
+                <h2 style="color: #2E86C1; text-align: center;">Loan Application Submitted on Behalf of Client</h2>
                 <p>Hello <strong>{recipient_name}</strong>,</p>
-                <p>Your loan application ID is <strong>{application_id}</strong>. You can view the status of your application by clicking the button below:</p>
+                <p>A loan application has been successfully submitted on behalf of <strong>{client_name}</strong>. The application ID is <strong>{application_id}</strong>. You can track the status of this application by clicking the button below:</p>
                 <div style="text-align: center; margin: 20px 0;">
                     <a href="{applicant_dashboard_url}" style="background-color: #2E86C1; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 5px;">View Application Status</a>
                 </div>
-                <p>Thank you for choosing Pendeza Uganda for your financial needs!</p>
+                <p>Thank you for assisting clients with their financial needs through Pendeza Uganda.</p>
                 <p style="color: #888;">- Pendeza Uganda - Finance Department</p>
             </div>
         </body>
         </html>
         """
+
     else:
         email_body = f"""
         <html>
@@ -150,6 +160,11 @@ def loan_apply(request):
     form_title = "Loan Application Form"
     form = LoanApplicationForm(request.POST or None)
 
+    logged_in_user = request.user
+
+    # Retrieve the user's role from their Profile model
+    user_role = getattr(logged_in_user.profile, "role", "guest") 
+
     if request.method == "POST":
         if form.is_valid():
             borrower = form.cleaned_data.get("borrower")
@@ -171,13 +186,20 @@ def loan_apply(request):
                 # application = form.save()  # Save the loan application without passing the user
                 application = form.save(commit=False)  # Save the loan application without committing
                 application.disbursement_date = now()  # Set the default disbursement date
+                application.applied_by = logged_in_user  # Store the user who applied
+                application.applied_by_role = user_role  # Store the user's role
                 application.save()  # Save the loan application to the database
+
+                # Extract client (borrower) name
+                client_name = borrower.get_full_name() if hasattr(borrower, "get_full_name") else str(borrower)
+
 
                 # Send email to the logged-in user applying on behalf of the borrower
                 send_loan_application_email(
                     recipient_name=logged_in_user.username,
                     recipient_email=logged_in_user.email,
                     application_id=application.id,
+                    client_name=client_name,
                     is_applicant=True,
                 )
 
@@ -187,6 +209,7 @@ def loan_apply(request):
                     recipient_name="Loan Officer",
                     recipient_email=boo_email,
                     application_id=application.id,
+                    client_name=client_name,
                     is_applicant=False,
                 )
 
@@ -206,6 +229,7 @@ def loan_apply(request):
     return render(request, "loans/apply_for_loan.html", context)
 
 # =================================== view_repayment_schedule View ===================================
+@login_required
 def repayment_schedule(request, loan_id):
     # Fetch the loan using the provided loan ID
     loan = get_object_or_404(Loan, id=loan_id)
@@ -554,17 +578,6 @@ def approve_all_loans(request):
 
 
 # =================================== Reject Loan View ===================================
-# @login_required
-# @admin_or_manager_required
-# def reject_loan(request, loan_id):
-#     loan = get_object_or_404(Loan, id=loan_id, status="pending")
-#     loan.status = "rejected"
-#     loan.reason_for_rejection = "Please review this loan"
-#     loan.save()
-#     messages.info(request, f"Loan {loan.id} has been rejected.", extra_tags="bg-danger")
-#     return redirect("loans:loan_applications")
-
-
 @login_required
 @admin_or_manager_required
 def reject_loan(request, loan_id):
@@ -602,20 +615,6 @@ def reject_loan(request, loan_id):
     messages.info(request, f"Loan {loan.id} has been rejected.", extra_tags="bg-danger")
     
     return redirect("loans:loan_applications")
-
-# def send_email_to_boo(loan):
-#     # Replace with actual email sending logic
-#     subject = f"Loan {loan.id} Rejected by HOF"
-#     message = f"The loan with ID {loan.id} has been rejected by HOF."
-#     recipient_list = [settings.BOO_EMAIL]
-#     send_mail(subject, message, settings.EMAIL_HOST_USER, recipient_list)
-
-# def send_email_to_boo_and_hof(loan):
-#     # Replace with actual email sending logic
-#     subject = f"Loan {loan.id} Rejected by ED"
-#     message = f"The loan with ID {loan.id} has been rejected by ED."
-#     recipient_list = [settings.BOO_EMAIL, settings.HOF_EMAIL]
-#     send_mail(subject, message, settings.EMAIL_HOST_USER, recipient_list)
 
 
 def send_email_to_boo(loan):

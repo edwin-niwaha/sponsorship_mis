@@ -67,6 +67,7 @@ class LoanApplicationForm(forms.ModelForm):
             "start_date",
             "loan_period_months",
             "interest_method",
+            "loan_purpose",
             "reason_for_approval",
         ]
         widgets = {
