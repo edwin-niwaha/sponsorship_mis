@@ -1,4 +1,4 @@
-{% extends 'loans/base.html' %}
+{% extends '_partials/guest_base.html' %}
 {% load crispy_forms_tags %}
 
 {% block head %}
@@ -6,31 +6,25 @@
 {% endblock %}
 
 {% block content %}
-  <div class="container">
-    <div class="page-header flex-wrap">
-      <h3 class="mb-0">{{ form_name|upper }}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-      <div class="d-flex">
-        <a title="Register Child" class="btn btn-sm ml-3 btn-success" href="{% url 'seven_hills_registration' %}"><i class="mdi mdi-account-plus btn-icon-prepend"></i></a>
-        <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'seven_hills_list' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
+  <!-- Loan Application Form -->
+  <div class="container mt-5 pt-5">
+    <div class="row mb-3">
+      <div class="col-md-12 d-flex justify-content-between align-items-center">
+        <h2 class="text-center mb-4">{{ form_name|upper }}</h2>
+        <a href="{% url 'seven_hills_list' %}" class="btn btn-info"><i class="mdi mdi-chart-bar"></i></a>
       </div>
     </div>
-    <hr />
-
-    <div class="form-content my-3 p-3">
-      <div class="row justify-content-center">
-        <div class="col-lg-12">
-          <div class="card shadow-lg border-0 rounded-lg mt-0 mb-5">
-            <div class="card-body">
-              <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <!--  -->
-                {{ form|crispy }}
-                <div class="form-group mt-4 mb-0">
-                  <button type="submit" class="col-md-12 btn btn-dark" onclick="return confirm('Are you sure you want to proceed?') && validateForm()">REGISTER</button>
-                </div>
-              </form>
+    <div class="row justify-content-center">
+      <div class="col-md-12">
+        <div class="card p-4 shadow-sm">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <!--  -->
+            {{ form|crispy }}
+            <div class="form-group mt-4 mb-0">
+              <button type="submit" class="col-md-12 btn btn-dark" onclick="return confirm('Are you sure you want to proceed?') && validateForm()">REGISTER</button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>

@@ -60,8 +60,9 @@ class ImportCOAForm(forms.Form):
 class LoanApplicationForm(forms.ModelForm):
     class Meta:
         model = Loan
+        # exclude = ("borrower",)
         fields = [
-            "borrower",
+            # "borrower",
             "principal_amount",
             "interest_rate",
             "start_date",
@@ -71,7 +72,7 @@ class LoanApplicationForm(forms.ModelForm):
             "reason_for_approval",
         ]
         widgets = {
-            "borrower": forms.Select(attrs={"class": "form-control"}),
+            # "borrower": forms.Select(attrs={"class": "form-control"}),
             "principal_amount": forms.NumberInput(
                 attrs={
                     "class": "form-control",
@@ -111,9 +112,9 @@ class LoanApplicationForm(forms.ModelForm):
             ),
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["borrower"].queryset = Client.objects.all()
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     self.fields["borrower"].queryset = Client.objects.all()
 
     def save(self, commit=True, user=None):
         loan = super().save(commit=False)
@@ -125,16 +126,21 @@ class LoanApplicationForm(forms.ModelForm):
             loan.save()
         return loan
 
+
 class LoanRejectionForm(forms.Form):
     reason_for_rejection = forms.CharField(
         max_length=100,
-        widget=forms.Textarea(attrs={
-            "class": "form-control",
-            "placeholder": "Enter reason for rejection",
-            "rows": 3,
-        }),
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Enter reason for rejection",
+                "rows": 3,
+            }
+        ),
         label="Reason for Rejection",
     )
+
+
 # =================================== LoanDisbursementForm ===================================
 class LoanDisbursementForm(forms.ModelForm):
     loan = forms.ModelChoiceField(
@@ -158,11 +164,10 @@ class LoanDisbursementForm(forms.ModelForm):
     disbursement_date = forms.DateField(
         label="Disbursement Date",
         required=True,
-        widget=forms.DateInput(
-            attrs={"class": "form-control", "type": "date"}
-        ),
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
         initial=now().date(),  # Default to today's date
     )
+
     class Meta:
         model = LoanDisbursement
         fields = [

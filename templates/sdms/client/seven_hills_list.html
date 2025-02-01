@@ -1,75 +1,84 @@
-{% extends 'loans/base.html' %}
-{% load static %}
-
+{% extends '_partials/guest_base.html' %}
+{% load humanize %}
+{% load crispy_forms_tags %}
 {% block content %}
-  <div class="container">
-    <div class="page-header flex-wrap">
-      <h3 class="mb-0">{{ table_title|upper }}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-      <div class="d-flex">
-        <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
+  <!-- Loan Application Form -->
+  <div class="container-fluid mt-5 pt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-12">
+        <h2 class="text-center mb-4">{{ table_title|upper }}</h2>
+        <!-- Header with Add Loan and Print button -->
+        <div class="row mb-3">
+          <div class="col-md-12 d-flex justify-content-between align-items-center">
+            <a href="{% url 'seven_hills_registration' %}" class="btn btn-dark ml-2"><i class="mdi mdi-plus mr-2"></i>Add Member</a>
+            <button title="Print" type="button" class="btn btn-success ml-2" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
+          </div>
+        </div>
 
-        <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success" onclick="ExportToExcel('xlsx')"><i class="mdi mdi-file-excel btn-icon-prepend"></i></button>
+        <!-- Loan DataTable -->
+        <div id="printMe" class="card shadow mb-4">
+          <div class="card-header py-3 d-flex justify-content-between">
+            <h3 class="m-0">{{ table_title|upper }}</h3>
+            <!-- Filters and Sorting -->
+            <form method="get" action="{% url 'seven_hills_list' %}" class="py-2">
+              <div class="row g-3">
+                <!-- Search Filter -->
+                <div class="col-12 col-md-12 d-flex">
+                  <div class="me-2 w-100">
+                    <input type="text" name="search" id="searchInput" value="{{ request.GET.search }}" placeholder="Search..." class="form-control pl-5" />
+                  </div>
+                  <button type="submit" class="btn btn-primary"><i class="mdi mdi-magnify me-2"></i></button>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-striped table-bordered" id="dataTable">
+                <thead>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Reg.No</th>
+                    <th scope="col">Full Name</th>
+                    <th scope="col">Gender</th>
+                    <th scope="col">Reg Date</th>
+                    <th scope="col" colspan="2">Action</th>
+                  </tr>
+                </thead>
+                <tbody class="table-group-divider">
+                  {% for client in records %}
+                    <tr>
+                      <th scope="row">{{ forloop.counter }}.</th>
+                      <td>{{ client.prefixed_id }}</td>
+                      <td>{{ client.full_name }}</td>
+                      <td>{{ client.gender }}</td>
+                      <td>{{ client.registration_date }}</td>
 
-        <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success" onclick="Export2Doc('printMe');"><i class="mdi mdi-file-word btn-icon-prepend"></i></button>
-
-        <a title="Register Client" class="btn btn-sm ml-3 btn-success" href="{% url 'seven_hills_registration' %}"><i class="mdi mdi-account-plus btn-icon-prepend"></i></a>
-
-        <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'seven_hills_list' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
-      </div>
-    </div>
-    <form method="GET" action="{% url 'seven_hills_list' %}">
-      <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..." style="border-radius: 5px; height: 35px;" />
-      <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
-    </form>
-
-    <div id="printMe" class="tab-pane show active">
-      <header style="text-align: center;"></header>
-      <hr class="bg-info" style="height: 3px;" />
-      <div class="table-responsive">
-        <table class="my-table" id="dataTable">
-          <thead>
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">Reg.No</th>
-              <th scope="col">Full Name</th>
-              <th scope="col">Gender</th>
-              <th scope="col">Reg Date</th>
-              <th scope="col" colspan="2">Action</th>
-            </tr>
-          </thead>
-          <tbody class="table-group-divider">
-            {% for client in records %}
-              <tr>
-                <th scope="row">{{ forloop.counter }}.</th>
-                <td>{{ client.prefixed_id }}</td>
-                <td>{{ client.full_name }}</td>
-                <td>{{ client.gender }}</td>
-                <td>{{ client.registration_date }}</td>
-
-                <td>
-                  {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
-                    <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_seven_hills' client.id %}"><i class="bi bi-pencil"></i></a>
-                  {% else %}
-                    <button class="btn btn-primary btn-sm" onclick="showNoPermissionMessage('edit')"><i class="bi bi-pencil"></i></button>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                    <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_seven_hills' client.id %}" onclick="return confirm('Are you sure about this? This record will be deleted permanently.');"><i class="bi bi-trash"></i></a>
-                  {% else %}
-                    <button class="btn btn-danger btn-sm disabled" onclick="showNoPermissionMessage('delete')"><i class="bi bi-trash"></i></button>
-                  {% endif %}
-                </td>
-                <td>
-                  <a class="btn btn-info btn-sm" title="View Details" href="{% url 'seven_hills_details' client.id %}"><i class="bi bi-eye"></i></a>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        <hr class="bg-info" style="height: 3px;" />
-
-        <!-- Pagination links &raquo; -->
+                      <td>
+                        {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
+                          <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_seven_hills' client.id %}"><i class="bi bi-pencil"></i></a>
+                        {% else %}
+                          <button class="btn btn-primary btn-sm" onclick="showNoPermissionMessage('edit')"><i class="bi bi-pencil"></i></button>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+                          <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_seven_hills' client.id %}" onclick="return confirm('Are you sure about this? This record will be deleted permanently.');"><i class="bi bi-trash"></i></a>
+                        {% else %}
+                          <button class="btn btn-danger btn-sm disabled" onclick="showNoPermissionMessage('delete')"><i class="bi bi-trash"></i></button>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <a class="btn btn-info btn-sm" title="View Details" href="{% url 'seven_hills_details' client.id %}"><i class="bi bi-eye"></i></a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <!-- Pagination links -->
         <div class="pagination">
           <span class="step-links">
             {% if records.has_previous %}

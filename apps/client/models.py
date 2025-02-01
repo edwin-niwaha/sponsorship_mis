@@ -165,8 +165,10 @@ class SevenHillsRegistration(models.Model):
     def clean(self):
         # Validate that date_of_birth is not in the future
         if self.date_of_birth and self.date_of_birth > datetime.date.today():
-            raise ValidationError({"date_of_birth": "Date of birth cannot be in the future."})
-        
+            raise ValidationError(
+                {"date_of_birth": "Date of birth cannot be in the future."}
+            )
+
         # Call the parent clean method to ensure other validations still work
         super().clean()
 

@@ -226,7 +226,7 @@ def seven_hills_registration_view(request):
         form = SevenHillsRegistrationForm()
 
     context = {
-        "form_name": "Seven Hills Registration",
+        "form_name": "Seven Hills Registration Form",
         "form": form,
     }
 

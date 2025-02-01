@@ -32,7 +32,6 @@ from .forms import (
     LoanApplicationForm,
     LoanDisbursementForm,
     LoanRepaymentForm,
-    LoanRejectionForm,
 )
 from .models import (
     ChartOfAccounts,
@@ -44,6 +43,7 @@ logger = logging.getLogger(__name__)
 
 
 # =================================== Loan Applications View ===================================
+
 
 @login_required
 def loan_applications(request):
@@ -69,11 +69,13 @@ def loan_applications(request):
 
     return render(request, "loans/loan_applications.html", context)
 
+
 def get_loan_queryset(search_query):
     queryset = Loan.objects.prefetch_related("disbursements").all().order_by("id")
     if search_query:
         queryset = queryset.filter(borrower__full_name__icontains=search_query)
     return queryset
+
 
 def paginate_queryset(queryset, page_number):
     paginator = Paginator(queryset, 50)
@@ -82,13 +84,17 @@ def paginate_queryset(queryset, page_number):
     except PageNotAnInteger:
         return paginator.page(1)  # Return first page if page number is not an integer
     except EmptyPage:
-        return paginator.page(paginator.num_pages)  # Return last page if page number is out of range
-
+        return paginator.page(
+            paginator.num_pages
+        )  # Return last page if page number is out of range
 
 
 # =================================== Loan Apply View ===================================
 
-def send_loan_application_email(recipient_name, client_name, recipient_email, application_id, is_applicant=True):
+
+def send_loan_application_email(
+    recipient_name, client_name, recipient_email, application_id, is_applicant=True
+):
     """
     Sends an email notification for loan application status or request for officer approval.
 
@@ -101,9 +107,15 @@ def send_loan_application_email(recipient_name, client_name, recipient_email, ap
     Returns:
         bool: True if the email was sent successfully, False otherwise.
     """
-    applicant_dashboard_url = "https://sponsorwithpendeza.up.railway.app/loans/applications/"
+    applicant_dashboard_url = (
+        "https://sponsorwithpendeza.up.railway.app/loans/applications/"
+    )
     officer_review_url = "https://sponsorwithpendeza.up.railway.app/loans/applications/"
-    subject = "Your Loan Application Submitted" if is_applicant else "New Loan Application for Review"
+    subject = (
+        "Your Loan Application Submitted"
+        if is_applicant
+        else "New Loan Application for Review"
+    )
 
     if is_applicant:
         email_body = f"""
@@ -154,16 +166,90 @@ def send_loan_application_email(recipient_name, client_name, recipient_email, ap
         return False
 
 
+# @login_required
+# def loan_apply(request):
+#     form_title = "Loan Application Form"
+#     form = LoanApplicationForm(request.POST or None)
+
+#     logged_in_user = request.user
+
+#     # Retrieve the user's role from their Profile model
+#     user_role = getattr(logged_in_user.profile, "role", "guest")
+
+#     if request.method == "POST":
+#         if form.is_valid():
+#             borrower = form.cleaned_data.get("borrower")
+#             logged_in_user = request.user
+
+#             # Check if the selected borrower has an active (running) loan balance
+#             running_loan = Loan.objects.filter(
+#                 borrower=borrower, status__in=["overdue", "disbursed"]
+#             ).exists()
+#             if running_loan:
+#                 messages.warning(
+#                     request,
+#                     f"{borrower} already has a running loan balance and cannot apply for a new loan.",
+#                     extra_tags="bg-warning",
+#                 )
+#                 return redirect("loans:apply_for_loan")
+
+#             try:
+#                 # application = form.save()  # Save the loan application without passing the user
+#                 application = form.save(commit=False)  # Save the loan application without committing
+#                 application.disbursement_date = now()  # Set the default disbursement date
+#                 application.applied_by = logged_in_user  # Store the user who applied
+#                 application.applied_by_role = user_role  # Store the user's role
+#                 application.save()  # Save the loan application to the database
+
+#                 # Extract client (borrower) name
+#                 client_name = borrower.get_full_name() if hasattr(borrower, "get_full_name") else str(borrower)
+
+
+#                 # Send email to the logged-in user applying on behalf of the borrower
+#                 send_loan_application_email(
+#                     recipient_name=logged_in_user.username,
+#                     recipient_email=logged_in_user.email,
+#                     application_id=application.id,
+#                     client_name=client_name,
+#                     is_applicant=True,
+#                 )
+
+#                 # Send email to the loan officer for approval
+#                 boo_email = settings.BOO_EMAIL
+#                 send_loan_application_email(
+#                     recipient_name="Loan Officer",
+#                     recipient_email=boo_email,
+#                     application_id=application.id,
+#                     client_name=client_name,
+#                     is_applicant=False,
+#                 )
+
+#                 messages.success(
+#                     request,
+#                     "Loan application submitted successfully!",
+#                     extra_tags="bg-success",
+#                 )
+#                 return redirect("loans:apply_for_loan")
+#             except ValidationError as e:
+#                 messages.error(request, str(e), extra_tags="bg-danger")
+
+#     context = {
+#         "form": form,
+#         "form_title": form_title,
+#     }
+#     return render(request, "loans/apply_for_loan.html", context)
+
+
 @login_required
-# @admin_or_manager_required
 def loan_apply(request):
     form_title = "Loan Application Form"
     form = LoanApplicationForm(request.POST or None)
+    borrowers = Client.objects.all().order_by("id")
 
     logged_in_user = request.user
 
     # Retrieve the user's role from their Profile model
-    user_role = getattr(logged_in_user.profile, "role", "guest") 
+    user_role = getattr(logged_in_user.profile, "role", "guest")
 
     if request.method == "POST":
         if form.is_valid():
@@ -184,15 +270,22 @@ def loan_apply(request):
 
             try:
                 # application = form.save()  # Save the loan application without passing the user
-                application = form.save(commit=False)  # Save the loan application without committing
-                application.disbursement_date = now()  # Set the default disbursement date
+                application = form.save(
+                    commit=False
+                )  # Save the loan application without committing
+                application.disbursement_date = (
+                    now()
+                )  # Set the default disbursement date
                 application.applied_by = logged_in_user  # Store the user who applied
                 application.applied_by_role = user_role  # Store the user's role
                 application.save()  # Save the loan application to the database
 
                 # Extract client (borrower) name
-                client_name = borrower.get_full_name() if hasattr(borrower, "get_full_name") else str(borrower)
-
+                client_name = (
+                    borrower.get_full_name()
+                    if hasattr(borrower, "get_full_name")
+                    else str(borrower)
+                )
 
                 # Send email to the logged-in user applying on behalf of the borrower
                 send_loan_application_email(
@@ -225,8 +318,10 @@ def loan_apply(request):
     context = {
         "form": form,
         "form_title": form_title,
+        "borrowers": borrowers,
     }
     return render(request, "loans/apply_for_loan.html", context)
+
 
 # =================================== view_repayment_schedule View ===================================
 @login_required
@@ -338,9 +433,11 @@ def disburse_loan(request):
             disbursement_date = form.cleaned_data.get("disbursement_date")
 
             # Set the disbursement_date on the related Loan model
-            loan.disbursement_date = disbursement_date  # Update loan's disbursement_date
-            
-            loan.status = "disbursed" # Update loan status
+            loan.disbursement_date = (
+                disbursement_date  # Update loan's disbursement_date
+            )
+
+            loan.status = "disbursed"  # Update loan status
             loan.save()  # Save the updated loan status
 
             messages.success(
@@ -421,6 +518,7 @@ def disburse_all_loans(request):
 
 # =================================== Approve Loan View ===================================
 
+
 @login_required
 def approve_loan(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
@@ -464,7 +562,9 @@ def approve_loan(request, loan_id):
         email.content_subtype = "html"
         email.send()
 
-        messages.success(request, f"Loan {loan.id} approved by BOO.", extra_tags="bg-success")
+        messages.success(
+            request, f"Loan {loan.id} approved by BOO.", extra_tags="bg-success"
+        )
 
     elif loan.status == "boo_approved" and current_user.profile.role == "hof":
         loan.status = "hof_approved"
@@ -504,7 +604,9 @@ def approve_loan(request, loan_id):
         email.content_subtype = "html"
         email.send()
 
-        messages.success(request, f"Loan {loan.id} approved by HOF.", extra_tags="bg-success")
+        messages.success(
+            request, f"Loan {loan.id} approved by HOF.", extra_tags="bg-success"
+        )
 
     elif loan.status == "hof_approved" and current_user.profile.role == "ed":
         loan.status = "approved"
@@ -523,7 +625,7 @@ def approve_loan(request, loan_id):
                     <p style="font-size: 16px; color: #34495e;">We are pleased to inform you that the loan <strong style="color: #e74c3c;">{loan.id}</strong> for <strong style="color: #e74c3c;">{loan.borrower.full_name}</strong> (Amount: <strong style="color: #e74c3c;">UGX {loan.principal_amount:,.2f}</strong>) has been fully approved by <strong style="color: #e74c3c;">{current_user.username}</strong>.</p>
                     <p style="font-size: 16px; color: #34495e;">Please proceed with the disbursement of the loan.</p>
                     <p style="text-align: center;">
-                        <a href="{request.build_absolute_uri(f'/loans/disburse/')}" style="background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Go on and Disburse the Loan</a>
+                        <a href="{request.build_absolute_uri(f'/loans/disburse/')}" style="background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Disburse the Loan</a>
                     </p>
                 </div>
             </body>
@@ -538,7 +640,9 @@ def approve_loan(request, loan_id):
         email.content_subtype = "html"
         email.send()
 
-        messages.success(request, f"Loan {loan.id} fully approved by ED.", extra_tags="bg-success")
+        messages.success(
+            request, f"Loan {loan.id} fully approved by ED.", extra_tags="bg-success"
+        )
 
     else:
         messages.error(
@@ -585,7 +689,11 @@ def reject_loan(request, loan_id):
 
     # Check if the loan is already approved
     if loan.status == "approved":
-        messages.error(request, f"Loan {loan.id} cannot be rejected because it is already approved.", extra_tags="bg-warning")
+        messages.error(
+            request,
+            f"Loan {loan.id} cannot be rejected because it is already approved.",
+            extra_tags="bg-warning",
+        )
         return redirect("loans:loan_applications")
 
     # Define the rejection process based on the current loan status
@@ -597,7 +705,11 @@ def reject_loan(request, loan_id):
     elif loan.status == "hof_approved":
         rejection_status = "ed_rejected"
     else:
-        messages.error(request, f"Loan {loan.id} cannot be rejected because its status is {loan.status}.", extra_tags="bg-warning")
+        messages.error(
+            request,
+            f"Loan {loan.id} cannot be rejected because its status is {loan.status}.",
+            extra_tags="bg-warning",
+        )
         return redirect("loans:loan_applications")
 
     # Update loan status and reason for rejection
@@ -613,7 +725,7 @@ def reject_loan(request, loan_id):
 
     # Display success message
     messages.info(request, f"Loan {loan.id} has been rejected.", extra_tags="bg-danger")
-    
+
     return redirect("loans:loan_applications")
 
 
@@ -631,9 +743,12 @@ def send_email_to_boo(loan):
         </body>
     </html>
     """
-    email = EmailMessage(subject, message, settings.EMAIL_HOST_USER, [settings.BOO_EMAIL])
+    email = EmailMessage(
+        subject, message, settings.EMAIL_HOST_USER, [settings.BOO_EMAIL]
+    )
     email.content_subtype = "html"
     email.send()
+
 
 def send_email_to_boo_and_hof(loan):
     subject = f"Loan {loan.id} Rejected by ED"
@@ -649,10 +764,16 @@ def send_email_to_boo_and_hof(loan):
         </body>
     </html>
     """
-    email = EmailMessage(subject, message, settings.EMAIL_HOST_USER, [settings.BOO_EMAIL, settings.HOF_EMAIL])
+    email = EmailMessage(
+        subject,
+        message,
+        settings.EMAIL_HOST_USER,
+        [settings.BOO_EMAIL, settings.HOF_EMAIL],
+    )
     email.content_subtype = "html"
     email.send()
-    
+
+
 # =================================== Delete Loan View ===================================
 @login_required
 @admin_or_manager_required

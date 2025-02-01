@@ -19,7 +19,7 @@
               <strong>Principal Amount:</strong> <span class="text-end">{{ loan.principal_amount|floatformat:'2'|intcomma }}</span>
             </p>
             <p>
-              <strong>Interest Rate:</strong> {{ loan.interest_rate }}%
+              <strong>Interest Rate:</strong> {{ loan.interest_rate|floatformat:1 }}%
             </p>
             <p>
               <strong>Loan Period:</strong> {{ loan_period_years|floatformat:1 }} years ({{ loan.loan_period_months }} months)

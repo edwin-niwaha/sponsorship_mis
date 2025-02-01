@@ -1,16 +1,12 @@
+{% extends '_partials/guest_base.html' %}
 {% load humanize %}
 {% load crispy_forms_tags %}
 {% block content %}
-  {% include '_partials/main_nav.html' %}
   <!-- Loan Application Form -->
   <div class="container-fluid mt-5 pt-3">
     <div class="row justify-content-center">
       <div class="col-md-12">
         <h2 class="text-center mb-4">{{ form_title|upper }}</h2>
-        <!-- =============== Messages Start ================= -->
-        {% include '_partials/messages.html' %}
-        <!-- =============== Messages End ================= -->
-
         <!-- Header with Add Loan and Print button -->
         <div class="row mb-3">
           <div class="col-md-12 d-flex justify-content-between align-items-center">
@@ -50,6 +46,7 @@
                       <th>Period</th>
                       <th>Rate (%)</th>
                       <th>Method</th>
+                      <th>Applied by</th>
                       <th>Applied On</th>
                       <th>Disbursed On</th>
                       <th>Due Date</th>
@@ -68,6 +65,7 @@
                         <td class="text-center">{{ loan.loan_period_months }}</td>
                         <td class="text-center">{{ loan.interest_rate|floatformat:0 }}%</td>
                         <td>{{ loan.interest_method }}</td>
+                        <td>{{ loan.applied_by }}</td>
                         <td>{{ loan.start_date|date:'d/m/Y' }}</td>
                         <td>
                           {% if loan.status == 'disbursed' %}

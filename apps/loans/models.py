@@ -68,8 +68,6 @@ class ChartOfAccounts(models.Model):
 
 
 # =================================== Loan Model ===================================
-
-
 class Loan(models.Model):
     # Loan status options
     STATUS_CHOICES = [
@@ -84,7 +82,7 @@ class Loan(models.Model):
         ("hof_rejected", "HOF Rejected"),
         ("boo_approved", "BOO Approved"),  # New status
         ("hof_approved", "HOF Approved"),  # New status
-        ("ed_approved", "ED Approved"),   # New status
+        ("ed_approved", "ED Approved"),  # New status
     ]
 
     # Interest calculation methods
@@ -124,13 +122,11 @@ class Loan(models.Model):
         validators=[
             MinValueValidator(0),  # Ensures the value is not negative
             MaxValueValidator(30),  # Ensures the value does not exceed 30
-        ]
+        ],
     )
     start_date = models.DateField(verbose_name="Start Date")
     disbursement_date = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name="Disbursement Date"
+        blank=True, null=True, verbose_name="Disbursement Date"
     )
     loan_period_months = models.PositiveIntegerField(
         verbose_name="Loan Period (Months)"
@@ -161,6 +157,7 @@ class Loan(models.Model):
         default="business",
         verbose_name="Loan Purpose",
     )
+
     approved_by_boo = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -189,12 +186,20 @@ class Loan(models.Model):
         blank=True, null=True, verbose_name="Approval Date"
     )
     reason_for_rejection = models.TextField(null=True, blank=True)
-    reason_for_approval = models.TextField(max_length=100,
-        blank=False, null=False, verbose_name="Reason for Approval",
-        default="Approval granted based on the borrower's "
+    reason_for_approval = models.TextField(
+        max_length=100,
+        blank=False,
+        null=False,
+        verbose_name="Reason for Approval",
+        default="Approval granted based on the borrower's ",
     )
-    applied_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="applied_loans")
-    applied_by_role = models.CharField(max_length=15, blank=True, null=True)    
+    applied_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="applied_loans",
+    )
+    applied_by_role = models.CharField(max_length=15, blank=True, null=True)
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -215,11 +220,11 @@ class Loan(models.Model):
         # Ensure the start date is not in the future
         if self.start_date > date.today():
             raise ValidationError({"start_date": "Start date cannot be in the future."})
-        
+
         """Validate the loan period and due date."""
         if self.due_date and self.due_date <= self.disbursement_date:
             raise ValidationError("Due date must be after the start date.")
-        
+
         if self.loan_period_months <= 0:
             raise ValidationError("Loan period must be a positive integer.")
 
@@ -334,40 +339,6 @@ class Loan(models.Model):
             "interest_balance": interest_balance,
         }
 
-        # def update_status(self):
-        #     """Update loan status based on computed remaining balance and due date."""
-        #     # Calculate total remaining balance
-        #     balances = self.calculate_remaining_balances()
-        #     total_remaining_balance = (
-        #         balances["principal_balance"] + balances["interest_balance"]
-        #     )
-
-        #     # Update status based on the computed remaining balance and due date
-        #     if total_remaining_balance <= 0:
-        #         self.status = "repaid"
-        #     elif timezone.now().date() > self.due_date:
-        #         self.status = "overdue" if self.status == "approved" else self.status
-
-        #     # Save status update
-        #     self.save(update_fields=["status"])
-
-        # def save(self, *args, **kwargs):
-        # """Override save to ensure the account is set, calculate due date, interest, and status before saving."""
-        # if not self.account:
-        #     try:
-        #         self.account = ChartOfAccounts.objects.get(
-        #             account_number="1050"
-        #         )  # Loan Receivable
-        #     except ChartOfAccounts.DoesNotExist:
-        #         raise ValidationError(
-        #             "Default loan account missing. Please contact support."
-        #         )
-
-        # self.calculate_due_date()
-        # self.calculate_interest()
-        # self.update_status()
-        # super().save(*args, **kwargs)
-
     def update_status(self):
         """Update loan status based on current status, balance, and due date."""
         # Calculate total remaining balance
@@ -434,25 +405,25 @@ class Loan(models.Model):
         return f"Loan {self.id} - {self.borrower} ({self.status})"
 
 
-# =================================== Product Model ===================================
-class Product(models.Model):
-    name = models.CharField(max_length=255)
-    description = models.TextField()
-    interest_rate = models.DecimalField(max_digits=5, decimal_places=2)
-    max_loan_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    min_loan_amount = models.DecimalField(max_digits=10, decimal_places=2)
+# # =================================== Product Model ===================================
+# class Product(models.Model):
+#     name = models.CharField(max_length=255)
+#     description = models.TextField()
+#     interest_rate = models.DecimalField(max_digits=5, decimal_places=2)
+#     max_loan_amount = models.DecimalField(max_digits=10, decimal_places=2)
+#     min_loan_amount = models.DecimalField(max_digits=10, decimal_places=2)
 
-    def __str__(self):
-        return self.name
+#     def __str__(self):
+#         return self.name
 
 
-# =================================== LoanProduct Model ===================================
-class LoanProduct(models.Model):
-    loan = models.ForeignKey(Loan, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+# # =================================== LoanProduct Model ===================================
+# class LoanProduct(models.Model):
+#     loan = models.ForeignKey(Loan, on_delete=models.CASCADE)
+#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
 
-    def __str__(self):
-        return f"Loan Product for Loan {self.loan.id} - {self.product.name}"
+#     def __str__(self):
+#         return f"Loan Product for Loan {self.loan.id} - {self.product.name}"
 
 
 # =================================== LoanDisbursement Model ===================================
@@ -462,7 +433,9 @@ class LoanDisbursement(models.Model):
     )
     # disbursement_date = models.DateField(default=timezone.now)
     account = models.ForeignKey(
-        ChartOfAccounts, on_delete=models.CASCADE, related_name="disbursements"
+        ChartOfAccounts,
+        on_delete=models.CASCADE,
+        related_name="disbursements_from_account",
     )
     payment_method = models.CharField(
         max_length=20,

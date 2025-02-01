@@ -1,6 +1,7 @@
+{% extends '_partials/guest_base.html' %}
+{% load static %}
 {% load crispy_forms_tags %}
 {% block content %}
-  {% include '_partials/main_nav.html' %}
   <!-- Loan Application Form -->
   <div class="container mt-5 pt-5">
     <div class="row mb-3">
@@ -11,12 +12,18 @@
     </div>
     <div class="row justify-content-center">
       <div class="col-md-12">
-        <!-- =============== Messages Start ================= -->
-        {% include '_partials/messages.html' %}
-        <!-- =============== Messages End ================= -->
         <div class="card p-4 shadow-sm">
           <form method="post">
             {% csrf_token %}
+            <div class="d-flex justify-content-center mb-3">
+              <select name="id" id="dropdown" class="chzn-select" required>
+                <option value="" selected disabled>Search client...</option>
+                {% for borrower in borrowers %}
+                  <option value="{{ borrower.id }}">{{ borrower.full_name }} → {{ borrower.reg_number }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <hr />
             {{ form|crispy }}
             <div class="form-group mt-4 mb-0">
               <button type="submit" class="btn btn-dark w-100 text-uppercase" onclick="return confirm('Are you sure you want to proceed?') && validateForm()">Submit Application</button>

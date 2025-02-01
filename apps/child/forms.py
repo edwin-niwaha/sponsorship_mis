@@ -58,7 +58,7 @@ class ChildForm(forms.ModelForm):
         super(ChildForm, self).clean()
 
         full_name = self.cleaned_data.get("full_name")
-        
+
         if len(full_name) < 3:
             self.add_error(
                 "full_name", "Can not save first name less than 3 characters long"

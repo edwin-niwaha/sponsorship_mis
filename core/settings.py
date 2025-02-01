@@ -31,12 +31,19 @@ SITE_URL = f"https://{BASE_DOMAIN}"
 
 # Allowed hosts and trusted origins
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", BASE_DOMAIN]
-CSRF_TRUSTED_ORIGINS = ["https://sponsorwithpendeza.up.railway.app", "http://localhost", "http://127.0.0.1"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://sponsorwithpendeza.up.railway.app",
+    "http://localhost",
+    "http://127.0.0.1",
+]
 
 
 # Security settings --comment in dev
 SECURE_SSL_REDIRECT = True  # Redirect HTTP to HTTPS
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO","https",)  # Trust proxy's HTTPS header
+SECURE_PROXY_SSL_HEADER = (
+    "HTTP_X_FORWARDED_PROTO",
+    "https",
+)  # Trust proxy's HTTPS header
 CSRF_COOKIE_SECURE = True  # Secure CSRF cookies
 SESSION_COOKIE_DOMAIN = f".{BASE_DOMAIN}"  # Domain for session cookies
 CSRF_COOKIE_DOMAIN = f".{BASE_DOMAIN}"  # Domain for CSRF cookies
