@@ -13,7 +13,7 @@
         <span class="menu-title">SDMS-HOME</span>
       </a>
     </li>
-    {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+    {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'hof' or user.profile.role == 'boo' or user.profile.role == 'ed' %}
       <li class="nav-item">
         <a class="nav-link" data-toggle="collapse" href="#dashboards-menu" aria-expanded="false" aria-controls="dashboards-menu">
           <i class="mdi mdi-view-dashboard menu-icon"></i>
