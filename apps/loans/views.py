@@ -43,16 +43,17 @@ logger = logging.getLogger(__name__)
 
 
 # =================================== Loan Applications View ===================================
-
-
 @login_required
-def loan_applications(request):
+def loan_applications_view(request):
     user = request.user
     search_query = request.GET.get("search")
     page = request.GET.get("page")
 
     # Get all loan applications based on search criteria
-    queryset = get_loan_queryset(search_query)
+    # queryset = get_loan_queryset(search_query)
+    queryset = get_loan_queryset(search_query).filter(
+        status__in=["pending", "boo_approved", "hof_approved"]
+    )
 
     # Apply role-based filtering for staff or guest
     if user.profile.role in ["staff", "guest"]:
@@ -90,7 +91,6 @@ def paginate_queryset(queryset, page_number):
 
 
 # =================================== Loan Apply View ===================================
-
 
 def send_loan_application_email(
     recipient_name, client_name, recipient_email, application_id, is_applicant=True
@@ -351,6 +351,57 @@ def disbursed_loans_view(request):
 
     return render(request, "loans/disbursed_loans_list.html", context)
 
+# =================================== Approved Loans View ===================================
+@login_required
+def approved_loans_view(request):
+    user = request.user
+    search_query = request.GET.get("search")
+    page = request.GET.get("page")
+
+    # Fetch only approved loan applications based on search criteria
+    queryset = get_loan_queryset(search_query).filter(status="approved")
+
+    # Apply role-based filtering
+    if user.profile.role in ["staff", "guest"]:
+        queryset = queryset.filter(applied_by=user)
+
+    # Paginate the results
+    loans = paginate_queryset(queryset, page)
+
+    context = {
+        "loans": loans,
+        "table_title": "Pending Loan Disbursements",
+        "search_query": search_query,
+    }
+
+    return render(request, "loans/approved_loans_list.html", context)
+
+# =================================== Rejected Loans View ===================================
+@login_required
+def rejected_loans_view(request):
+    user = request.user
+    search_query = request.GET.get("search")
+    page = request.GET.get("page")
+
+    # Fetch loan applications with the required statuses
+    queryset = get_loan_queryset(search_query).filter(
+        status__in=["ed_rejected", "hof_rejected"]
+    )
+
+    # Apply role-based filtering
+    if user.profile.role in ["staff", "guest"]:
+        queryset = queryset.filter(applied_by=user)
+
+    # Paginate the results
+    loans = paginate_queryset(queryset, page)
+
+    context = {
+        "loans": loans,
+        "table_title": "Rejected Loans",
+        "search_query": search_query,
+    }
+
+    return render(request, "loans/rejected_loans_list.html", context)
 
 # =================================== Disburse Loan View ===================================
 @login_required

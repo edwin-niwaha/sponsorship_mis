@@ -88,7 +88,7 @@
           <li class="nav-item">
             <a class="nav-link" href="{% url 'loans:disburse_loan' %}">
               <i class="mdi mdi-cash-register menu-icon"></i>
-              <span class="menu-title">Disburse Loan</span>
+              <span class="menu-title">Disburse</span>
             </a>
           </li>
           <li class="nav-item">
@@ -97,11 +97,23 @@
               <span class="menu-title">Disbursed</span>
             </a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'loans:approved_loans' %}">
+              <i class="mdi mdi-file-check menu-icon"></i>
+              <span class="menu-title">Approved</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'loans:rejected_loans' %}">
+              <i class="mdi mdi-file-check menu-icon"></i>
+              <span class="menu-title">Rejected</span>
+            </a>
+          </li>
           <!-- Loan Payments -->
           <li class="nav-item">
             <a class="nav-link" href="{% url 'loans:loan_repayment_create' %}">
               <i class="mdi mdi-credit-card menu-icon"></i>
-              <span class="menu-title">Loan Repay</span>
+              <span class="menu-title">Repayment</span>
             </a>
           </li>
         </ul>
