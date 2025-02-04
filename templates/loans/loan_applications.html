@@ -51,7 +51,7 @@
                       <th>Disbursed On</th>
                       <th>Due Date</th>
                       <th>Status</th>
-                      <th class="text-center print-hide" colspan="6">Actions</th>
+                      <th class="text-center print-hide" colspan="7">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -134,6 +134,12 @@
                             {% if role in 'administrator hof ed' %}
                               <td class="text-center print-hide">
                                 <a href="{% url 'loans:reject_loan' loan.id %}" class="btn btn-danger btn-sm" title="Reject Loan" onclick="return confirm('Are you sure you want to reject this loan?');"><i class="mdi mdi-close-circle"></i></a>
+                              </td>
+                            {% endif %}
+                            <!-- Update Button -->
+                            {% if role in 'administrator hof ed' %}
+                              <td class="text-center print-hide">
+                                <a href="{% url 'loans:update_loan' loan.id %}" class="btn btn-warning btn-sm" title="Update Loan"><i class="mdi mdi-pencil"></i></a>
                               </td>
                             {% endif %}
                           {% endwith %}

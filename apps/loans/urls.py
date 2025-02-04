@@ -8,6 +8,7 @@ urlpatterns = [
     # Loan application URLs
     path("apply/", views.loan_apply, name="apply_for_loan"),
     path("applications/", views.loan_applications, name="loan_applications"),
+    path('loan/update/<int:loan_id>/', views.update_loan, name='update_loan'),
     path("disbursed/", views.disbursed_loans_view, name="disbursed_loans"),
     path("disburse_all_loans/", views.disburse_all_loans, name="disburse_all_loans"),
     path(

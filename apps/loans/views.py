@@ -166,87 +166,6 @@ def send_loan_application_email(
         return False
 
 
-# @login_required
-# def loan_apply(request):
-#     form_title = "Loan Application Form"
-#     form = LoanApplicationForm(request.POST or None)
-
-#     logged_in_user = request.user
-
-#     # Retrieve the user's role from their Profile model
-#     user_role = getattr(logged_in_user.profile, "role", "guest")
-
-#     if request.method == "POST":
-#         if form.is_valid():
-#             borrower = form.cleaned_data.get("borrower")
-#             logged_in_user = request.user
-
-#             # Check if the selected borrower has an active (running) loan balance
-#             running_loan = Loan.objects.filter(
-#                 borrower=borrower, status__in=["overdue", "disbursed"]
-#             ).exists()
-#             if running_loan:
-#                 messages.warning(
-#                     request,
-#                     f"{borrower} already has a running loan balance and cannot apply for a new loan.",
-#                     extra_tags="bg-warning",
-#                 )
-#                 return redirect("loans:apply_for_loan")
-
-#             try:
-#                 # application = form.save()  # Save the loan application without passing the user
-#                 application = form.save(commit=False)  # Save the loan application without committing
-#                 application.disbursement_date = now()  # Set the default disbursement date
-#                 application.applied_by = logged_in_user  # Store the user who applied
-#                 application.applied_by_role = user_role  # Store the user's role
-#                 application.save()  # Save the loan application to the database
-
-#                 # Extract client (borrower) name
-#                 client_name = borrower.get_full_name() if hasattr(borrower, "get_full_name") else str(borrower)
-
-
-#                 # Send email to the logged-in user applying on behalf of the borrower
-#                 send_loan_application_email(
-#                     recipient_name=logged_in_user.username,
-#                     recipient_email=logged_in_user.email,
-#                     application_id=application.id,
-#                     client_name=client_name,
-#                     is_applicant=True,
-#                 )
-
-#                 # Send email to the loan officer for approval
-#                 boo_email = settings.BOO_EMAIL
-#                 send_loan_application_email(
-#                     recipient_name="Loan Officer",
-#                     recipient_email=boo_email,
-#                     application_id=application.id,
-#                     client_name=client_name,
-#                     is_applicant=False,
-#                 )
-
-#                 messages.success(
-#                     request,
-#                     "Loan application submitted successfully!",
-#                     extra_tags="bg-success",
-#                 )
-#                 return redirect("loans:apply_for_loan")
-#             except ValidationError as e:
-#                 messages.error(request, str(e), extra_tags="bg-danger")
-
-#     context = {
-#         "form": form,
-#         "form_title": form_title,
-#     }
-#     return render(request, "loans/apply_for_loan.html", context)
-
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.utils.timezone import now
-from django.conf import settings
-from django.core.exceptions import ValidationError
-
 @login_required
 def loan_apply(request):
     form_title = "Loan Application Form"
@@ -321,6 +240,26 @@ def loan_apply(request):
     }
     return render(request, "loans/apply_for_loan.html", context)
 
+# =================================== update_loan View ===================================
+@admin_or_manager_required
+def update_loan(request, loan_id):
+    loan = get_object_or_404(Loan, id=loan_id)
+    form_title = "Update Loan Details"
+
+    if request.method == "POST":
+        form = LoanApplicationForm(request.POST, instance=loan)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Loan details updated successfully.", extra_tags="bg-success")
+            return redirect("loans:loan_applications")
+        else:
+            messages.error(request, "Please correct the errors below.", extra_tags="bg-danger")
+    else:
+        form = LoanApplicationForm(instance=loan)
+
+    return render(
+        request, "loans/loan_update.html", {"form": form, "loan": loan, "form_title": form_title}
+    )
 
 # =================================== view_repayment_schedule View ===================================
 @login_required
@@ -516,8 +455,6 @@ def disburse_all_loans(request):
 
 
 # =================================== Approve Loan View ===================================
-
-
 @login_required
 def approve_loan(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
