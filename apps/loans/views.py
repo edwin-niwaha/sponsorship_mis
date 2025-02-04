@@ -240,6 +240,13 @@ def send_loan_application_email(
 #     return render(request, "loans/apply_for_loan.html", context)
 
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.utils.timezone import now
+from django.conf import settings
+from django.core.exceptions import ValidationError
+
 @login_required
 def loan_apply(request):
     form_title = "Loan Application Form"
@@ -247,16 +254,14 @@ def loan_apply(request):
     borrowers = Client.objects.all().order_by("id")
 
     logged_in_user = request.user
-
-    # Retrieve the user's role from their Profile model
     user_role = getattr(logged_in_user.profile, "role", "guest")
 
     if request.method == "POST":
         if form.is_valid():
-            borrower = form.cleaned_data.get("borrower")
-            logged_in_user = request.user
+            borrower_id = request.POST.get("id")
+            borrower = get_object_or_404(Client, pk=borrower_id)
 
-            # Check if the selected borrower has an active (running) loan balance
+            # Check if the borrower has an active loan
             running_loan = Loan.objects.filter(
                 borrower=borrower, status__in=["overdue", "disbursed"]
             ).exists()
@@ -269,25 +274,18 @@ def loan_apply(request):
                 return redirect("loans:apply_for_loan")
 
             try:
-                # application = form.save()  # Save the loan application without passing the user
-                application = form.save(
-                    commit=False
-                )  # Save the loan application without committing
-                application.disbursement_date = (
-                    now()
-                )  # Set the default disbursement date
-                application.applied_by = logged_in_user  # Store the user who applied
-                application.applied_by_role = user_role  # Store the user's role
-                application.save()  # Save the loan application to the database
+                # Save the loan application
+                application = form.save(commit=False)
+                application.borrower = borrower  # Explicitly assign borrower
+                application.disbursement_date = now()
+                application.applied_by = logged_in_user
+                application.applied_by_role = user_role
+                application.save()
 
                 # Extract client (borrower) name
-                client_name = (
-                    borrower.get_full_name()
-                    if hasattr(borrower, "get_full_name")
-                    else str(borrower)
-                )
+                client_name = borrower.get_full_name() if hasattr(borrower, "get_full_name") else str(borrower)
 
-                # Send email to the logged-in user applying on behalf of the borrower
+                # Send email to logged-in user
                 send_loan_application_email(
                     recipient_name=logged_in_user.username,
                     recipient_email=logged_in_user.email,
@@ -296,7 +294,7 @@ def loan_apply(request):
                     is_applicant=True,
                 )
 
-                # Send email to the loan officer for approval
+                # Send email to loan officer
                 boo_email = settings.BOO_EMAIL
                 send_loan_application_email(
                     recipient_name="Loan Officer",
@@ -312,6 +310,7 @@ def loan_apply(request):
                     extra_tags="bg-success",
                 )
                 return redirect("loans:apply_for_loan")
+
             except ValidationError as e:
                 messages.error(request, str(e), extra_tags="bg-danger")
 

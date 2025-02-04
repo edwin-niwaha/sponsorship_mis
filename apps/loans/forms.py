@@ -60,17 +60,17 @@ class ImportCOAForm(forms.Form):
 class LoanApplicationForm(forms.ModelForm):
     class Meta:
         model = Loan
-        # exclude = ("borrower",)
-        fields = [
-            # "borrower",
-            "principal_amount",
-            "interest_rate",
-            "start_date",
-            "loan_period_months",
-            "interest_method",
-            "loan_purpose",
-            "reason_for_approval",
-        ]
+        exclude = ("borrower", "account", "disbursement_date", "due_date", "status", "total_interest", "approved_by_boo", "approved_by_hof", "approved_by_ed", "approved_date", "reason_for_rejection", "reason_for_approval", "applied_by", "applied_by_role", "created_by", "created_at")
+        # fields = [
+        #     # "borrower",
+        #     "principal_amount",
+        #     "interest_rate",
+        #     "start_date",
+        #     "loan_period_months",
+        #     "interest_method",
+        #     "loan_purpose",
+        #     "reason_for_approval",
+        # ]
         widgets = {
             # "borrower": forms.Select(attrs={"class": "form-control"}),
             "principal_amount": forms.NumberInput(
