@@ -1,4 +1,6 @@
 import datetime
+from datetime import date
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 # Third-party Imports
@@ -41,6 +43,11 @@ class Sponsor(models.Model):
     last_name = models.CharField(max_length=50, null=True, verbose_name="Last Name")
     gender = models.CharField(
         max_length=6, choices=GENDER_CHOICES, blank=False, verbose_name="Gender"
+    )
+    date_of_birth = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Date of Birth",
     )
     email = models.EmailField(verbose_name="Email")
     sponsorship_type = models.CharField(
@@ -96,6 +103,16 @@ class Sponsor(models.Model):
     class Meta:
         managed = True
         db_table = "sponsor_details"
+
+    def clean(self):
+        # Validate that date_of_birth is not in the future
+        if self.date_of_birth and self.date_of_birth > datetime.date.today():
+            raise ValidationError(
+                {"date_of_birth": "Date of birth cannot be in the future."}
+            )
+
+        # Call the parent clean method to ensure other validations still work
+        super().clean()
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"

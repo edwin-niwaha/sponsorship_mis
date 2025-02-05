@@ -148,7 +148,9 @@ WSGI_APPLICATION = "core.wsgi.application"
 # Database configuration (PostgreSQL)
 DATABASES = {
     "default": dj_database_url.config(
-        default=os.getenv("DATABASE_URL", None)  # Use DATABASE_URL if provided
+        default=os.getenv("DATABASE_URL"),
+        conn_max_age=600,  # Keep the connection alive for 10 minutes
+        ssl_require=True    # Ensure a secure (SSL-encrypted) connection
     )
 }
 

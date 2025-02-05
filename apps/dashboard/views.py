@@ -1,13 +1,11 @@
 import json
 from datetime import date, timedelta
-
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, FloatField, Sum, F, ExpressionWrapper, DecimalField
 from django.db.models.functions import Coalesce, Cast
 from django.db.models.functions import Coalesce, ExtractYear
 from django.http import JsonResponse
 from django.shortcuts import render
-
 from apps.child.models import Child
 from apps.finance.models import ChildPayments, StaffPayments
 from apps.inventory.products.models import Category, Product
@@ -33,7 +31,7 @@ def dashboard(request):
     # Retrieve counts using annotations
     sponsors_count = Sponsor.objects.filter(is_departed=False).count()
     children_count = Child.objects.count()
-    sponsored_count = ChildSponsorship.objects.filter(is_active=True).count()
+    sponsored_count = Child.objects.filter(is_departed=False, is_sponsored=True).count()
     non_sponsored_count = Child.objects.filter(
         is_departed=False, is_sponsored=False
     ).count()
