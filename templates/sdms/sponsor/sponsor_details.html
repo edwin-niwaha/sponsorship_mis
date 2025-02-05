@@ -44,6 +44,7 @@
                     <th scope="col">First_Name</th>
                     <th scope="col">Last_Name</th>
                     <th scope="col">Gender</th>
+                    <th scope="col">D.O.B</th>
                     <th scope="col">Email</th>
                     <th scope="col">Sponsorship_Type</th>
                     <th scope="col">Amount Expected</th>
@@ -69,6 +70,7 @@
                       <td>{{ sponsor.first_name }}</td>
                       <td>{{ sponsor.last_name }}</td>
                       <td>{{ sponsor.gender }}</td>
+                      <td>{{ sponsor.date_of_birth }}</td>
                       <td>{{ sponsor.email }}</td>
                       <td>{{ sponsor.sponsorship_type }}</td>
                       <td>{{ sponsor.expected_amt|floatformat:'2'|intcomma }}</td>
