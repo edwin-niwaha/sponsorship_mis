@@ -1,5 +1,4 @@
-{% extends 'sdms/base_rpts.html' %}
-
+{% extends '_partials/guest_base.html' %}
 {% block title %}
   Staff List
 {% endblock %}
@@ -14,8 +13,8 @@
           <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
         </form>
         <div class="d-flex">
-          <!--   <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
-                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>   -->
+          <!--        <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
+                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>        -->
 
           <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success" onclick="ExportToExcel('xlsx')"><i class="mdi mdi-file-excel btn-icon-prepend"></i></button>
 
@@ -49,6 +48,7 @@
                 <th scope="col">First_Name</th>
                 <th scope="col">Last_Name</th>
                 <th scope="col">Gender</th>
+                <th scope="col">D.O.B</th>
                 <th scope="col">Email</th>
                 <th scope="col">Marital_Status</th>
                 <th scope="col">Home_District</th>
@@ -75,6 +75,7 @@
                   <td>{{ staff.first_name }}</td>
                   <td>{{ staff.last_name }}</td>
                   <td>{{ staff.gender }}</td>
+                  <td>{{ sponsor.date_of_birth }}</td>
                   <td>{{ staff.email }}</td>
                   <td>{{ staff.marital_status }}</td>
                   <td>{{ staff.home_district }}</td>

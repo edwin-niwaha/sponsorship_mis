@@ -1,4 +1,5 @@
 import datetime
+from django.core.exceptions import ValidationError
 from cloudinary.models import CloudinaryField
 
 from django.core.validators import FileExtensionValidator, MinValueValidator
@@ -30,12 +31,6 @@ class Staff(models.Model):
 
     first_name = models.CharField(max_length=25, null=True, verbose_name="First Name")
     last_name = models.CharField(max_length=25, null=True, verbose_name="Last Name")
-    # picture = models.ImageField(
-    #     default="default.jpg",
-    #     upload_to="staff_profiles/",
-    #     verbose_name="Upload Image(jpg, jpeg, png)",
-    #     validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
-    # )
     picture = CloudinaryField(
         "staff_profiles",
         validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
@@ -44,6 +39,11 @@ class Staff(models.Model):
     )
     gender = models.CharField(
         max_length=6, choices=GENDER_CHOICES, blank=False, verbose_name="Gender"
+    )
+    date_of_birth = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Date of Birth",
     )
     marital_status = models.CharField(max_length=30, choices=MARITAL_STATUS_CHOICES)
     email = models.EmailField(verbose_name="Email")
@@ -88,6 +88,16 @@ class Staff(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+    def clean(self):
+        # Validate that date_of_birth is not in the future
+        if self.date_of_birth and self.date_of_birth > datetime.date.today():
+            raise ValidationError(
+                {"date_of_birth": "Date of birth cannot be in the future."}
+            )
+
+        # Call the parent clean method to ensure other validations still work
+        super().clean()
 
     @property
     def prefixed_id(self):
