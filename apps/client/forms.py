@@ -1,4 +1,6 @@
 from django import forms
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Fieldset, ButtonHolder, Submit
 
 from .models import Client, SevenHillsRegistration
 
@@ -55,6 +57,18 @@ class SevenHillsRegistrationForm(forms.ModelForm):
                 attrs={"class": "form-control", "rows": 3}
             ),
         }
+    # Custom fields
+    services_interested = forms.MultipleChoiceField(
+        choices=SevenHillsRegistration.SERVICES_INTERESTED,
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
+
+    ministry_groups = forms.MultipleChoiceField(
+        choices=SevenHillsRegistration.MINISTRY_GROUPS,
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
 
     def clean_full_name(self):
         full_name = self.cleaned_data.get("full_name")
@@ -73,3 +87,38 @@ class SevenHillsRegistrationForm(forms.ModelForm):
             )
 
         return cleaned_data
+    
+    def clean_services_interested(self):
+        services_interested = self.cleaned_data.get("services_interested")
+        valid_services = [choice[0] for choice in SevenHillsRegistration.SERVICES_INTERESTED]
+        invalid_choices = [choice for choice in services_interested if choice not in valid_services]
+        if invalid_choices:
+            raise forms.ValidationError(f"Invalid services: {', '.join(invalid_choices)}")
+        return services_interested
+
+    def clean_ministry_groups(self):
+        ministry_groups = self.cleaned_data.get("ministry_groups")
+        valid_groups = [choice[0] for choice in SevenHillsRegistration.MINISTRY_GROUPS]
+        invalid_choices = [choice for choice in ministry_groups if choice not in valid_groups]
+        if invalid_choices:
+            raise forms.ValidationError(f"Invalid ministry groups: {', '.join(invalid_choices)}")
+        return ministry_groups
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Adding crispy form helper for layout customization
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Fieldset(
+                'Services Interested',
+                'services_interested',
+            ),
+            Fieldset(
+                'Ministry Groups',
+                'ministry_groups',
+            ),
+            ButtonHolder(
+                Submit('submit', 'Submit', css_class='btn btn-primary')
+            )
+        )
+        

@@ -101,17 +101,17 @@ class SevenHillsRegistration(models.Model):
     ]
     children_age_brackets = models.CharField(max_length=20, blank=True, null=True)
 
-    highest_education = models.CharField(max_length=255)
-    home_village = models.CharField(max_length=255)
-    residence = models.CharField(max_length=255)
+    highest_education = models.CharField(max_length=255, blank=True, null=True)
+    home_village = models.CharField(max_length=255, blank=True, null=True)
+    residence = models.CharField(max_length=255, blank=True, null=True)
     email = models.EmailField(validators=[EmailValidator()], blank=True, null=True)
     telephone_1 = PhoneNumberField(blank=True, null=True)
     telephone_2 = PhoneNumberField(blank=True, null=True)
 
-    next_of_kin = models.CharField(max_length=255)
-    next_of_kin_telephone_1 = PhoneNumberField()
+    next_of_kin = models.CharField(max_length=255, blank=True, null=True)
+    next_of_kin_telephone_1 = PhoneNumberField(blank=True, null=True)
     next_of_kin_telephone_2 = PhoneNumberField(blank=True, null=True)
-    relationship_with_next_of_kin = models.CharField(max_length=255)
+    relationship_with_next_of_kin = models.CharField(max_length=255, blank=True, null=True)
 
     workplace = models.CharField(max_length=255, blank=True, null=True)
 
@@ -136,8 +136,8 @@ class SevenHillsRegistration(models.Model):
         ("Discipleship", "Discipleship"),
         ("Volunteering", "Volunteering"),
     ]
-    services_interested = models.CharField(
-        max_length=50, choices=SERVICES_INTERESTED, blank=True, null=True
+    services_interested = models.TextField(
+        blank=True, null=True
     )
 
     MINISTRY_GROUPS = [
@@ -150,8 +150,8 @@ class SevenHillsRegistration(models.Model):
         ("Hospitality", "Hospitality"),
         ("Media", "Media"),
     ]
-    ministry_groups = models.CharField(
-        max_length=50, choices=MINISTRY_GROUPS, blank=True, null=True
+    ministry_groups = models.TextField(
+        blank=True, null=True
     )
 
     dc_makerere_association_year = models.PositiveIntegerField(
@@ -162,6 +162,9 @@ class SevenHillsRegistration(models.Model):
     additional_comments = models.TextField(blank=True, null=True)
     agrees_to_photo_use = models.BooleanField(default=False)
 
+    class Meta:
+            db_table = 'seven_hills_registration'
+            
     def clean(self):
         # Validate that date_of_birth is not in the future
         if self.date_of_birth and self.date_of_birth > datetime.date.today():
@@ -179,6 +182,38 @@ class SevenHillsRegistration(models.Model):
     def __str__(self):
         return f"{self.full_name}"
 
+    # Convert services_interested field (comma-separated string) to human-readable form
+    def get_services_interested_display(self):
+        services_dict = {
+            "Savings Scheme": "Join Savings Scheme",
+            "Skills Training": "Skills Training",
+            "Share Group": "Join Share Group",
+            "Community Unit": "Join Community Unit",
+            "Discipleship": "Discipleship",
+            "Volunteering": "Volunteering",
+        }
+        if self.services_interested:
+            selected_services = self.services_interested.split(",")
+            return ", ".join([services_dict.get(service.strip(), service) for service in selected_services])
+        return ""
+
+    # Convert ministry_groups field (comma-separated string) to human-readable form
+    def get_ministry_groups_display(self):
+        ministries_dict = {
+            "Ushering": "Ushering",
+            "Evangelism": "Evangelism",
+            "Children Ministry": "Children's Ministry",
+            "Youth Ministry": "Youth Ministry",
+            "Intercession": "Intercession",
+            "Choir": "Choir",
+            "Hospitality": "Hospitality",
+            "Media": "Media",
+        }
+        if self.ministry_groups:
+            selected_ministries = self.ministry_groups.split(",")
+            return ", ".join([ministries_dict.get(ministry.strip(), ministry) for ministry in selected_ministries])
+        return ""
+    
     @property
     def prefixed_id(self):
         if self.pk < 10:
