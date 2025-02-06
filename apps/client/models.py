@@ -105,7 +105,7 @@ class SevenHillsRegistration(models.Model):
     home_village = models.CharField(max_length=255)
     residence = models.CharField(max_length=255)
     email = models.EmailField(validators=[EmailValidator()], blank=True, null=True)
-    telephone_1 = PhoneNumberField()
+    telephone_1 = PhoneNumberField(blank=True, null=True)
     telephone_2 = PhoneNumberField(blank=True, null=True)
 
     next_of_kin = models.CharField(max_length=255)
