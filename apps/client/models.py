@@ -104,7 +104,7 @@ class SevenHillsRegistration(models.Model):
     highest_education = models.CharField(max_length=255)
     home_village = models.CharField(max_length=255)
     residence = models.CharField(max_length=255)
-    email = models.EmailField(validators=[EmailValidator()])
+    email = models.EmailField(validators=[EmailValidator()], blank=True, null=True)
     telephone_1 = PhoneNumberField()
     telephone_2 = PhoneNumberField(blank=True, null=True)
 
