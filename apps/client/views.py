@@ -247,7 +247,7 @@ def seven_hills_list(request):
             messages.info(request, "No results found for your search.")
 
     # Paginate the filtered queryset
-    paginator = Paginator(queryset, 20)  # Show 20 records per page
+    paginator = Paginator(queryset, 50)  # Show 50 records per page
     page = request.GET.get("page")
 
     try:
