@@ -6,60 +6,111 @@
   <div class="container-fluid mt-5 pt-5">
     <div class="row justify-content-center">
       <div class="col-md-12">
-        <h2 class="text-center mb-4">{{ table_title|upper }}</h2>
-        <!-- Header with Add Loan and Print button -->
         <div class="row mb-3">
           <div class="col-md-12 d-flex justify-content-between align-items-center">
             <a href="{% url 'seven_hills_registration' %}" class="btn btn-dark ml-2"><i class="mdi mdi-plus mr-2"></i>Add Member</a>
-            <button title="Print" type="button" class="btn btn-success ml-2" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
+
+            <div class="d-flex">
+              <button title="Export To Excel" type="button" class="btn btn-sm btn-success me-2" onclick="ExportToExcel('xlsx')"><i class="mdi mdi-file-excel btn-icon-prepend"></i></button>
+              <button title="Print" type="button" class="btn btn-success" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-header py-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
+          <h3 class="m-0">{{ table_title|upper }}</h3>
+
+          <div class="col-12 col-md-6 d-flex">
+            <!-- Filters and Sorting -->
+            <form method="get" action="{% url 'seven_hills_list' %}" class="w-100 w-md-auto mt-2 mt-md-0">
+              <div class="row g-2 align-items-center">
+                <!-- Search Filter -->
+                <div class="col-12 col-md-10">
+                  <input type="text" name="search" id="searchInput" value="{{ request.GET.search }}" placeholder="Filter by Full Name, Residence, Services, Ministry Groups..." class="form-control" />
+                </div>
+                <div class="col-12 col-md-auto">
+                  <button type="submit" class="btn btn-primary w-100"><i class="mdi mdi-filter me-2"></i> Filter</button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
 
         <!-- Loan DataTable -->
         <div id="printMe" class="card shadow mb-4">
-          <div class="card-header py-3 d-flex justify-content-between">
-            <h3 class="m-0">{{ table_title|upper }}</h3>
-            <!-- Filters and Sorting -->
-            <form method="get" action="{% url 'seven_hills_list' %}" class="py-2">
-              <div class="row g-3">
-                <!-- Search Filter -->
-                <div class="col-12 col-md-12 d-flex">
-                  <div class="me-2 w-100">
-                    <input type="text" name="search" id="searchInput" value="{{ request.GET.search }}" placeholder="Search..." class="form-control pl-5" />
-                  </div>
-                  <button type="submit" class="btn btn-primary"><i class="mdi mdi-magnify me-2"></i></button>
-                </div>
-              </div>
-            </form>
-          </div>
           <div class="card-body">
             <div class="table-responsive">
               <table class="table table-striped table-bordered" id="dataTable">
                 <thead>
                   <tr>
                     <th scope="col">#</th>
-                    <th scope="col">Reg.No</th>
+                    {% comment %} <th scope="col">Reg. No</th> {% endcomment %}
                     <th scope="col">Full Name</th>
                     <th scope="col">Gender</th>
-                    <th scope="col">Reg Date</th>
-                    <th scope="col" colspan="2">Action</th>
+                    <th scope="col">Reg_Date</th>
+                    <th scope="col">D.O.B</th>
+                    <th scope="col">Age Bracket</th>
+                    <th scope="col">Marital_Status</th>
+                    <th scope="col">Spouse's_Name</th>
+                    <th scope="col">Children</th>
+                    <th scope="col">Education</th>
+                    <th scope="col">Home_Village</th>
+                    <th scope="col">Residence</th>
+                    {% comment %} <th scope="col">Email</th> {% endcomment %}
+                    <th scope="col">Phone 1</th>
+                    <th scope="col">Phone 2</th>
+                    <th scope="col">Next_of_Kin</th>
+                    <th scope="col">Next_of_Kin_Contact</th>
+                    <th scope="col">Workplace</th>
+                    <th scope="col">Savings_Freq.</th>
+                    <th scope="col">Min Savings</th>
+                    <th scope="col">Saving Goal</th>
+                    <th scope="col">Interested_Services</th>
+                    <th scope="col">Ministry_Groups</th>
+                    {% comment %} <th scope="col">Recommended By</th> {% endcomment %}
+                    {% comment %} <th scope="col">Preferred_Contact</th> {% endcomment %}
+                    <th scope="col">Comments</th>
+                    <th scope="col">Photo Consent</th>
+                    <th scope="col" colspan="3">Action</th>
                   </tr>
                 </thead>
                 <tbody class="table-group-divider">
                   {% for client in records %}
                     <tr>
                       <th scope="row">{{ forloop.counter }}.</th>
-                      <td>{{ client.prefixed_id }}</td>
+                      {% comment %} <td>{{ client.prefixed_id }}</td> {% endcomment %}
                       <td>{{ client.full_name }}</td>
-                      <td>{{ client.gender }}</td>
-                      <td>{{ client.registration_date }}</td>
-
+                      <td>{{ client.get_gender_display }}</td>
+                      <td>{{ client.registration_date|date:'d/m/Y' }}</td>
+                      <td>{{ client.date_of_birth|date:'d/m/Y' }}</td>
+                      <td>{{ client.get_age_bracket_display }}</td>
+                      <td>{{ client.get_marital_status_display }}</td>
+                      <td>{{ client.spouse_name }}</td>
+                      <td>{{ client.number_of_children }}</td>
+                      <td>{{ client.highest_education }}</td>
+                      <td>{{ client.home_village }}</td>
+                      <td>{{ client.residence }}</td>
+                      {% comment %} <td>{{ client.email }}</td> {% endcomment %}
+                      <td>{{ client.telephone_1 }}</td>
+                      <td>{{ client.telephone_2 }}</td>
+                      <td>{{ client.next_of_kin }}</td>
+                      <td>{{ client.next_of_kin_telephone_1 }}</td>
+                      <td>{{ client.workplace }}</td>
+                      <td>{{ client.get_savings_frequency_display }}</td>
+                      <td>{{ client.min_savings_amount }}</td>
+                      <td>{{ client.saving_goal }}</td>
+                      <td>{{ client.get_services_interested_display }}</td>
+                      <td>{{ client.get_ministry_groups_display }}</td>
+                      {% comment %} <td>{{ client.recommended_by }}</td> {% endcomment %}
+                      {% comment %} <td>{{ client.preferred_contact_method }}</td> {% endcomment %}
+                      <td>{{ client.additional_comments }}</td>
+                      <td>{{ client.agrees_to_photo_use|yesno:'Yes,No' }}</td>
                       <td>
                         <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_seven_hills' client.id %}"><i class="bi bi-pencil"></i></a>
                       </td>
                       <td>
                         {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                          <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_seven_hills' client.id %}" onclick="return confirm('Are you sure about this? This record will be deleted permanently.');"><i class="bi bi-trash"></i></a>
+                          <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_seven_hills' client.id %}" onclick="return confirm('Are you sure? This record will be deleted permanently.');"><i class="bi bi-trash"></i></a>
                         {% else %}
                           <button class="btn btn-danger btn-sm disabled" onclick="showNoPermissionMessage('delete')"><i class="bi bi-trash"></i></button>
                         {% endif %}

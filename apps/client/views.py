@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
@@ -242,12 +243,17 @@ def seven_hills_list(request):
     # Apply search filter
     search_query = request.GET.get("search")
     if search_query:
-        queryset = queryset.filter(full_name__icontains=search_query)
+        queryset = queryset.filter(
+            Q(full_name__icontains=search_query) |
+            Q(residence__icontains=search_query) |
+            Q(services_interested__icontains=search_query) |
+            Q(ministry_groups__icontains=search_query)
+        )
         if not queryset.exists():
             messages.info(request, "No results found for your search.")
 
     # Paginate the filtered queryset
-    paginator = Paginator(queryset, 50)  # Show 50 records per page
+    paginator = Paginator(queryset, 100)
     page = request.GET.get("page")
 
     try:
