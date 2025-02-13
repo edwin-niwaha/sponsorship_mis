@@ -11,13 +11,13 @@ logger = logging.getLogger(__name__)
 
 #     if created:
 #         logger.info(f"Profile created for user: {user}")
-    
+
 #     uid = kwargs.get("uid", None)
 #     logger.info(f"UID from social auth: {uid}")
 
 #     # Assign a default role only if it does not exist
 #     if not profile.role or profile.role.strip() == "":
-#         profile.role = "guest"  
+#         profile.role = "guest"
 #         profile.save()
 #         logger.info(f"Profile updated with role 'guest' for user: {user}")
 #     else:

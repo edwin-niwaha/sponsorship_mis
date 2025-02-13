@@ -39,15 +39,14 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 # Security settings --comment in dev
-SECURE_SSL_REDIRECT = True  # Redirect HTTP to HTTPS
-SECURE_PROXY_SSL_HEADER = (
-    "HTTP_X_FORWARDED_PROTO",
-    "https",
-)  # Trust proxy's HTTPS header
-CSRF_COOKIE_SECURE = True  # Secure CSRF cookies
-SESSION_COOKIE_DOMAIN = f".{BASE_DOMAIN}"  # Domain for session cookies
-CSRF_COOKIE_DOMAIN = f".{BASE_DOMAIN}"  # Domain for CSRF cookies
-
+# SECURE_SSL_REDIRECT = True  # Redirect HTTP to HTTPS
+# SECURE_PROXY_SSL_HEADER = (
+#     "HTTP_X_FORWARDED_PROTO",
+#     "https",
+# )  # Trust proxy's HTTPS header
+# CSRF_COOKIE_SECURE = True  # Secure CSRF cookies
+# SESSION_COOKIE_DOMAIN = f".{BASE_DOMAIN}"  # Domain for session cookies
+# CSRF_COOKIE_DOMAIN = f".{BASE_DOMAIN}"  # Domain for CSRF cookies
 
 
 ############################## CORS CONFIGURATION ###############################
@@ -152,7 +151,7 @@ DATABASES = {
     "default": dj_database_url.config(
         default=os.getenv("DATABASE_URL"),
         conn_max_age=600,  # Keep the connection alive for 10 minutes
-        ssl_require=True    # Ensure a secure (SSL-encrypted) connection
+        ssl_require=True,  # Ensure a secure (SSL-encrypted) connection
     )
 }
 

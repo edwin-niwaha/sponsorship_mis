@@ -60,7 +60,23 @@ class ImportCOAForm(forms.Form):
 class LoanApplicationForm(forms.ModelForm):
     class Meta:
         model = Loan
-        exclude = ("borrower", "account", "disbursement_date", "due_date", "status", "total_interest", "approved_by_boo", "approved_by_hof", "approved_by_ed", "approved_date", "reason_for_rejection", "applied_by", "applied_by_role", "created_by", "created_at")
+        exclude = (
+            "borrower",
+            "account",
+            "disbursement_date",
+            "due_date",
+            "status",
+            "total_interest",
+            "approved_by_boo",
+            "approved_by_hof",
+            "approved_by_ed",
+            "approved_date",
+            "reason_for_rejection",
+            "applied_by",
+            "applied_by_role",
+            "created_by",
+            "created_at",
+        )
         widgets = {
             # "borrower": forms.Select(attrs={"class": "form-control"}),
             "principal_amount": forms.NumberInput(
@@ -116,48 +132,59 @@ class LoanApplicationForm(forms.ModelForm):
             loan.save()
         return loan
 
+
 # =================================== LoanApplicationUpdateForm ===================================
 class LoanApplicationUpdateForm(forms.ModelForm):
     class Meta:
         model = Loan
         fields = [
-            "borrower", 
-            "principal_amount", 
-            "interest_rate", 
-            "interest_method", 
-            "start_date", 
-            "loan_period_months", 
-            "reason_for_approval"
+            "borrower",
+            "principal_amount",
+            "interest_rate",
+            "interest_method",
+            "start_date",
+            "loan_period_months",
+            "reason_for_approval",
         ]
         widgets = {
             "borrower": forms.Select(attrs={"class": "form-control"}),
-            "principal_amount": forms.NumberInput(attrs={
-                "class": "form-control", 
-                "placeholder": "Enter the principal amount", 
-                "min": 0,
-            }),
-            "interest_rate": forms.NumberInput(attrs={
-                "class": "form-control", 
-                "placeholder": "Enter interest rate (%)", 
-                "min": 0, 
-                "step": 0.01,
-            }),
+            "principal_amount": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Enter the principal amount",
+                    "min": 0,
+                }
+            ),
+            "interest_rate": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Enter interest rate (%)",
+                    "min": 0,
+                    "step": 0.01,
+                }
+            ),
             "interest_method": forms.Select(attrs={"class": "form-control"}),
-            "start_date": forms.DateInput(attrs={
-                "class": "form-control", 
-                "type": "date", 
-                "placeholder": "Select start date",
-            }),
-            "loan_period_months": forms.NumberInput(attrs={
-                "class": "form-control", 
-                "placeholder": "Enter loan period in months", 
-                "min": 1,
-            }),
-            "reason_for_approval": forms.Textarea(attrs={
-                "class": "form-control", 
-                "placeholder": "Enter reason for approval", 
-                "rows": 3,
-            }),
+            "start_date": forms.DateInput(
+                attrs={
+                    "class": "form-control",
+                    "type": "date",
+                    "placeholder": "Select start date",
+                }
+            ),
+            "loan_period_months": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Enter loan period in months",
+                    "min": 1,
+                }
+            ),
+            "reason_for_approval": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Enter reason for approval",
+                    "rows": 3,
+                }
+            ),
         }
 
     def save(self, commit=True, user=None):

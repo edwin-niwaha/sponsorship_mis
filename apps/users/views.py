@@ -81,6 +81,7 @@ def home(request):
 
 #         return render(request, self.template_name, {"form": form})
 
+
 class RegisterView(View):
     form_class = RegisterForm
     initial = {"key": "value"}
@@ -112,7 +113,7 @@ class RegisterView(View):
             return redirect(to="login")
 
         return render(request, self.template_name, {"form": form})
-   
+
 
 # =================================== Login View ===================================
 
@@ -133,6 +134,7 @@ class RegisterView(View):
 #         # else browser session will be as long as the session cookie time "SESSION_COOKIE_AGE" defined in settings.py
 #         return super(CustomLoginView, self).form_valid(form)
 
+
 class CustomLoginView(LoginView):
     form_class = LoginForm
 
@@ -151,7 +153,7 @@ class CustomLoginView(LoginView):
             self.request.session.modified = True
 
         return super().form_valid(form)
-    
+
 
 # =================================== Reset password View  ===================================
 

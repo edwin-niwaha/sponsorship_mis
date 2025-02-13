@@ -8,7 +8,7 @@ class SponsorForm(forms.ModelForm):
     class Meta:
         model = Sponsor
         exclude = ("is_departed",)
-        widgets = { 
+        widgets = {
             "start_date": forms.DateInput(attrs={"type": "date"}),
             "date_of_birth": forms.DateInput(attrs={"type": "date"}),
             "comment": forms.Textarea(attrs={"class": "form-control", "rows": 3}),

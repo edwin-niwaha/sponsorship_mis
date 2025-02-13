@@ -244,10 +244,10 @@ def seven_hills_list(request):
     search_query = request.GET.get("search")
     if search_query:
         queryset = queryset.filter(
-            Q(full_name__icontains=search_query) |
-            Q(residence__icontains=search_query) |
-            Q(services_interested__icontains=search_query) |
-            Q(ministry_groups__icontains=search_query)
+            Q(full_name__icontains=search_query)
+            | Q(residence__icontains=search_query)
+            | Q(services_interested__icontains=search_query)
+            | Q(ministry_groups__icontains=search_query)
         )
         if not queryset.exists():
             messages.info(request, "No results found for your search.")

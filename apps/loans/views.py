@@ -92,6 +92,7 @@ def paginate_queryset(queryset, page_number):
 
 # =================================== Loan Apply View ===================================
 
+
 def send_loan_application_email(
     recipient_name, client_name, recipient_email, application_id, is_applicant=True
 ):
@@ -202,7 +203,11 @@ def loan_apply(request):
                 application.save()
 
                 # Extract client (borrower) name
-                client_name = borrower.get_full_name() if hasattr(borrower, "get_full_name") else str(borrower)
+                client_name = (
+                    borrower.get_full_name()
+                    if hasattr(borrower, "get_full_name")
+                    else str(borrower)
+                )
 
                 # Send email to logged-in user
                 send_loan_application_email(
@@ -240,6 +245,7 @@ def loan_apply(request):
     }
     return render(request, "loans/apply_for_loan.html", context)
 
+
 # =================================== update_loan View ===================================
 @admin_or_manager_required
 def update_loan(request, loan_id):
@@ -250,16 +256,23 @@ def update_loan(request, loan_id):
         form = LoanApplicationForm(request.POST, instance=loan)
         if form.is_valid():
             form.save()
-            messages.success(request, "Loan details updated successfully.", extra_tags="bg-success")
+            messages.success(
+                request, "Loan details updated successfully.", extra_tags="bg-success"
+            )
             return redirect("loans:loan_applications")
         else:
-            messages.error(request, "Please correct the errors below.", extra_tags="bg-danger")
+            messages.error(
+                request, "Please correct the errors below.", extra_tags="bg-danger"
+            )
     else:
         form = LoanApplicationForm(instance=loan)
 
     return render(
-        request, "loans/loan_update.html", {"form": form, "loan": loan, "form_title": form_title}
+        request,
+        "loans/loan_update.html",
+        {"form": form, "loan": loan, "form_title": form_title},
     )
+
 
 # =================================== view_repayment_schedule View ===================================
 @login_required
@@ -351,6 +364,7 @@ def disbursed_loans_view(request):
 
     return render(request, "loans/disbursed_loans_list.html", context)
 
+
 # =================================== Approved Loans View ===================================
 @login_required
 def approved_loans_view(request):
@@ -375,6 +389,7 @@ def approved_loans_view(request):
     }
 
     return render(request, "loans/approved_loans_list.html", context)
+
 
 # =================================== Rejected Loans View ===================================
 @login_required
@@ -402,6 +417,7 @@ def rejected_loans_view(request):
     }
 
     return render(request, "loans/rejected_loans_list.html", context)
+
 
 # =================================== Disburse Loan View ===================================
 @login_required

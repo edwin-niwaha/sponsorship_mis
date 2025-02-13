@@ -111,7 +111,9 @@ class SevenHillsRegistration(models.Model):
     next_of_kin = models.CharField(max_length=255, blank=True, null=True)
     next_of_kin_telephone_1 = PhoneNumberField(blank=True, null=True)
     next_of_kin_telephone_2 = PhoneNumberField(blank=True, null=True)
-    relationship_with_next_of_kin = models.CharField(max_length=255, blank=True, null=True)
+    relationship_with_next_of_kin = models.CharField(
+        max_length=255, blank=True, null=True
+    )
 
     workplace = models.CharField(max_length=255, blank=True, null=True)
 
@@ -136,9 +138,7 @@ class SevenHillsRegistration(models.Model):
         ("Discipleship", "Discipleship"),
         ("Volunteering", "Volunteering"),
     ]
-    services_interested = models.TextField(
-        blank=True, null=True
-    )
+    services_interested = models.TextField(blank=True, null=True)
 
     MINISTRY_GROUPS = [
         ("Ushering", "Ushering"),
@@ -150,9 +150,7 @@ class SevenHillsRegistration(models.Model):
         ("Hospitality", "Hospitality"),
         ("Media", "Media"),
     ]
-    ministry_groups = models.TextField(
-        blank=True, null=True
-    )
+    ministry_groups = models.TextField(blank=True, null=True)
 
     dc_makerere_association_year = models.PositiveIntegerField(
         blank=True, null=True, validators=[MinValueValidator(1900)]
@@ -163,8 +161,8 @@ class SevenHillsRegistration(models.Model):
     agrees_to_photo_use = models.BooleanField(default=False)
 
     class Meta:
-            db_table = 'seven_hills_registration'
-            
+        db_table = "seven_hills_registration"
+
     def clean(self):
         # Validate that date_of_birth is not in the future
         if self.date_of_birth and self.date_of_birth > datetime.date.today():
@@ -194,7 +192,12 @@ class SevenHillsRegistration(models.Model):
         }
         if self.services_interested:
             selected_services = self.services_interested.split(",")
-            return ", ".join([services_dict.get(service.strip(), service) for service in selected_services])
+            return ", ".join(
+                [
+                    services_dict.get(service.strip(), service)
+                    for service in selected_services
+                ]
+            )
         return ""
 
     # Convert ministry_groups field (comma-separated string) to human-readable form
@@ -211,9 +214,14 @@ class SevenHillsRegistration(models.Model):
         }
         if self.ministry_groups:
             selected_ministries = self.ministry_groups.split(",")
-            return ", ".join([ministries_dict.get(ministry.strip(), ministry) for ministry in selected_ministries])
+            return ", ".join(
+                [
+                    ministries_dict.get(ministry.strip(), ministry)
+                    for ministry in selected_ministries
+                ]
+            )
         return ""
-    
+
     @property
     def prefixed_id(self):
         if self.pk < 10:
