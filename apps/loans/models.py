@@ -406,24 +406,6 @@ class Loan(models.Model):
 
 
 # # =================================== Product Model ===================================
-# class Product(models.Model):
-#     name = models.CharField(max_length=255)
-#     description = models.TextField()
-#     interest_rate = models.DecimalField(max_digits=5, decimal_places=2)
-#     max_loan_amount = models.DecimalField(max_digits=10, decimal_places=2)
-#     min_loan_amount = models.DecimalField(max_digits=10, decimal_places=2)
-
-#     def __str__(self):
-#         return self.name
-
-
-# # =================================== LoanProduct Model ===================================
-# class LoanProduct(models.Model):
-#     loan = models.ForeignKey(Loan, on_delete=models.CASCADE)
-#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
-#     def __str__(self):
-#         return f"Loan Product for Loan {self.loan.id} - {self.product.name}"
 
 
 # =================================== LoanDisbursement Model ===================================

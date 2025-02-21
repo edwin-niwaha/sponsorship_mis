@@ -23,7 +23,7 @@ urlpatterns = [
     path("approve-all-loans/", views.approve_all_loans, name="approve_all_loans"),
     path("reject/<int:loan_id>/", views.reject_loan, name="reject_loan"),
     path("disburse/", views.disburse_loan, name="disburse_loan"),
-    path("delete/<int:loan_id>/", views.delete_loan, name="delete_loan"),
+    path("application/delete/<int:loan_id>/", views.delete_loan, name="delete_loan"),
     # Loan repayment
     path(
         "repay/",
@@ -31,6 +31,11 @@ urlpatterns = [
         name="loan_repayment_create",
     ),
     path("<int:loan_id>/", views.loan_detail_view, name="loan_detail"),
+    path(
+        "repayment/delete/<int:repayment_id>/",
+        views.delete_repayment,
+        name="delete_repayment",
+    ),
     path("loan-aging-report/", views.loan_aging_report, name="loan_aging_report"),
     path("loan-arrears-report/", views.loan_arrears_report, name="loan-arrears-report"),
     path("loan-portfolio/", views.loan_portfolio_report, name="loan_portfolio_report"),

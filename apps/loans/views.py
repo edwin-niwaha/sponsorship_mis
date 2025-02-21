@@ -6,7 +6,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.core.mail import send_mail
 from django.core.mail import EmailMessage
 from django.utils.html import strip_tags
-
+from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
@@ -37,6 +37,8 @@ from .models import (
     ChartOfAccounts,
     Loan,
     TransactionHistory,
+    LoanRepayment,
+    LoanDisbursement,
 )
 
 logger = logging.getLogger(__name__)
@@ -337,6 +339,10 @@ def disbursed_loans_view(request):
     # Paginate the filtered loans
     loans = paginate_queryset(disbursed_loans, request.GET.get("page"))
 
+    # Calculate the total disbursed amount
+    total_disbursed = sum(loan.principal_amount for loan in disbursed_loans)
+    total_interest_all = sum(loan.total_interest for loan in disbursed_loans)
+
     # Process each loan and its disbursements
     loans_with_disbursement_info = [
         {
@@ -360,6 +366,8 @@ def disbursed_loans_view(request):
         "loans_with_disbursement_info": loans_with_disbursement_info,
         "loans": loans,
         "table_title": "Disbursed Loans",
+        "total_disbursed": total_disbursed,
+        "total_interest_all": total_interest_all,
     }
 
     return render(request, "loans/disbursed_loans_list.html", context)
@@ -855,9 +863,10 @@ def loan_detail_view(request, loan_id):
 
     # Get borrower's full name
     borrower_name = loan.borrower.full_name
+    borrower_reg_no = loan.borrower.reg_number
 
     # Set up the form title for the view
-    form_title = f"Details for {borrower_name} Loan id: ({loan.id})"
+    form_title = f"{borrower_name} | Loan id: ({loan.id}) | Reg No: {borrower_reg_no}"
 
     # Render the loan detail template with necessary context
     return render(
@@ -874,6 +883,22 @@ def loan_detail_view(request, loan_id):
             "form_title": form_title,
         },
     )
+
+
+@login_required
+@admin_or_manager_required
+def delete_repayment(request, repayment_id):
+    repayment = get_object_or_404(LoanRepayment, id=repayment_id)
+
+    if request.method == "POST":
+        repayment.delete()
+        messages.success(
+            request,
+            "Repayment deleted successfully.",
+            extra_tags="bg-success",
+        )
+
+    return redirect(request.META.get("HTTP_REFERER", "loans:loan_list"))
 
 
 # =================================== Chart of Accounts List View ===================================
@@ -1362,6 +1387,56 @@ def loan_arrears_report(request):
 
 
 # =================================== loan_portfolio_report view ===================================
+# @login_required
+# @admin_or_manager_required
+# def loan_portfolio_report(request):
+#     today = timezone.now().date()
+
+#     # Fetch loans from the database
+#     loans = Loan.objects.all()  # Adjust the query if needed
+
+#     loan_data = []
+
+#     for loan in loans:
+#         # Call to calculate remaining balances for the loan
+#         remaining_balances = loan.calculate_remaining_balances()
+#         remaining_principal = remaining_balances["principal_balance"]
+#         remaining_interest = remaining_balances["interest_balance"]
+
+#         # Calculate the number of days overdue, if any
+#         if loan.due_date and loan.due_date < today:
+#             days_overdue = (today - loan.due_date).days
+#         else:
+#             days_overdue = (
+#                 0  # Set to 0 if the due date is in the future or loan is on time
+#             )
+
+#         # Add data to the loan_info list
+#         loan_info = {
+#             "loan_id": loan.id,
+#             "borrower": loan.borrower.full_name,
+#             "principal_amount": loan.principal_amount,
+#             "interest_rate": loan.interest_rate,
+#             "loan_period_months": loan.loan_period_months,
+#             "remaining_principal": remaining_principal,
+#             "remaining_interest": remaining_interest,
+#             "total_remaining_balance": remaining_principal + remaining_interest,
+#             "start_date": loan.start_date,
+#             "due_date": loan.due_date,
+#             "days_overdue": days_overdue,
+#         }
+#         loan_data.append(loan_info)
+
+#     return render(
+#         request,
+#         "loans/loan_portfolio_report.html",
+#         {
+#             "loan_data": loan_data,
+#             "table_title": "Loan Portfolio Report",
+#         },
+#     )
+
+
 @login_required
 @admin_or_manager_required
 def loan_portfolio_report(request):
@@ -1371,6 +1446,10 @@ def loan_portfolio_report(request):
     loans = Loan.objects.all()  # Adjust the query if needed
 
     loan_data = []
+    total_principal = 0
+    total_remaining_principal = 0
+    total_remaining_interest = 0
+    total_remaining_balance = 0
 
     for loan in loans:
         # Call to calculate remaining balances for the loan
@@ -1378,15 +1457,19 @@ def loan_portfolio_report(request):
         remaining_principal = remaining_balances["principal_balance"]
         remaining_interest = remaining_balances["interest_balance"]
 
-        # Calculate the number of days overdue, if any
-        if loan.due_date and loan.due_date < today:
-            days_overdue = (today - loan.due_date).days
-        else:
-            days_overdue = (
-                0  # Set to 0 if the due date is in the future or loan is on time
-            )
+        # Calculate overdue days
+        days_overdue = (
+            (today - loan.due_date).days
+            if loan.due_date and loan.due_date < today
+            else 0
+        )
 
-        # Add data to the loan_info list
+        # Sum totals
+        total_principal += loan.principal_amount
+        total_remaining_principal += remaining_principal
+        total_remaining_interest += remaining_interest
+        total_remaining_balance += remaining_principal + remaining_interest
+
         loan_info = {
             "loan_id": loan.id,
             "borrower": loan.borrower.full_name,
@@ -1408,6 +1491,10 @@ def loan_portfolio_report(request):
         {
             "loan_data": loan_data,
             "table_title": "Loan Portfolio Report",
+            "total_principal": total_principal,
+            "total_remaining_principal": total_remaining_principal,
+            "total_remaining_interest": total_remaining_interest,
+            "total_remaining_balance": total_remaining_balance,
         },
     )
 

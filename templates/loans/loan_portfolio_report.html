@@ -46,7 +46,7 @@
                       <tr>
                         <td>{{ loan.loan_id|default:'N/A' }}</td>
                         <td>{{ loan.borrower|default:'N/A' }}</td>
-                        <td>{{ loan.principal_amount|floatformat:'2'|intcomma }}</td>
+                        <td class="text-end">{{ loan.principal_amount|floatformat:'2'|intcomma }}</td>
                         <td>{{ loan.interest_rate|default:'N/A' }}</td>
                         <td>{{ loan.loan_period_months|default:'N/A' }}</td>
                         <td>{{ loan.start_date|date:'d/m/Y' }}</td>
@@ -58,12 +58,22 @@
                             0
                           {% endif %}
                         </td>
-                        <td>{{ loan.remaining_principal|floatformat:'2'|intcomma|default:'0' }}</td>
-                        <td>{{ loan.remaining_interest|floatformat:'2'|intcomma|default:'0' }}</td>
-                        <td>{{ loan.total_remaining_balance|floatformat:'2'|intcomma|default:'0' }}</td>
+                        <td class="text-end">{{ loan.remaining_principal|floatformat:'2'|intcomma|default:'0' }}</td>
+                        <td class="text-end">{{ loan.remaining_interest|floatformat:'2'|intcomma|default:'0' }}</td>
+                        <td class="text-end">{{ loan.total_remaining_balance|floatformat:'2'|intcomma|default:'0' }}</td>
                       </tr>
                     {% endfor %}
                   </tbody>
+                  <tfoot>
+                    <tr class="fw-bold">
+                      <td colspan="2" class="text-end">Totals:</td>
+                      <td class="text-end">{{ total_principal|floatformat:'2'|intcomma }}</td>
+                      <td colspan="5"></td>
+                      <td class="text-end">{{ total_remaining_principal|floatformat:'2'|intcomma }}</td>
+                      <td class="text-end">{{ total_remaining_interest|floatformat:'2'|intcomma }}</td>
+                      <td class="text-end">{{ total_remaining_balance|floatformat:'2'|intcomma }}</td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             </div>
