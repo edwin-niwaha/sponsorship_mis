@@ -45,31 +45,30 @@ logger = logging.getLogger(__name__)
 @login_required
 @admin_or_manager_or_staff_required
 def child_list(request):
-    # queryset = Child.objects.all().filter(is_departed="No").order_by("id").select_related("profile_picture")
-    queryset = Child.objects.all().filter(is_departed=False).order_by("id")
-
-    search_query = request.GET.get("search")
+    # Get all children who have not departed
+    queryset = Child.objects.filter(is_departed=False).order_by("id")
+    
+    # Search functionality
+    search_query = request.GET.get("search", "")
     if search_query:
         queryset = queryset.filter(full_name__icontains=search_query)
 
+    # Pagination
     paginator = Paginator(queryset, 50)
-    page = request.GET.get("page")
+    page = request.GET.get("page", 1)
 
     try:
         records = paginator.page(page)
     except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
         records = paginator.page(1)
     except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
         records = paginator.page(paginator.num_pages)
 
     return render(
         request,
         "sdms/child/child_list.html",
-        {"records": records, "table_title": "Children List"},
+        {"records": records, "table_title": "Children List", "search_query": search_query},
     )
-
 
 @login_required
 @admin_or_manager_or_staff_required
@@ -149,7 +148,7 @@ def register_child(request):
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
-def update_child(request, pk, template_name="sdms/child/child_register.html"):
+def update_child(request, pk, template_name="sdms/child/child_update.html"):
     try:
         child_record = Child.objects.get(pk=pk)
     except Child.DoesNotExist:

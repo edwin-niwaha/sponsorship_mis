@@ -10,8 +10,8 @@
     <div class="page-header flex-wrap">
       <h3 class="mb-0">{{ form_name|upper }}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
       <div class="d-flex">
-        <a title="Register Sponsor" class="btn btn-sm ml-3 btn-success" href="{% url 'register_sponsor' %}"><i class="mdi mdi-account-plus btn-icon-prepend"></i></a>
-        <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'sponsor_list' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
+        <a title="Register Donor" class="btn btn-sm ml-3 btn-success" href="{% url 'add_donor' %}"><i class="mdi mdi-account-plus btn-icon-prepend"></i></a>
+        <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'donor_list' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
       </div>
     </div>
     <hr />
@@ -26,7 +26,7 @@
                 <!--  -->
                 {{ form|crispy }}
                 <div class="form-group mt-4 mb-0">
-                  <button type="submit" class="col-md-12 btn btn-dark" onclick="return confirm('Are you sure you want save?') && validateForm()">REGISTER SPONSOR</button>
+                  <button type="submit" class="col-md-12 btn btn-dark" onclick="return confirm('Are you sure you want save?') && validateForm()">ADD DONOR</button>
                 </div>
               </form>
             </div>

@@ -1,14 +1,13 @@
 {% extends '_partials/guest_base.html' %}
 {% load humanize %}
 {% load crispy_forms_tags %}
+
 {% block content %}
-  <!-- Loan Application Form -->
   <div class="container-fluid mt-5 pt-3">
     <div class="row justify-content-center">
       <div class="col-md-12">
         <h2 class="text-center mb-4">{{ form_title|upper }}</h2>
 
-        <!-- Header with Add Loan and Print button -->
         <div class="row mb-3">
           <div class="col-md-12 d-flex justify-content-between align-items-center">
             <a href="{% url 'register_sponsor' %}" class="btn btn-dark ml-2"><i class="mdi mdi-plus mr-2"></i>Add Sponsor</a>
@@ -16,14 +15,12 @@
           </div>
         </div>
 
-        <!-- Loan DataTable -->
         <div id="printMe" class="card shadow mb-4">
           <div class="card-header py-3 d-flex justify-content-between">
             <h3 class="m-0">{{ table_title|upper }}</h3>
             <!-- Filters and Sorting -->
             <form method="get" action="{% url 'sponsor_list' %}" class="py-2">
               <div class="row g-3">
-                <!-- Search Filter -->
                 <div class="col-12 col-md-12 d-flex">
                   <div class="me-2 w-100">
                     <input type="text" name="search" id="searchInput" value="{{ request.GET.search }}" placeholder="Search..." class="form-control pl-5" />
@@ -33,39 +30,39 @@
               </div>
             </form>
           </div>
+
           <div class="card-body">
-            <!-- Start table -->
             <div class="table-responsive">
               <table class="table table-striped table-bordered" id="dataTable">
                 <thead>
                   <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Reg.No</th>
-                    <th scope="col">First_Name</th>
-                    <th scope="col">Last_Name</th>
-                    <th scope="col">Gender</th>
-                    <th scope="col">D.O.B</th>
-                    <th scope="col">Email</th>
-                    <th scope="col">Sponsorship_Type</th>
-                    <th scope="col">Amount Expected</th>
-                    <th scope="col">Job_Title</th>
-                    <th scope="col">Region</th>
-                    <th scope="col">Town</th>
-                    <th scope="col">Origin</th>
-                    <th scope="col">Business_Telephone</th>
-                    <th scope="col">Mobile_Telephone</th>
-                    <th scope="col">City</th>
-                    <th scope="col">Start_Date</th>
-                    <th scope="col">Street_Address_1</th>
-                    <th scope="col">Street_Address_2</th>
-                    <th scope="col">Zip_Code</th>
-                    <th scope="col" colspan="2">Action</th>
+                    <th>#</th>
+                    <th>Reg.No</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Gender</th>
+                    <th>D.O.B</th>
+                    <th>Email</th>
+                    <th>Sponsorship Type</th>
+                    <th>Amount Expected</th>
+                    <th>Job Title</th>
+                    <th>Region</th>
+                    <th>Town</th>
+                    <th>Origin</th>
+                    <th>Business Telephone</th>
+                    <th>Mobile Telephone</th>
+                    <th>City</th>
+                    <th>Start Date</th>
+                    <th>Street Address 1</th>
+                    <th>Street Address 2</th>
+                    <th>Zip Code</th>
+                    <th colspan="2">Action</th>
                   </tr>
                 </thead>
-                <tbody class="table-group-divider">
+                <tbody>
                   {% for sponsor in records %}
                     <tr>
-                      <th scope="row">{{ forloop.counter }}.</th>
+                      <th>{{ forloop.counter }}.</th>
                       <td>{{ sponsor.prefixed_id }}</td>
                       <td>{{ sponsor.first_name }}</td>
                       <td>{{ sponsor.last_name }}</td>
@@ -104,46 +101,30 @@
                 </tbody>
               </table>
             </div>
-            <!-- End Table -->
           </div>
         </div>
       </div>
-      <!-- Pagination links -->
+
+      <!-- Pagination Links -->
       <div class="pagination">
         <span class="step-links">
           {% if records.has_previous %}
-            <a href="?page=1">
-              <!-- first -->
-              <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
-                <path fill="#2375e1" d="M14 3.002a1 1 0 0 0-1.578-.816l-7 4.963a1 1 0 0 0-.007 1.628l7 5.037A1 1 0 0 0 14 13.003zM2 2.5a.5.5 0 0 1 1 0v11a.5.5 0 0 1-1 0z" />
-              </svg>
-            </a>
-            <a href="?page={{ records.previous_page_number }}">
-              <!-- previous -->
-              <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-                <path fill="#2375e1" d="m4 10l9 9l1.4-1.5L7 10l7.4-7.5L13 1z" />
-              </svg>
-            </a>
+            <a href="?page=1"><i class="mdi mdi-chevron-double-left"></i></a>
+            <a href="?page={{ records.previous_page_number }}"><i class="mdi mdi-chevron-left"></i></a>
           {% endif %}
-
           <span class="current">Page {{ records.number }} of {{ records.paginator.num_pages }}.</span>
-
           {% if records.has_next %}
-            <a href="?page={{ records.next_page_number }}">
-              <!-- Next -->
-              <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-                <path fill="#2375e1" d="M7 1L5.6 2.5L13 10l-7.4 7.5L7 19l9-9z" />
-              </svg>
-            </a>
-            <a href="?page={{ records.paginator.num_pages }}">
-              <!-- last -->
-              <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 28 28">
-                <path fill="#2375e1" d="M23.5 3.75a.75.75 0 0 1 1.5 0v20.5a.75.75 0 0 1-1.5 0zM3 5.254C3 3.438 5.041 2.37 6.533 3.406l12.504 8.68a2.25 2.25 0 0 1 .013 3.688l-12.504 8.81C5.056 25.634 3 24.57 3 22.745z" />
-              </svg>
-            </a>
+            <a href="?page={{ records.next_page_number }}"><i class="mdi mdi-chevron-right"></i></a>
+            <a href="?page={{ records.paginator.num_pages }}"><i class="mdi mdi-chevron-double-right"></i></a>
           {% endif %}
         </span>
       </div>
     </div>
   </div>
+
+  <script>
+    function showNoPermissionMessage(action) {
+      alert(`You do not have permission to ${action} this sponsor.`)
+    }
+  </script>
 {% endblock %}

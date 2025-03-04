@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from .models import (
     ChildPayments,
     StaffPayments,
+    DonorPayment,
 )
 
 
@@ -46,6 +47,23 @@ class ChildPaymentForm(forms.ModelForm):
         # Add more validation as needed
 
         return payment_year
+
+
+# =================================== Donor Payments Form ===================================
+
+class DonorPaymentForm(forms.ModelForm):
+
+    class Meta:
+        model = DonorPayment
+        exclude = (
+            "donor",
+        )
+
+        widgets = {
+            "payment_date": forms.DateInput(attrs={"type": "date", "required": True}),
+            "amount": forms.NumberInput(attrs={"type": "number", "required": True}),
+        }
+
 
 
 # =================================== Child Payment Edit Form ===================================

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+  <!-- You can add custom head content here if needed -->
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <div class="page-header flex-wrap">
+      <a href="{% url 'add_donor' %}" class="btn btn-dark ml-2">
+        <i class="mdi mdi-plus mr-2"></i>
+        Add Donor
+      </a>
+      <h3 class="mb-0">{{ form_name|upper }}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
+      <div class="d-flex">
+        <a class="btn btn-sm ml-3 btn-success" href="{% url 'sponsor_payment_without_child' %}"><i class="mdi mdi-folder-plus btn-icon-prepend"></i></a>
+        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'donor_payment_list' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
+      </div>
+    </div>
+    <hr />
+
+    <div class="form-content my-3 p-3">
+      <div class="row justify-content-center">
+        <div class="col-lg-12">
+          <div class="card shadow-lg border-0 rounded-lg mt-0 mb-5">
+            <div class="card-body">
+              <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group">
+                  <select name="donor_id" id="sponsor_dropdown" class="chzn-select" required style="width: 40%;">
+                    <option value="" selected disabled>Search Donor...</option>
+                    {% for donor in donors %}
+                      <option value="{{ donor.id }}">{{ donor.full_name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                {{ form|crispy }}
+
+                <div class="form-group mt-4 mb-0">
+                  <button type="submit" class="col-md-12 btn btn-dark" onclick="return confirm('Are you sure you want to proceed?') && validateForm()">SUBMIT PAYMENT</button>
+                  <br />
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

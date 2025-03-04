@@ -4,6 +4,10 @@ from . import views
 
 urlpatterns = [
     path("add/", views.register_sponsor, name="register_sponsor"),
+    path("donors/add/", views.add_donor_view, name="add_donor"),
+    path("donors/", views.donor_list_view, name="donor_list"),
+    path("donors/update/<int:donor_id>/", views.update_donor_view, name="update_donor"),
+    path("donors/delete/<int:donor_id>/", views.delete_donor_view, name="delete_donor"),
     path("list/", views.sponsor_list, name="sponsor_list"),
     path("update/<int:pk>/", views.update_sponsor, name="update_sponsor"),
     path("delete/<int:pk>/", views.delete_sponsor, name="delete_sponsor"),

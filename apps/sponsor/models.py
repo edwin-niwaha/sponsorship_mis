@@ -126,10 +126,18 @@ class Sponsor(models.Model):
         else:
             return f"PS{self.pk}"
 
+# =================================== DONOR MODEL ===================================
+class Donor(models.Model):
+    full_name = models.CharField(_("Full Name"), max_length=255)
+    email = models.EmailField(_("Email"), null=True, blank=True)
+    phone = models.CharField(_("Phone"), max_length=20, null=True, blank=True)
+    created_at = models.DateTimeField(_("Created At"), auto_now_add=True)
+
+    def __str__(self):
+        return self.full_name
+
 
 # =================================== SPONSOR DEPARTURE MODEL ===================================
-
-
 class SponsorDeparture(models.Model):
     sponsor = models.ForeignKey(
         Sponsor,  # Direct reference to the Sponsor model

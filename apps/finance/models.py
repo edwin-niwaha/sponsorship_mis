@@ -1,6 +1,6 @@
 # Standard Library Imports
 from datetime import date
-
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 # Third-party Imports
@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 
 # Local App Imports
 from apps.child.models import Child
-from apps.sponsor.models import Sponsor
+from apps.sponsor.models import Sponsor, Donor
 from apps.staff.models import Staff
 
 # =================================== CHILD-SPONSOR PAYMENT MODEL ===================================
@@ -43,6 +43,8 @@ class ChildPayments(models.Model):
         on_delete=models.CASCADE,
         related_name="child_payments_received",
         verbose_name=_("Child"),
+        null=True,
+        blank=True,
     )
     payment_date = models.DateField(
         _("Date of payment"),
@@ -74,10 +76,36 @@ class ChildPayments(models.Model):
     def __str__(self):
         return f"{self.sponsor} - {self.child} - {self.month}"
 
+# =================================== DONOR PAYMENT MODEL ===================================
+
+class DonorPayment(models.Model):
+    donor = models.ForeignKey(
+        Donor,
+        on_delete=models.CASCADE,
+        related_name="donor_payments",
+        verbose_name=_("Donor"),
+    )
+    payment_date = models.DateField(
+        _("Date of payment"),
+        validators=[
+            MinValueValidator(limit_value=date(2018, 1, 1)),
+            MaxValueValidator(limit_value=date.today),  
+        ],
+    )
+    amount = models.DecimalField(_("Amount"), max_digits=10, decimal_places=2, default=0)
+    created_at = models.DateTimeField(_("Created At"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Updated At"), auto_now=True)
+
+    class Meta:
+        db_table = "donor_payments"
+        verbose_name = _("Donor Payment")
+        verbose_name_plural = _("Donor Payments")
+
+    def __str__(self):
+        return f"{self.donor} - {self.month} {self.payment_year}"
+
 
 # =================================== STAFF-SPONSOR PAYMENT MODEL ===================================
-
-
 class StaffPayments(models.Model):
     sponsor = models.ForeignKey(
         Sponsor,

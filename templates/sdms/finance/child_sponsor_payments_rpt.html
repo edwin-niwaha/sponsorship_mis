@@ -46,11 +46,15 @@
     <div id="printMe" class="tab-pane show active">
         <hr class="bg-info" style="height: 3px;" />
         {% if sponsor_payments %}
-        <header style="text-align: center;">
-            <h3 class="text-primary" style="font-family:'Lucida Sans Unicode', sans-serif;">
-                {{ first_name|upper }} {{ last_name|upper }} - Payments Report
+        <header class="text-center my-5">
+            <h3 class="text-primary" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 700; font-size: 2.5rem;">
+                {{ last_name|upper }} {{ first_name|upper }} - Payments Report
             </h3>
+            <h2 class="text-muted" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 500; font-size: 2rem;">
+                <strong>Sponsorship Type:</strong> <span class="text-dark">{{ sponsor_payments.0.sponsor.sponsorship_type }}</span>
+            </h2>
         </header>
+        
         <hr class="bg-info" style="height: 3px;" />
         <div class="table-responsive">
             <table class="my-table">
@@ -82,7 +86,7 @@
                 </tfoot>
             </table>
 
-            <h4>Detailed Payments:</h4>
+            <h4 class="text-upper">Detailed Payments:</h4>
             <hr class="bg-info" style="height: 3px;" />
             <table class="my-table">
                 <thead>
@@ -94,7 +98,7 @@
                         <th scope="col">Year</th>
                         <th scope="col">Received(UgX)</th>
                         <th scope="col">Clr</th>
-                        <th colspan="3" scope="col">Action</th>
+                        <th class="print-hide" colspan="3" scope="col">Action</th>
                     </tr>
                 </thead>
                 <tbody class="table-group-divider">
@@ -115,7 +119,7 @@
                             <!-- Cross mark (❌) indicating the payment is invalid -->
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="print-hide">
                             {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
                             <form action="{% url 'validate_child_payment' payment.id %}" method="post"
                                 onsubmit="return confirm('Are you sure you want to validate?');">
@@ -132,7 +136,7 @@
                             </button>
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="print-hide">
                             {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
                             <a class="btn btn-danger btn-sm" title="Edit"
                                 href="{% url 'edit_child_payment' payment.id %}"
@@ -145,7 +149,7 @@
                             </button>
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="print-hide">
                             {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
                             <a class="btn btn-danger btn-sm" title="Erase"
                                 href="{% url 'delete_child_payment' payment.id %}"

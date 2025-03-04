@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Sponsor, SponsorDeparture
+from .models import Sponsor, SponsorDeparture, Donor
 
 
 # =================================== SPONSOR FORM ===================================
@@ -49,6 +49,17 @@ class SponsorForm(forms.ModelForm):
 
         return self.cleaned_data
 
+# =================================== DONOR FORM ===================================
+class DonorForm(forms.ModelForm):
+    class Meta:
+        model = Donor
+        fields = ["full_name", "email", "phone"]
+
+        widgets = {
+            "full_name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Full Name", "required": True}),
+            "email": forms.EmailInput(attrs={"class": "form-control", "placeholder": "Email"}),
+            "phone": forms.TextInput(attrs={"class": "form-control", "placeholder": "Phone Number"}),
+        }
 
 # =================================== SPONSOR DEPATURE ===================================
 class SponsorDepartForm(forms.ModelForm):

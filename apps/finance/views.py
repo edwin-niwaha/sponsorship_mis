@@ -1,5 +1,5 @@
 from collections import defaultdict
-
+from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from apps.child.models import Child
-from apps.sponsor.models import Sponsor
+from apps.sponsor.models import Sponsor, Donor
 from apps.staff.models import Staff
 from apps.users.decorators import (
     admin_or_manager_or_staff_required,
@@ -19,11 +19,13 @@ from .forms import (
     ChildPaymentEditForm,
     ChildPaymentForm,
     StaffPaymentEditForm,
-    StaffPaymentForm,
+    StaffPaymentForm, 
+    DonorPaymentForm,
 )
 from .models import (
     ChildPayments,
     StaffPayments,
+    DonorPayment,
 )
 
 
@@ -75,6 +77,126 @@ def child_sponsor_payment(request):
         },
     )
 
+# =================================== sponsor_payment_without_child Payment ===================================
+@login_required
+@admin_or_manager_or_staff_required
+@transaction.atomic
+def sponsor_payment_without_child(request):
+    if request.method == "POST":
+        form = ChildPaymentForm(request.POST, request.FILES)
+        if form.is_valid():
+            sponsor_id = request.POST.get("sponsor_id")
+
+            sponsor_instance = get_object_or_404(Sponsor, pk=sponsor_id)
+
+            try:
+                # Create the payment instance
+                with transaction.atomic():
+                    payment = form.save(commit=False)
+                    payment.sponsor = sponsor_instance
+
+                    # Since there is no child, don't set child in the payment
+                    payment.child = None
+
+                    payment.save()
+
+                messages.success(
+                    request, "Payment submitted successfully!", extra_tags="bg-success"
+                )
+                return redirect("sponsor_payment_without_child")
+            except IntegrityError:
+                messages.error(
+                    request, "An error occurred while processing the request."
+                )
+        else:
+            messages.error(request, "Form is invalid.", extra_tags="bg-danger")
+    else:
+        form = ChildPaymentForm()
+
+    sponsors = Sponsor.objects.filter(is_departed=False).order_by("id")
+    return render(
+        request,
+        "sdms/finance/sponsor_payment_without_child.html",
+        {
+            "form": form,
+            "form_name": "Sponsor Payments (Without Child)",
+            "sponsors": sponsors,
+        },
+    )
+
+
+# =================================== donor_payment_view Payment ===================================
+@login_required
+@admin_or_manager_or_staff_required
+@transaction.atomic
+def donor_payment_view(request):
+    if request.method == "POST":
+        form = DonorPaymentForm(request.POST, request.FILES)
+        if form.is_valid():
+            donor_id = request.POST.get("donor_id")
+            donor_instance = get_object_or_404(Donor, pk=donor_id)
+
+            try:
+                # Create the payment instance, link to donor and save
+                donor_payment = form.save(commit=False)
+                donor_payment.donor = donor_instance
+                donor_payment.save()
+
+                messages.success(request, "Payment submitted successfully!", extra_tags="bg-success")
+                return redirect("donor_payment")
+
+            except IntegrityError:
+                # Handle database integrity errors
+                messages.error(request, "An error occurred while processing the payment.", extra_tags="bg-danger")
+
+        else:
+            messages.error(request, "Form is invalid.", extra_tags="bg-danger")
+
+    else:
+        form = DonorPaymentForm()
+
+    donors = Donor.objects.all().order_by("id")
+
+    return render(
+        request,
+        "sdms/finance/donor_payments.html",
+        {
+            "form": form,
+            "form_name": " One time contributions",
+            "donors": donors,
+        },
+    )
+
+# =================================== donor_payment_list_view Payment ===================================
+@login_required
+@admin_or_manager_or_staff_required
+def donor_payment_list_view(request):
+    search_query = request.GET.get("search", "").strip()
+    donor_payments = DonorPayment.objects.all().order_by("-payment_date")
+
+    # Filter by donor name if search query is provided
+    if search_query:
+        donor_payments = donor_payments.filter(donor__full_name__icontains=search_query)
+
+    # Pagination
+    paginator = Paginator(donor_payments, 50)
+    page_number = request.GET.get("page")
+    donor_payments = paginator.get_page(page_number)
+
+    return render(request, "sdms/finance/donor_payments_list.html", {
+        "donor_payments": donor_payments,
+        "search_query": search_query
+    })
+
+# =================================== delete_donor_payment Transaction ===================================
+@login_required
+@admin_or_manager_required
+@transaction.atomic
+def delete_donor_payment_view(request, pk):
+    records = DonorPayment.objects.get(id=pk)
+    records.delete()
+    messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
+    return HttpResponseRedirect(reverse("donor_payment_list"))
 
 # =================================== Saff Payment ===================================
 @login_required
@@ -125,7 +247,6 @@ def staff_sponsor_payment(request):
     )
 
 
-# =================================== OTHER OPERATIONS ===================================
 # =================================== Validate Child payment  ===================================
 @login_required
 @admin_or_manager_required

@@ -16,10 +16,10 @@ from apps.users.decorators import (
     admin_required,
 )
 
-from .forms import SponsorDepartForm, SponsorForm, SponsorUploadForm
+from .forms import SponsorDepartForm, SponsorForm, SponsorUploadForm, DonorForm
 from .models import (
     Sponsor,
-    SponsorDeparture,
+    SponsorDeparture, Donor
 )
 
 logger = logging.getLogger(__name__)
@@ -29,36 +29,27 @@ logger = logging.getLogger(__name__)
 @login_required
 @admin_or_manager_or_staff_required
 def sponsor_list(request):
-    queryset = Sponsor.objects.all().filter(is_departed=False).order_by("id")
+    search_query = request.GET.get("search", "")
+    queryset = Sponsor.objects.filter(is_departed=False).order_by("id")
 
-    search_query = request.GET.get("search")
     if search_query:
-        queryset = queryset.filter(first_name__icontains=search_query).filter(
-            last_name__icontains=search_query
-        )
+        queryset = queryset.filter(first_name__icontains=search_query) | queryset.filter(last_name__icontains=search_query)
 
-    paginator = Paginator(queryset, 100)
+    paginator = Paginator(queryset, 10)
     page = request.GET.get("page")
 
     try:
         records = paginator.page(page)
     except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
         records = paginator.page(1)
     except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
         records = paginator.page(paginator.num_pages)
 
-    return render(
-        request,
-        "sdms/sponsor/sponsor_details.html",
-        {
-            "records": records,
-            "table_title": "Sponsors List",
-            "search_query": search_query,
-        },
-    )
-
+    return render(request, "sdms/sponsor/sponsor_details.html", {
+        "records": records,
+        "table_title": "Sponsors List",
+        "search_query": search_query,
+    })
 
 # =================================== Register Sponsor ===================================
 
@@ -73,7 +64,7 @@ def register_sponsor(request):
         if form.is_valid():
             form.save()
             messages.info(
-                request, "Record saved successfully!", extra_tags="bg-success"
+                request, "Sponsor added successfully!", extra_tags="bg-success"
             )
             return redirect("register_sponsor")
         else:
@@ -92,11 +83,92 @@ def register_sponsor(request):
     )
 
 
+# ===================================  Donor List ===================================
+@login_required
+def donor_list_view(request):
+    search_query = request.GET.get("search", "")
+    donors = Donor.objects.all().order_by("-created_at")
+
+    if search_query:
+        donors = donors.filter(full_name__icontains=search_query)
+
+    # Pagination
+    paginator = Paginator(donors, 50)
+    page_number = request.GET.get("page")
+    donors_page = paginator.get_page(page_number)
+
+    return render(
+        request,
+        "sdms/sponsor/donor_list.html",
+        {"donors": donors_page, "table_title": "List of Other Donors", "search_query": search_query},
+    )
+
+# =================================== Register Donor ===================================
+@login_required
+@admin_or_manager_or_staff_required
+@transaction.atomic
+def add_donor_view(request):
+    if request.method == "POST":
+        form = DonorForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            form.save()
+            messages.info(
+                request, "Donor added successfully!", extra_tags="bg-success"
+            )
+            return redirect("add_donor")
+        else:
+            # Display an error message if the form is not valid
+            messages.error(
+                request,
+                "There was an error saving the record. Please check the form for errors.",
+                extra_tags="bg-danger",
+            )
+    else:
+        form = DonorForm()
+    return render(
+        request,
+        "sdms/sponsor/add_donor.html",
+        {"form_name": "Register Other Donors", "form": form},
+    )
+
+
+# =================================== Update Donor ===================================
+@login_required
+def update_donor_view(request, donor_id):
+    donor = get_object_or_404(Donor, id=donor_id)
+    
+    if request.method == "POST":
+        form = DonorForm(request.POST, instance=donor)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Donor updated successfully!", extra_tags="bg-success")
+            return redirect("donor_list")
+        else:
+            messages.error(request, "Form is invalid.", extra_tags="bg-danger")
+    else:
+        form = DonorForm(instance=donor)
+
+    return render(request, "sdms/sponsor/update_donor.html", {"form": form, "form_name": "Update Donor"})
+
+
+# =================================== Delete Donor ===================================
+@login_required
+@admin_or_manager_required
+def delete_donor_view(request, donor_id):
+    donor = get_object_or_404(Donor, id=donor_id)
+    
+    # Automatically delete the donor without confirmation
+    donor.delete()
+    messages.success(request, "Donor deleted successfully!", extra_tags="bg-danger")
+    return HttpResponseRedirect(reverse("donor_list"))
+
+
 # =================================== Update Sponsor data ===================================
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
-def update_sponsor(request, pk, template_name="sdms/sponsor/sponsor_register.html"):
+def update_sponsor(request, pk, template_name="sdms/sponsor/sponsor_update.html"):
     try:
         sponsor_record = Sponsor.objects.get(pk=pk)
     except Sponsor.DoesNotExist:
