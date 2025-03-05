@@ -51,19 +51,17 @@ class ChildPaymentForm(forms.ModelForm):
 
 # =================================== Donor Payments Form ===================================
 
+
 class DonorPaymentForm(forms.ModelForm):
 
     class Meta:
         model = DonorPayment
-        exclude = (
-            "donor",
-        )
+        exclude = ("donor",)
 
         widgets = {
             "payment_date": forms.DateInput(attrs={"type": "date", "required": True}),
             "amount": forms.NumberInput(attrs={"type": "number", "required": True}),
         }
-
 
 
 # =================================== Child Payment Edit Form ===================================

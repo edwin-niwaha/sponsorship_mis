@@ -11,6 +11,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from openpyxl import load_workbook
+from django.db.models import OuterRef, Subquery
 
 from apps.users.decorators import (
     admin_or_manager_or_staff_required,
@@ -42,12 +43,49 @@ logger = logging.getLogger(__name__)
 
 
 # =================================== Fetch and display all children details ===================================
-@login_required
+# @login_required
+# @admin_or_manager_or_staff_required
+# def child_list(request):
+#     # Get all children who have not departed
+#     queryset = Child.objects.filter(is_departed=False).order_by("id")
+
+#     # Search functionality
+#     search_query = request.GET.get("search", "")
+#     if search_query:
+#         queryset = queryset.filter(full_name__icontains=search_query)
+
+#     # Pagination
+#     paginator = Paginator(queryset, 50)
+#     page = request.GET.get("page", 1)
+
+#     try:
+#         records = paginator.page(page)
+#     except PageNotAnInteger:
+#         records = paginator.page(1)
+#     except EmptyPage:
+#         records = paginator.page(paginator.num_pages)
+
+#     return render(
+#         request,
+#         "sdms/child/child_list.html",
+#         {"records": records, "table_title": "Children List", "search_query": search_query},
+#     )
+
+
 @admin_or_manager_or_staff_required
 def child_list(request):
-    # Get all children who have not departed
-    queryset = Child.objects.filter(is_departed=False).order_by("id")
-    
+    # Subquery to get the latest profile picture for each child
+    latest_picture = ChildProfilePicture.objects.filter(
+        child=OuterRef("pk"), is_current=True
+    ).values("picture")[:1]
+
+    # Get all children who have not departed and annotate them with their profile picture
+    queryset = (
+        Child.objects.filter(is_departed=False)
+        .annotate(picture=Subquery(latest_picture))
+        .order_by("id")
+    )
+
     # Search functionality
     search_query = request.GET.get("search", "")
     if search_query:
@@ -67,8 +105,13 @@ def child_list(request):
     return render(
         request,
         "sdms/child/child_list.html",
-        {"records": records, "table_title": "Children List", "search_query": search_query},
+        {
+            "records": records,
+            "table_title": "Children List",
+            "search_query": search_query,
+        },
     )
+
 
 @login_required
 @admin_or_manager_or_staff_required
@@ -100,13 +143,29 @@ def child_list_detailed(request):
 
 
 # =================================== Fetch and display selected child's details ===================================
+# @login_required
+# @admin_or_manager_or_staff_required
+# def child_details(request, pk):
+#     record = Child.objects.get(pk=pk)
+#     age = record.calculate_age()
+
+#     context = {"table_title": "Child Profile Report", "record": record, "age": age}
+#     return render(request, "sdms/child/child_profile_rpt.html", context)
+
+
 @login_required
 @admin_or_manager_or_staff_required
 def child_details(request, pk):
     record = Child.objects.get(pk=pk)
     age = record.calculate_age()
+    profile_picture = record.get_current_profile_picture()
 
-    context = {"table_title": "Child Profile Report", "record": record, "age": age}
+    context = {
+        "table_title": "Child Profile Report",
+        "record": record,
+        "age": age,
+        "profile_picture": profile_picture,
+    }
     return render(request, "sdms/child/child_profile_rpt.html", context)
 
 

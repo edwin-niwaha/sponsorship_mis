@@ -44,14 +44,17 @@
             </tr>
             <tr>
                 <td width="45%" rowspan="2" colspan="2">
-                    {% if record.picture and record.picture.url %}
-                    <img class="rounded-circle account-img" height="100" width="100" src="{{ record.picture.url }}"
-                        style="cursor: pointer" />
+                    {% if record.profile_picture.all %}
+                        {% with record.profile_picture.all.0 as profile_picture %}
+                            <img class="rounded-circle account-img" height="100" width="100" 
+                                src="{{ profile_picture.picture.url }}" style="cursor: pointer" />
+                        {% endwith %}
                     {% else %}
-                    No avatar!
+                        No avatar!
                     {% endif %}
                     <i class="text-info">Reg. No:</i> {{ record.prefixed_id }}
                 </td>
+                
                 <td class="text-info">Full Name:</td>
                 <td>{{record.full_name}}</td>
             </tr>

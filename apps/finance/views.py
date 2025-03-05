@@ -19,7 +19,7 @@ from .forms import (
     ChildPaymentEditForm,
     ChildPaymentForm,
     StaffPaymentEditForm,
-    StaffPaymentForm, 
+    StaffPaymentForm,
     DonorPaymentForm,
 )
 from .models import (
@@ -76,6 +76,7 @@ def child_sponsor_payment(request):
             "children": children,
         },
     )
+
 
 # =================================== sponsor_payment_without_child Payment ===================================
 @login_required
@@ -142,12 +143,18 @@ def donor_payment_view(request):
                 donor_payment.donor = donor_instance
                 donor_payment.save()
 
-                messages.success(request, "Payment submitted successfully!", extra_tags="bg-success")
+                messages.success(
+                    request, "Payment submitted successfully!", extra_tags="bg-success"
+                )
                 return redirect("donor_payment")
 
             except IntegrityError:
                 # Handle database integrity errors
-                messages.error(request, "An error occurred while processing the payment.", extra_tags="bg-danger")
+                messages.error(
+                    request,
+                    "An error occurred while processing the payment.",
+                    extra_tags="bg-danger",
+                )
 
         else:
             messages.error(request, "Form is invalid.", extra_tags="bg-danger")
@@ -167,6 +174,7 @@ def donor_payment_view(request):
         },
     )
 
+
 # =================================== donor_payment_list_view Payment ===================================
 @login_required
 @admin_or_manager_or_staff_required
@@ -183,10 +191,12 @@ def donor_payment_list_view(request):
     page_number = request.GET.get("page")
     donor_payments = paginator.get_page(page_number)
 
-    return render(request, "sdms/finance/donor_payments_list.html", {
-        "donor_payments": donor_payments,
-        "search_query": search_query
-    })
+    return render(
+        request,
+        "sdms/finance/donor_payments_list.html",
+        {"donor_payments": donor_payments, "search_query": search_query},
+    )
+
 
 # =================================== delete_donor_payment Transaction ===================================
 @login_required
@@ -197,6 +207,7 @@ def delete_donor_payment_view(request, pk):
     records.delete()
     messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
     return HttpResponseRedirect(reverse("donor_payment_list"))
+
 
 # =================================== Saff Payment ===================================
 @login_required

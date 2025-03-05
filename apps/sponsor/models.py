@@ -126,6 +126,7 @@ class Sponsor(models.Model):
         else:
             return f"PS{self.pk}"
 
+
 # =================================== DONOR MODEL ===================================
 class Donor(models.Model):
     full_name = models.CharField(_("Full Name"), max_length=255)

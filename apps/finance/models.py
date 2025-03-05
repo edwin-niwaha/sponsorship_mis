@@ -76,7 +76,9 @@ class ChildPayments(models.Model):
     def __str__(self):
         return f"{self.sponsor} - {self.child} - {self.month}"
 
+
 # =================================== DONOR PAYMENT MODEL ===================================
+
 
 class DonorPayment(models.Model):
     donor = models.ForeignKey(
@@ -89,10 +91,12 @@ class DonorPayment(models.Model):
         _("Date of payment"),
         validators=[
             MinValueValidator(limit_value=date(2018, 1, 1)),
-            MaxValueValidator(limit_value=date.today),  
+            MaxValueValidator(limit_value=date.today),
         ],
     )
-    amount = models.DecimalField(_("Amount"), max_digits=10, decimal_places=2, default=0)
+    amount = models.DecimalField(
+        _("Amount"), max_digits=10, decimal_places=2, default=0
+    )
     created_at = models.DateTimeField(_("Created At"), auto_now_add=True)
     updated_at = models.DateTimeField(_("Updated At"), auto_now=True)
 

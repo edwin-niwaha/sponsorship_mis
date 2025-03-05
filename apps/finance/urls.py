@@ -14,12 +14,18 @@ urlpatterns = [
         views.child_sponsor_payments_report,
         name="child_sponsor_payments_report",
     ),
-    path('sponsor-payment-without-child/', 
-         views.sponsor_payment_without_child, 
-         name='sponsor_payment_without_child'),
-    path('donor-payment/', views.donor_payment_view, name='donor_payment'), 
+    path(
+        "sponsor-payment-without-child/",
+        views.sponsor_payment_without_child,
+        name="sponsor_payment_without_child",
+    ),
+    path("donor-payment/", views.donor_payment_view, name="donor_payment"),
     path("donor-payments/", views.donor_payment_list_view, name="donor_payment_list"),
-    path("donor-payment/delete/<int:pk>/", views.delete_donor_payment_view, name="delete_donor_payment"),
+    path(
+        "donor-payment/delete/<int:pk>/",
+        views.delete_donor_payment_view,
+        name="delete_donor_payment",
+    ),
     path(
         "child-sponsorship/payment/validate/<int:payment_id>/",
         views.validate_child_payment,

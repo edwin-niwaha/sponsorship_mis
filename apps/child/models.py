@@ -64,7 +64,7 @@ class Child(models.Model):
         verbose_name="Registration Date",
     )
 
-    picture = CloudinaryField("child_picture", blank=True, null=True)
+    # picture = CloudinaryField("child_picture", blank=True, null=True)
 
     weight = models.DecimalField(
         max_digits=5,
@@ -228,9 +228,8 @@ class Child(models.Model):
     def __str__(self):
         return self.full_name
 
-    # @property
-    # def prefixed_id(self):
-    #     return f"CH-00{self.pk}"
+    def get_current_profile_picture(self):
+        return self.profile_picture.filter(is_current=True).first()
 
     @property
     def prefixed_id(self):
