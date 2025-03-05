@@ -14,6 +14,12 @@ from django.utils import timezone
 from phonenumber_field.modelfields import PhoneNumberField
 
 
+def validate_image_size(value):
+    limit = 1500 * 1024  # 1,500 KB (1.5 MB)
+    if value.size > limit:
+        raise ValidationError(f"Image size should not exceed 1.5 MB.")
+
+
 # =================================== CHILD MODEL ===================================
 def current_year():
     return timezone.now().year
@@ -266,7 +272,10 @@ class ChildProfilePicture(models.Model):
 
     picture = CloudinaryField(
         "child_picture",
-        validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
+        validators=[
+            FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"]),
+            validate_image_size,
+        ],
         null=True,
         blank=True,
     )

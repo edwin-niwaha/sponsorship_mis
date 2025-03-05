@@ -231,7 +231,6 @@ CLOUDINARY_STORAGE = {
     "CLOUD_NAME": CLOUDINARY_CLOUD_NAME,
     "API_KEY": CLOUDINARY_API_KEY,
     "API_SECRET": CLOUDINARY_API_SECRET,
-    "MAX_FILE_SIZE": 5242880,
 }
 
 DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
@@ -286,8 +285,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # =================================== SETTINGS TO DJANGO CRISPY FORMS PACKAGE ===================================
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
-
-DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5 MB
 
 
 # =================================== USE THE LOGGER ===================================
