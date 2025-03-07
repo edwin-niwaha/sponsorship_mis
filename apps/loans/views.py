@@ -334,7 +334,7 @@ def disbursed_loans_view(request):
     queryset = get_loan_queryset(request.GET.get("search"))
 
     # Filter for disbursed loans
-    disbursed_loans = queryset.all().prefetch_related("disbursements")
+    disbursed_loans = queryset.filter(status="disbursed").prefetch_related("disbursements")
 
     # Paginate the filtered loans
     loans = paginate_queryset(disbursed_loans, request.GET.get("page"))
