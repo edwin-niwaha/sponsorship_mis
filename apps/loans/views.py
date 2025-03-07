@@ -368,9 +368,11 @@ def disbursed_loans_view(request):
     queryset = get_loan_queryset(request.GET.get("search"))
 
     # Filter for disbursed loans
-    disbursed_loans = queryset.filter(status="disbursed").prefetch_related(
-        "disbursements"
-    )
+    # disbursed_loans = queryset.filter(status="disbursed").prefetch_related(
+    #     "disbursements"
+    # )
+    disbursed_loans = queryset.filter(status__in=["disbursed", "overdue", "repaid"]).prefetch_related("disbursements")
+
 
     # Paginate the filtered loans
     loans = paginate_queryset(disbursed_loans, request.GET.get("page"))
@@ -1427,56 +1429,6 @@ def loan_arrears_report(request):
 
 
 # =================================== loan_portfolio_report view ===================================
-# @login_required
-# @admin_or_manager_required
-# def loan_portfolio_report(request):
-#     today = timezone.now().date()
-
-#     # Fetch loans from the database
-#     loans = Loan.objects.all()  # Adjust the query if needed
-
-#     loan_data = []
-
-#     for loan in loans:
-#         # Call to calculate remaining balances for the loan
-#         remaining_balances = loan.calculate_remaining_balances()
-#         remaining_principal = remaining_balances["principal_balance"]
-#         remaining_interest = remaining_balances["interest_balance"]
-
-#         # Calculate the number of days overdue, if any
-#         if loan.due_date and loan.due_date < today:
-#             days_overdue = (today - loan.due_date).days
-#         else:
-#             days_overdue = (
-#                 0  # Set to 0 if the due date is in the future or loan is on time
-#             )
-
-#         # Add data to the loan_info list
-#         loan_info = {
-#             "loan_id": loan.id,
-#             "borrower": loan.borrower.full_name,
-#             "principal_amount": loan.principal_amount,
-#             "interest_rate": loan.interest_rate,
-#             "loan_period_months": loan.loan_period_months,
-#             "remaining_principal": remaining_principal,
-#             "remaining_interest": remaining_interest,
-#             "total_remaining_balance": remaining_principal + remaining_interest,
-#             "start_date": loan.start_date,
-#             "due_date": loan.due_date,
-#             "days_overdue": days_overdue,
-#         }
-#         loan_data.append(loan_info)
-
-#     return render(
-#         request,
-#         "loans/loan_portfolio_report.html",
-#         {
-#             "loan_data": loan_data,
-#             "table_title": "Loan Portfolio Report",
-#         },
-#     )
-
-
 @login_required
 @admin_or_manager_required
 def loan_portfolio_report(request):
