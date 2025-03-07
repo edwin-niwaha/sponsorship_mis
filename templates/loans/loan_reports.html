@@ -12,7 +12,7 @@
     <hr class="bg-info" style="height: 3px;" />
 
     <div class="row">
-      {% if user.profile.role == 'administrator' %}
+      {% if user.profile.role == 'administrator' or user.profile.role == 'hof' %}
         <!-- Loan Portfolio Card -->
         <div class="col-md-3 mb-4">
           <a href="{% url 'loans:loan_portfolio_report' %}" class="text-decoration-none">
