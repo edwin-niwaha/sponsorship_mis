@@ -856,6 +856,10 @@ def loan_repayment_create_view(request):
             repayment = form.save(commit=False)
             repayment.loan = form.cleaned_data["loan"]
             repayment.save()
+
+            # After saving, update loan status
+            repayment.loan.update_status()
+
             messages.success(
                 request,
                 "Loan repayment submitted successfully.",
