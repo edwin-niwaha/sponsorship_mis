@@ -73,6 +73,40 @@ def loan_applications_view(request):
     return render(request, "loans/loan_applications.html", context)
 
 
+@login_required
+def loan_applications_all_view(request):
+    user = request.user
+    search_query = request.GET.get("search")
+    page = request.GET.get("page")
+
+    # Get all loan applications based on search criteria
+    # queryset = get_loan_queryset(search_query)
+    queryset = get_loan_queryset(search_query).filter(
+        status__in=[
+            "pending",
+            "boo_approved",
+            "hof_approved",
+            "ed_approved",
+            "disbursed",
+        ]
+    )
+
+    # Apply role-based filtering for staff or guest
+    if user.profile.role in ["staff", "guest"]:
+        queryset = queryset.filter(applied_by=user)
+
+    # Paginate the results
+    loans = paginate_queryset(queryset, page)
+
+    context = {
+        "loans": loans,
+        "table_title": "All Loan Applications",
+        "search_query": search_query,  # Pass search query for input retention
+    }
+
+    return render(request, "loans/loan_applications_all.html", context)
+
+
 def get_loan_queryset(search_query):
     queryset = Loan.objects.prefetch_related("disbursements").all().order_by("id")
     if search_query:
@@ -334,7 +368,9 @@ def disbursed_loans_view(request):
     queryset = get_loan_queryset(request.GET.get("search"))
 
     # Filter for disbursed loans
-    disbursed_loans = queryset.filter(status="disbursed").prefetch_related("disbursements")
+    disbursed_loans = queryset.filter(status="disbursed").prefetch_related(
+        "disbursements"
+    )
 
     # Paginate the filtered loans
     loans = paginate_queryset(disbursed_loans, request.GET.get("page"))
