@@ -105,7 +105,7 @@
                     {% for payment in sponsor_payments %}
                     <tr {% if not payment.is_valid %}style="background-color: #f2dede; color: red" {% endif %}>
                         <th scope="row">{{forloop.counter}}</th>
-                        <td>{{ payment.child }}</td>
+                        <td>{{ payment.child|default:"Other Contributions" }}</td>
                         <td>{{ payment.payment_date }}</td>
                         <td>{{ payment.get_month_display }}</td>
                         <td>{{ payment.payment_year }}</td>
