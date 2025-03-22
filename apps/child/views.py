@@ -896,10 +896,16 @@ def delete_confirmation(request):
 @admin_or_manager_or_staff_required
 def birthday_list(request):
     # Annotate the queryset with the birth month
-    children_with_birthday = Child.objects.filter(is_sponsored=True).annotate(
-        birth_month=ExtractMonth("date_of_birth"),
-        month_name=Concat(Value("Month: "), F("birth_month"), output_field=CharField()),
-    ).order_by("birth_month", "date_of_birth")
+    children_with_birthday = (
+        Child.objects.filter(is_sponsored=True)
+        .annotate(
+            birth_month=ExtractMonth("date_of_birth"),
+            month_name=Concat(
+                Value("Month: "), F("birth_month"), output_field=CharField()
+            ),
+        )
+        .order_by("birth_month", "date_of_birth")
+    )
 
     context = {
         "table_title": "Children's Birthdays",

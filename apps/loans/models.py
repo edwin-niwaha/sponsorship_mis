@@ -185,7 +185,12 @@ class Loan(models.Model):
     approved_date = models.DateField(
         blank=True, null=True, verbose_name="Approval Date"
     )
-    reason_for_rejection = models.TextField(null=True, blank=True, verbose_name="Reason for Rejection", max_length=255,)
+    reason_for_rejection = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="Reason for Rejection",
+        max_length=255,
+    )
     reason_for_approval = models.TextField(
         max_length=255,
         blank=False,
@@ -404,6 +409,13 @@ class Loan(models.Model):
     def __str__(self):
         return f"Loan {self.id} - {self.borrower} ({self.status})"
 
+    def to_select2(self):
+        # Format the label to include client information (full name, registration number, etc.)
+        return {
+            "label": f"Loan #{self.id} - {self.borrower.full_name} ({self.borrower.reg_number})",
+            "value": self.id,
+        }
+
 
 # # =================================== Product Model ===================================
 
@@ -608,12 +620,12 @@ class LoanRepayment(models.Model):
 
         if self.principal_payment > remaining_principal:
             raise ValidationError(
-                f"Principal payment of {self.principal_payment:,.2f} exceeds remaining principal balance."
+                f"Principal payment of {self.principal_payment:,.2f} exceeds remaining principal balance of {remaining_principal:,.2f}."
             )
 
         if self.interest_payment > remaining_interest:
             raise ValidationError(
-                f"Interest payment of {self.interest_payment:,.2f} exceeds remaining interest balance."
+                f"Interest payment of {self.interest_payment:,.2f} exceeds remaining interest balance of {remaining_interest:,.2f}."
             )
 
     def save(self, *args, **kwargs):

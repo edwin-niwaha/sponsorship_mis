@@ -497,6 +497,7 @@ def upload_ebook(request):
 
 # ===================================  Books list  ===================================
 
+
 @login_required
 @admin_or_manager_or_staff_required
 def ebook_list(request):

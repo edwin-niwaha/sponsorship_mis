@@ -1,4 +1,7 @@
 import logging
+from django.db.models import Q
+from django.db.models import Sum, F, Value, DecimalField
+from django.db.models.functions import Coalesce
 from django.utils.timezone import now
 from django.conf import settings
 from datetime import date
@@ -371,8 +374,9 @@ def disbursed_loans_view(request):
     # disbursed_loans = queryset.filter(status="disbursed").prefetch_related(
     #     "disbursements"
     # )
-    disbursed_loans = queryset.filter(status__in=["disbursed", "overdue", "repaid"]).prefetch_related("disbursements")
-
+    disbursed_loans = queryset.filter(
+        status__in=["disbursed", "overdue", "repaid"]
+    ).prefetch_related("disbursements")
 
     # Paginate the filtered loans
     loans = paginate_queryset(disbursed_loans, request.GET.get("page"))
@@ -848,10 +852,71 @@ def delete_loan(request, loan_id):
 
 
 # ===================================  loan_repayment_create_view ===================================
+# @login_required
+# @admin_or_manager_required
+# def loan_repayment_create_view(request):
+#     form_title = "Repay Loans"
+#     if request.method == "POST":
+#         form = LoanRepaymentForm(request.POST)
+#         if form.is_valid():
+#             repayment = form.save(commit=False)
+#             repayment.loan = form.cleaned_data["loan"]
+#             repayment.save()
+
+#             # After saving, update loan status
+#             repayment.loan.update_status()
+
+#             messages.success(
+#                 request,
+#                 "Loan repayment submitted successfully.",
+#                 extra_tags="bg-success",
+#             )
+#             return redirect(
+#                 "loans:loan_detail", loan_id=repayment.loan.id
+#             )  # Update with your loan detail view name
+#         else:
+#             messages.error(request, "Please correct the errors below.")
+#     else:
+#         form = LoanRepaymentForm()
+
+#     return render(
+#         request,
+#         "loans/loan_repayment_form.html",
+#         {
+#             "form": form,
+#             "form_title": form_title,
+#         },
+#     )
+
+
 @login_required
 @admin_or_manager_required
 def loan_repayment_create_view(request):
     form_title = "Repay Loans"
+
+    # Annotate loans with principal and interest paid, and calculate remaining balances
+    loans = Loan.objects.annotate(
+        principal_paid=Coalesce(
+            Sum("repayments__principal_payment"), Value(0, output_field=DecimalField())
+        ),
+        interest_paid=Coalesce(
+            Sum("repayments__interest_payment"), Value(0, output_field=DecimalField())
+        ),
+        remaining_principal=F("principal_amount")
+        - Coalesce(
+            Sum("repayments__principal_payment"), Value(0, output_field=DecimalField())
+        ),
+        remaining_interest=F("total_interest")
+        - Coalesce(
+            Sum("repayments__interest_payment"), Value(0, output_field=DecimalField())
+        ),
+    ).filter(
+        # Fetch only loans with remaining principal or interest, and status "disbursed"
+        Q(remaining_principal__gt=0)
+        | Q(remaining_interest__gt=0),  # Outstanding balance
+        status="disbursed",  # Status should be "disbursed"
+    )
+
     if request.method == "POST":
         form = LoanRepaymentForm(request.POST)
         if form.is_valid():
@@ -881,6 +946,7 @@ def loan_repayment_create_view(request):
         {
             "form": form,
             "form_title": form_title,
+            "loans": loans,  # Pass the filtered loans queryset to the template
         },
     )
 

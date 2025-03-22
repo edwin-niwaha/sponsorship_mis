@@ -210,10 +210,12 @@ class PolicyForm(forms.ModelForm):
 
 # =================================== Ebook Form  ===================================
 
+
 class EbookUploadForm(forms.ModelForm):
     class Meta:
         model = Ebook
         fields = ["title", "author", "ebook_file"]
+
 
 # =================================== Document Form  ===================================
 

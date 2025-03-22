@@ -36,6 +36,15 @@
         Sponsorship & Donor Management Software (SDMS)
       {% endblock %}
     </title>
+
+    <!-- Include Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+
+    <!-- Include jQuery (required for Select2) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Include Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
   </head>
 
   <body>
@@ -112,6 +121,14 @@
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('currentYear').textContent = new Date().getFullYear()
+    })
+  </script>
+  <script>
+    $(document).ready(function () {
+      $('#dropdown').select2({
+        placeholder: 'Search for a loan...',
+        allowClear: true
+      })
     })
   </script>
 </html>
