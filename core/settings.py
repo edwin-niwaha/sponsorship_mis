@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "crispy_bootstrap5",
     "django.contrib.humanize",
     "django_select2",
+    "cloudinary",
     # =================================== PROJECT APPLICATIONS ===================================
     "apps.users",
     "apps.child",

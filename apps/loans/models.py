@@ -185,9 +185,9 @@ class Loan(models.Model):
     approved_date = models.DateField(
         blank=True, null=True, verbose_name="Approval Date"
     )
-    reason_for_rejection = models.TextField(null=True, blank=True)
+    reason_for_rejection = models.TextField(null=True, blank=True, verbose_name="Reason for Rejection", max_length=255,)
     reason_for_approval = models.TextField(
-        max_length=100,
+        max_length=255,
         blank=False,
         null=False,
         verbose_name="Reason for Approval",

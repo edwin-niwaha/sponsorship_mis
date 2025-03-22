@@ -119,12 +119,9 @@ class PolicyRead(models.Model):
 class Ebook(models.Model):
     title = models.CharField(max_length=200)
     author = models.CharField(max_length=200)
-    # ebook_file = models.FileField(upload_to="ebooks/")
-    ebook_file = CloudinaryField(
-        "ebook_file", resource_type="auto"
-    )  # Handles all file types
+    ebook_file = CloudinaryField("ebook_file", resource_type="auto")  # Handles PDF uploads
     upload_date = models.DateField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):

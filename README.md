@@ -40,6 +40,10 @@ cd backend
   ```bash
   # For winodws
     source venv/Scripts/activate
+  # Powershell
+    deactivate
+    venv\Scripts\Activate
+
     
   # For linux
     source venv/bin/activate

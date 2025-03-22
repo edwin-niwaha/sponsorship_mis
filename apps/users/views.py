@@ -25,7 +25,7 @@ from apps.users.decorators import (
 from .forms import (
     ContactForm,
     DocumentForm,
-    EbookForm,
+    EbookUploadForm,
     LoginForm,
     PolicyForm,
     RegisterForm,
@@ -469,7 +469,7 @@ def policy_report(request):
 @transaction.atomic
 def upload_ebook(request):
     if request.method == "POST":
-        form = EbookForm(request.POST, request.FILES)
+        form = EbookUploadForm(request.POST, request.FILES)
 
         if form.is_valid():
             form.save()
@@ -486,7 +486,7 @@ def upload_ebook(request):
             )
 
     else:
-        form = EbookForm()
+        form = EbookUploadForm()
 
     return render(
         request,
@@ -496,6 +496,7 @@ def upload_ebook(request):
 
 
 # ===================================  Books list  ===================================
+
 @login_required
 @admin_or_manager_or_staff_required
 def ebook_list(request):
@@ -515,10 +516,9 @@ def ebook_list(request):
     except EmptyPage:
         records = paginator.page(paginator.num_pages)
 
-    # Add file existence information to each record
+    # Check if ebook_file exists and is a valid file (Cloudinary URL)
     for record in records:
-        file_path = record.ebook_file.name
-        record.file_exists = default_storage.exists(file_path)
+        record.file_exists = bool(record.ebook_file and record.ebook_file.url)
 
     return render(
         request,
@@ -537,7 +537,7 @@ def update_ebook(request, pk, template_name="accounts/ebook_upload.html"):
 
     if request.method == "POST":
         # Bind the form to the request data and files, including the instance to update
-        form = EbookForm(request.POST, request.FILES, instance=client_record)
+        form = EbookUploadForm(request.POST, request.FILES, instance=client_record)
         if form.is_valid():
             # Save the updated record
             form.save()
@@ -549,7 +549,7 @@ def update_ebook(request, pk, template_name="accounts/ebook_upload.html"):
             return redirect("ebook_list")  # Adjust the redirect as needed
     else:
         # Pre-populate the form with existing data
-        form = EbookForm(instance=client_record)
+        form = EbookUploadForm(instance=client_record)
 
     # Render the form in the template
     context = {"form_name": "Update Book", "form": form}

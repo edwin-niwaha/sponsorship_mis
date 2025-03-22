@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
+import magic 
 
 from .models import Contact, DocumentUpload, Ebook, Policy, Profile
 
@@ -208,26 +209,11 @@ class PolicyForm(forms.ModelForm):
 
 
 # =================================== Ebook Form  ===================================
-class EbookForm(forms.ModelForm):
+
+class EbookUploadForm(forms.ModelForm):
     class Meta:
         model = Ebook
-        fields = "__all__"
-
-        widgets = {
-            "upload_date": forms.DateInput(attrs={"type": "date"}),
-        }
-
-    def clean_ebook_file(self):
-        ebook_file = self.cleaned_data.get("ebook_file")
-        if ebook_file:
-            if not ebook_file.name.endswith(".pdf"):
-                raise forms.ValidationError("Only PDF files are allowed.")
-            if ebook_file.size > 10 * 1024 * 1024:  # 10 MB limit
-                raise forms.ValidationError(
-                    "The file is too large. It should be less than 10 MB."
-                )
-        return ebook_file
-
+        fields = ["title", "author", "ebook_file"]
 
 # =================================== Document Form  ===================================
 
