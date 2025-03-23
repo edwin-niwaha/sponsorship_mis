@@ -35,7 +35,7 @@
                 <thead>
                   <tr>
                     <th scope="col">#</th>
-                    <th scope="col">Reg.No</th>
+                    {% comment %} <th scope="col">Reg.No</th> {% endcomment %}
                     <th scope="col">Picture</th>
                     <th scope="col">First_Name</th>
                     <th scope="col">Last_Name</th>
@@ -56,7 +56,7 @@
                   {% for staff in records %}
                     <tr>
                       <th scope="row">{{ forloop.counter }}.</th>
-                      <td>{{ staff.prefixed_id }}</td>
+                      {% comment %} <td>{{ staff.prefixed_id }}</td> {% endcomment %}
                       <td>
                         {% if staff.picture %}
                           <img class="rounded-circle account-img" height="50" width="50" src="{{ staff.picture.url }}" alt="" />
