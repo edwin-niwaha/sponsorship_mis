@@ -11,7 +11,7 @@ from apps.users.decorators import (
     admin_or_manager_required,
 )
 
-from .forms import StaffDepartureForm, StaffForm
+from .forms import StaffDepartureForm, StaffForm, StaffUpdateForm
 from .models import Staff, StaffDeparture
 
 
@@ -81,34 +81,24 @@ def register_staff(request):
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
-def update_staff(request, pk, template_name="sdms/staff/staff_register.html"):
-    try:
-        staff_record = Staff.objects.get(pk=pk)
-    except Staff.DoesNotExist:
-        messages.error(request, "Record not found!", extra_tags="bg-danger")
-        return redirect("staff_list")  # Or a relevant error page
+def update_staff(request, pk, template_name="sdms/staff/staff_update.html"):
+    # Fetch the staff record or raise an error if not found
+    staff_record = get_object_or_404(Staff, pk=pk)
 
     if request.method == "POST":
-        form = StaffForm(request.POST, request.FILES, instance=staff_record)
+        form = StaffUpdateForm(request.POST, request.FILES, instance=staff_record)
+        
         if form.is_valid():
             form.save()
-
-            messages.success(
-                request, "Record updated successfully!", extra_tags="bg-success"
-            )
-            return redirect("staff_list")
-            # Display an error message if the form is not valid
+            messages.success(request, "Staff record updated successfully!", extra_tags="bg-success")
+            return redirect("staff_list")  # Redirect to the staff list after successful update
         else:
-            messages.error(
-                request,
-                "There was an error saving the record. Please check the form for errors.",
-                extra_tags="bg-danger",
-            )
+            messages.error(request, "There was an error saving the record. Please check the form for errors.", extra_tags="bg-danger")
     else:
-        # Pre-populate the form with existing data
-        form = StaffForm(instance=staff_record)
+        # Populate the form with the existing staff data for GET requests
+        form = StaffUpdateForm(instance=staff_record)
 
-    context = {"form_name": "Staff Registration", "form": form}
+    context = {"form_name": "Update Staff Information", "form": form}
     return render(request, template_name, context)
 
 

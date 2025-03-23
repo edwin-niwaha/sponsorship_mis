@@ -49,6 +49,32 @@ class StaffForm(forms.ModelForm):
         return self.cleaned_data
 
 
+class StaffUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Staff
+        exclude = ("is_departed", "is_sponsored", "created_at", "updated_at")
+        widgets = {
+            "date_of_birth": forms.DateInput(attrs={"type": "date", "required": True}),
+            "date_started_work": forms.DateInput(
+                attrs={"type": "date", "required": True}
+            ),
+            "gender": forms.Select(attrs={"class": "form-control", "required": True}),
+            "marital_status": forms.Select(
+                attrs={"class": "form-control", "required": True}
+            ),
+            "department": forms.Select(
+                attrs={"class": "form-control", "required": True}
+            ),
+        }
+
+    def clean_picture(self):
+        picture = self.cleaned_data.get('picture')
+        if picture:
+            # You can add any custom validation here if needed
+            if not picture.name.endswith(('jpg', 'jpeg', 'png')):
+                raise forms.ValidationError("Please upload a valid image (jpg, jpeg, png).")
+        return picture
+
 # =================================== STAFF DEPATURE ===================================
 class StaffDepartureForm(forms.ModelForm):
     class Meta:
