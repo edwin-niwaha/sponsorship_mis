@@ -1,6 +1,7 @@
 import datetime
 from django.core.exceptions import ValidationError
 from cloudinary.models import CloudinaryField
+import cloudinary.uploader
 
 from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.db import models
@@ -93,6 +94,15 @@ class Staff(models.Model):
 
         # Call the parent clean method to ensure other validations still work
         super().clean()
+
+
+    def save(self, *args, **kwargs):
+        if self.picture and not str(self.picture).startswith("http"):
+            upload_result = cloudinary.uploader.upload(
+                self.picture.file, folder="staff_profiles"
+            )
+            self.picture = upload_result["url"]
+        super().save(*args, **kwargs)
 
     @property
     def prefixed_id(self):

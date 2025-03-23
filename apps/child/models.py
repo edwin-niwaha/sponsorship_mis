@@ -2,6 +2,7 @@ import datetime
 from datetime import date
 from django.core.exceptions import ValidationError
 from cloudinary.models import CloudinaryField
+import cloudinary.uploader
 
 from django.core.validators import (
     FileExtensionValidator,
@@ -294,6 +295,14 @@ class ChildProfilePicture(models.Model):
             f"Profile picture of {self.child.full_name} uploaded at {self.uploaded_at}"
         )
 
+    def save(self, *args, **kwargs):
+        if self.picture and not str(self.picture).startswith("http"):
+            upload_result = cloudinary.uploader.upload(
+                self.picture.file, folder="kids_profiles"
+            )
+            self.picture = upload_result["url"]
+        super().save(*args, **kwargs)
+
 
 # =================================== CHILD PROGRESS MODEL ===================================
 
@@ -424,12 +433,6 @@ class ChildCorrespondence(models.Model):
         choices=SOURCE_CHOICES,
         verbose_name="Select the source of correspondence",
     )
-    # attachment = models.FileField(
-    #     upload_to="correspondence_attachments/",
-    #     blank=True,
-    #     null=True,
-    #     verbose_name="Attachment",
-    # )
     attachment = CloudinaryField(
         "correspondence_attachments", resource_type="auto", null=True, blank=True
     )
@@ -478,12 +481,6 @@ class ChildIncident(models.Model):
     )
     reported_by = models.CharField(max_length=25, verbose_name="Reported By")
     followed_up_by = models.CharField(max_length=25, verbose_name="Followed Up By")
-    # attachment = models.FileField(
-    #     upload_to="incident_attachments/",
-    #     blank=True,
-    #     null=True,
-    #     verbose_name="Attachment",
-    # )
     attachment = CloudinaryField(
         "incident_attachments", resource_type="auto", null=True, blank=True
     )
