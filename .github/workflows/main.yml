@@ -1,0 +1,11 @@
+name: Test Workflow
+on:
+  schedule:
+    - cron: "*/1 * * * *" #runs every minute for testing.
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo
+        run: echo "Test workflow ran!"
