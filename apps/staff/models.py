@@ -31,12 +31,7 @@ class Staff(models.Model):
 
     first_name = models.CharField(max_length=25, null=True, verbose_name="First Name")
     last_name = models.CharField(max_length=25, null=True, verbose_name="Last Name")
-    picture = CloudinaryField(
-        "staff_profiles",
-        validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],
-        null=True,
-        blank=True,
-    )
+    picture = CloudinaryField("image", blank=True, null=True)
     gender = models.CharField(
         max_length=6, choices=GENDER_CHOICES, blank=False, verbose_name="Gender"
     )
