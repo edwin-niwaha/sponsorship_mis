@@ -11,7 +11,7 @@ from apps.users.decorators import (
     admin_or_manager_required,
 )
 
-from .forms import StaffDepartureForm, StaffForm, StaffUpdateForm
+from .forms import StaffDepartureForm, StaffForm
 from .models import Staff, StaffDeparture
 
 
@@ -86,7 +86,7 @@ def update_staff(request, pk, template_name="sdms/staff/staff_update.html"):
     staff_record = get_object_or_404(Staff, pk=pk)
 
     if request.method == "POST":
-        form = StaffUpdateForm(request.POST, request.FILES, instance=staff_record)
+        form = StaffForm(request.POST, request.FILES, instance=staff_record)
         
         if form.is_valid():
             form.save()
@@ -96,7 +96,7 @@ def update_staff(request, pk, template_name="sdms/staff/staff_update.html"):
             messages.error(request, "There was an error saving the record. Please check the form for errors.", extra_tags="bg-danger")
     else:
         # Populate the form with the existing staff data for GET requests
-        form = StaffUpdateForm(instance=staff_record)
+        form = StaffForm(instance=staff_record)
 
     context = {"form_name": "Update Staff Information", "form": form}
     return render(request, template_name, context)
