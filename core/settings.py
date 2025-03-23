@@ -12,9 +12,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 ############################### SECURITY SETTINGS ###############################
-
 # Security settings
-DJANGO_SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "default_secret_key")
+SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
 
 # Production settings
 DEBUG = False
@@ -178,21 +177,6 @@ AUTHENTICATION_BACKENDS = (
     "social_core.backends.google.GoogleOAuth2",
     "django.contrib.auth.backends.ModelBackend",
 )
-
-
-# Add a pipeline to create the profile
-# SOCIAL_AUTH_PIPELINE = (
-#     'social_core.pipeline.social_auth.social_details',
-#     'social_core.pipeline.social_auth.social_uid',
-#     'social_core.pipeline.social_auth.auth_allowed',
-#     'social_core.pipeline.social_auth.social_user',
-#     'social_core.pipeline.user.get_username',
-#     'social_core.pipeline.user.create_user',
-#     'social_core.pipeline.social_auth.associate_user',
-#     'social_core.pipeline.social_auth.load_extra_data',
-#     'social_core.pipeline.user.user_details',
-#     'apps.users.pipeline.create_profile',  # Add your function here
-# )
 
 
 # Internationalization
