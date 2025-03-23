@@ -10,6 +10,7 @@ class StaffForm(forms.ModelForm):
         model = Staff
         exclude = ("is_departed", "is_sponsored")
         widgets = {
+            "date_of_birth": forms.DateInput(attrs={"type": "date", "required": True}),
             "date_started_work": forms.DateInput(
                 attrs={"type": "date", "required": True}
             ),
