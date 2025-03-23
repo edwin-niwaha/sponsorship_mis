@@ -27,9 +27,35 @@ class Command(BaseCommand):
                 subject = f"🎉 Happy Birthday, {staff.first_name}!"
 
                 # Render HTML email template
-                html_content = render_to_string(
-                    "sdms/staff/birthday_email.html", {"staff_name": staff.first_name}
-                )
+                html_content = f"""
+                <html>
+                <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; background-color: #f4f4f9; padding: 20px;">
+                    <div style="max-width: 600px; margin: auto; padding: 30px; border: 1px solid #ddd; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                    <h2 style="color: #2E86C1; text-align: center; font-size: 28px; margin-bottom: 20px; font-weight: bold;">
+                        Happy Birthday, {staff.first_name}!
+                    </h2>
+                    <p style="font-size: 18px; line-height: 1.6; color: #555;">
+                        Dear <strong>{staff.first_name}</strong>,
+                    </p>
+                    <p style="font-size: 16px; line-height: 1.6; color: #555;">
+                        On this special day, we want to take a moment to celebrate YOU! 🎉 Your hard work, dedication, and positive attitude make you an invaluable member of our team.
+                    </p>
+                    <p style="font-size: 16px; line-height: 1.6; color: #555;">
+                        May this year bring you continued success, happiness, and wonderful new opportunities. Thank you for everything you do at <strong>Pendeza Uganda</strong>. We're proud to have you with us!
+                    </p>
+                    <div style="text-align: center; margin: 40px 0; border-top: 2px solid #2E86C1; padding-top: 20px;">
+                        <p style="font-size: 18px; line-height: 1.6; color: #555;">
+                        Wishing you an amazing year ahead, filled with joy, growth, and achievements! 🎈
+                        </p>
+                    </div>
+                    <p style="color: #888; font-size: 14px; text-align: center; margin-top: 20px;">
+                        With warmest regards, <br />
+                        <strong style="color: #2E86C1;">The Pendeza Uganda Team</strong>
+                    </p>
+                    </div>
+                </body>
+                </html>
+                """
 
                 # Create email with both plain text and HTML versions
                 email = EmailMultiAlternatives(
