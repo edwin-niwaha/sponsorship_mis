@@ -83,16 +83,16 @@ def loan_applications_all_view(request):
     page = request.GET.get("page")
 
     # Get all loan applications based on search criteria
-    # queryset = get_loan_queryset(search_query)
-    queryset = get_loan_queryset(search_query).filter(
-        status__in=[
-            "pending",
-            "boo_approved",
-            "hof_approved",
-            "ed_approved",
-            "disbursed",
-        ]
-    )
+    queryset = get_loan_queryset(search_query)
+    # queryset = get_loan_queryset(search_query).filter(
+    #     status__in=[
+    #         "pending",
+    #         "boo_approved",
+    #         "hof_approved",
+    #         "ed_approved",
+    #         "disbursed",
+    #     ]
+    # )
 
     # Apply role-based filtering for staff or guest
     if user.profile.role in ["staff", "guest"]:
