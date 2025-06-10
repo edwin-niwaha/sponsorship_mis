@@ -95,7 +95,6 @@ class Staff(models.Model):
         # Call the parent clean method to ensure other validations still work
         super().clean()
 
-
     def save(self, *args, **kwargs):
         if self.picture and not str(self.picture).startswith("http"):
             upload_result = cloudinary.uploader.upload(

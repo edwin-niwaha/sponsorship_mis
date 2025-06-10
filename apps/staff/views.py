@@ -87,13 +87,21 @@ def update_staff(request, pk, template_name="sdms/staff/staff_update.html"):
 
     if request.method == "POST":
         form = StaffForm(request.POST, request.FILES, instance=staff_record)
-        
+
         if form.is_valid():
             form.save()
-            messages.success(request, "Staff record updated successfully!", extra_tags="bg-success")
-            return redirect("staff_list")  # Redirect to the staff list after successful update
+            messages.success(
+                request, "Staff record updated successfully!", extra_tags="bg-success"
+            )
+            return redirect(
+                "staff_list"
+            )  # Redirect to the staff list after successful update
         else:
-            messages.error(request, "There was an error saving the record. Please check the form for errors.", extra_tags="bg-danger")
+            messages.error(
+                request,
+                "There was an error saving the record. Please check the form for errors.",
+                extra_tags="bg-danger",
+            )
     else:
         # Populate the form with the existing staff data for GET requests
         form = StaffForm(instance=staff_record)

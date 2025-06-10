@@ -1771,3 +1771,51 @@ def loan_reports_dashboard(request):
     """
     context = {"form_title": "Reports Dashboard [loans]"}  # Add the title here
     return render(request, "loans/loan_reports.html", context)
+
+
+@login_required
+@admin_or_manager_required
+def client_loan_statement(request):
+    clients = Client.objects.all().order_by("full_name")
+    client = None
+    statement_data = None
+
+    if request.method == "POST":
+        client_id = request.POST.get("client_id")
+        if client_id:
+            client = get_object_or_404(Client, id=client_id)
+            loans = (
+                Loan.objects.filter(borrower=client)
+                .select_related("account")
+                .order_by("-created_at")
+            )
+
+            statement_data = []
+            for loan in loans:
+                repayments = loan.repayments.all().order_by("repayment_date")
+                transactions = loan.transactions.all().order_by("transaction_date")
+                balances = loan.calculate_remaining_balances()
+                payment_schedule = loan.generate_payment_schedule()
+
+                loan_data = {
+                    "loan": loan,
+                    "repayments": repayments,
+                    "transactions": transactions,
+                    "principal_balance": balances["principal_balance"],
+                    "interest_balance": balances["interest_balance"],
+                    "total_balance": balances["principal_balance"]
+                    + balances["interest_balance"],
+                    "payment_schedule": payment_schedule,
+                }
+                statement_data.append(loan_data)
+
+    context = {
+        "clients": clients,
+        "client": client,
+        "statement_data": statement_data,
+    }
+
+    return render(request, "loans/loan_statement.html", context)
+
+
+#

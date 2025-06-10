@@ -55,10 +55,16 @@ class StaffUpdateForm(forms.ModelForm):
         exclude = ("is_departed", "is_sponsored", "created_at", "updated_at")
         widgets = {
             "date_of_birth": forms.DateInput(attrs={"type": "date", "required": True}),
-            "date_started_work": forms.DateInput(attrs={"type": "date", "required": True}),
+            "date_started_work": forms.DateInput(
+                attrs={"type": "date", "required": True}
+            ),
             "gender": forms.Select(attrs={"class": "form-control", "required": True}),
-            "marital_status": forms.Select(attrs={"class": "form-control", "required": True}),
-            "department": forms.Select(attrs={"class": "form-control", "required": True}),
+            "marital_status": forms.Select(
+                attrs={"class": "form-control", "required": True}
+            ),
+            "department": forms.Select(
+                attrs={"class": "form-control", "required": True}
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -81,7 +87,8 @@ class StaffUpdateForm(forms.ModelForm):
             raise forms.ValidationError("Image size should not exceed 1.5 MB.")
 
         return picture
-        
+
+
 # =================================== STAFF DEPATURE ===================================
 class StaffDepartureForm(forms.ModelForm):
     class Meta:

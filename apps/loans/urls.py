@@ -72,4 +72,5 @@ urlpatterns = [
         name="ledger_report_with_id",
     ),
     path("loans-dash/", views.loan_reports_dashboard, name="loan_reports_dashboard"),
+    path("statement/", views.client_loan_statement, name="loan_statement"),
 ]

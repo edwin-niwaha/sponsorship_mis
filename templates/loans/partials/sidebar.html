@@ -64,7 +64,7 @@
     <li class="nav-item">
       <a class="nav-link" data-toggle="collapse" href="#loansMenu" aria-expanded="false" aria-controls="loansMenu">
         <i class="mdi mdi-bank menu-icon"></i>
-        <span class="menu-title">LOANS</span>
+        <span class="menu-title">Manage Loans</span>
         <i class="menu-arrow"></i>
       </a>
       <div class="collapse" id="loansMenu">
@@ -119,6 +119,13 @@
             <a class="nav-link" href="{% url 'loans:loan_repayment_create' %}">
               <i class="mdi mdi-credit-card menu-icon"></i>
               <span class="menu-title">Repayment</span>
+            </a>
+          </li>
+          <!-- Client Loan Statement -->
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'loans:loan_statement' %}">
+              <i class="mdi mdi-file-document menu-icon"></i>
+              <span class="menu-title">Statements</span>
             </a>
           </li>
         </ul>
