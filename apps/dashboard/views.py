@@ -1,15 +1,16 @@
 import json
 from datetime import date, timedelta
+
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, FloatField, Sum, F, ExpressionWrapper, DecimalField
-from django.db.models.functions import Coalesce, Cast
+from django.db.models import Count, F, FloatField, Sum
 from django.db.models.functions import Coalesce, ExtractYear
 from django.http import JsonResponse
 from django.shortcuts import render
+
 from apps.child.models import Child
 from apps.finance.models import ChildPayments, StaffPayments
 from apps.inventory.products.models import Category, Product
-from apps.inventory.sales.models import Sale, SaleDetail
+from apps.inventory.sales.models import Sale
 from apps.loans.models import Loan, LoanRepayment
 from apps.sponsor.models import Sponsor
 from apps.sponsorship.models import ChildSponsorship, StaffSponsorship

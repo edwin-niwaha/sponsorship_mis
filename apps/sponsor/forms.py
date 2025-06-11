@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Sponsor, SponsorDeparture, Donor
+from .models import Donor, Sponsor, SponsorDeparture
 
 
 # =================================== SPONSOR FORM ===================================

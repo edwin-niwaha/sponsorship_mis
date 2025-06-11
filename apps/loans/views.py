@@ -1,23 +1,19 @@
 import logging
-from django.db.models import Q
-from django.db.models import Sum, F, Value, DecimalField
-from django.db.models.functions import Coalesce
-from django.utils.timezone import now
-from django.conf import settings
 from datetime import date
-from django.core.mail import EmailMultiAlternatives
-from django.core.mail import send_mail
-from django.core.mail import EmailMessage
-from django.utils.html import strip_tags
-from django.urls import reverse
+
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from django.db.models import F, Sum
+from django.db.models import DecimalField, F, Q, Sum, Value
+from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.html import strip_tags
+from django.utils.timezone import now
 from openpyxl import load_workbook
 
 from apps.client.models import Client
@@ -39,9 +35,8 @@ from .forms import (
 from .models import (
     ChartOfAccounts,
     Loan,
-    TransactionHistory,
     LoanRepayment,
-    LoanDisbursement,
+    TransactionHistory,
 )
 
 logger = logging.getLogger(__name__)
@@ -597,7 +592,7 @@ def approve_loan(request, loan_id):
                         Please review for HOF approval.
                     </p>
                     <p style="text-align: center;">
-                        <a href="{request.build_absolute_uri(f'/loans/applications/')}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-size: 16px; display: inline-block; margin-top: 20px;">
+                        <a href="{request.build_absolute_uri('/loans/applications/')}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-size: 16px; display: inline-block; margin-top: 20px;">
                             Approve Loan
                         </a>
                     </p>
@@ -639,7 +634,7 @@ def approve_loan(request, loan_id):
                         Please review for ED approval.
                     </p>
                     <p style="text-align: center;">
-                        <a href="{request.build_absolute_uri(f'/loans/applications/')}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-size: 16px; display: inline-block; margin-top: 20px;">
+                        <a href="{request.build_absolute_uri('/loans/applications/')}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-size: 16px; display: inline-block; margin-top: 20px;">
                             Approve Loan
                         </a>
                     </p>
@@ -678,7 +673,7 @@ def approve_loan(request, loan_id):
                     <p style="font-size: 16px; color: #34495e;">We are pleased to inform you that the loan <strong style="color: #e74c3c;">{loan.id}</strong> for <strong style="color: #e74c3c;">{loan.borrower.full_name}</strong> (Amount: <strong style="color: #e74c3c;">UGX {loan.principal_amount:,.2f}</strong>) has been fully approved by <strong style="color: #e74c3c;">{current_user.username}</strong>.</p>
                     <p style="font-size: 16px; color: #34495e;">Please proceed with the disbursement of the loan.</p>
                     <p style="text-align: center;">
-                        <a href="{request.build_absolute_uri(f'/loans/disburse/')}" style="background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Disburse the Loan</a>
+                        <a href="{request.build_absolute_uri('/loans/disburse/')}" style="background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 16px;">Disburse the Loan</a>
                     </p>
                 </div>
             </body>

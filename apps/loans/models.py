@@ -1,11 +1,11 @@
-from django.conf import settings
-from decimal import ROUND_DOWN, Decimal
 from datetime import date
+from decimal import ROUND_DOWN, Decimal
+
 from dateutil.relativedelta import relativedelta
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Sum
 from django.utils import timezone
@@ -96,6 +96,10 @@ class Loan(models.Model):
         ("business", "Business"),
         ("school_fees", "School Fees"),
         ("investment", "Investment"),
+        ("agriculture", "Agriculture"),
+        ("emergency", "Emergency"),
+        ("personal_development", "Personal Development"),
+        ("salary", "Salary Advance"),
     ]
     # Fields
     account = models.ForeignKey(

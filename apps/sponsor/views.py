@@ -16,8 +16,8 @@ from apps.users.decorators import (
     admin_required,
 )
 
-from .forms import SponsorDepartForm, SponsorForm, SponsorUploadForm, DonorForm
-from .models import Sponsor, SponsorDeparture, Donor
+from .forms import DonorForm, SponsorDepartForm, SponsorForm, SponsorUploadForm
+from .models import Donor, Sponsor, SponsorDeparture
 
 logger = logging.getLogger(__name__)
 

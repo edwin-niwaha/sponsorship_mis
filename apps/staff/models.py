@@ -1,9 +1,9 @@
 import datetime
-from django.core.exceptions import ValidationError
-from cloudinary.models import CloudinaryField
-import cloudinary.uploader
 
-from django.core.validators import FileExtensionValidator, MinValueValidator
+import cloudinary.uploader
+from cloudinary.models import CloudinaryField
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 

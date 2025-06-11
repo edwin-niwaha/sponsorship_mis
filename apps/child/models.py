@@ -1,9 +1,9 @@
 import datetime
 from datetime import date
-from django.core.exceptions import ValidationError
-from cloudinary.models import CloudinaryField
-import cloudinary.uploader
 
+import cloudinary.uploader
+from cloudinary.models import CloudinaryField
+from django.core.exceptions import ValidationError
 from django.core.validators import (
     FileExtensionValidator,
     MaxValueValidator,
@@ -18,7 +18,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 def validate_image_size(value):
     limit = 1500 * 1024  # 1,500 KB (1.5 MB)
     if value.size > limit:
-        raise ValidationError(f"Image size should not exceed 1.5 MB.")
+        raise ValidationError("Image size should not exceed 1.5 MB.")
 
 
 # =================================== CHILD MODEL ===================================

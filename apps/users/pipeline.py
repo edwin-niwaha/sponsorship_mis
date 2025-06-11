@@ -1,5 +1,4 @@
 import logging
-from .models import Profile
 
 logger = logging.getLogger(__name__)
 

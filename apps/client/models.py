@@ -1,16 +1,16 @@
 import datetime
 from datetime import date
+
+from cloudinary.models import CloudinaryField
 from django.core.exceptions import ValidationError
 from django.core.validators import (
-    FileExtensionValidator,
-    RegexValidator,
-    MinValueValidator,
-    MaxValueValidator,
     EmailValidator,
+    FileExtensionValidator,
+    MinValueValidator,
+    RegexValidator,
 )
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
-from cloudinary.models import CloudinaryField
 
 
 # Clients registration

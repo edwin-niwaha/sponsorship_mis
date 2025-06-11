@@ -1,6 +1,6 @@
 # Standard Library Imports
 from datetime import date
-from django.core.exceptions import ValidationError
+
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 # Third-party Imports
@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 
 # Local App Imports
 from apps.child.models import Child
-from apps.sponsor.models import Sponsor, Donor
+from apps.sponsor.models import Donor, Sponsor
 from apps.staff.models import Staff
 
 # =================================== CHILD-SPONSOR PAYMENT MODEL ===================================

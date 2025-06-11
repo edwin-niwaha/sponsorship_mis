@@ -1,12 +1,12 @@
 import os
+from io import BytesIO
+
+import requests
+from cloudinary.models import CloudinaryField
+from cloudinary.uploader import upload
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-import requests
-from io import BytesIO
-from cloudinary.uploader import upload
-from cloudinary.models import CloudinaryField
 from django.core.files.uploadedfile import InMemoryUploadedFile
-
 from django.db import models
 from PIL import Image
 
