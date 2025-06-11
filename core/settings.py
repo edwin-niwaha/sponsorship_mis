@@ -1,10 +1,7 @@
 import os
 from pathlib import Path
-
-import dj_database_url
-
-# To keep secret keys in environment variables
 from dotenv import load_dotenv
+import dj_database_url
 
 load_dotenv()
 

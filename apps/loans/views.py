@@ -217,12 +217,12 @@ def loan_apply(request):
 
             # Check if the borrower has an active loan
             running_loan = Loan.objects.filter(
-                borrower=borrower, status__in=["overdue", "disbursed"]
+                borrower=borrower, status__in=["overdue"]
             ).exists()
             if running_loan:
                 messages.warning(
                     request,
-                    f"{borrower} already has a running loan balance and cannot apply for a new loan.",
+                    f"{borrower} already has an overdue loan balance and cannot apply for a new loan. Please settle the outstanding amount before applying for a new loan.",
                     extra_tags="bg-warning",
                 )
                 return redirect("loans:apply_for_loan")
@@ -851,6 +851,30 @@ def delete_loan(request, loan_id):
 # @admin_or_manager_required
 # def loan_repayment_create_view(request):
 #     form_title = "Repay Loans"
+
+#     # Annotate loans with principal and interest paid, and calculate remaining balances
+#     loans = Loan.objects.annotate(
+#         principal_paid=Coalesce(
+#             Sum("repayments__principal_payment"), Value(0, output_field=DecimalField())
+#         ),
+#         interest_paid=Coalesce(
+#             Sum("repayments__interest_payment"), Value(0, output_field=DecimalField())
+#         ),
+#         remaining_principal=F("principal_amount")
+#         - Coalesce(
+#             Sum("repayments__principal_payment"), Value(0, output_field=DecimalField())
+#         ),
+#         remaining_interest=F("total_interest")
+#         - Coalesce(
+#             Sum("repayments__interest_payment"), Value(0, output_field=DecimalField())
+#         ),
+#     ).filter(
+#         # Fetch only loans with remaining principal or interest, and status "disbursed"
+#         Q(remaining_principal__gt=0)
+#         | Q(remaining_interest__gt=0),  # Outstanding balance
+#         status="disbursed",  # Status should be "disbursed"
+#     )
+
 #     if request.method == "POST":
 #         form = LoanRepaymentForm(request.POST)
 #         if form.is_valid():
@@ -880,6 +904,7 @@ def delete_loan(request, loan_id):
 #         {
 #             "form": form,
 #             "form_title": form_title,
+#             "loans": loans,  # Pass the filtered loans queryset to the template
 #         },
 #     )
 
@@ -927,9 +952,10 @@ def loan_repayment_create_view(request):
                 "Loan repayment submitted successfully.",
                 extra_tags="bg-success",
             )
-            return redirect(
-                "loans:loan_detail", loan_id=repayment.loan.id
-            )  # Update with your loan detail view name
+            # return redirect(
+            #     "loans:loan_detail", loan_id=repayment.loan.id
+            # )
+            return redirect("loans:loan_repayment_create")
         else:
             messages.error(request, "Please correct the errors below.")
     else:

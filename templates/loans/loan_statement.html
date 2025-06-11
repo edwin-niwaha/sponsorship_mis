@@ -117,7 +117,7 @@
                         </div>
                     </div>
 
-                    <!-- Payment Schedule -->
+                    {% comment %} <!-- Payment Schedule -->
                     <div class="mb-8">
                         <h3 class="text-lg font-medium text-gray-700 mb-4">Payment Schedule</h3>
                         <div class="overflow-x-auto">
@@ -147,6 +147,45 @@
                                     {% endfor %}
                                 </tbody>
                             </table>
+                        </div>
+                    </div> {% endcomment %}
+
+                    <!-- Payment Schedule -->
+                    <div class="mb-8">
+                        <h3 class="d-flex align-items-center mb-4">
+                            <button class="btn btn-link text-decoration-none fw-bold text-primary p-0 d-flex align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#payment-schedule-{{ loan_data.loan.id }}" aria-expanded="false" aria-controls="payment-schedule-{{ loan_data.loan.id }}">
+                                <i class="bi bi-plus toggle-icon me-2 fs-4"></i> Payment Schedule
+                            </button>
+                        </h3>
+                        <div id="payment-schedule-{{ loan_data.loan.id }}" class="collapse">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left text-gray-600">
+                                    <thead class="text-xs uppercase bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3">Due Date</th>
+                                            <th class="px-6 py-3 text-right">Principal</th>
+                                            <th class="px-6 py-3 text-right">Interest</th>
+                                            <th class="px-6 py-3 text-right">Total Payment</th>
+                                            <th class="px-6 py-3 text-right">Remaining Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for payment in loan_data.payment_schedule %}
+                                            <tr class="bg-white border-b hover:bg-gray-50">
+                                                <td class="px-6 py-4">{{ payment.payment_due_date }}</td>
+                                                <td class="px-6 py-4 text-right">{{ payment.principal_payment|floatformat:'2'|intcomma }}</td>
+                                                <td class="px-6 py-4 text-right">{{ payment.interest_payment|floatformat:'2'|intcomma }}</td>
+                                                <td class="px-6 py-4 text-right">{{ payment.total_payment|floatformat:'2'|intcomma }}</td>
+                                                <td class="px-6 py-4 text-right">{{ payment.remaining_balance|floatformat:'2'|intcomma }}</td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="5" class="px-6 py-4 text-center text-gray-500">No payment schedule available</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 

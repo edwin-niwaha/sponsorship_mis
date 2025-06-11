@@ -52,6 +52,12 @@ class Client(models.Model):
     def __str__(self):
         return self.full_name
 
+    def get_full_name(self):
+        return f"{self.full_name}".strip()
+
+    def to_select2(self):
+        return {"label": self.get_full_name(), "value": self.id}
+
 
 # 7Hills registration
 class SevenHillsRegistration(models.Model):

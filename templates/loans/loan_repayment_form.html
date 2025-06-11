@@ -1,6 +1,5 @@
 {% extends 'loans/base.html' %}
 {% load humanize %}
-{% load crispy_forms_tags %}
 
 {% block content %}
   <div class="container-fluid">
@@ -23,7 +22,79 @@
           <div class="card-body">
             <form method="post">
               {% csrf_token %}
-              {{ form|crispy }}
+              <!-- Loan Field -->
+              <div class="form-group">
+                <label for="{{ form.loan.id_for_label }}">{{ form.loan.label }}</label>
+                <div class="d-flex align-items-center">
+                  {{ form.loan }}
+                  <a id="view-loan-details" href="#" class="btn btn-info btn-sm ml-2" disabled><i class="mdi mdi-eye mr-1"></i> View Loan Details</a>
+                </div>
+                {% if form.loan.errors %}
+                  <div class="text-danger">
+                    {% for error in form.loan.errors %}
+                      <small>{{ error }}</small>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                <!-- Display Principal and Interest Balances -->
+                <div id="loan-balances" class="mt-2 d-flex justify-content-start align-items-center bg-light p-2 rounded border">
+                  <div class="me-4">
+                    <strong>Principal:</strong> <span id="principal-balance" class="badge bg-primary text-white">Select a loan</span>
+                  </div>
+                  <div>
+                    <strong>Interest:</strong> <span id="interest-balance" class="badge bg-info text-white">Select a loan</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Repayment Date Field -->
+              <div class="form-group">
+                <label for="{{ form.repayment_date.id_for_label }}">{{ form.repayment_date.label }}</label>
+                {{ form.repayment_date }}
+                {% if form.repayment_date.errors %}
+                  <div class="text-danger">
+                    {% for error in form.repayment_date.errors %}
+                      <small>{{ error }}</small>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <!-- Principal Payment Field -->
+              <div class="form-group">
+                <label for="{{ form.principal_payment.id_for_label }}">{{ form.principal_payment.label }}</label>
+                {{ form.principal_payment }}
+                {% if form.principal_payment.errors %}
+                  <div class="text-danger">
+                    {% for error in form.principal_payment.errors %}
+                      <small>{{ error }}</small>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <!-- Interest Payment Field -->
+              <div class="form-group">
+                <label for="{{ form.interest_payment.id_for_label }}">{{ form.interest_payment.label }}</label>
+                {{ form.interest_payment }}
+                {% if form.interest_payment.errors %}
+                  <div class="text-danger">
+                    {% for error in form.interest_payment.errors %}
+                      <small>{{ error }}</small>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <!-- Account Field -->
+              <div class="form-group">
+                <label for="{{ form.account.id_for_label }}">{{ form.account.label }}</label>
+                {{ form.account }}
+                {% if form.account.errors %}
+                  <div class="text-danger">
+                    {% for error in form.account.errors %}
+                      <small>{{ error }}</small>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <!-- Submit Button -->
               <div class="form-group mt-4 mb-0">
                 <button type="submit" class="btn btn-dark btn-block" onclick="return confirm('Are you sure you want to proceed?') && validateForm()">Submit Repayment</button>
               </div>
@@ -33,4 +104,51 @@
       </div>
     </div>
   </div>
+
+  <script>
+    $(document).ready(function() {
+      // Loan balances data from Django
+      const loanBalances = {
+        {% for loan in loans %}
+          "{{ loan.id }}": {
+            principal: "{{ loan.remaining_principal|floatformat:2 }}",
+            interest: "{{ loan.remaining_interest|floatformat:2 }}"
+          }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      };
+
+      // Update balances and button state when a loan is selected
+      $('#{{ form.loan.id_for_label }}').on('change', function() {
+        const loanId = $(this).val();
+        const $viewButton = $('#view-loan-details');
+        
+        if (loanId && loanBalances[loanId]) {
+          // Update balances
+          $('#principal-balance').text(Number(loanBalances[loanId].principal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+          $('#interest-balance').text(Number(loanBalances[loanId].interest).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+          
+          // Enable button and set URL
+          $viewButton
+            .attr('href', `/loans/${loanId}/`) // Assumes URL pattern is /loans/<loan_id>/
+            .removeAttr('disabled')
+            .removeClass('btn-secondary')
+            .addClass('btn-info');
+        } else {
+          // Reset balances
+          $('#principal-balance').text('Select a loan');
+          $('#interest-balance').text('Select a loan');
+          
+          // Disable button
+          $viewButton
+            .attr('href', '#')
+            .attr('disabled', 'disabled')
+            .removeClass('btn-info')
+            .addClass('btn-secondary');
+        }
+      });
+
+      // Trigger change event on page load to handle pre-selected loan (if any)
+      $('#{{ form.loan.id_for_label }}').trigger('change');
+    });
+  </script>
 {% endblock %}

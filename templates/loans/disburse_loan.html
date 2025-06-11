@@ -1,5 +1,4 @@
 {% extends 'loans/base.html' %}
-{% load crispy_forms_tags %}
 
 {% block content %}
   <div class="container-fluid">
@@ -11,13 +10,6 @@
             Go back
           </button>
         </a>
-        <!-- Add button to disburse all loans -->
-        {% comment %} <a href="{% url 'loans:disburse_all_loans' %}">
-          <button type="button" class="btn btn-success font-weight-bold">
-            <i class="mdi mdi-check-all mr-2"></i>
-            Disburse All Loans
-          </button>
-        </a> {% endcomment %}
         <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'loans:disbursed_loans' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
       </div>
     </div>
@@ -30,7 +22,55 @@
           <div class="card-body">
             <form method="post">
               {% csrf_token %}
-              {{ form|crispy }}
+              <!-- Loan Field -->
+              <div class="form-group">
+                <label for="{{ form.loan.id_for_label }}">{{ form.loan.label }}</label>
+                {{ form.loan }}
+                {% if form.loan.errors %}
+                  <div class="text-danger">
+                    {% for error in form.loan.errors %}
+                      <small>{{ error }}</small>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <!-- Account Field -->
+              <div class="form-group">
+                <label for="{{ form.account.id_for_label }}">{{ form.account.label }}</label>
+                {{ form.account }}
+                {% if form.account.errors %}
+                  <div class="text-danger">
+                    {% for error in form.account.errors %}
+                      <small>{{ error }}</small>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <!-- Disbursement Date Field -->
+              <div class="form-group">
+                <label for="{{ form.disbursement_date.id_for_label }}">{{ form.disbursement_date.label }}</label>
+                {{ form.disbursement_date }}
+                {% if form.disbursement_date.errors %}
+                  <div class="text-danger">
+                    {% for error in form.disbursement_date.errors %}
+                      <small>{{ error }}</small>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <!-- Payment Method Field -->
+              <div class="form-group">
+                <label for="{{ form.payment_method.id_for_label }}">{{ form.payment_method.label }}</label>
+                {{ form.payment_method }}
+                {% if form.payment_method.errors %}
+                  <div class="text-danger">
+                    {% for error in form.payment_method.errors %}
+                      <small>{{ error }}</small>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              <!-- Submit Button -->
               <div class="form-group mt-4 mb-0">
                 <button type="submit" class="btn btn-dark btn-block" onclick="return confirm('Are you sure you want to proceed?') && validateForm()">Submit</button>
               </div>

@@ -217,7 +217,7 @@ class LoanDisbursementForm(forms.ModelForm):
         queryset=Loan.objects.filter(status="approved"),
         required=True,
         label="Select Loan",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(attrs={"class": "chzn-select"}),
     )
     account = forms.ModelChoiceField(
         queryset=ChartOfAccounts.objects.filter(
@@ -315,9 +315,8 @@ class LoanRepaymentForm(forms.ModelForm):
     loan = forms.ModelChoiceField(
         queryset=Loan.objects.none(),
         label="Loan",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(attrs={"class": "chzn-select"}),
     )
-
     account = forms.ModelChoiceField(
         queryset=ChartOfAccounts.objects.filter(
             account_type="asset",

@@ -1,124 +1,182 @@
 {% extends 'loans/base.html' %}
 
 {% block content %}
-  <style>
-    .fixed-card-height {
-      height: 100px; /* Adjust as needed */
-    }
-  </style>
+  <div class="container my-2">
+    <h2 class="text-center mb-4 text-uppercase fw-bold">{{ form_title }}</h2>
+    <hr class="border-primary border-3 opacity-75 mb-3" />
 
-  <div class="container mt-2">
-    <h2 class="text-center mb-4">{{ form_title|upper }}</h2>
-    <hr class="bg-info" style="height: 3px;" />
-
-    <div class="row">
-      {% if user.profile.role == 'administrator' or user.profile.role == 'hof' %}
+    {% if user.profile.role == 'administrator' or user.profile.role == 'hof' %}
+      <!-- First Row: Core Reports -->
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 mb-4">
         <!-- Loan Portfolio Card -->
-        <div class="col-md-3 mb-4">
+        <div class="col">
           <a href="{% url 'loans:loan_portfolio_report' %}" class="text-decoration-none">
-            <div class="card shadow-sm border-0 fixed-card-height">
-              <div class="card-body text-center d-flex flex-column justify-content-center">
-                <i class="mdi mdi-clipboard-text mdi-36px mb-3 text-primary"></i>
-                <h5 class="card-title">Loan Portfolio</h5>
+            <div class="card h-100 shadow-sm border-0 rounded-3 hover-scale">
+              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
+                <i class="mdi mdi-clipboard-text display-4 mb-3 text-primary"></i>
+                <h5 class="card-title mb-0 fw-semibold">Loan Portfolio</h5>
               </div>
             </div>
           </a>
         </div>
 
         <!-- Aging Report Card -->
-        <div class="col-md-3 mb-4">
+        <div class="col">
           <a href="{% url 'loans:loan_aging_report' %}" class="text-decoration-none">
-            <div class="card shadow-sm border-0 fixed-card-height">
-              <div class="card-body text-center d-flex flex-column justify-content-center">
-                <i class="mdi mdi-file-chart mdi-36px mb-3 text-success"></i>
-                <h5 class="card-title">Aging Report</h5>
+            <div class="card h-100 shadow-sm border-0 rounded-3 hover-scale">
+              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
+                <i class="mdi mdi-file-chart display-4 mb-3 text-success"></i>
+                <h5 class="card-title mb-0 fw-semibold">Aging Report</h5>
               </div>
             </div>
           </a>
         </div>
 
         <!-- Arrears Report Card -->
-        <div class="col-md-3 mb-4">
+        <div class="col">
           <a href="{% url 'loans:loan-arrears-report' %}" class="text-decoration-none">
-            <div class="card shadow-sm border-0 fixed-card-height">
-              <div class="card-body text-center d-flex flex-column justify-content-center">
-                <i class="mdi mdi-account-multiple mdi-36px mb-3 text-danger"></i>
-                <h5 class="card-title">Arrears Report</h5>
+            <div class="card h-100 shadow-sm border-0 rounded-3 hover-scale">
+              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
+                <i class="mdi mdi-account-multiple display-4 mb-3 text-danger"></i>
+                <h5 class="card-title mb-0 fw-semibold">Arrears Report</h5>
               </div>
             </div>
           </a>
         </div>
 
         <!-- Portfolio at Risk (PAR) Card -->
-        <div class="col-md-3 mb-4">
+        <div class="col">
           <a href="{% url 'loans:portfolio_at_risk_report' %}" class="text-decoration-none">
-            <div class="card shadow-sm border-0 fixed-card-height">
-              <div class="card-body text-center d-flex flex-column justify-content-center">
-                <i class="mdi mdi-account-multiple mdi-36px mb-3 text-warning"></i>
-                <h5 class="card-title">PAR</h5>
+            <div class="card h-100 shadow-sm border-0 rounded-3 hover-scale">
+              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
+                <i class="mdi mdi-account-multiple display-4 mb-3 text-warning"></i>
+                <h5 class="card-title mb-0 fw-semibold">PAR</h5>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Second Row: Loan Management -->
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 mb-4">
+        <!-- Loan Applications Card -->
+        <div class="col">
+          <a href="{% url 'loans:loan_applications' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm border-0 rounded-3 hover-scale">
+              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
+                <i class="mdi mdi-file-document-box display-4 mb-3 text-info"></i>
+                <h5 class="card-title mb-0 fw-semibold">Loan Applications</h5>
               </div>
             </div>
           </a>
         </div>
 
-        <!-- New Cards Row -->
-        <div class="row mt-4">
-          <!-- Loan Applications Card -->
-          <div class="col-md-3 mb-4">
-            <a href="{% url 'loans:loan_applications' %}" class="text-decoration-none">
-              <div class="card shadow-sm border-0 fixed-card-height">
-                <div class="card-body text-center d-flex flex-column justify-content-center">
-                  <i class="mdi mdi-file-document-box mdi-36px mb-3 text-info"></i>
-                  <h5 class="card-title">Loan Applications</h5>
-                </div>
+        <!-- Loan Disbursements Card -->
+        <div class="col">
+          <a href="{% url 'loans:disbursed_loans' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm border-0 rounded-3 hover-scale">
+              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
+                <i class="mdi mdi-cash-multiple display-4 mb-3 text-success"></i>
+                <h5 class="card-title mb-0 fw-semibold">Loan Disbursements</h5>
               </div>
-            </a>
-          </div>
+            </div>
+          </a>
+        </div>
 
-          <!-- Loan Disbursements Card -->
-          <div class="col-md-3 mb-4">
-            <a href="{% url 'loans:disbursed_loans' %}" class="text-decoration-none">
-              <div class="card shadow-sm border-0 fixed-card-height">
-                <div class="card-body text-center d-flex flex-column justify-content-center">
-                  <i class="mdi mdi-cash-multiple mdi-36px mb-3 text-success"></i>
-                  <h5 class="card-title">Loan Disbursements</h5>
-                </div>
+        <!-- Non-Performing Loans Card -->
+        <div class="col">
+          <a href="{% url 'loans:non_performing_loans' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm border-0 rounded-3 hover-scale">
+              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
+                <i class="mdi mdi-alert display-4 mb-3 text-danger"></i>
+                <h5 class="card-title mb-0 fw-semibold">Non-Performing Loans</h5>
               </div>
-            </a>
-          </div>
+            </div>
+          </a>
+        </div>
 
-          <!-- Non-Performing Loans Card -->
-          <div class="col-md-3 mb-4">
-            <a href="{% url 'loans:non_performing_loans' %}" class="text-decoration-none">
-              <div class="card shadow-sm border-0 fixed-card-height">
-                <div class="card-body text-center d-flex flex-column justify-content-center">
-                  <i class="mdi mdi-alert mdi-36px mb-3 text-danger"></i>
-                  <h5 class="card-title">Non-Performing Loans</h5>
-                </div>
+        <!-- Chart of Accounts Card -->
+        <div class="col">
+          <a href="{% url 'loans:chart_of_accounts_list' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm border-0 rounded-3 hover-scale">
+              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
+                <i class="mdi mdi-account-cash display-4 mb-3 text-primary"></i>
+                <h5 class="card-title mb-0 fw-semibold">Chart of Accounts</h5>
               </div>
-            </a>
-          </div>
+            </div>
+          </a>
+        </div>
+      </div>
 
-          <!-- Chart of Accounts Card -->
-          <div class="col-md-3 mb-4">
-            <a href="{% url 'loans:chart_of_accounts_list' %}" class="text-decoration-none">
-              <div class="card shadow-sm border-0 fixed-card-height">
-                <div class="card-body text-center d-flex flex-column justify-content-center">
-                  <i class="mdi mdi-account-cash mdi-36px mb-3 text-primary"></i>
-                  <h5 class="card-title">Chart of Accounts</h5>
-                </div>
+      <!-- Third Row: Additional Reports -->
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 mb-4">
+        <!-- Loan Statements Card -->
+        <div class="col">
+          <a href="{% url 'loans:loan_statement' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm border-0 rounded-3 hover-scale">
+              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
+                <i class="mdi mdi-file-document display-4 mb-3 text-secondary"></i>
+                <h5 class="card-title mb-0 fw-semibold">Loan Statements</h5>
               </div>
-            </a>
+            </div>
+          </a>
+        </div>
+
+        <!-- All Loan Applications Card -->
+        <div class="col">
+          <a href="{% url 'loans:loan_applications_all' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm border-0 rounded-3 hover-scale">
+              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
+                <i class="mdi mdi-file-multiple display-4 mb-3 text-info"></i>
+                <h5 class="card-title mb-0 fw-semibold">All Loan Applications</h5>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <!-- Approved Loans Card -->
+        <div class="col">
+          <a href="{% url 'loans:approved_loans' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm border-0 rounded-3 hover-scale">
+              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
+                <i class="mdi mdi-check-circle display-4 mb-3 text-success"></i>
+                <h5 class="card-title mb-0 fw-semibold">Approved Loans</h5>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <!-- Rejected Loans Card -->
+        <div class="col">
+          <a href="{% url 'loans:rejected_loans' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm border-0 rounded-3 hover-scale">
+              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
+                <i class="mdi mdi-close-circle display-4 mb-3 text-danger"></i>
+                <h5 class="card-title mb-0 fw-semibold">Rejected Loans</h5>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+    {% else %}
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="alert alert-warning d-flex align-items-center justify-content-center rounded-3" role="alert">
+            <i class="mdi mdi-alert-circle-outline me-2 fs-4"></i>
+            <span>You do not have access to view reports.</span>
           </div>
         </div>
-      {% else %}
-        <!-- Restricted Access Message -->
-        <div class="col-md-12">
-          <div class="alert alert-warning text-center">
-            <i class="mdi mdi-alert-circle-outline"></i> You do not have access to view reports.
-          </div>
-        </div>
-      {% endif %}
-    </div>
+      </div>
+    {% endif %}
   </div>
+
+  <style>
+    .hover-scale {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hover-scale:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
+    }
+  </style>
 {% endblock %}
