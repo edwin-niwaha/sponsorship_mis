@@ -99,8 +99,12 @@
                                 <p class="font-medium">{{ loan_data.loan.total_interest|floatformat:'2'|intcomma }}</p>
                             </div>
                             <div>
-                                <p class="text-sm text-gray-500">Start Date</p>
+                                <p class="text-sm text-gray-500">Applied On</p>
                                 <p class="font-medium">{{ loan_data.loan.start_date }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Disbursement Date</p>
+                                <p class="font-medium">{{ loan_data.loan.disbursement_date|default:"N/A" }}</p>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500">Due Date</p>
@@ -110,10 +114,10 @@
                                 <p class="text-sm text-gray-500">Interest Method</p>
                                 <p class="font-medium">{{ loan_data.loan.get_interest_method_display }}</p>
                             </div>
-                            <div>
+                            {% comment %} <div>
                                 <p class="text-sm text-gray-500">Purpose</p>
                                 <p class="font-medium">{{ loan_data.loan.get_loan_purpose_display }}</p>
-                            </div>
+                            </div> {% endcomment %}
                         </div>
                     </div>
 
