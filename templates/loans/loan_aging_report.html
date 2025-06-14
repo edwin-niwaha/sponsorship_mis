@@ -3,7 +3,7 @@
 {% load humanize %}
 
 {% block content %}
-  <div class="form-content my-5 p-4">
+  <div class="form-content my-2">
     <div class="container-fluid">
       <div class="row mb-3">
         <div class="col-md-12 d-flex justify-content-between align-items-center">
@@ -46,16 +46,16 @@
                           <tr>
                             <td>{{ loan.loan_id }}</td>
                             <td>{{ loan.borrower }}</td>
-                            <td>{{ loan.principal_amount|floatformat:'2'|intcomma }}</td>
+                            <td class="text-right">{{ loan.principal_amount|floatformat:'2'|intcomma }}</td>
                             <td>{{ loan.interest_rate }}</td>
                             <td>{{ loan.loan_period_months }}</td>
                             <td>{{ loan.start_date|date:'d/m/Y' }}</td>
                             <td>{{ loan.due_date|date:'d/m/Y' }}</td>
                             <td>{{ loan.days_overdue }}</td>
-                            <td>{{ loan.principal_due|floatformat:'2'|intcomma }}</td>
-                            <td>{{ loan.interest_due|floatformat:'2'|intcomma }}</td>
-                            <td>{{ loan.outstanding_balance|floatformat:'2'|intcomma }}</td>
-                            <td>{{ loan.total_paid|floatformat:'2'|intcomma }}</td>
+                            <td class="text-right">{{ loan.principal_due|floatformat:'2'|intcomma }}</td>
+                            <td class="text-right">{{ loan.interest_due|floatformat:'2'|intcomma }}</td>
+                            <td class="text-right">{{ loan.outstanding_balance|floatformat:'2'|intcomma }}</td>
+                            <td class="text-right">{{ loan.total_paid|floatformat:'2'|intcomma }}</td>
                           </tr>
                         {% endfor %}
                       </tbody>

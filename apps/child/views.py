@@ -1,5 +1,4 @@
 import logging
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.management import call_command
@@ -27,6 +26,7 @@ from .forms import (
     ChildProgressForm,
     UploadForm,
 )
+
 from .models import (
     Child,
     ChildCorrespondence,
@@ -36,41 +36,14 @@ from .models import (
     ChildProgress,
 )
 
+from apps.sponsorship.models import ChildSponsorship
+
 # The getLogger() function is used to get a logger instance
 logger = logging.getLogger(__name__)
 # logger.info("Child ID received: %s", child_id)  # Log the child_id value
 
 
 # =================================== Fetch and display all children details ===================================
-# @login_required
-# @admin_or_manager_or_staff_required
-# def child_list(request):
-#     # Get all children who have not departed
-#     queryset = Child.objects.filter(is_departed=False).order_by("id")
-
-#     # Search functionality
-#     search_query = request.GET.get("search", "")
-#     if search_query:
-#         queryset = queryset.filter(full_name__icontains=search_query)
-
-#     # Pagination
-#     paginator = Paginator(queryset, 50)
-#     page = request.GET.get("page", 1)
-
-#     try:
-#         records = paginator.page(page)
-#     except PageNotAnInteger:
-#         records = paginator.page(1)
-#     except EmptyPage:
-#         records = paginator.page(paginator.num_pages)
-
-#     return render(
-#         request,
-#         "sdms/child/child_list.html",
-#         {"records": records, "table_title": "Children List", "search_query": search_query},
-#     )
-
-
 @admin_or_manager_or_staff_required
 def child_list(request):
     # Subquery to get the latest profile picture for each child
@@ -142,16 +115,6 @@ def child_list_detailed(request):
 
 
 # =================================== Fetch and display selected child's details ===================================
-# @login_required
-# @admin_or_manager_or_staff_required
-# def child_details(request, pk):
-#     record = Child.objects.get(pk=pk)
-#     age = record.calculate_age()
-
-#     context = {"table_title": "Child Profile Report", "record": record, "age": age}
-#     return render(request, "sdms/child/child_profile_rpt.html", context)
-
-
 @login_required
 @admin_or_manager_or_staff_required
 def child_details(request, pk):
@@ -169,8 +132,6 @@ def child_details(request, pk):
 
 
 # =================================== Register Child ===================================
-
-
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
@@ -632,6 +593,44 @@ def delete_incident(request, pk):
 
 
 # =================================== Add Child Depature ===================================
+# @login_required
+# @admin_or_manager_required
+# @transaction.atomic
+# def child_departure(request):
+#     if request.method == "POST":
+#         form = ChildDepartForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             child_id = request.POST.get("id")
+#             child_instance = get_object_or_404(Child, pk=child_id)
+
+#             # Create a ChildDepart instance
+#             child_depart = ChildDepart.objects.create(child=child_instance)
+#             child_depart.depart_date = form.cleaned_data["depart_date"]
+#             child_depart.depart_reason = form.cleaned_data["depart_reason"]
+#             child_depart.save()
+
+#             # Update Child status to "departed"
+#             child_instance.is_departed = True
+#             child_instance.is_sponsored = False
+#             child_instance.save()
+
+#             messages.success(
+#                 request, "Child departed successfully!", extra_tags="bg-success"
+#             )
+#             return redirect("child_departure")
+#         else:
+#             messages.error(request, "Form is invalid.", extra_tags="bg-danger")
+#     else:
+#         form = ChildDepartForm()
+
+#     children = Child.objects.filter(is_departed=False).order_by("id")
+#     return render(
+#         request,
+#         "sdms/child/child_depature.html",
+#         {"form": form, "form_name": "Child Depature Form", "children": children},
+#     )
+
+
 @login_required
 @admin_or_manager_required
 @transaction.atomic
@@ -650,7 +649,13 @@ def child_departure(request):
 
             # Update Child status to "departed"
             child_instance.is_departed = True
+            child_instance.is_sponsored = False
             child_instance.save()
+
+            # Update related ChildSponsorship records to inactive
+            ChildSponsorship.objects.filter(child=child_instance).update(
+                is_active=False
+            )
 
             messages.success(
                 request, "Child departed successfully!", extra_tags="bg-success"

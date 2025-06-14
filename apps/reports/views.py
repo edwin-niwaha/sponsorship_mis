@@ -91,23 +91,23 @@ def reports_dash(request):
 
 
 # =================================== All Children Master List ===================================
-
-
 @login_required
 @admin_or_manager_or_staff_required
 def children_master_list(request):
     queryset = (
-        ChildSponsorship.objects.filter(is_active=True)
-        .select_related("child", "sponsor")
-        .order_by("child", "id")
+        Child.objects.filter(is_sponsored=True)
+        .prefetch_related("sponsorships_received__sponsor")
+        .order_by("full_name")
     )
     search_query = request.GET.get("search")
-    queryset = filter_by_search(queryset, search_query, ["child__full_name"])
+    queryset = filter_by_search(queryset, search_query, ["full_name"])
 
     # Group the queryset by child
     grouped_sponsorships = defaultdict(list)
-    for sponsorship in queryset:
-        grouped_sponsorships[sponsorship.child].append(sponsorship)
+    for child in queryset:
+        grouped_sponsorships[child].extend(
+            child.sponsorships_received.filter(is_active=True)
+        )
 
     page = request.GET.get("page")
     records = paginate_queryset(list(grouped_sponsorships.items()), page)
@@ -143,26 +143,28 @@ def all_children(request):
 
 
 # =================================== All Sponsored Children List ===================================
-
-
 @login_required
 @admin_or_manager_or_staff_required
 def sponsored_children(request):
-    """
-    Render a paginated list of all sponsored children, grouped by child.
-    """
+    # Filter children where is_sponsored is True
     queryset = (
-        ChildSponsorship.objects.filter(is_active=True)
-        .select_related("child", "sponsor")
-        .order_by("child", "id")
+        Child.objects.filter(is_sponsored=True)
+        .prefetch_related(
+            "sponsorships_received__sponsor"
+        )  # Use prefetch_related for reverse ForeignKey
+        .order_by("full_name")
     )
+
+    # Apply search filter if provided
     search_query = request.GET.get("search")
-    queryset = filter_by_search(queryset, search_query, ["child__full_name"])
+    queryset = filter_by_search(queryset, search_query, ["full_name"])
 
     # Group the queryset by child
     grouped_sponsorships = defaultdict(list)
-    for sponsorship in queryset:
-        grouped_sponsorships[sponsorship.child].append(sponsorship)
+    for child in queryset:
+        grouped_sponsorships[child].extend(
+            child.sponsorships_received.filter(is_active=True)
+        )
 
     page = request.GET.get("page")
     records = paginate_queryset(list(grouped_sponsorships.items()), page)

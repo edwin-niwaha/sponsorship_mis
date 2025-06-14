@@ -1,122 +1,119 @@
 {% extends 'sdms/base_rpts.html' %}
+{% load static %}
 
-{% block title %}All sponsored Children{% endblock %}
+{% block title %}
+  All Sponsored Children
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="page-header flex-wrap p-2">
-        <h3 class="mb-0">{{table_title|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-        <form method="GET" action="{% url 'sponsored_children' %}">
-            <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..."
-                style="border-radius: 5px; height: 35px;">
-            <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
-            </a>
-        </form>
-        <div class="d-flex">
-            <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
-                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
-
-            <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success"
-                onclick="ExportToExcel('xlsx')">
-                <i class="mdi mdi-file-excel btn-icon-prepend"></i> </button>
-
-            <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success"
-                onclick="Export2Doc('printMe');">
-                <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
-
-            <button id="back_btn" type="button" class="btn btn-sm ml-3 btn-success">
-                <i class="mdi mdi-arrow-left btn-icon-prepend"></i>
-            </button>
-            <script>
-                document.getElementById("back_btn").addEventListener("click", function () {
-                    window.location.href = "{% url 'reports_dash' %}";
-                });
-            </script>
-        </div>
+  <div class="container-fluid mt-4">
+    <div class="page-header d-flex flex-wrap p-2 align-items-center">
+      <h3 class="mb-0 me-auto">{{ table_title|upper }}</h3>
+      <form method="GET" action="{% url 'sponsored_children' %}" class="d-flex align-items-center">
+        <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..." class="form-control me-2" style="border-radius: 5px; height: 35px;" />
+        <button type="submit" class="btn btn-sm btn-success"><i class="mdi mdi-magnify"></i></button>
+      </form>
+      <div class="d-flex ms-3">
+        <button title="Print" class="btn btn-sm btn-success me-2" onclick="printDiv('printMe')"><i class="mdi mdi-printer"></i></button>
+        <button title="Export To Excel" class="btn btn-sm btn-success me-2" onclick="ExportToExcel('xlsx')"><i class="mdi mdi-file-excel"></i></button>
+        <button title="Export To Word" class="btn btn-sm btn-success me-2" onclick="Export2Doc('printMe')"><i class="mdi mdi-file-word"></i></button>
+        <button id="back_btn" class="btn btn-sm btn-success"><i class="mdi mdi-arrow-left"></i></button>
+      </div>
     </div>
-    <div id="printMe" class="tab-pane show active">
-        <hr class="bg-info" style="height: 3px;" />
-        <!--Start table-->
-        <div class="table-container">
-            <table class="my-table" id="dataTable">
-                <thead>
-                    <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Reg.No</th>
-                        <th scope="col">Full Name</th>
-                        <th scope="col">Gender</th>
-                        <th scope="col">D.O.B</th>
-                        <th colspan="2" scope="col">Sponsor</th>
-                        <th scope="col">Start Date</th>
-                        <th scope="col">Sponsorship Type</th>
-                    </tr>
-                </thead>
-                <tbody class="table-group-divider">
-                    {% for child, sponsorships in records %}
-                    <tr>
-                        <th scope="row">{{ forloop.counter }}.</th>
-                        <td>{{ child.prefixed_id }}</td>
-                        <td>{{ child.full_name }}</td>
-                        <td>{{ child.gender }}</td>
-                        <td>{{ child.date_of_birth }}</td>
-                        <td colspan="2">{{ sponsorships.0.sponsor.last_name }} {{ sponsorships.0.sponsor.first_name }}
-                        </td>
-                        <td>{{ sponsorships.0.sponsor.start_date }}</td>
-                        <td>{{ sponsorships.0.sponsor.sponsorship_type }}</td>
-                    </tr>
-                    {% for sponsorship in sponsorships|slice:"1:" %}
-                    <tr>
-                        <td colspan="6"></td>
-                        <td>{{ sponsorship.sponsor.last_name }} {{ sponsorship.sponsor.first_name }}</td>
-                        <td>{{ sponsorship.sponsor.start_date }}</td>
-                        <td>{{ sponsorship.sponsor.sponsorship_type }}</td>
-                    </tr>
-                    {% endfor %}
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
 
-        <!--End Table-->
-
-        <!-- Pagination links &raquo;  -->
-        <div class="pagination">
-            <span class="step-links">
-                {% if records.has_previous %}
-                <a href="?page=1">
-                    <!-- first -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
-                        <path fill="#2375e1"
-                            d="M14 3.002a1 1 0 0 0-1.578-.816l-7 4.963a1 1 0 0 0-.007 1.628l7 5.037A1 1 0 0 0 14 13.003zM2 2.5a.5.5 0 0 1 1 0v11a.5.5 0 0 1-1 0z" />
-                    </svg> </a>
-                <a href="?page={{ records.previous_page_number }}">
-                    <!-- previous -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-                        <path fill="#2375e1" d="m4 10l9 9l1.4-1.5L7 10l7.4-7.5L13 1z" /></svg>
-                </a>
+    <div id="printMe">
+      <hr class="bg-info" style="height: 3px;" />
+      <div class="table-responsive">
+        <table class="table my-table" id="dataTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Reg.No</th>
+              <th>Full Name</th>
+              <th>Gender</th>
+              <th>D.O.B</th>
+              <th colspan="2">Sponsor</th>
+              <th>Start Date</th>
+              <th>Sponsorship Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for child, sponsorships in records %}
+              <tr>
+                <th>{{ forloop.counter }}.</th>
+                <td>{{ child.prefixed_id }}</td>
+                <td>{{ child.full_name }}</td>
+                <td>{{ child.gender }}</td>
+                <td>{{ child.date_of_birth }}</td>
+                {% if sponsorships %}
+                  <td colspan="2">{{ sponsorships.0.sponsor.last_name }} {{ sponsorships.0.sponsor.first_name }}</td>
+                  <td>{{ sponsorships.0.start_date }}</td>
+                  <td>{{ sponsorships.0.sponsorship_type }}</td>
+                {% else %}
+                  <td colspan="2">-</td>
+                  <td>-</td>
+                  <td>-</td>
                 {% endif %}
+              </tr>
+              {% for sponsorship in sponsorships|slice:'1:' %}
+                <tr>
+                  <td colspan="5"></td>
+                  <td colspan="2">{{ sponsorship.sponsor.last_name }} {{ sponsorship.sponsor.first_name }}</td>
+                  <td>{{ sponsorship.start_date }}</td>
+                  <td>{{ sponsorship.sponsorship_type }}</td>
+                </tr>
+              {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
 
-                <span class="current">
-                    Page {{ records.number }} of {{ records.paginator.num_pages }}.
-                </span>
-
-                {% if records.has_next %}
-                <a href="?page={{ records.next_page_number }}">
-                    <!-- Next -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-                        <path fill="#2375e1" d="M7 1L5.6 2.5L13 10l-7.4 7.5L7 19l9-9z" /></svg>
-                </a>
-                <a href="?page={{ records.paginator.num_pages }}">
-                    <!-- last  -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 28 28">
-                        <path fill="#2375e1"
-                            d="M23.5 3.75a.75.75 0 0 1 1.5 0v20.5a.75.75 0 0 1-1.5 0zM3 5.254C3 3.438 5.041 2.37 6.533 3.406l12.504 8.68a2.25 2.25 0 0 1 .013 3.688l-12.504 8.81C5.056 25.634 3 24.57 3 22.745z" />
-                    </svg>
-                    </svg>
-                </a>
-                {% endif %}
-            </span>
-        </div>
+      <!-- Pagination -->
+      <nav class="mt-3">
+        <ul class="pagination justify-content-center">
+          {% if records.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page=1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
+                  <path fill="#2375e1" d="M14 3.002a1 1 0 0 0-1.578-.816l-7 4.963a1 1 0 0 0-.007 1.628l7 5.037A1 1 0 0 0 14 13.003zM2 2.5a.5.5 0 0 1 1 0v11a.5.5 0 0 1-1 0z" />
+                </svg>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ records.previous_page_number }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
+                  <path fill="#2375e1" d="m4 10l9 9l1.4-1.5L7 10l7.4-7.5L13 1z" />
+                </svg>
+              </a>
+            </li>
+          {% endif %}
+          <li class="page-item disabled">
+            <span class="page-link">Page {{ records.number }} of {{ records.paginator.num_pages }}</span>
+          </li>
+          {% if records.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ records.next_page_number }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
+                  <path fill="#2375e1" d="M7 1L5.6 2.5L13 10l-7.4 7.5L7 19l9-9z" />
+                </svg>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ records.paginator.num_pages }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 28 28">
+                  <path fill="#2375e1" d="M23.5 3.75a.75.75 0 0 1 1.5 0v20.5a.75.75 0 0 1-1.5 0zM3 5.254C3 3.438 5.041 2.37 6.533 3.406l12.504 8.68a2.25 2.25 0 0 1 .013 3.688l-12.504 8.81C5.056 25.634 3 24.57 3 22.745z" />
+                </svg>
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
     </div>
-</div>
+  </div>
+
+  <script>
+    document.getElementById('back_btn').addEventListener('click', () => {
+      window.location.href = "{% url 'reports_dash' %}"
+    })
+  </script>
 {% endblock %}

@@ -421,9 +421,6 @@ class Loan(models.Model):
         }
 
 
-# # =================================== Product Model ===================================
-
-
 # =================================== LoanDisbursement Model ===================================
 class LoanDisbursement(models.Model):
     loan = models.ForeignKey(
