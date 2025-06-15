@@ -114,6 +114,7 @@ TEMPLATES = [
                 "apps.users.context_processors.guest_profiles_context",
                 "apps.users.context_processors.guest_user_feedback_context",
                 "apps.users.context_processors.low_stock_alerts_context",
+                "apps.loans.context_processors.loans_due_today_context",
             ],
         },
     },
@@ -295,3 +296,8 @@ LOGGING = {
         },
     },
 }
+
+# Twilio Configuration
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")

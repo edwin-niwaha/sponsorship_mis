@@ -32,7 +32,7 @@
             <a class="nav-link" href="{% url 'main-dashboard' %}"><i class="mdi mdi-lock-open menu-icon"></i> SPONSORSHIP</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'inventory-dashboard' %}"><i class="mdi mdi-warehouse menu-icon"></i> INVENTORY MGT</a>
+            <a class="nav-link" href="{% url 'inventory-dashboard' %}"><i class="mdi mdi-warehouse menu-icon"></i> INVENTORY MS</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'loans-dashboard' %}"><i class="mdi mdi-cash-multiple menu-icon"></i> LOAN MANAGER</a>
@@ -45,21 +45,20 @@
     <li>
       <hr class="sidebar-divider my-3" />
     </li>
-    <!-- LOANS Menu -->
 
+    <!-- Loan Applications Menu -->
     <li class="nav-item">
-      <a class="nav-link" data-toggle="collapse" href="#loansMenu" aria-expanded="false" aria-controls="loansMenu">
-        <i class="mdi mdi-bank menu-icon"></i>
-        <span class="menu-title">Manage Loans</span>
+      <a class="nav-link" data-toggle="collapse" href="#loanApplicationsMenu" aria-expanded="false" aria-controls="loanApplicationsMenu">
+        <i class="mdi mdi-file-document-box menu-icon"></i>
+        <span class="menu-title">Loan Applications</span>
         <i class="menu-arrow"></i>
       </a>
-      <div class="collapse" id="loansMenu">
+      <div class="collapse" id="loanApplicationsMenu">
         <ul class="nav flex-column sub-menu">
-          <!-- Loan Applications -->
           <li class="nav-item">
             <a class="nav-link" href="{% url 'loans:apply_for_loan' %}">
               <i class="mdi mdi-file-document-box menu-icon"></i>
-              <span class="menu-title">Loan Apply</span>
+              <span class="menu-title">Apply</span>
             </a>
           </li>
           <li class="nav-item">
@@ -74,40 +73,62 @@
               <span class="menu-title">All Applications</span>
             </a>
           </li>
-          <!-- Loan Disbursements -->
+        </ul>
+      </div>
+    </li>
 
+    <!-- Loan Disbursements Menu -->
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="collapse" href="#loanDisbursementsMenu" aria-expanded="false" aria-controls="loanDisbursementsMenu">
+        <i class="mdi mdi-cash-register menu-icon"></i>
+        <span class="menu-title">Loan Disbursements</span>
+        <i class="menu-arrow"></i>
+      </a>
+      <div class="collapse" id="loanDisbursementsMenu">
+        <ul class="nav flex-column sub-menu">
           <li class="nav-item">
             <a class="nav-link" href="{% url 'loans:disburse_loan' %}">
               <i class="mdi mdi-cash-register menu-icon"></i>
-              <span class="menu-title">Disburse</span>
+              <span class="menu-title">Disburse Loan</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'loans:disbursed_loans' %}">
               <i class="mdi mdi-file-check menu-icon"></i>
-              <span class="menu-title">Disbursed</span>
+              <span class="menu-title">Disbursed Loans</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'loans:approved_loans' %}">
               <i class="mdi mdi-file-check menu-icon"></i>
-              <span class="menu-title">Approved</span>
+              <span class="menu-title">Approved Loans</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'loans:rejected_loans' %}">
               <i class="mdi mdi-file-check menu-icon"></i>
-              <span class="menu-title">Rejected</span>
+              <span class="menu-title">Rejected Loans</span>
             </a>
           </li>
-          <!-- Loan Payments -->
+        </ul>
+      </div>
+    </li>
+
+    <!-- Loan Management Menu -->
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="collapse" href="#loanManagementMenu" aria-expanded="false" aria-controls="loanManagementMenu">
+        <i class="mdi mdi-bank menu-icon"></i>
+        <span class="menu-title">Loan Management</span>
+        <i class="menu-arrow"></i>
+      </a>
+      <div class="collapse" id="loanManagementMenu">
+        <ul class="nav flex-column sub-menu">
           <li class="nav-item">
             <a class="nav-link" href="{% url 'loans:loan_repayment_create' %}">
               <i class="mdi mdi-credit-card menu-icon"></i>
               <span class="menu-title">Repayment</span>
             </a>
           </li>
-          <!-- Client Loan Statement -->
           <li class="nav-item">
             <a class="nav-link" href="{% url 'loans:loan_statement' %}">
               <i class="mdi mdi-file-document menu-icon"></i>
@@ -117,24 +138,36 @@
           <li class="nav-item">
             <a class="nav-link" href="{% url 'loans:due_overdue_report' %}">
               <i class="mdi mdi-file-document menu-icon"></i>
-              <span class="menu-title">Loan Due</span>
+              <span class="menu-title">Loans Due</span>
             </a>
           </li>
         </ul>
       </div>
     </li>
-    <!-- Clients -->
+
+    <!-- Clients Menu -->
     <li class="nav-item">
-      <a class="nav-link" href="{% url 'client_list' %}">
-        <i class="mdi mdi-account menu-icon"></i>
-        <span class="menu-title">Main Clients</span>
+      <a class="nav-link" data-toggle="collapse" href="#clientsMenu" aria-expanded="false" aria-controls="clientsMenu">
+        <i class="mdi mdi-account-group menu-icon"></i>
+        <span class="menu-title">Manage Clients</span>
+        <i class="menu-arrow"></i>
       </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="{% url 'seven_hills_list' %}">
-        <i class="mdi mdi-account-multiple menu-icon"></i>
-        <span class="menu-title">7 Hills Clients</span>
-      </a>
+      <div class="collapse" id="clientsMenu">
+        <ul class="nav flex-column sub-menu">
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'client_list' %}">
+              <i class="mdi mdi-account menu-icon"></i>
+              <span class="menu-title">Main Clients</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'seven_hills_list' %}">
+              <i class="mdi mdi-account-multiple menu-icon"></i>
+              <span class="menu-title">7 Hills Clients</span>
+            </a>
+          </li>
+        </ul>
+      </div>
     </li>
 
     <li class="nav-item">
@@ -152,7 +185,7 @@
     <li class="nav-item">
       <a class="nav-link" href="{% url 'loans:loan_reports_dashboard' %}">
         <i class="mdi mdi-chart-bar menu-icon"></i>
-        <span class="menu-title">Reports</span>
+        <span class="menu-title">LMS Reports</span>
       </a>
     </li>
 

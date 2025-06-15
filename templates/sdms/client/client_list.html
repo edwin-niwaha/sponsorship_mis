@@ -40,6 +40,7 @@
               <th scope="col">Picture</th>
               <th scope="col">Client Name</th>
               <th scope="col">Telephone</th>
+              <th scope="col">Email</th>
               <th scope="col" colspan="2">Action</th>
             </tr>
           </thead>
@@ -57,6 +58,7 @@
                 </td>
                 <td>{{ client.full_name }}</td>
                 <td>{{ client.mobile_telephone }}</td>
+                <td>{{ client.email }}</td>
                 <td>
                   {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
                     <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_client' client.id %}"><i class="bi bi-pencil"></i></a>

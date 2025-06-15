@@ -32,6 +32,17 @@ class Client(models.Model):
             )
         ],
     )
+    email = models.EmailField(
+        verbose_name="Email",
+        blank=True,
+        default="no-email@example.com",
+        validators=[
+            RegexValidator(
+                r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+                message="Enter a valid email address.",
+            )
+        ],
+    )
     picture = CloudinaryField(
         "client_uploads",
         validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"])],

@@ -1,5 +1,4 @@
 import logging
-from django.utils import timezone
 from datetime import date, datetime
 import pytz
 from django.conf import settings
@@ -1862,9 +1861,7 @@ def loan_due_overdue_report(request):
             ]
             if loan.due_date and loan.due_date < today:
                 days_overdue = (today - loan.due_date).days
-                total_amount_due = (
-                    total_balance  # For fully overdue loans, total balance is due
-                )
+                total_amount_due = total_balance  # Total balance is due, already capped
                 overdue_loans.append(
                     {
                         "loan": loan,
@@ -1877,7 +1874,6 @@ def loan_due_overdue_report(request):
                     }
                 )
             elif overdue_payments:
-                # Use the earliest overdue payment date to calculate days overdue
                 earliest_due_date = min(
                     (
                         payment["payment_due_date"].date()
@@ -1886,12 +1882,14 @@ def loan_due_overdue_report(request):
                     )
                     for payment in overdue_payments
                 )
-                if earliest_due_date < today:  # Ensure the payment is actually overdue
+                if earliest_due_date < today:
                     days_overdue = (today - earliest_due_date).days
-                    total_amount_due = sum(
+                    monthly_installment = sum(
                         p["principal_payment"] + p["interest_payment"]
                         for p in overdue_payments
                     )
+                    # Cap total_amount_due at total_balance
+                    total_amount_due = min(monthly_installment, total_balance)
                     overdue_loans.append(
                         {
                             "loan": loan,
@@ -1926,9 +1924,11 @@ def loan_due_overdue_report(request):
             ]
 
             if due_payments:
-                total_amount_due = sum(
+                monthly_installment = sum(
                     p["principal_payment"] + p["interest_payment"] for p in due_payments
                 )
+                # Cap total_amount_due at total_balance
+                total_amount_due = min(monthly_installment, total_balance)
                 due_loans.append(
                     {
                         "loan": loan,
@@ -1944,9 +1944,23 @@ def loan_due_overdue_report(request):
             logger.error(f"Error processing due loans for Loan {loan.id}: {e}")
             continue
 
+    # Calculate totals
+    due_loans_count = len(due_loans)
+    due_loans_total_amount = sum(loan["total_amount_due"] for loan in due_loans)
+    due_loans_total_balance = sum(loan["total_balance"] for loan in due_loans)
+    overdue_loans_count = len(overdue_loans)
+    overdue_loans_total_amount = sum(loan["total_amount_due"] for loan in overdue_loans)
+    overdue_loans_total_balance = sum(loan["total_balance"] for loan in overdue_loans)
+
     context = {
         "due_loans": due_loans,
+        "due_loans_count": due_loans_count,
+        "due_loans_total_amount": due_loans_total_amount,
+        "due_loans_total_balance": due_loans_total_balance,
         "overdue_loans": overdue_loans,
+        "overdue_loans_count": overdue_loans_count,
+        "overdue_loans_total_amount": overdue_loans_total_amount,
+        "overdue_loans_total_balance": overdue_loans_total_balance,
         "today": today,
     }
     return render(request, "loans/due_overdue_report.html", context)
