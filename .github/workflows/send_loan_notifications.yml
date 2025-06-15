@@ -16,7 +16,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5  # Use the latest version of setup-python action
         with:
-          python-version: "3.10"  # Specify your Python version (match your project)
+          python-version: "3.12"  # Specify your Python version (match your project)
 
       - name: Install Dependencies
         run: |
