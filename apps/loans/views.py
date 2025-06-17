@@ -1,6 +1,6 @@
 import logging
 from datetime import date, datetime
-
+from decimal import Decimal
 import pytz
 from django.conf import settings
 from django.contrib import messages
@@ -575,7 +575,6 @@ def disburse_all_loans(request):
 
 # =================================== Approve Loan View ===================================
 @login_required
-@admin_or_manager_required
 def approve_loan(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
     current_user = request.user
@@ -1768,7 +1767,6 @@ def process_and_import_loan_data(excel_file):
 
 # =================================== loan_reports_dashboard view ===================================
 @login_required
-@admin_or_manager_or_staff_required
 def loan_reports_dashboard(request):
     """
     Renders the reports dashboard with report cards for users with the 'administrator' role.
@@ -1824,6 +1822,155 @@ def client_loan_statement(request):
 
 
 # =================================== loan_due_overdue_report view ===================================
+# @login_required
+# @admin_or_manager_or_staff_required
+# def loan_due_overdue_report(request):
+#     # Set timezone to Africa/Nairobi
+#     try:
+#         timezone.activate(pytz.timezone("Africa/Nairobi"))
+#     except pytz.exceptions.UnknownTimeZoneError:
+#         timezone.activate(pytz.UTC)
+
+#     today = timezone.now().date()
+
+#     disbursed_loans = Loan.objects.filter(status="disbursed")
+#     due_loans = []
+#     overdue_loans = []
+
+#     for loan in disbursed_loans:
+#         # Calculate balances
+#         try:
+#             balances = loan.calculate_remaining_balances()
+#             total_balance = balances["principal_balance"] + balances["interest_balance"]
+#             if total_balance <= 0:
+#                 continue
+#         except Exception as e:
+#             logger.error(f"Error calculating balances for Loan {loan.id}: {e}")
+#             continue
+
+#         # Handle overdue loans
+#         try:
+#             schedule = loan.generate_payment_schedule()
+#             overdue_payments = [
+#                 payment
+#                 for payment in schedule
+#                 if isinstance(payment["payment_due_date"], (date, datetime))
+#                 and (
+#                     payment["payment_due_date"].date()
+#                     if isinstance(payment["payment_due_date"], datetime)
+#                     else payment["payment_due_date"]
+#                 )
+#                 < today
+#                 and payment["principal_payment"] + payment["interest_payment"] > 0
+#             ]
+#             if loan.due_date and loan.due_date < today:
+#                 days_overdue = (today - loan.due_date).days
+#                 total_amount_due = total_balance  # Total balance is due, already capped
+#                 overdue_loans.append(
+#                     {
+#                         "loan": loan,
+#                         "principal_balance": balances["principal_balance"],
+#                         "interest_balance": balances["interest_balance"],
+#                         "total_balance": total_balance,
+#                         "disbursement_date": loan.disbursement_date,
+#                         "total_amount_due": total_amount_due,
+#                         "days_overdue": days_overdue,
+#                     }
+#                 )
+#             elif overdue_payments:
+#                 earliest_due_date = min(
+#                     (
+#                         payment["payment_due_date"].date()
+#                         if isinstance(payment["payment_due_date"], datetime)
+#                         else payment["payment_due_date"]
+#                     )
+#                     for payment in overdue_payments
+#                 )
+#                 if earliest_due_date < today:
+#                     days_overdue = (today - earliest_due_date).days
+#                     monthly_installment = sum(
+#                         p["principal_payment"] + p["interest_payment"]
+#                         for p in overdue_payments
+#                     )
+#                     # Cap total_amount_due at total_balance
+#                     total_amount_due = min(monthly_installment, total_balance)
+#                     overdue_loans.append(
+#                         {
+#                             "loan": loan,
+#                             "principal_balance": balances["principal_balance"],
+#                             "interest_balance": balances["interest_balance"],
+#                             "total_balance": total_balance,
+#                             "disbursement_date": loan.disbursement_date,
+#                             "total_amount_due": total_amount_due,
+#                             "days_overdue": days_overdue,
+#                         }
+#                     )
+#         except Exception as e:
+#             logger.error(f"Error processing overdue for Loan {loan.id}: {e}")
+#             continue
+
+#         # Handle loans due today
+#         if not loan.disbursement_date or loan.loan_period_months <= 0:
+#             continue
+
+#         try:
+#             schedule = loan.generate_payment_schedule()
+#             due_payments = [
+#                 payment
+#                 for payment in schedule
+#                 if isinstance(payment["payment_due_date"], (date, datetime))
+#                 and (
+#                     payment["payment_due_date"].date()
+#                     if isinstance(payment["payment_due_date"], datetime)
+#                     else payment["payment_due_date"]
+#                 )
+#                 == today
+#             ]
+
+#             if due_payments:
+#                 monthly_installment = sum(
+#                     p["principal_payment"] + p["interest_payment"] for p in due_payments
+#                 )
+#                 # Cap total_amount_due at total_balance
+#                 total_amount_due = min(monthly_installment, total_balance)
+#                 due_loans.append(
+#                     {
+#                         "loan": loan,
+#                         "principal_balance": balances["principal_balance"],
+#                         "interest_balance": balances["interest_balance"],
+#                         "total_balance": total_balance,
+#                         "due_payment": due_payments[0],
+#                         "disbursement_date": loan.disbursement_date,
+#                         "total_amount_due": total_amount_due,
+#                     }
+#                 )
+#         except Exception as e:
+#             logger.error(f"Error processing due loans for Loan {loan.id}: {e}")
+#             continue
+
+#     # Calculate totals
+#     due_loans_count = len(due_loans)
+#     due_loans_total_amount = sum(loan["total_amount_due"] for loan in due_loans)
+#     due_loans_total_balance = sum(loan["total_balance"] for loan in due_loans)
+#     overdue_loans_count = len(overdue_loans)
+#     overdue_loans_total_amount = sum(loan["total_amount_due"] for loan in overdue_loans)
+#     overdue_loans_total_balance = sum(loan["total_balance"] for loan in overdue_loans)
+
+#     context = {
+#         "due_loans": due_loans,
+#         "due_loans_count": due_loans_count,
+#         "due_loans_total_amount": due_loans_total_amount,
+#         "due_loans_total_balance": due_loans_total_balance,
+#         "overdue_loans": overdue_loans,
+#         "overdue_loans_count": overdue_loans_count,
+#         "overdue_loans_total_amount": overdue_loans_total_amount,
+#         "overdue_loans_total_balance": overdue_loans_total_balance,
+#         "today": today,
+#     }
+#     return render(request, "loans/due_overdue_report.html", context)
+
+
+
 @login_required
 @admin_or_manager_or_staff_required
 def loan_due_overdue_report(request):
@@ -1835,7 +1982,7 @@ def loan_due_overdue_report(request):
 
     today = timezone.now().date()
 
-    disbursed_loans = Loan.objects.filter(status="disbursed")
+    disbursed_loans = Loan.objects.filter(status="disbursed").prefetch_related("repayments")
     due_loans = []
     overdue_loans = []
 
@@ -1865,9 +2012,52 @@ def loan_due_overdue_report(request):
                 < today
                 and payment["principal_payment"] + payment["interest_payment"] > 0
             ]
-            if loan.due_date and loan.due_date < today:
-                days_overdue = (today - loan.due_date).days
-                total_amount_due = total_balance  # Total balance is due, already capped
+
+            # Check actual repayments for this loan
+            actual_repayments = loan.repayments.filter(repayment_date__lte=today)
+
+            # Filter out payments that have been fully paid
+            unpaid_overdue_payments = []
+            for payment in overdue_payments:
+                due_date = (
+                    payment["payment_due_date"].date()
+                    if isinstance(payment["payment_due_date"], datetime)
+                    else payment["payment_due_date"]
+                )
+                expected_principal = Decimal(str(payment["principal_payment"]))
+                expected_interest = Decimal(str(payment["interest_payment"]))
+                expected_total = expected_principal + expected_interest
+
+                # Find repayments for this due date
+                repayments_for_date = actual_repayments.filter(repayment_date=due_date)
+                total_principal_paid = sum(
+                    Decimal(str(r.principal_payment)) for r in repayments_for_date
+                )
+                total_interest_paid = sum(
+                    Decimal(str(r.interest_payment)) for r in repayments_for_date
+                )
+                total_paid = total_principal_paid + total_interest_paid
+
+                # If the total paid is less than expected, the payment is still overdue
+                if total_paid < expected_total:
+                    unpaid_overdue_payments.append(payment)
+
+            # If there are unpaid overdue payments, add to overdue_loans
+            if unpaid_overdue_payments:
+                earliest_due_date = min(
+                    (
+                        payment["payment_due_date"].date()
+                        if isinstance(payment["payment_due_date"], datetime)
+                        else payment["payment_due_date"]
+                    )
+                    for payment in unpaid_overdue_payments
+                )
+                days_overdue = (today - earliest_due_date).days
+                total_overdue_amount = sum(
+                    Decimal(str(p["principal_payment"])) + Decimal(str(p["interest_payment"]))
+                    for p in unpaid_overdue_payments
+                )
+                total_amount_due = min(total_overdue_amount, total_balance)
                 overdue_loans.append(
                     {
                         "loan": loan,
@@ -1877,36 +2067,25 @@ def loan_due_overdue_report(request):
                         "disbursement_date": loan.disbursement_date,
                         "total_amount_due": total_amount_due,
                         "days_overdue": days_overdue,
+                        "unpaid_payments": unpaid_overdue_payments,  # Optional: for debugging
                     }
                 )
-            elif overdue_payments:
-                earliest_due_date = min(
-                    (
-                        payment["payment_due_date"].date()
-                        if isinstance(payment["payment_due_date"], datetime)
-                        else payment["payment_due_date"]
-                    )
-                    for payment in overdue_payments
+            # If loan.due_date is past and balance remains, consider it overdue
+            elif loan.due_date and loan.due_date < today and total_balance > 0:
+                days_overdue = (today - loan.due_date).days
+                total_amount_due = total_balance
+                overdue_loans.append(
+                    {
+                        "loan": loan,
+                        "principal_balance": balances["principal_balance"],
+                        "interest_balance": balances["interest_balance"],
+                        "total_balance": total_balance,
+                        "disbursement_date": loan.disbursement_date,
+                        "total_amount_due": total_amount_due,
+                        "days_overdue": days_overdue,
+                        "unpaid_payments": [],  # Optional: for debugging
+                    }
                 )
-                if earliest_due_date < today:
-                    days_overdue = (today - earliest_due_date).days
-                    monthly_installment = sum(
-                        p["principal_payment"] + p["interest_payment"]
-                        for p in overdue_payments
-                    )
-                    # Cap total_amount_due at total_balance
-                    total_amount_due = min(monthly_installment, total_balance)
-                    overdue_loans.append(
-                        {
-                            "loan": loan,
-                            "principal_balance": balances["principal_balance"],
-                            "interest_balance": balances["interest_balance"],
-                            "total_balance": total_balance,
-                            "disbursement_date": loan.disbursement_date,
-                            "total_amount_due": total_amount_due,
-                            "days_overdue": days_overdue,
-                        }
-                    )
         except Exception as e:
             logger.error(f"Error processing overdue for Loan {loan.id}: {e}")
             continue
@@ -1927,14 +2106,15 @@ def loan_due_overdue_report(request):
                     else payment["payment_due_date"]
                 )
                 == today
+                and payment["principal_payment"] + payment["interest_payment"] > 0
             ]
 
             if due_payments:
-                monthly_installment = sum(
-                    p["principal_payment"] + p["interest_payment"] for p in due_payments
+                total_due_today = sum(
+                    Decimal(str(p["principal_payment"])) + Decimal(str(p["interest_payment"]))
+                    for p in due_payments
                 )
-                # Cap total_amount_due at total_balance
-                total_amount_due = min(monthly_installment, total_balance)
+                total_amount_due = min(total_due_today, total_balance)
                 due_loans.append(
                     {
                         "loan": loan,
@@ -1952,11 +2132,11 @@ def loan_due_overdue_report(request):
 
     # Calculate totals
     due_loans_count = len(due_loans)
-    due_loans_total_amount = sum(loan["total_amount_due"] for loan in due_loans)
-    due_loans_total_balance = sum(loan["total_balance"] for loan in due_loans)
+    due_loans_total_amount = sum(Decimal(str(loan["total_amount_due"])) for loan in due_loans)
+    due_loans_total_balance = sum(Decimal(str(loan["total_balance"])) for loan in due_loans)
     overdue_loans_count = len(overdue_loans)
-    overdue_loans_total_amount = sum(loan["total_amount_due"] for loan in overdue_loans)
-    overdue_loans_total_balance = sum(loan["total_balance"] for loan in overdue_loans)
+    overdue_loans_total_amount = sum(Decimal(str(loan["total_amount_due"])) for loan in overdue_loans)
+    overdue_loans_total_balance = sum(Decimal(str(loan["total_balance"])) for loan in overdue_loans)
 
     context = {
         "due_loans": due_loans,
