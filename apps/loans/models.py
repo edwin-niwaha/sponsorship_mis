@@ -420,6 +420,23 @@ class Loan(models.Model):
             "value": self.id,
         }
 
+    def calculate_total_amount_due_balance(self, due_date, total_amount_due):
+
+        # Get repayments made on or before the due date
+        repayments = self.repayments.filter(repayment_date__lte=due_date).aggregate(
+            total_principal=Sum("principal_payment"),
+            total_interest=Sum("interest_payment"),
+        )
+
+        total_principal_paid = repayments["total_principal"] or Decimal("0.00")
+        total_interest_paid = repayments["total_interest"] or Decimal("0.00")
+        total_paid = total_principal_paid + total_interest_paid
+
+        # Calculate remaining due balance
+        remaining_due_balance = max(total_amount_due - total_paid, Decimal("0.00"))
+
+        return remaining_due_balance.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+
 
 # =================================== LoanDisbursement Model ===================================
 class LoanDisbursement(models.Model):

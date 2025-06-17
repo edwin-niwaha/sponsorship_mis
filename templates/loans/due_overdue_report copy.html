@@ -17,6 +17,11 @@
         <!-- Due Loans -->
         <h2 class="h5 mb-3">Loans Due Today</h2>
         {% if due_loans %}
+          <p class="mb-3">
+            <strong>Total Loans: {{ due_loans_count|intcomma }}</strong> |
+            <strong>Total Amount Due: UgX {{ due_loans_total_amount|floatformat:'2'|intcomma }}</strong> |
+            <strong>Total Outstanding Balance: UgX {{ due_loans_total_balance|floatformat:'2'|intcomma }}</strong>
+          </p>
           <div class="table-responsive">
             <table class="my-table" id="dataTable">
               <thead class="table-light">
@@ -28,8 +33,8 @@
                   <th>Period</th>
                   <th>Disbursed On</th>
                   <th class="text-end">Total Amount Due</th>
-                  <th class="text-end">Principal Due</th>
-                  <th class="text-end">Interest Due</th>
+                  <th class="text-end">Principal Balance</th>
+                  <th class="text-end">Interest Balance</th>
                   <th class="text-end">Total Balance</th>
                 </tr>
               </thead>
@@ -43,8 +48,8 @@
                     <td>{{ item.loan.loan_period_months }}</td>
                     <td>{{ item.disbursement_date|date:'d/m/Y' }}</td>
                     <td class="text-end">{{ item.total_amount_due|floatformat:'2'|intcomma }}</td>
-                    <td class="text-end">{{ item.due_payment.principal_payment|floatformat:'2'|intcomma }}</td>
-                    <td class="text-end">{{ item.due_payment.interest_payment|floatformat:'2'|intcomma }}</td>
+                    <td class="text-end">{{ item.principal_balance|floatformat:'2'|intcomma }}</td>
+                    <td class="text-end">{{ item.interest_balance|floatformat:'2'|intcomma }}</td>
                     <td class="text-end">{{ item.total_balance|floatformat:'2'|intcomma }}</td>
                   </tr>
                 {% endfor %}
@@ -58,6 +63,11 @@
         <!-- Overdue Loans -->
         <h2 class="h5 mb-3 mt-4">Overdue Loans</h2>
         {% if overdue_loans %}
+          <p class="mb-3">
+            <strong>Total Loans: {{ overdue_loans_count|intcomma }}</strong> |
+            <strong>Total Amount Due: UgX {{ overdue_loans_total_amount|floatformat:'2'|intcomma }}</strong> |
+            <strong>Total Outstanding Balance: UgX {{ overdue_loans_total_balance|floatformat:'2'|intcomma }}</strong>
+          </p>
           <div class="table-responsive">
             <table class="my-table" id="dataTable">
               <thead class="table-light">
