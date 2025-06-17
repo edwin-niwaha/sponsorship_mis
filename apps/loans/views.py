@@ -879,7 +879,7 @@ def loan_repayment_create_view(request):
         # Fetch only loans with remaining principal or interest, and status "disbursed"
         Q(remaining_principal__gt=0)
         | Q(remaining_interest__gt=0),  # Outstanding balance
-        status="disbursed",  # Status should be "disbursed"
+        status__in=["disbursed", "overdue"]
     )
 
     if request.method == "POST":
