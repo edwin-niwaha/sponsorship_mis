@@ -1,4 +1,5 @@
 import logging
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.management import call_command
@@ -11,6 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from openpyxl import load_workbook
 
+from apps.sponsorship.models import ChildSponsorship
 from apps.users.decorators import (
     admin_or_manager_or_staff_required,
     admin_or_manager_required,
@@ -26,7 +28,6 @@ from .forms import (
     ChildProgressForm,
     UploadForm,
 )
-
 from .models import (
     Child,
     ChildCorrespondence,
@@ -35,8 +36,6 @@ from .models import (
     ChildProfilePicture,
     ChildProgress,
 )
-
-from apps.sponsorship.models import ChildSponsorship
 
 # The getLogger() function is used to get a logger instance
 logger = logging.getLogger(__name__)

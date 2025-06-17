@@ -1,12 +1,14 @@
-from django.core.management.base import BaseCommand
-from django.conf import settings
-from django.utils import timezone
-import pytz
-from datetime import date, datetime
 import logging
-from apps.loans.models import Loan
-from twilio.rest import Client
+from datetime import date, datetime
+
+import pytz
+from django.conf import settings
+from django.core.management.base import BaseCommand
+from django.utils import timezone
 from twilio.base.exceptions import TwilioRestException
+from twilio.rest import Client
+
+from apps.loans.models import Loan
 
 logger = logging.getLogger(__name__)
 

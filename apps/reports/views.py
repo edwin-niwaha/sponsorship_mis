@@ -8,7 +8,7 @@ from django.shortcuts import render
 from apps.child.models import Child
 from apps.finance.models import ChildPayments, StaffPayments
 from apps.sponsor.models import Sponsor
-from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
+from apps.sponsorship.models import StaffSponsorship
 from apps.staff.models import Staff
 from apps.users.decorators import (
     admin_or_manager_or_staff_required,

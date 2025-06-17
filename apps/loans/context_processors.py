@@ -1,9 +1,8 @@
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+import logging
+from datetime import date, datetime
+
 import pytz
 from django.utils import timezone
-from datetime import date, datetime
-import logging
 
 logger = logging.getLogger(__name__)
 

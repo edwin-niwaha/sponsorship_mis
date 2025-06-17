@@ -1,5 +1,6 @@
 import logging
 from datetime import date, datetime
+
 import pytz
 from django.conf import settings
 from django.contrib import messages
@@ -11,13 +12,10 @@ from django.db import transaction
 from django.db.models import DecimalField, F, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.timezone import now
 from openpyxl import load_workbook
-from dateutil.relativedelta import relativedelta
-from django.utils import timezone
-from datetime import date, datetime
-import logging
 
 logger = logging.getLogger(__name__)
 from apps.client.models import Client
@@ -48,6 +46,7 @@ logger = logging.getLogger(__name__)
 
 # =================================== Loan Applications View ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def loan_applications_view(request):
     user = request.user
     search_query = request.GET.get("search")
@@ -76,6 +75,7 @@ def loan_applications_view(request):
 
 
 @login_required
+@admin_or_manager_or_staff_required
 def loan_applications_all_view(request):
     user = request.user
     search_query = request.GET.get("search")
@@ -314,6 +314,7 @@ def update_loan(request, loan_id):
 
 # =================================== view_repayment_schedule View ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def repayment_schedule(request, loan_id):
     # Fetch the loan using the provided loan ID
     loan = get_object_or_404(Loan, id=loan_id)
@@ -416,6 +417,7 @@ def disbursed_loans_view(request):
 
 # =================================== Approved Loans View ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def approved_loans_view(request):
     user = request.user
     search_query = request.GET.get("search")
@@ -442,6 +444,7 @@ def approved_loans_view(request):
 
 # =================================== Rejected Loans View ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def rejected_loans_view(request):
     user = request.user
     search_query = request.GET.get("search")
@@ -572,6 +575,7 @@ def disburse_all_loans(request):
 
 # =================================== Approve Loan View ===================================
 @login_required
+@admin_or_manager_required
 def approve_loan(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
     current_user = request.user
@@ -916,7 +920,7 @@ def loan_repayment_create_view(request):
 
 # ===================================  loan_detail_view  ===================================
 @login_required
-@admin_or_manager_required
+@admin_or_manager_or_staff_required
 def loan_detail_view(request, loan_id):
     # Fetch the loan instance
     loan = get_object_or_404(Loan, id=loan_id)
@@ -974,7 +978,7 @@ def delete_repayment(request, repayment_id):
 
 # =================================== Chart of Accounts List View ===================================
 @login_required
-@admin_or_manager_required
+@admin_or_manager_or_staff_required
 def chart_of_accounts_list_view(request):
     accounts = ChartOfAccounts.objects.all()
     accounts_by_type = {}
@@ -1178,7 +1182,7 @@ def get_financial_year_dates():
 
 
 @login_required
-@admin_or_manager_required
+@admin_or_manager_or_staff_required
 def ledger_report_view(request):
     selected_account_id = request.GET.get("account_id")  # Get selected account ID
     ledger_data = []
@@ -1254,7 +1258,7 @@ def ledger_report_view(request):
 
 # =================================== Loan Aging Report view ===================================
 @login_required
-@admin_or_manager_required
+@admin_or_manager_or_staff_required
 def loan_aging_report(request):
     today = timezone.now().date()
 
@@ -1353,7 +1357,7 @@ def loan_aging_report(request):
 
 # =================================== Loan Arrears Report view ===================================
 @login_required
-@admin_or_manager_required
+@admin_or_manager_or_staff_required
 def loan_arrears_report(request):
     today = timezone.now().date()
 
@@ -1472,7 +1476,7 @@ def loan_arrears_report(request):
 
 # =================================== loan_portfolio_report view ===================================
 @login_required
-@admin_or_manager_required
+@admin_or_manager_or_staff_required
 def loan_portfolio_report(request):
     today = timezone.now().date()
 
@@ -1538,7 +1542,7 @@ def loan_portfolio_report(request):
 
 # =================================== portfolio_at_risk view ===================================
 @login_required
-@admin_or_manager_required
+@admin_or_manager_or_staff_required
 def portfolio_at_risk(request):
     # Fetch all loans
     loans = Loan.objects.all().order_by("id")
@@ -1619,7 +1623,8 @@ def portfolio_at_risk(request):
 
 # =================================== non_performing_loans view ===================================
 
-
+@login_required
+@admin_or_manager_or_staff_required
 def non_performing_loans(request):
     # Get today's date
     today = timezone.now().date()
@@ -1763,6 +1768,7 @@ def process_and_import_loan_data(excel_file):
 
 # =================================== loan_reports_dashboard view ===================================
 @login_required
+@admin_or_manager_or_staff_required
 def loan_reports_dashboard(request):
     """
     Renders the reports dashboard with report cards for users with the 'administrator' role.
@@ -1773,7 +1779,7 @@ def loan_reports_dashboard(request):
 
 # =================================== client_loan_statement view ===================================
 @login_required
-@admin_or_manager_required
+@admin_or_manager_or_staff_required
 def client_loan_statement(request):
     clients = Client.objects.all().order_by("full_name")
     client = None
@@ -1819,7 +1825,7 @@ def client_loan_statement(request):
 
 # =================================== loan_due_overdue_report view ===================================
 @login_required
-@admin_or_manager_required
+@admin_or_manager_or_staff_required
 def loan_due_overdue_report(request):
     # Set timezone to Africa/Nairobi
     try:

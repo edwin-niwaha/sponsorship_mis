@@ -1,10 +1,12 @@
-from django.core.management.base import BaseCommand
-from django.core.mail import EmailMultiAlternatives
-from django.conf import settings
-from django.utils import timezone
-import pytz
-from datetime import date, datetime
 import logging
+from datetime import date, datetime
+
+import pytz
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.core.management.base import BaseCommand
+from django.utils import timezone
+
 from apps.loans.models import Loan
 
 logger = logging.getLogger(__name__)
