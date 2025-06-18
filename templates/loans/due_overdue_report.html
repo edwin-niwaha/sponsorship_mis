@@ -80,6 +80,7 @@
             <table class="my-table" id="dataTable">
               <thead class="table-light">
                 <tr>
+                  <th>#</th>
                   <th>Loan ID</th>
                   <th>Borrower</th>
                   <th class="text-end">Principal</th>
@@ -97,6 +98,7 @@
               <tbody>
                 {% for item in overdue_loans %}
                   <tr>
+                    <td>{{ forloop.counter }}</td>
                     <td>{{ item.loan.id }}</td>
                     <td>{{ item.loan.borrower.full_name }}</td>
                     <td class="text-end">{{ item.loan.principal_amount|floatformat:'2'|intcomma }}</td>
