@@ -365,7 +365,7 @@ def repayment_schedule(request, loan_id):
 
 # =================================== Disbursed Loans View ===================================
 @login_required
-@admin_or_manager_required
+@admin_or_manager_or_staff_required
 def disbursed_loans_view(request):
     # Fetch loans based on optional search filtering
     queryset = get_loan_queryset(request.GET.get("search"))
@@ -853,9 +853,9 @@ def delete_loan(request, loan_id):
     return redirect("loans:loan_applications")
 
 
-# ===================================  loan_repayment_create_view ===================================
+# ===================================  loan_repayment_create_view  ===================================
 @login_required
-@admin_or_manager_required
+@admin_or_manager_or_staff_required
 def loan_repayment_create_view(request):
     form_title = "Repay Loans"
 

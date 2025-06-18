@@ -31,7 +31,16 @@ def loans_due_today_context(request):
             balances = loan.calculate_remaining_balances()
             total_balance = balances["principal_balance"] + balances["interest_balance"]
             # Skip loans with zero or negative balance
-            if total_balance <= 0:
+            # Generate payment schedule early
+            schedule = loan.generate_payment_schedule()
+            # Calculate total_amount_due and total_amount_due_balance
+            total_amount_due = total_balance  # Simplified; adjust based on logic
+            total_amount_due_balance = loan.calculate_total_amount_due_balance(
+                due_date=today, total_amount_due=total_amount_due
+            )
+            # if total_balance <= 0:
+            if total_balance <= 0 or total_amount_due_balance <= 0:
+            # if total_balance <= 0:
                 continue
 
             # Skip invalid loans with missing disbursement date or invalid loan period
