@@ -2070,7 +2070,9 @@ def loan_due_overdue_report(request):
             if not loan.disbursement_date or loan.loan_period_months <= 0:
                 continue
         except Exception as e:
-            logger.error(f"Error calculating balances or schedule for Loan {loan.id}: {e}")
+            logger.error(
+                f"Error calculating balances or schedule for Loan {loan.id}: {e}"
+            )
             continue
 
         # Handle overdue loans
@@ -2197,14 +2199,14 @@ def loan_due_overdue_report(request):
     due_loans = sorted(
         due_loans,
         key=lambda x: x["disbursement_date"] or timezone.datetime.min.date(),
-        reverse=False
+        reverse=False,
     )
     overdue_loans = sorted(
         overdue_loans,
         key=lambda x: x["disbursement_date"] or timezone.datetime.min.date(),
-        reverse=False
+        reverse=False,
     )
-    
+
     # Calculate totals
     due_loans_count = len(due_loans)
     due_loans_total_amount = sum(loan["total_amount_due"] for loan in due_loans)

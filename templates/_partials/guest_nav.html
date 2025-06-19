@@ -14,7 +14,7 @@
         </li>
         {% if user.is_authenticated and user.profile.role != 'guest' %}
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'main-dashboard' %}">MAIN-DASHBOARD</a>
+            <a class="nav-link" href="{% url 'main-dashboard' %}">DASHBOARD</a>
           </li>
         {% endif %}
       </ul>

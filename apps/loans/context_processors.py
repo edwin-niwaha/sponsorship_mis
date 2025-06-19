@@ -159,8 +159,10 @@ def loans_due_today_context(request):
                             for p in overdue_payments
                         )
                         total_amount_due = min(monthly_installment, total_balance)
-                        total_amount_due_balance = loan.calculate_total_amount_due_balance(
-                            due_date=today, total_amount_due=total_amount_due
+                        total_amount_due_balance = (
+                            loan.calculate_total_amount_due_balance(
+                                due_date=today, total_amount_due=total_amount_due
+                            )
                         )
                         if total_amount_due_balance <= 0:
                             continue  # Re-check to ensure exclusion

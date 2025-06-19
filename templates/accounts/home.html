@@ -2,45 +2,76 @@
 {% load static %}
 
 {% block content %}
-  <div class="container">
-    <div class="row">
+  <!-- Hero Section -->
+  <div class="container-fluid py-5">
+    <div class="row align-items-center g-4">
       <div class="col-md-6 m-auto">
         <div class="p-4">
           <img src="{% static 'images/hero.png' %}" class="img-fluid mx-auto" alt="Background Image" />
         </div>
       </div>
-      <div class="col-md-6 m-auto">
-        <div class="p-4">
-          <div class="d-flex justify-content-center align-items-center">
-            <div class="text-center">
-              <h3>Sponsorship & Donor Management Software (SDMS)</h3>
-              <hr class="my-4" style="height: 5px; background-color: #008080;" />
-              {% if user.is_authenticated %}
-                <a class="btn btn-warning btn-lg" href="{% url 'logout' %}" role="button" onclick="return confirm('Are you sure you want to logout?');">Logout</a>
-              {% else %}
-                <a href="{% url 'login' %}" class="btn btn-primary btn-lg mb-2 w-100">Sign In</a>
-                <span class="d-block my-2">OR</span>
-                <a href="{% url 'users-register' %}" class="btn btn-primary btn-lg w-100">Register</a>
+      <div class="col-lg-6 text-center px-4">
+        <h3 class="fw-bold mb-3">Sponsorship & Donor Management Software (SDMS)</h3>
+        <hr class="my-4" style="height: 5px; background-color: #008080;" />
+        {% if user.is_authenticated %}
+          <a href="{% url 'main-dashboard' %}" class="btn btn-lg px-5 py-3 text-white" style="background: linear-gradient(135deg, #127D61, #1A9C78); 
+          border-radius: 10px; 
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); 
+          transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">Get Started</a>
+        {% else %}
+          <a href="{% url 'login' %}" class="btn btn-primary btn-lg w-100 mb-2">Sign In</a>
+          <span class="d-block my-2">OR</span>
+          <a href="{% url 'users-register' %}" class="btn btn-outline-primary btn-lg w-100">Register</a>
+        {% endif %}
+        <hr class="my-4" style="height: 5px; background-color: #008080;" />
+        <div class="welcome-message">
+          <p>
+            Dear <span style="color:#F79420;">
+              {{ user.username.title|default:'Guest' }}
+              {% if user.profile.role %}
+                <small class="text-muted">({{ user.profile.get_role_display }})</small>
               {% endif %}
-              <hr class="my-4" style="height: 5px; background-color: #008080;" />
-
-              <!-- Welcome Message -->
-              <div class="welcome-message">
-                <p>
-                  Dear <span style="color:#F79420;">
-                    {{ user.username.title|default:'Guest' }}
-                    {% if user.profile.role %}
-                      <small class="text-muted">({{ user.profile.get_role_display }})</small>
-                    {% endif %}
-                  </span>, Welcome to SDMS{% if not user.is_authenticated %}
-                    | You must be a registered user to use this tool.
-                  {% endif %}
-                </p>
-              </div>
-            </div>
-          </div>
+            </span>, Welcome to SDMS{% if not user.is_authenticated %} | You must be a registered user to use this tool.{% endif %}
+          </p>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Features Section -->
+  <div class="container-fluid py-5">
+    <h2 class="fw-bold text-success mb-5 text-center">Why Choose SDMS?</h2>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+      <div class="col">
+        <div class="bg-primary-subtle border-start border-4 border-primary rounded-4 shadow-sm p-4 h-100">
+          <div class="mb-3 display-6 text-primary">⚙️</div>
+          <h5 class="fw-semibold mb-2">Efficient Management</h5>
+          <p class="text-muted">Streamline donor and sponsorship data with our intuitive, user-friendly interface.</p>
+        </div>
+      </div>
+      <div class="col">
+        <div class="bg-success-subtle border-start border-4 border-success rounded-4 shadow-sm p-4 h-100">
+          <div class="mb-3 display-6 text-success">🛡️</div>
+          <h5 class="fw-semibold mb-2">Secure & Reliable</h5>
+          <p class="text-muted">Safeguard your data with advanced security and dependable infrastructure.</p>
+        </div>
+      </div>
+      <div class="col">
+        <div class="bg-warning-subtle border-start border-4 border-warning rounded-4 shadow-sm p-4 h-100">
+          <div class="mb-3 display-6 text-warning">📊</div>
+          <h5 class="fw-semibold mb-2">Real-Time Insights</h5>
+          <p class="text-muted">Empower decisions with actionable insights from real-time analytics.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Call to Action Section -->
+  <section class="text-white py-5 mb-5 text-center" style="background: linear-gradient(to right, #198754, #0d6efd); border-radius: 12px;">
+    <div class="container-fluid">
+      <h2 class="display-6 fw-bold mb-3">Ready to Transform Your Donor Management?</h2>
+      <p class="lead mb-4">Join thousands of organizations worldwide revolutionizing their operations with SDMS.</p>
+      <a href="https://perpetual-web-vert.vercel.app/contact/" target="_blank" class="btn btn-warning btn-lg px-5 py-3 rounded-pill fw-bold text-white">CONTACT US NOW</a>
+    </div>
+  </section>
 {% endblock %}
