@@ -19,20 +19,24 @@
         {% if due_loans %}
           <p class="mb-3">
             <strong>Total Loans: {{ due_loans_count|intcomma }}</strong> |
-            <strong>Total Amount Due: UgX {{ due_loans_total_amount|floatformat:'2'|intcomma }}</strong> |
+            <strong>Total Monthly Installment: UgX {{ due_loans_total_amount|floatformat:'2'|intcomma }}</strong> |
+            <strong>Total Amount Due Balance: UgX {{ due_loans_total_due_balance|floatformat:'2'|intcomma }}</strong> |
             <strong>Total Outstanding Balance: UgX {{ due_loans_total_balance|floatformat:'2'|intcomma }}</strong>
           </p>
           <div class="table-responsive">
             <table class="my-table" id="dataTable">
               <thead class="table-light">
                 <tr>
+                  <th>#</th>
                   <th>Loan ID</th>
                   <th>Borrower</th>
                   <th class="text-end">Principal</th>
                   <th>Rate(%)</th>
                   <th>Period</th>
                   <th>Disbursed On</th>
-                  <th class="text-end">Total Amount Due</th>
+                  <th>Maturity Due Date</th>
+                  <th class="text-end">Monthly Installment</th>
+                  <th class="text-end">Total Amount Due Balance</th>
                   <th class="text-end">Principal Balance</th>
                   <th class="text-end">Interest Balance</th>
                   <th class="text-end">Total Balance</th>
@@ -41,13 +45,16 @@
               <tbody>
                 {% for item in due_loans %}
                   <tr>
+                    <td>{{ forloop.counter }}</td>
                     <td>{{ item.loan.id }}</td>
                     <td>{{ item.loan.borrower.full_name }}</td>
                     <td class="text-end">{{ item.loan.principal_amount|floatformat:'2'|intcomma }}</td>
                     <td>{{ item.loan.interest_rate }}</td>
                     <td>{{ item.loan.loan_period_months }}</td>
                     <td>{{ item.disbursement_date|date:'d/m/Y' }}</td>
+                    <td>{{ item.maturity_due_date|date:'d/m/Y' }}</td>
                     <td class="text-end">{{ item.total_amount_due|floatformat:'2'|intcomma }}</td>
+                    <td class="text-end">{{ item.total_amount_due_balance|floatformat:'2'|intcomma }}</td>
                     <td class="text-end">{{ item.principal_balance|floatformat:'2'|intcomma }}</td>
                     <td class="text-end">{{ item.interest_balance|floatformat:'2'|intcomma }}</td>
                     <td class="text-end">{{ item.total_balance|floatformat:'2'|intcomma }}</td>
@@ -64,14 +71,15 @@
         <h2 class="h5 mb-3 mt-4">Overdue Loans</h2>
         {% if overdue_loans %}
           <p class="mb-3">
-            <strong>Total Loans: {{ overdue_loans_count|intcomma }}</strong> |
-            <strong>Total Amount Due: UgX {{ overdue_loans_total_amount|floatformat:'2'|intcomma }}</strong> |
+            <strong>Total Loans: {{ overdue_loans_count|intcomma }}</strong> |{% comment %} <strong>Total Monthly Installment Balance: UgX {{ overdue_loans_total_amount|floatformat:'2'|intcomma }}</strong> |{% endcomment %}
+            <strong>Total Amount Due Balance: UgX {{ overdue_loans_total_due_balance|floatformat:'2'|intcomma }}</strong> |
             <strong>Total Outstanding Balance: UgX {{ overdue_loans_total_balance|floatformat:'2'|intcomma }}</strong>
           </p>
           <div class="table-responsive">
             <table class="my-table" id="dataTable">
               <thead class="table-light">
                 <tr>
+                  <th>#</th>
                   <th>Loan ID</th>
                   <th>Borrower</th>
                   <th class="text-end">Principal</th>
@@ -79,7 +87,8 @@
                   <th>Period</th>
                   <th>Disbursed On</th>
                   <th>Maturity Due Date</th>
-                  <th class="text-end">Total Amount Due</th>
+                  {% comment %} <th class="text-end">Monthly Installment Balance</th> {% endcomment %}
+                  <th class="text-end">Total Amount Due Balance</th>
                   <th class="text-end">Principal Balance</th>
                   <th class="text-end">Interest Balance</th>
                   <th class="text-end">Total Balance</th>
@@ -88,14 +97,16 @@
               <tbody>
                 {% for item in overdue_loans %}
                   <tr>
+                    <td>{{ forloop.counter }}</td>
                     <td>{{ item.loan.id }}</td>
                     <td>{{ item.loan.borrower.full_name }}</td>
                     <td class="text-end">{{ item.loan.principal_amount|floatformat:'2'|intcomma }}</td>
                     <td>{{ item.loan.interest_rate }}</td>
                     <td>{{ item.loan.loan_period_months }}</td>
                     <td>{{ item.disbursement_date|date:'d/m/Y' }}</td>
-                    <td class="text-danger">{{ item.loan.due_date|date:'d/m/Y' }}</td>
-                    <td class="text-end">{{ item.total_amount_due|floatformat:'2'|intcomma }}</td>
+                    <td class="text-danger">{{ item.maturity_due_date|date:'d/m/Y' }}</td>
+                    {% comment %} <td class="text-end">{{ item.total_amount_due|floatformat:'2'|intcomma }}</td> {% endcomment %}
+                    <td class="text-end">{{ item.total_amount_due_balance|floatformat:'2'|intcomma }}</td>
                     <td class="text-end">{{ item.principal_balance|floatformat:'2'|intcomma }}</td>
                     <td class="text-end">{{ item.interest_balance|floatformat:'2'|intcomma }}</td>
                     <td class="text-end">{{ item.total_balance|floatformat:'2'|intcomma }}</td>

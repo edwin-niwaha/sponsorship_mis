@@ -9,17 +9,33 @@
       <button onclick="printDiv('printMe')" class="btn btn-success"><i class="bi bi-printer me-2"></i>Print</button>
     </div>
 
+    <!-- Date Selection Form -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <form method="GET" action="{% url 'loans:due_overdue_report' %}">
+          <div class="row">
+            <div class="col-md-4">
+              <label for="selected_date" class="form-label">Select Date</label>
+              <input type="date" name="selected_date" id="selected_date" class="form-control" value="{{ selected_date|date:'Y-m-d' }}" required />
+            </div>
+            <div class="col-md-2 align-self-end">
+              <button type="submit" class="btn btn-primary">Filter</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <div id="printMe" class="card">
       <div class="card-header bg-secondary text-white">
-        <h1 class="h4 mb-0">Loan Due and Overdue Report - {{ today|date:'d/m/Y' }}</h1>
+        <h1 class="h4 mb-0">Loan Due and Overdue Report - {{ selected_date|date:'d/m/Y' }}</h1>
       </div>
       <div class="card-body">
         <!-- Due Loans -->
-        <h2 class="h5 mb-3">Loans Due Today</h2>
+        <h2 class="h5 mb-3">Loans Due on {{ selected_date|date:'d/m/Y' }}</h2>
         {% if due_loans %}
           <p class="mb-3">
-            <strong>Total Loans: {{ due_loans_count|intcomma }}</strong> |
-            <strong>Total Monthly Installment: UgX {{ due_loans_total_amount|floatformat:'2'|intcomma }}</strong> |
+            <strong>Total Loans: {{ due_loans_count|intcomma }}</strong> |{% comment %} <strong>Total Monthly Installment: UgX {{ due_loans_total_amount|floatformat:'2'|intcomma }}</strong> |{% endcomment %}
             <strong>Total Amount Due Balance: UgX {{ due_loans_total_due_balance|floatformat:'2'|intcomma }}</strong> |
             <strong>Total Outstanding Balance: UgX {{ due_loans_total_balance|floatformat:'2'|intcomma }}</strong>
           </p>
@@ -35,7 +51,7 @@
                   <th>Period</th>
                   <th>Disbursed On</th>
                   <th>Maturity Due Date</th>
-                  <th class="text-end">Monthly Installment</th>
+                  {% comment %} <th class="text-end">Monthly Installment</th> {% endcomment %}
                   <th class="text-end">Total Amount Due Balance</th>
                   <th class="text-end">Principal Balance</th>
                   <th class="text-end">Interest Balance</th>
@@ -53,7 +69,7 @@
                     <td>{{ item.loan.loan_period_months }}</td>
                     <td>{{ item.disbursement_date|date:'d/m/Y' }}</td>
                     <td>{{ item.maturity_due_date|date:'d/m/Y' }}</td>
-                    <td class="text-end">{{ item.total_amount_due|floatformat:'2'|intcomma }}</td>
+                    {% comment %} <td class="text-end">{{ item.total_amount_due|floatformat:'2'|intcomma }}</td> {% endcomment %}
                     <td class="text-end">{{ item.total_amount_due_balance|floatformat:'2'|intcomma }}</td>
                     <td class="text-end">{{ item.principal_balance|floatformat:'2'|intcomma }}</td>
                     <td class="text-end">{{ item.interest_balance|floatformat:'2'|intcomma }}</td>
@@ -64,15 +80,14 @@
             </table>
           </div>
         {% else %}
-          <p class="text-muted">No installments due today ({{ today|date:'d/m/Y' }}).</p>
+          <p class="text-muted">No installments due on {{ selected_date|date:'d/m/Y' }}.</p>
         {% endif %}
 
         <!-- Overdue Loans -->
-        <h2 class="h5 mb-3 mt-4">Overdue Loans</h2>
+        <h2 class="h5 mb-3 mt-4">Overdue Loans as of {{ selected_date|date:'d/m/Y' }}</h2>
         {% if overdue_loans %}
           <p class="mb-3">
             <strong>Total Loans: {{ overdue_loans_count|intcomma }}</strong> |
-            <strong>Total Monthly Installment Balance: UgX {{ overdue_loans_total_amount|floatformat:'2'|intcomma }}</strong> |
             <strong>Total Amount Due Balance: UgX {{ overdue_loans_total_due_balance|floatformat:'2'|intcomma }}</strong> |
             <strong>Total Outstanding Balance: UgX {{ overdue_loans_total_balance|floatformat:'2'|intcomma }}</strong>
           </p>
@@ -88,7 +103,6 @@
                   <th>Period</th>
                   <th>Disbursed On</th>
                   <th>Maturity Due Date</th>
-                  <th class="text-end">Monthly Installment Balance</th>
                   <th class="text-end">Total Amount Due Balance</th>
                   <th class="text-end">Principal Balance</th>
                   <th class="text-end">Interest Balance</th>
@@ -106,7 +120,6 @@
                     <td>{{ item.loan.loan_period_months }}</td>
                     <td>{{ item.disbursement_date|date:'d/m/Y' }}</td>
                     <td class="text-danger">{{ item.maturity_due_date|date:'d/m/Y' }}</td>
-                    <td class="text-end">{{ item.total_amount_due|floatformat:'2'|intcomma }}</td>
                     <td class="text-end">{{ item.total_amount_due_balance|floatformat:'2'|intcomma }}</td>
                     <td class="text-end">{{ item.principal_balance|floatformat:'2'|intcomma }}</td>
                     <td class="text-end">{{ item.interest_balance|floatformat:'2'|intcomma }}</td>
@@ -117,7 +130,7 @@
             </table>
           </div>
         {% else %}
-          <p class="text-muted">No overdue loans found as of {{ today|date:'d/m/Y' }}.</p>
+          <p class="text-muted">No overdue loans found as of {{ selected_date|date:'d/m/Y' }}.</p>
         {% endif %}
       </div>
     </div>
