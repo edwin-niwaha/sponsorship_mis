@@ -21,13 +21,13 @@ DEBUG = False
 
 # Base domain and site details
 SITE_NAME = "Sponsorship Database"
-BASE_DOMAIN = "sponsorwithpendeza.up.railway.app"
+BASE_DOMAIN = "sponsorwithpendeza.org"
 SITE_URL = f"https://{BASE_DOMAIN}"
 
 # Allowed hosts and trusted origins
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", BASE_DOMAIN]
 CSRF_TRUSTED_ORIGINS = [
-    "https://sponsorwithpendeza.up.railway.app",
+    "https://sponsorwithpendeza.org",
     "http://localhost",
     "http://127.0.0.1",
 ]
@@ -228,7 +228,7 @@ LOGIN_REDIRECT_URL = "/"
 LOGIN_URL = "login"
 
 SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = (
-    "https://sponsorwithpendeza.up.railway.app/oauth/complete/google-oauth2/"
+    "https://sponsorwithpendeza.org/oauth/complete/google-oauth2/"
 )
 
 

@@ -458,7 +458,7 @@ class Command(BaseCommand):
 
         today = timezone.now().date()
         loans = Loan.objects.filter(status__in=["disbursed", "overdue"])
-        url = "https://sponsorwithpendeza.up.railway.app/loans/due-overdue-report/"
+        url = "https://sponsorwithpendeza.org/loans/due-overdue-report/"
         due_summary, overdue_summary = [], []
         sent, failed = 0, 0
 

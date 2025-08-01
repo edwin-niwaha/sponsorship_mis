@@ -147,9 +147,9 @@ def send_loan_application_email(
         bool: True if the email was sent successfully, False otherwise.
     """
     applicant_dashboard_url = (
-        "https://sponsorwithpendeza.up.railway.app/loans/applications/"
+        "https://sponsorwithpendeza.org/loans/applications/"
     )
-    officer_review_url = "https://sponsorwithpendeza.up.railway.app/loans/applications/"
+    officer_review_url = "https://sponsorwithpendeza.org/loans/applications/"
     subject = (
         "Your Loan Application Submitted"
         if is_applicant
