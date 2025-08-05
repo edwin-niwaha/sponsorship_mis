@@ -5,7 +5,8 @@ from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-
+import requests
+import uuid
 from apps.child.models import Child
 from apps.sponsor.models import Sponsor
 from apps.staff.models import Staff
@@ -431,3 +432,15 @@ def terminate_staff_sponsorship(request, sponsorship_id):
             return HttpResponseRedirect(reverse("staff_sponsorship_report"))
 
     return HttpResponseBadRequest("Invalid request")
+
+
+# =================================== payment_flutter_view ===================================
+def payment_flutter_view(request):
+    unique_tx_ref = f"txref-{uuid.uuid4()}"  # Generate a unique transaction reference
+    context = {
+        "unique_tx_ref": unique_tx_ref,
+        "public_key": "FLWPUBK_TEST-02b9b5fc6406bd4a41c3ff141cc45e93-X",
+        "currency": "UGX",
+        "form_title": "Secure Flutterwave Payment",
+    }
+    return render(request, "sdms/sponsorship/payment_flutter.html", context)

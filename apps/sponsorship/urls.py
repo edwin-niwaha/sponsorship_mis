@@ -63,4 +63,7 @@ urlpatterns = [
         views.edit_staff_sponsorship,
         name="edit_staff_sponsorship",
     ),
+    path("payment/flutter/", views.payment_flutter_view, name="payment_flutter"),
+    # path("payment/flutter/callback/", views.payment_callback, name="payment-callback"),
+
 ]
