@@ -3,6 +3,7 @@ from django.db import models
 import uuid
 from django.core.validators import MinValueValidator, RegexValidator
 from django.contrib.auth.models import User
+
 # Local App Imports
 from apps.child.models import Child
 from apps.sponsor.models import Sponsor
@@ -92,120 +93,137 @@ class StaffSponsorship(models.Model):
 
 
 # =================================== PAYMENT MODEL ===================================
+# class Payment(models.Model):
+#     STATUS_CHOICES = (
+#         ('pending', 'Pending'),
+#         ('success', 'Success'),
+#         ('failed', 'Failed'),
+#         ('cancelled', 'Cancelled'),
+#     )
+
+#     PAYMENT_METHOD_CHOICES = (
+#         ('card', 'Card'),
+#         ('mobilemoney', 'Mobile Money'),
+#         ('ussd', 'USSD'),
+#         ('banktransfer', 'Bank Transfer'),
+#     )
+
+#     transaction_id = models.UUIDField(
+#         default=uuid.uuid4,
+#         editable=False,
+#         unique=True,
+#         help_text="Unique internal transaction ID"
+#     )
+#     user = models.ForeignKey(
+#         User,
+#         on_delete=models.CASCADE,
+#         null=True,
+#         blank=True,
+#         help_text="Associated user, if authenticated"
+#     )
+#     amount = models.DecimalField(
+#         max_digits=10,
+#         decimal_places=2,
+#         validators=[MinValueValidator(0.01)],
+#         help_text="Payment amount in the specified currency"
+#     )
+#     currency = models.CharField(
+#         max_length=3,
+#         default='UGX',
+#         validators=[
+#             RegexValidator(
+#                 regex='^(UGX|NGN|USD|KES|GHS|ZAR)$',
+#                 message="Currency must be one of: UGX, NGN, USD, KES, GHS, ZAR"
+#             )
+#         ],
+#         help_text="Currency code (e.g., UGX, USD)"
+#     )
+#     status = models.CharField(
+#         max_length=20,
+#         choices=STATUS_CHOICES,
+#         default='pending',
+#         help_text="Current status of the payment"
+#     )
+#     customer_name = models.CharField(
+#         max_length=200,
+#         validators=[
+#             RegexValidator(
+#                 regex=r'^[\w\s\-\.]+$',
+#                 message="Name can only contain letters, numbers, spaces, hyphens, and periods"
+#             )
+#         ],
+#         help_text="Customer's full name"
+#     )
+#     customer_email = models.EmailField(
+#         help_text="Customer's email address"
+#     )
+#     transaction_ref = models.CharField(
+#         max_length=100,
+#         unique=True,
+#         help_text="Unique Flutterwave transaction reference"
+#     )
+#     flutterwave_transaction_id = models.CharField(
+#         max_length=100,
+#         null=True,
+#         blank=True,
+#         help_text="Flutterwave's transaction ID"
+#     )
+#     payment_method = models.CharField(
+#         max_length=20,
+#         choices=PAYMENT_METHOD_CHOICES,
+#         null=True,
+#         blank=True,
+#         help_text="Payment method used"
+#     )
+#     created_at = models.DateTimeField(
+#         auto_now_add=True,
+#         editable=False,
+#         help_text="Timestamp when payment was created"
+#     )
+#     updated_at = models.DateTimeField(
+#         auto_now=True,
+#         help_text="Timestamp of last update"
+#     )
+#     meta = models.JSONField(
+#         null=True,
+#         blank=True,
+#         help_text="Additional metadata from Flutterwave"
+#     )
+
+#     class Meta:
+#         ordering = ['-created_at']
+#         indexes = [
+#             models.Index(fields=['transaction_ref']),
+#             models.Index(fields=['status']),
+#         ]
+#         constraints = [
+#             models.UniqueConstraint(fields=['transaction_ref'], name='unique_transaction_ref')
+#         ]
+
+#     def __str__(self):
+#         return f"{self.customer_name} - {self.amount} {self.currency} ({self.status}) - {self.transaction_ref}"
+
+#     def masked_email(self):
+#         """Return a partially masked email for display purposes."""
+#         if not self.customer_email:
+#             return ""
+#         local, domain = self.customer_email.split('@')
+#         masked_local = local[:2] + '****' + local[-2:] if len(local) > 4 else local
+#         return f"{masked_local}@{domain}"
+
+
 class Payment(models.Model):
-    STATUS_CHOICES = (
-        ('pending', 'Pending'),
-        ('success', 'Success'),
-        ('failed', 'Failed'),
-        ('cancelled', 'Cancelled'),
-    )
-
-    PAYMENT_METHOD_CHOICES = (
-        ('card', 'Card'),
-        ('mobilemoney', 'Mobile Money'),
-        ('ussd', 'USSD'),
-        ('banktransfer', 'Bank Transfer'),
-    )
-
-    transaction_id = models.UUIDField(
-        default=uuid.uuid4,
-        editable=False,
-        unique=True,
-        help_text="Unique internal transaction ID"
-    )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        help_text="Associated user, if authenticated"
+        help_text="Associated user, if authenticated",
     )
-    amount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        validators=[MinValueValidator(0.01)],
-        help_text="Payment amount in the specified currency"
-    )
-    currency = models.CharField(
-        max_length=3,
-        default='UGX',
-        validators=[
-            RegexValidator(
-                regex='^(UGX|NGN|USD|KES|GHS|ZAR)$',
-                message="Currency must be one of: UGX, NGN, USD, KES, GHS, ZAR"
-            )
-        ],
-        help_text="Currency code (e.g., UGX, USD)"
-    )
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='pending',
-        help_text="Current status of the payment"
-    )
-    customer_name = models.CharField(
-        max_length=200,
-        validators=[
-            RegexValidator(
-                regex=r'^[\w\s\-\.]+$',
-                message="Name can only contain letters, numbers, spaces, hyphens, and periods"
-            )
-        ],
-        help_text="Customer's full name"
-    )
-    customer_email = models.EmailField(
-        help_text="Customer's email address"
-    )
-    transaction_ref = models.CharField(
-        max_length=100,
-        unique=True,
-        help_text="Unique Flutterwave transaction reference"
-    )
-    flutterwave_transaction_id = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        help_text="Flutterwave's transaction ID"
-    )
-    payment_method = models.CharField(
-        max_length=20,
-        choices=PAYMENT_METHOD_CHOICES,
-        null=True,
-        blank=True,
-        help_text="Payment method used"
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        editable=False,
-        help_text="Timestamp when payment was created"
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        help_text="Timestamp of last update"
-    )
-    meta = models.JSONField(
-        null=True,
-        blank=True,
-        help_text="Additional metadata from Flutterwave"
-    )
-
-    class Meta:
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['transaction_ref']),
-            models.Index(fields=['status']),
-        ]
-        constraints = [
-            models.UniqueConstraint(fields=['transaction_ref'], name='unique_transaction_ref')
-        ]
-
-    def __str__(self):
-        return f"{self.customer_name} - {self.amount} {self.currency} ({self.status}) - {self.transaction_ref}"
-
-    def masked_email(self):
-        """Return a partially masked email for display purposes."""
-        if not self.customer_email:
-            return ""
-        local, domain = self.customer_email.split('@')
-        masked_local = local[:2] + '****' + local[-2:] if len(local) > 4 else local
-        return f"{masked_local}@{domain}"
+    email = models.EmailField()
+    first_name = models.CharField(max_length=20, blank=True, null=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    reference = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+    status = models.CharField(max_length=20, default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

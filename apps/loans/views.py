@@ -146,9 +146,7 @@ def send_loan_application_email(
     Returns:
         bool: True if the email was sent successfully, False otherwise.
     """
-    applicant_dashboard_url = (
-        "https://sponsorwithpendeza.org/loans/applications/"
-    )
+    applicant_dashboard_url = "https://sponsorwithpendeza.org/loans/applications/"
     officer_review_url = "https://sponsorwithpendeza.org/loans/applications/"
     subject = (
         "Your Loan Application Submitted"
@@ -1824,6 +1822,7 @@ def client_loan_statement(request):
 
 # =================================== loan_due_overdue_report view===================================
 
+
 @login_required
 @admin_or_manager_or_staff_required
 def loan_due_overdue_report(request):
@@ -1833,12 +1832,14 @@ def loan_due_overdue_report(request):
         timezone.activate(pytz.UTC)
 
     # Get selected date from GET parameters or default to today
-    selected_date_str = request.GET.get('selected_date')
+    selected_date_str = request.GET.get("selected_date")
     if selected_date_str:
         try:
-            selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+            selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
         except ValueError:
-            logger.warning(f"Invalid date format for selected_date: {selected_date_str}")
+            logger.warning(
+                f"Invalid date format for selected_date: {selected_date_str}"
+            )
             selected_date = timezone.now().date()
     else:
         selected_date = timezone.now().date()
@@ -1886,7 +1887,9 @@ def loan_due_overdue_report(request):
             if not loan.disbursement_date or loan.loan_period_months <= 0:
                 continue
         except Exception as e:
-            logger.error(f"Error calculating balances or schedule for Loan {loan.id}: {e}")
+            logger.error(
+                f"Error calculating balances or schedule for Loan {loan.id}: {e}"
+            )
             continue
 
         try:

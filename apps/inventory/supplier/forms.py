@@ -27,10 +27,12 @@ class SupplierForm(forms.ModelForm):
             phone_str = str(phone)
             if not phone_str.replace("+", "").isdigit():
                 raise forms.ValidationError("Phone number must contain only digits.")
-            
+
             # Check phone number length
             phone_length = len(phone)
             if phone_length < 8 or phone_length > 15:
-                raise forms.ValidationError("Phone number must be between 8 and 15 characters long.")
+                raise forms.ValidationError(
+                    "Phone number must be between 8 and 15 characters long."
+                )
 
         return cleaned_data  # Don't forget to return cleaned_data!

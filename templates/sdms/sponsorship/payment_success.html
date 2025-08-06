@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Payment Success</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .success {
+        color: green;
+        margin-bottom: 15px;
+      }
+      a {
+        color: #007bff;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Payment Status</h2>
+    {% if message %}
+      <p class="success">{{ message }}</p>
+    {% endif %}
+    <a href="{% url 'initiate_payment' %}">Make Another Payment</a>
+    <br />
+    <a href="/">Return to Home</a>
+  </body>
+</html>

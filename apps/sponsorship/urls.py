@@ -1,5 +1,5 @@
 from django.urls import path
-
+from django.views.decorators.csrf import csrf_exempt
 from . import views
 
 urlpatterns = [
@@ -63,7 +63,10 @@ urlpatterns = [
         views.edit_staff_sponsorship,
         name="edit_staff_sponsorship",
     ),
-    path("payment/flutter/", views.payment_flutter_view, name="payment_flutter"),
-    # path("payment/flutter/callback/", views.payment_callback, name="payment-callback"),
-
+    path(
+        "initiate-payment/",
+        csrf_exempt(views.initiate_payment),
+        name="initiate_payment",
+    ),
+    path("payment/callback/", views.payment_callback, name="payment_callback"),
 ]

@@ -46,7 +46,11 @@ class Supplier(models.Model):
     contact_name = models.CharField(max_length=255, verbose_name="Contact Name")
     email = models.EmailField(verbose_name="Email Address")
     phone = models.CharField(
-        max_length=20, null=True, blank=True, default="+12125552368", verbose_name="Telephone"
+        max_length=20,
+        null=True,
+        blank=True,
+        default="+12125552368",
+        verbose_name="Telephone",
     )
     address = models.CharField(max_length=255, verbose_name="Address")
     created_at = models.DateTimeField(default=timezone.now, verbose_name="Created At")
@@ -70,14 +74,16 @@ class Supplier(models.Model):
     def validate_phone(self):
         if self.phone:
             # Check if phone number starts with '+'
-            if not self.phone.startswith('+'):
+            if not self.phone.startswith("+"):
                 raise ValidationError("Phone number must start with a '+'.")
-            
+
             # Check phone number length
             phone_length = len(self.phone)
             if phone_length < 8 or phone_length > 15:
-                raise ValidationError("Phone number must be between 8 and 15 characters long.")
-            
+                raise ValidationError(
+                    "Phone number must be between 8 and 15 characters long."
+                )
+
             # Validate phone number format
             try:
                 parsed_phone = phonenumbers.parse(self.phone, None)

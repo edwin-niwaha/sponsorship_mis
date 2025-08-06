@@ -1,12 +1,15 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
-from django.http import HttpResponseBadRequest, HttpResponseRedirect
+from django.http import HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 import requests
 import uuid
+import json
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 from apps.child.models import Child
 from apps.sponsor.models import Sponsor
 from apps.staff.models import Staff
@@ -24,6 +27,7 @@ from .forms import (
 from .models import (
     ChildSponsorship,
     StaffSponsorship,
+    Payment,
 )
 
 
@@ -435,12 +439,139 @@ def terminate_staff_sponsorship(request, sponsorship_id):
 
 
 # =================================== payment_flutter_view ===================================
-def payment_flutter_view(request):
-    unique_tx_ref = f"txref-{uuid.uuid4()}"  # Generate a unique transaction reference
-    context = {
-        "unique_tx_ref": unique_tx_ref,
-        "public_key": "FLWPUBK_TEST-02b9b5fc6406bd4a41c3ff141cc45e93-X",
-        "currency": "UGX",
-        "form_title": "Secure Flutterwave Payment",
-    }
-    return render(request, "sdms/sponsorship/payment_flutter.html", context)
+# def payment_flutter_view(request):
+#     unique_tx_ref = f"txref-{uuid.uuid4()}"  # Generate a unique transaction reference
+#     context = {
+#         "unique_tx_ref": unique_tx_ref,
+#         "public_key": "FLWPUBK_TEST-02b9b5fc6406bd4a41c3ff141cc45e93-X",
+#         "currency": "UGX",
+#         "form_title": "Secure Flutterwave Payment",
+#     }
+#     return render(request, "sdms/sponsorship/payment_flutter.html", context)
+
+
+# =================================== Render Payment Form ===================================
+
+
+@login_required
+@csrf_exempt
+def initiate_payment(request):
+    if request.method == "POST":
+        total_amount = request.POST.get("total_amount")
+        email = request.POST.get("email")
+
+        if not total_amount or not email:
+            return render(
+                request,
+                "sdms/sponsorship/payment_flutter.html",
+                {"error": "Please provide both email and amount."},
+            )
+
+        try:
+            total_amount = float(total_amount)
+            if total_amount <= 0:
+                raise ValueError("Amount must be positive")
+        except ValueError:
+            return render(
+                request,
+                "sdms/sponsorship/payment_flutter.html",
+                {"error": "Invalid amount. Please enter a valid number."},
+            )
+
+        reference = str(uuid.uuid4())
+        user = request.user
+
+        flutterwave_url = "https://api.flutterwave.com/v3/payments"
+        secret_key = settings.FLUTTERWAVE_SECRET_KEY
+
+        payload = {
+            "tx_ref": reference,
+            "amount": total_amount,
+            "currency": "UGX",
+            "redirect_url": "http://127.0.0.1:8000/payment/callback",
+            "payment_options": "card,mobilemoneyghana,mpesa,ussd",
+            "customer": {"email": email},
+        }
+
+        headers = {
+            "Authorization": f"Bearer {secret_key}",
+            "Content-Type": "application/json",
+        }
+
+        try:
+            payment = Payment(
+                user=user,
+                email=email,
+                total_amount=total_amount,
+                reference=reference,
+                status="pending",
+            )
+            payment.save()
+
+            response = requests.post(flutterwave_url, json=payload, headers=headers)
+            response_data = response.json()
+
+            if response_data.get("status") == "success" and response_data.get(
+                "data", {}
+            ).get("link"):
+                return HttpResponseRedirect(
+                    response_data["data"]["link"]
+                )  # Redirect to Flutterwave payment link
+            else:
+                payment.status = "failed"
+                payment.save()
+                return render(
+                    request,
+                    "sdms/sponsorship/payment_flutter.html",
+                    {"error": "Payment initiation failed. Please try again."},
+                )
+
+        except requests.exceptions.RequestException:
+            return render(
+                request,
+                "sdms/sponsorship/payment_flutter.html",
+                {"error": "Payment initiation failed due to a network error."},
+            )
+        except ValueError:
+            return render(
+                request,
+                "sdms/sponsorship/payment_flutter.html",
+                {"error": "Payment initiation failed due to invalid response."},
+            )
+
+    elif request.method == "GET":
+        return render(request, "sdms/sponsorship/payment_flutter.html")
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+def payment_callback(request):
+    if request.method == "GET":
+        status = request.GET.get("status")
+        tx_ref = request.GET.get("tx_ref")
+
+        if status == "successful":
+            try:
+                payment = Payment.objects.get(reference=tx_ref)
+                payment.status = "successful"
+                payment.save()
+                return render(
+                    request,
+                    "sdms/sponsorship/payment_success.html",
+                    {"message": "Payment was successful!"},
+                )
+
+            except Payment.DoesNotExist:
+                return render(
+                    request,
+                    "sdms/sponsorship/payment_flutter.html",
+                    {"error": "Payment not found."},
+                )
+
+        return render(
+            request,
+            "sdms/sponsorship/payment_flutter.html",
+            {"error": "Payment failed."},
+        )
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
