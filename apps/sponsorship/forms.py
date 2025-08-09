@@ -93,49 +93,49 @@ class StaffSponsorshipEditForm(BaseSponsorshipEditForm):
 
 
 # =================================== Payment Form for Flutterwave ===================================
-class PaymentForm(forms.Form):
-    customer_name = forms.CharField(
-        max_length=200,
-        required=True,
-        widget=forms.TextInput(
-            attrs={
-                "class": "form-control form-control-lg",
-                "placeholder": "Enter your full name",
-                "style": "border-color: #127D61;",
-            }
-        ),
-        validators=[
-            RegexValidator(
-                regex=r"^[\w\s\-\.]+$",
-                message="Name can only contain letters, numbers, spaces, hyphens, and periods",
-            )
-        ],
-        label="Full Name",
-    )
-    customer_email = forms.EmailField(
-        required=True,
-        widget=forms.EmailInput(
-            attrs={
-                "class": "form-control form-control-lg",
-                "placeholder": "Enter your email",
-                "style": "border-color: #127D61;",
-            }
-        ),
-        label="Email Address",
-    )
-    amount = forms.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        required=True,
-        validators=[MinValueValidator(0.01)],
-        widget=forms.NumberInput(
-            attrs={
-                "class": "form-control form-control-lg",
-                "placeholder": "Enter amount",
-                "min": "0.01",
-                "step": "0.01",
-                "style": "border-color: #127D61;",
-            }
-        ),
-        label="Donation Amount (UGX)",
-    )
+# class PaymentForm(forms.Form):
+#     customer_name = forms.CharField(
+#         max_length=200,
+#         required=True,
+#         widget=forms.TextInput(
+#             attrs={
+#                 "class": "form-control form-control-lg",
+#                 "placeholder": "Enter your full name",
+#                 "style": "border-color: #127D61;",
+#             }
+#         ),
+#         validators=[
+#             RegexValidator(
+#                 regex=r"^[\w\s\-\.]+$",
+#                 message="Name can only contain letters, numbers, spaces, hyphens, and periods",
+#             )
+#         ],
+#         label="Full Name",
+#     )
+#     customer_email = forms.EmailField(
+#         required=True,
+#         widget=forms.EmailInput(
+#             attrs={
+#                 "class": "form-control form-control-lg",
+#                 "placeholder": "Enter your email",
+#                 "style": "border-color: #127D61;",
+#             }
+#         ),
+#         label="Email Address",
+#     )
+#     amount = forms.DecimalField(
+#         max_digits=10,
+#         decimal_places=2,
+#         required=True,
+#         validators=[MinValueValidator(0.01)],
+#         widget=forms.NumberInput(
+#             attrs={
+#                 "class": "form-control form-control-lg",
+#                 "placeholder": "Enter amount",
+#                 "min": "0.01",
+#                 "step": "0.01",
+#                 "style": "border-color: #127D61;",
+#             }
+#         ),
+#         label="Donation Amount (UGX)",
+#     )

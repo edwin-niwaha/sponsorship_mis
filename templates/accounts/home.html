@@ -3,75 +3,109 @@
 
 {% block content %}
   <!-- Hero Section -->
-  <div class="container-fluid py-5">
-    <div class="row align-items-center g-4">
-      <div class="col-md-6 m-auto">
-        <div class="p-4">
-          <img src="{% static 'images/hero.png' %}" class="img-fluid mx-auto" alt="Background Image" />
-        </div>
-      </div>
-      <div class="col-lg-6 text-center px-4">
-        <h3 class="fw-bold mb-3">Sponsorship & Donor Management Software (SDMS)</h3>
-        <hr class="my-4" style="height: 5px; background-color: #008080;" />
+  <div class="container-fluid py-5" style="background: linear-gradient(135deg, #FFFFFF 0%, #f5f7fa 100%);">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6 text-center text-lg-start px-4">
+        <h3 class="display-5 fw-bold mb-3" style="color: #127D61;">Sponsorship & Donor Management Software (SDMS)</h3>
+        <p class="lead mb-4" style="color: #888B8D;">Comprehensive software for sponsor and donor management, inventory tracking, and loan processing – all in one powerful platform designed for efficiency and growth.</p>
         {% if user.is_authenticated %}
-          <a href="{% url 'main-dashboard' %}" class="btn btn-lg px-5 py-3 text-white" style="background: linear-gradient(135deg, #127D61, #1A9C78); 
-          border-radius: 10px; 
-          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); 
-          transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">Get Started</a>
+          <a href="{% url 'main-dashboard' %}" class="btn btn-lg px-5 py-3 text-white shadow-lg" style="background: linear-gradient(135deg, #127D61, #09C998); border-radius: 50px; transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 20px rgba(18, 125, 97, 0.3)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 10px rgba(0, 0, 0, 0.2)';">Get Started</a>
         {% else %}
-          <a href="{% url 'login' %}" class="btn btn-primary btn-lg w-100 mb-2">Sign In</a>
-          <span class="d-block my-2">OR</span>
-          <a href="{% url 'users-register' %}" class="btn btn-outline-primary btn-lg w-100">Register</a>
+          <a href="{% url 'login' %}" class="btn btn-lg px-5 py-3 text-white shadow-lg" style="background: linear-gradient(135deg, #127D61, #09C998); border-radius: 50px; transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 20px rgba(18, 125, 97, 0.3)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 10px rgba(0, 0, 0, 0.2)';">Login Here</a>
         {% endif %}
-        <hr class="my-4" style="height: 5px; background-color: #008080;" />
-        <div class="welcome-message">
-          <p>
-            Dear <span style="color:#F79420;">
-              {{ user.username.title|default:'Guest' }}
-              {% if user.profile.role %}
-                <small class="text-muted">({{ user.profile.get_role_display }})</small>
-              {% endif %}
-            </span>, Welcome to SDMS{% if not user.is_authenticated %} | You must be a registered user to use this tool.{% endif %}
-          </p>
+      </div>
+      <div class="col-lg-6">
+        <div class="p-4">
+          <img src="{% static 'images/hero.png' %}" class="img-fluid mx-auto" alt="Management Software Illustration" style="max-width: 100%; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.02)';" onmouseout="this.style.transform='scale(1)';" />
         </div>
       </div>
     </div>
   </div>
 
   <!-- Features Section -->
-  <div class="container-fluid py-5">
-    <h2 class="fw-bold text-success mb-5 text-center">Why Choose SDMS?</h2>
-    <div class="row row-cols-1 row-cols-md-3 g-4">
+  <div class="container-fluid py-5" style="background: #f8f9fa;">
+    <h2 class="fw-bold mb-5 text-center" style="color: #127D61;">Key Features of SDMS</h2>
+    <div class="row row-cols-1 row-cols-md-4 g-4 px-3">
       <div class="col">
-        <div class="bg-primary-subtle border-start border-4 border-primary rounded-4 shadow-sm p-4 h-100">
-          <div class="mb-3 display-6 text-primary">⚙️</div>
-          <h5 class="fw-semibold mb-2">Efficient Management</h5>
-          <p class="text-muted">Streamline donor and sponsorship data with our intuitive, user-friendly interface.</p>
+        <div class="bg-white border-start border-5 rounded-3 shadow-lg p-4 h-100" style="border-color: #F79420 !important; transition: transform 0.3s ease;" onmouseover="this.style.transform='translateY(-10px)';" onmouseout="this.style.transform='translateY(0)';">
+          <div class="mb-3 display-6" style="color: #F79420;">🤝</div>
+          <h5 class="fw-semibold mb-2" style="color: #127D61;">Sponsor & Donor Management</h5>
+          <p style="color: #888B8D;">Streamline relationships with sponsors and donors through intuitive tracking and engagement tools.</p>
         </div>
       </div>
       <div class="col">
-        <div class="bg-success-subtle border-start border-4 border-success rounded-4 shadow-sm p-4 h-100">
-          <div class="mb-3 display-6 text-success">🛡️</div>
-          <h5 class="fw-semibold mb-2">Secure & Reliable</h5>
-          <p class="text-muted">Safeguard your data with advanced security and dependable infrastructure.</p>
+        <div class="bg-white border-start border-5 rounded-3 shadow-lg p-4 h-100" style="border-color: #09C998 !important; transition: transform 0.3s ease;" onmouseover="this.style.transform='translateY(-10px)';" onmouseout="this.style.transform='translateY(0)';">
+          <div class="mb-3 display-6" style="color: #09C998;">📦</div>
+          <h5 class="fw-semibold mb-2" style="color: #127D61;">Inventory Management</h5>
+          <p style="color: #888B8D;">Efficiently track stock levels, orders, and supplies with real-time updates and alerts.</p>
         </div>
       </div>
       <div class="col">
-        <div class="bg-warning-subtle border-start border-4 border-warning rounded-4 shadow-sm p-4 h-100">
-          <div class="mb-3 display-6 text-warning">📊</div>
-          <h5 class="fw-semibold mb-2">Real-Time Insights</h5>
-          <p class="text-muted">Empower decisions with actionable insights from real-time analytics.</p>
+        <div class="bg-white border-start border-5 rounded-3 shadow-lg p-4 h-100" style="border-color: #F79420 !important; transition: transform 0.3s ease;" onmouseover="this.style.transform='translateY(-10px)';" onmouseout="this.style.transform='translateY(0)';">
+          <div class="mb-3 display-6" style="color: #F79420;">💰</div>
+          <h5 class="fw-semibold mb-2" style="color: #127D61;">Loan Management</h5>
+          <p style="color: #888B8D;">Manage loans seamlessly with automated processing, repayment tracking, and compliance features.</p>
+        </div>
+      </div>
+      <div class="col">
+        <div class="bg-white border-start border-5 rounded-3 shadow-lg p-4 h-100" style="border-color: #09C998 !important; transition: transform 0.3s ease;" onmouseover="this.style.transform='translateY(-10px)';" onmouseout="this.style.transform='translateY(0)';">
+          <div class="mb-3 display-6" style="color: #09C998;">📊</div>
+          <h5 class="fw-semibold mb-2" style="color: #127D61;">Integrated Analytics</h5>
+          <p style="color: #888B8D;">Gain insights across all modules with customizable reports and dashboards.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Benefits Section -->
+  <div class="container-fluid py-5" style="background: linear-gradient(135deg, #FFFFFF 0%, #f8f9fa 100%);">
+    <h2 class="fw-bold mb-5 text-center" style="color: #127D61;">Elevate Your Business Efficiency</h2>
+    <div class="row row-cols-1 row-cols-md-2 g-5 px-4">
+      <div class="col">
+        <div class="d-flex align-items-start p-3 rounded shadow-sm" style="background: #FFFFFF; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.03)';" onmouseout="this.style.transform='scale(1)';">
+          <div class="me-3" style="font-size: 2rem; color: #09C998;">🔄</div>
+          <div>
+            <h5 class="fw-semibold" style="color: #127D61;">Automated Workflows</h5>
+            <p style="color: #888B8D;">Reduce manual efforts in inventory restocking, loan approvals, and donor communications.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="d-flex align-items-start p-3 rounded shadow-sm" style="background: #FFFFFF; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.03)';" onmouseout="this.style.transform='scale(1)';">
+          <div class="me-3" style="font-size: 2rem; color: #F79420;">🛡️</div>
+          <div>
+            <h5 class="fw-semibold" style="color: #127D61;">Secure Data Handling</h5>
+            <p style="color: #888B8D;">Protect sensitive financial and inventory data with advanced security protocols.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="d-flex align-items-start p-3 rounded shadow-sm" style="background: #FFFFFF; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.03)';" onmouseout="this.style.transform='scale(1)';">
+          <div class="me-3" style="font-size: 2rem; color: #09C998;">🌐</div>
+          <div>
+            <h5 class="fw-semibold" style="color: #127D61;">Scalable Solutions</h5>
+            <p style="color: #888B8D;">Grow your operations with a system that adapts to your needs, from small teams to enterprises.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="d-flex align-items-start p-3 rounded shadow-sm" style="background: #FFFFFF; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.03)';" onmouseout="this.style.transform='scale(1)';">
+          <div class="me-3" style="font-size: 2rem; color: #F79420;">📈</div>
+          <div>
+            <h5 class="fw-semibold" style="color: #127D61;">Real-Time Insights</h5>
+            <p style="color: #888B8D;">Monitor inventory turnover, loan performance, and donor trends in one unified view.</p>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Call to Action Section -->
-  <section class="text-white py-5 mb-5 text-center" style="background: linear-gradient(to right, #198754, #0d6efd); border-radius: 12px;">
+  <section class="text-white py-5 mb-5 text-center rounded-3 mx-3 mx-md-0" style="background: linear-gradient(to right, #127D61, #09C998); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);">
     <div class="container-fluid">
-      <h2 class="display-6 fw-bold mb-3">Ready to Transform Your Donor Management?</h2>
-      <p class="lead mb-4">Join thousands of organizations worldwide revolutionizing their operations with SDMS.</p>
-      <a href="https://perpetual-web-vert.vercel.app/contact/" target="_blank" class="btn btn-warning btn-lg px-5 py-3 rounded-pill fw-bold text-white">CONTACT US NOW</a>
+      <h2 class="display-6 fw-bold mb-3">Ready to Streamline Your Management Processes?</h2>
+      <p class="lead mb-4">Discover how SDMS can transform your inventory, loans, sponsors, and donors management.</p>
+      <a href="https://perpetual-web-vert.vercel.app/contact/" target="_blank" class="btn btn-lg px-5 py-3 rounded-pill fw-bold shadow-lg" style="background-color: #F79420; color: #FFFFFF; transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'; this.style.backgroundColor='#e6830f';" onmouseout="this.style.transform='scale(1)'; this.style.backgroundColor='#F79420';">Get in Touch</a>
     </div>
   </section>
 {% endblock %}
