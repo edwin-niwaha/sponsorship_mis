@@ -66,9 +66,10 @@
                     </div>
 
                     <!-- Outstanding Balances -->
+                    <!-- Outstanding Balances -->
                     <div class="mb-8 bg-gray-50 p-6 rounded-lg">
                         <h3 class="text-lg font-medium text-gray-700 mb-4">Outstanding Balances</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                             <div class="text-center">
                                 <p class="text-sm text-gray-500">Principal Balance</p>
                                 <p class="text-xl font-bold text-gray-900">{{ loan_data.principal_balance|floatformat:'2'|intcomma }}</p>
@@ -78,11 +79,16 @@
                                 <p class="text-xl font-bold text-gray-900">{{ loan_data.interest_balance|floatformat:'2'|intcomma }}</p>
                             </div>
                             <div class="text-center">
+                                <p class="text-sm text-gray-500">Penalty Balance</p>
+                                <p class="text-xl font-bold text-gray-900">{{ loan_data.penalty_balance|floatformat:'2'|intcomma }}</p>
+                            </div>
+                            <div class="text-center">
                                 <p class="text-sm text-gray-500">Total Balance</p>
                                 <p class="text-xl font-bold text-red-600">{{ loan_data.total_balance|floatformat:'2'|intcomma }}</p>
                             </div>
                         </div>
                     </div>
+
 
                     <!-- Loan Details -->
                     <div class="mb-8">

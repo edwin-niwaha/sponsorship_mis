@@ -9,8 +9,10 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Sum
 from django.utils import timezone
+from django.db import transaction
 
 from apps.client.models import Client
+
 
 PAYMENT_METHOD_CHOICES = [
     ("bank_transfer", "Bank Transfer"),
@@ -331,29 +333,36 @@ class Loan(models.Model):
         total_repaid = self.repayments.aggregate(total=Sum("principal_payment"))[
             "total"
         ] or Decimal("0.00")
-
         # Get total interest paid from repayments
         total_interest_paid = self.repayments.aggregate(total=Sum("interest_payment"))[
             "total"
         ] or Decimal("0.00")
+        total_penalty_paid = self.repayments.aggregate(total=Sum("penalty_payment"))["total"] or Decimal("0.00")
 
         # Calculate remaining balances
         principal_balance = max(self.principal_amount - total_repaid, Decimal("0.00"))
         interest_balance = max(
             self.total_interest - total_interest_paid, Decimal("0.00")
         )
+        penalty_balance = max(
+            self.penalties.filter(is_paid=False).aggregate(total=Sum("penalty_amount"))["total"] or Decimal("0.00"),
+            Decimal("0.00")
+        )
 
         return {
             "principal_balance": principal_balance,
             "interest_balance": interest_balance,
+            "penalty_balance": penalty_balance,
+
         }
+
 
     def update_status(self):
         """Update loan status based on current status, balance, and due date."""
         # Calculate total remaining balance
         balances = self.calculate_remaining_balances()
         total_remaining_balance = (
-            balances["principal_balance"] + balances["interest_balance"]
+            balances["principal_balance"] + balances["interest_balance"] + balances["penalty_balance"]
         )
 
         # Status transitions based on remaining balance, due date, and current status
@@ -421,21 +430,26 @@ class Loan(models.Model):
         }
 
     def calculate_total_amount_due_balance(self, due_date, total_amount_due):
-
         # Get repayments made on or before the due date
         repayments = self.repayments.filter(repayment_date__lte=due_date).aggregate(
             total_principal=Sum("principal_payment"),
             total_interest=Sum("interest_payment"),
+            total_penalty=Sum("penalty_payment"),
         )
 
         total_principal_paid = repayments["total_principal"] or Decimal("0.00")
         total_interest_paid = repayments["total_interest"] or Decimal("0.00")
-        total_paid = total_principal_paid + total_interest_paid
+        total_penalty_paid = repayments["total_penalty"] or Decimal("0.00")
+        total_paid = total_principal_paid + total_interest_paid + total_penalty_paid
 
         # Calculate remaining due balance
-        remaining_due_balance = max(total_amount_due - total_paid, Decimal("0.00"))
+        total_penalty = self.penalties.filter(
+            penalty_date__lte=due_date, is_paid=False
+        ).aggregate(total=Sum("penalty_amount"))["total"] or Decimal("0.00")
 
+        remaining_due_balance = max(total_amount_due + total_penalty - total_paid, Decimal("0.00"))
         return remaining_due_balance.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+
 
 
 # =================================== LoanDisbursement Model ===================================
@@ -596,6 +610,12 @@ class LoanRepayment(models.Model):
     interest_payment = models.DecimalField(
         max_digits=15, decimal_places=2, default=Decimal("0.00")
     )
+    penalty_payment = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Penalty Payment",
+    )
     account = models.ForeignKey(
         ChartOfAccounts, on_delete=models.CASCADE, related_name="repayments"
     )
@@ -605,8 +625,7 @@ class LoanRepayment(models.Model):
 
     @property
     def total_payment(self):
-        """Calculate the total payment amount (principal + interest)."""
-        return self.principal_payment + self.interest_payment
+        return self.principal_payment + self.interest_payment + self.penalty_payment
 
     class Meta:
         db_table = "loan_repayments"
@@ -615,21 +634,18 @@ class LoanRepayment(models.Model):
         ordering = ["-repayment_date"]
 
     def clean(self):
-        """Validate repayment amount and ensure it does not exceed total loan balance."""
         if not self.loan:
             raise ValidationError("Please select a loan.")
 
-        # Calculate remaining balances
         balances = self.loan.calculate_remaining_balances()
-        remaining_principal = balances[
-            "principal_balance"
-        ]  # Adjusted based on your method's return structure
-        remaining_interest = balances[
-            "interest_balance"
-        ]  # Adjusted based on your method's return structure
+        remaining_principal = balances["principal_balance"]
+        remaining_interest = balances["interest_balance"]
+        remaining_penalty = balances["penalty_balance"]
 
-        total_balance = remaining_principal + remaining_interest
-        total_payment = self.principal_payment + self.interest_payment
+        total_balance = remaining_principal + remaining_interest + remaining_penalty
+        total_payment = (
+            self.principal_payment + self.interest_payment + self.penalty_payment
+        )
 
         if total_payment > total_balance:
             raise ValidationError(
@@ -646,27 +662,32 @@ class LoanRepayment(models.Model):
                 f"Interest payment of {self.interest_payment:,.2f} exceeds remaining interest balance of {remaining_interest:,.2f}."
             )
 
-    def save(self, *args, **kwargs):
-        """Override save method to perform validation and balance update."""
-        self.full_clean()  # Ensure all validations are run
-        super().save(*args, **kwargs)  # Call the parent's save method
-        self.create_transaction_entries()  # Record transactions
+        if self.penalty_payment > remaining_penalty:
+            raise ValidationError(
+                f"Penalty payment of {self.penalty_payment:,.2f} exceeds remaining penalty balance of {remaining_penalty:,.2f}."
+            )
 
-        # Update the associated loan's status after saving the repayment
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+        self.create_transaction_entries()
         if self.loan:
             self.loan.update_status()
 
     def create_transaction_entries(self):
-        """Create entries for the repayment, including interest receivable if applicable."""
-        # Create a transaction for the loan repayment
         self.create_transaction(
-            self.account, "debit", self.total_payment, self.description
+            self.account,
+            "debit",
+            self.principal_payment + self.interest_payment + self.penalty_payment,
+            self.description,
         )
         self.create_transaction(
-            self.loan.account, "credit", self.total_payment, self.description
+            self.loan.account,
+            "credit",
+            self.principal_payment + self.interest_payment,
+            self.description,
         )
 
-        # Handle interest payment if applicable
         if self.interest_payment > 0:
             interest_receivable_account = self.get_interest_receivable_account()
             self.create_transaction(
@@ -676,12 +697,18 @@ class LoanRepayment(models.Model):
                 description=f"Interest received for Loan {self.loan.id}",
             )
 
-    def get_interest_receivable_account(self):
-        """Retrieve the interest receivable account, or raise an error if not found."""
-        return ChartOfAccounts.objects.get(account_number="1060")
+        if self.penalty_payment > 0:
+            penalty_receivable_account = self.get_penalty_receivable_account()
+            self.create_transaction(
+                account=penalty_receivable_account,
+                transaction_type="credit",
+                amount=self.penalty_payment,
+                description=f"Penalty payment for Loan {self.loan.id}",
+            )
+            self.mark_penalties_paid()
 
     def create_transaction(self, account, transaction_type, amount, description):
-        """Helper to create a transaction entry."""
+        """Helper to create a transaction entry for the repayment."""
         TransactionHistory.objects.create(
             loan=self.loan,
             transaction_date=self.repayment_date,
@@ -691,5 +718,131 @@ class LoanRepayment(models.Model):
             description=description,
         )
 
+    def get_interest_receivable_account(self):
+        return ChartOfAccounts.objects.get(account_number="1060")
+
+    def get_penalty_receivable_account(self):
+        return ChartOfAccounts.objects.get(account_number="1071")
+
+    def mark_penalties_paid(self):
+        remaining_payment = self.penalty_payment
+        unpaid_penalties = self.loan.penalties.filter(is_paid=False).order_by(
+            "penalty_date"
+        )
+
+        for penalty in unpaid_penalties:
+            if remaining_payment >= penalty.penalty_amount:
+                penalty.is_paid = True
+                penalty.save()
+                remaining_payment -= penalty.penalty_amount
+            else:
+                break
+
     def __str__(self):
         return f"Repayment for Loan {self.loan.id} on {self.repayment_date} - Total Payment: {self.total_payment}"
+
+
+# =================================== LoanPenalty Model ===================================
+
+class LoanPenalty(models.Model):
+    loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name="penalties")
+    penalty_date = models.DateField(default=timezone.now, verbose_name="Penalty Date")
+    penalty_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, verbose_name="Penalty Amount"
+    )
+    remaining_amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        verbose_name="Remaining Penalty Amount",
+        default=Decimal("0.00"),
+    )
+    reason = models.CharField(max_length=255, verbose_name="Penalty Reason")
+    is_paid = models.BooleanField(default=False, verbose_name="Is Paid")
+    account = models.ForeignKey(
+        ChartOfAccounts,
+        on_delete=models.CASCADE,
+        related_name="penalties",
+        verbose_name="Penalty Account",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="penalties_created",
+        verbose_name="Created By",
+    )
+
+    class Meta:
+        db_table = "loan_penalties"
+        verbose_name = "Loan Penalty"
+        verbose_name_plural = "Loan Penalties"
+        ordering = ["-penalty_date"]
+
+    def clean(self):
+        if self.penalty_amount <= 0:
+            raise ValidationError("Penalty amount must be positive.")
+        if self.remaining_amount is None or self.remaining_amount < 0:
+            raise ValidationError("Remaining penalty amount cannot be negative or null.")
+
+    def save(self, *args, **kwargs):
+        # Set remaining_amount for new penalties
+        if not self.pk and not self.remaining_amount:
+            self.remaining_amount = self.penalty_amount
+
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+        if not self.is_paid:
+            self.create_transaction_entries()
+        self.loan.update_status()
+
+    def apply_payment(self, payment_amount):
+        """Apply a payment to this penalty and update its status."""
+        if payment_amount <= 0:
+            raise ValidationError("Payment amount must be positive.")
+
+        with transaction.atomic():
+            self.remaining_amount -= payment_amount
+            if self.remaining_amount <= 0:
+                self.remaining_amount = Decimal("0.00")
+                self.is_paid = True
+            self.save()
+
+    def create_transaction_entries(self):
+        """Create the debit and credit transactions for this penalty."""
+        # Debit the Penalty Receivable Account (1071)
+        self.create_transaction(
+            account=self.account,
+            transaction_type="debit",
+            amount=self.penalty_amount,
+            description=f"Penalty for Loan {self.loan.id}: {self.reason}",
+        )
+
+        # Credit the Loan Interest Income Account (5030)
+        try:
+            interest_income_account = ChartOfAccounts.objects.get(account_number="5030")
+        except ChartOfAccounts.DoesNotExist:
+            raise ValidationError("Loan Interest Income account (5030) does not exist.")
+
+        self.create_transaction(
+            account=interest_income_account,
+            transaction_type="credit",
+            amount=self.penalty_amount,
+            description=f"Penalty income for Loan {self.loan.id}: {self.reason}",
+        )
+
+    def create_transaction(self, account, transaction_type, amount, description):
+        TransactionHistory.objects.create(
+            loan=self.loan,
+            transaction_date=self.penalty_date,
+            amount=amount,
+            transaction_type=transaction_type,
+            account=account,
+            description=description,
+        )
+
+    def __str__(self):
+        return f"Penalty {self.id} for Loan {self.loan.id} - {self.penalty_amount}"

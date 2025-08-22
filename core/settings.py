@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "django_select2",
     "cloudinary",
+    "rest_framework",
     # =================================== PROJECT APPLICATIONS ===================================
     "apps.users",
     "apps.child",

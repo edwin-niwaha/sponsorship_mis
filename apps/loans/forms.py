@@ -1,13 +1,24 @@
 from django import forms
+from decimal import Decimal
 from django.db.models import DecimalField, F, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils.timezone import now
+from django.utils import timezone
+from .models import ChartOfAccounts, Loan, LoanDisbursement, LoanRepayment, LoanPenalty
 
-from .models import ChartOfAccounts, Loan, LoanDisbursement, LoanRepayment
+import logging
+
+logger = logging.getLogger(__name__)
 
 # contants
 min_account_number = 1010
 max_account_number = 1020
+
+
+# Import form
+class ImportLoansForm(forms.Form):
+    excel_file = forms.FileField()
+    excel_file.widget.attrs["class"] = "form-control-file"
 
 
 # =================================== ChartOfAccountsForm ===================================
@@ -310,8 +321,128 @@ class LoanAllDisbursementForm(forms.ModelForm):
 # =================================== LoanRepaymentForm ===================================
 
 
+# class LoanRepaymentForm(forms.ModelForm):
+#     # Modify this field to get filtered loans
+#     loan = forms.ModelChoiceField(
+#         queryset=Loan.objects.none(),
+#         label="Loan",
+#         widget=forms.Select(attrs={"class": "chzn-select"}),
+#     )
+#     account = forms.ModelChoiceField(
+#         queryset=ChartOfAccounts.objects.filter(
+#             account_type="asset",
+#             account_number__range=(min_account_number, max_account_number),
+#         ),
+#         label="Paying Account",
+#         widget=forms.Select(attrs={"class": "form-control"}),
+#     )
+
+#     principal_payment = forms.DecimalField(
+#         label="Principal Payment",
+#         widget=forms.NumberInput(attrs={"class": "form-control"}),
+#         min_value=0,
+#         decimal_places=2,
+#         max_digits=15,
+#         initial=0,
+#     )
+
+#     interest_payment = forms.DecimalField(
+#         label="Interest Payment",
+#         widget=forms.NumberInput(attrs={"class": "form-control"}),
+#         min_value=0,
+#         decimal_places=2,
+#         max_digits=15,
+#         initial=0,
+#     )
+
+#     class Meta:
+#         model = LoanRepayment
+#         fields = [
+#             "loan",
+#             "repayment_date",
+#             "principal_payment",
+#             "interest_payment",
+#             "account",
+#         ]
+#         widgets = {
+#             "repayment_date": forms.DateInput(
+#                 attrs={"type": "date", "class": "form-control"}
+#             ),
+#         }
+
+#     def __init__(self, *args, **kwargs):
+#         # Get the loans queryset dynamically
+#         super().__init__(*args, **kwargs)
+
+#         # Fetch loans with remaining balance and status "disbursed"
+#         self.fields["loan"].queryset = Loan.objects.annotate(
+#             principal_paid=Coalesce(
+#                 Sum("repayments__principal_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             interest_paid=Coalesce(
+#                 Sum("repayments__interest_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             remaining_principal=F("principal_amount")
+#             - Coalesce(
+#                 Sum("repayments__principal_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             remaining_interest=F("total_interest")
+#             - Coalesce(
+#                 Sum("repayments__interest_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#         ).filter(
+#             (
+#                 Q(remaining_principal__gt=0) | Q(remaining_interest__gt=0)
+#             ),  # Loans with remaining balance
+#             status="disbursed",  # Only loans with status "disbursed"
+#         )
+
+#     def clean(self):
+#         cleaned_data = super().clean()
+#         principal_payment = cleaned_data.get("principal_payment")
+#         interest_payment = cleaned_data.get("interest_payment")
+#         loan = cleaned_data.get("loan")
+
+#         if not loan:
+#             raise forms.ValidationError("Please select a loan.")
+
+#         # Calculate remaining balances using the method from the Loan model
+#         balances = loan.calculate_remaining_balances()
+#         remaining_principal = balances[
+#             "principal_balance"
+#         ]  # Adjusted to match your return structure
+#         remaining_interest = balances[
+#             "interest_balance"
+#         ]  # Adjusted to match your return structure
+
+#         # Validate principal payment
+#         if principal_payment and principal_payment > remaining_principal:
+#             raise forms.ValidationError(
+#                 f"Principal payment of {principal_payment:,.2f} cannot exceed the remaining principal balance of {remaining_principal:,.2f}."
+#             )
+
+#         # Validate interest payment
+#         if interest_payment and interest_payment > remaining_interest:
+#             raise forms.ValidationError(
+#                 f"Interest payment of {interest_payment:,.2f} cannot exceed the remaining interest balance of {remaining_interest:,.2f}."
+#             )
+
+#         # Optionally, validate that the total payment does not exceed the total balance
+#         total_payment = (principal_payment or 0) + (interest_payment or 0)
+#         total_remaining_balance = remaining_principal + remaining_interest
+#         if total_payment > total_remaining_balance:
+#             raise forms.ValidationError(
+#                 f"Total payment of {total_payment:,.2f} cannot exceed the total remaining balance of {total_remaining_balance:,.2f}."
+#             )
+
+#         return cleaned_data
+
+
 class LoanRepaymentForm(forms.ModelForm):
-    # Modify this field to get filtered loans
     loan = forms.ModelChoiceField(
         queryset=Loan.objects.none(),
         label="Loan",
@@ -325,7 +456,6 @@ class LoanRepaymentForm(forms.ModelForm):
         label="Paying Account",
         widget=forms.Select(attrs={"class": "form-control"}),
     )
-
     principal_payment = forms.DecimalField(
         label="Principal Payment",
         widget=forms.NumberInput(attrs={"class": "form-control"}),
@@ -334,9 +464,16 @@ class LoanRepaymentForm(forms.ModelForm):
         max_digits=15,
         initial=0,
     )
-
     interest_payment = forms.DecimalField(
         label="Interest Payment",
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+        min_value=0,
+        decimal_places=2,
+        max_digits=15,
+        initial=0,
+    )
+    penalty_payment = forms.DecimalField(
+        label="Penalty Payment",
         widget=forms.NumberInput(attrs={"class": "form-control"}),
         min_value=0,
         decimal_places=2,
@@ -351,6 +488,7 @@ class LoanRepaymentForm(forms.ModelForm):
             "repayment_date",
             "principal_payment",
             "interest_payment",
+            "penalty_payment",
             "account",
         ]
         widgets = {
@@ -360,10 +498,7 @@ class LoanRepaymentForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        # Get the loans queryset dynamically
         super().__init__(*args, **kwargs)
-
-        # Fetch loans with remaining balance and status "disbursed"
         self.fields["loan"].queryset = Loan.objects.annotate(
             principal_paid=Coalesce(
                 Sum("repayments__principal_payment"),
@@ -371,6 +506,10 @@ class LoanRepaymentForm(forms.ModelForm):
             ),
             interest_paid=Coalesce(
                 Sum("repayments__interest_payment"),
+                Value(0, output_field=DecimalField()),
+            ),
+            penalty_paid=Coalesce(
+                Sum("repayments__penalty_payment"),
                 Value(0, output_field=DecimalField()),
             ),
             remaining_principal=F("principal_amount")
@@ -383,55 +522,184 @@ class LoanRepaymentForm(forms.ModelForm):
                 Sum("repayments__interest_payment"),
                 Value(0, output_field=DecimalField()),
             ),
+            remaining_penalty=Coalesce(
+                Sum(
+                    "penalties__penalty_amount",
+                    filter=Q(penalties__is_paid=False),
+                    distinct=True,  # ✅ stops duplicates
+                ),
+                Value(0, output_field=DecimalField()),
+            ),
         ).filter(
-            (
-                Q(remaining_principal__gt=0) | Q(remaining_interest__gt=0)
-            ),  # Loans with remaining balance
-            status="disbursed",  # Only loans with status "disbursed"
+            Q(remaining_principal__gt=0) |
+            Q(remaining_interest__gt=0) |
+            Q(remaining_penalty__gt=0),
+            status="disbursed",
         )
+
+    # def clean(self):
+    #     cleaned_data = super().clean()
+    #     principal_payment = cleaned_data.get("principal_payment")
+    #     interest_payment = cleaned_data.get("interest_payment")
+    #     penalty_payment = cleaned_data.get("penalty_payment")
+    #     loan = cleaned_data.get("loan")
+
+    #     if not loan:
+    #         raise forms.ValidationError("Please select a loan.")
+
+    #     # Calculate remaining balances using the method from the Loan model
+    #     balances = loan.calculate_remaining_balances()
+    #     remaining_principal = balances["principal_balance"]
+    #     remaining_interest = balances["interest_balance"]
+    #     remaining_penalty = balances["penalty_balance"]
+
+    #     # Validate principal payment
+    #     if principal_payment and principal_payment > remaining_principal:
+    #         raise forms.ValidationError(
+    #             f"Principal payment of {principal_payment:,.2f} cannot exceed the remaining principal balance of {remaining_principal:,.2f}."
+    #         )
+
+    #     # Validate interest payment
+    #     if interest_payment and interest_payment > remaining_interest:
+    #         raise forms.ValidationError(
+    #             f"Interest payment of {interest_payment:,.2f} cannot exceed the remaining interest balance of {remaining_interest:,.2f}."
+    #         )
+
+    #     # Validate penalty payment
+    #     if penalty_payment and penalty_payment > remaining_penalty:
+    #         raise forms.ValidationError(
+    #             f"Penalty payment of {penalty_payment:,.2f} cannot exceed the remaining penalty balance of {remaining_penalty:,.2f}."
+    #         )
+
+    #     # Validate total payment
+    #     total_payment = (principal_payment or 0) + (interest_payment or 0) + (penalty_payment or 0)
+    #     total_remaining_balance = remaining_principal + remaining_interest + remaining_penalty
+    #     if total_payment > total_remaining_balance:
+    #         raise forms.ValidationError(
+    #             f"Total payment of {total_payment:,.2f} cannot exceed the total remaining balance of {total_remaining_balance:,.2f}."
+    #         )
+
+    #     return cleaned_data
 
     def clean(self):
         cleaned_data = super().clean()
-        principal_payment = cleaned_data.get("principal_payment")
-        interest_payment = cleaned_data.get("interest_payment")
+        principal_payment = cleaned_data.get("principal_payment") or Decimal("0.00")
+        interest_payment = cleaned_data.get("interest_payment") or Decimal("0.00")
+        penalty_payment = cleaned_data.get("penalty_payment") or Decimal("0.00")
         loan = cleaned_data.get("loan")
 
         if not loan:
             raise forms.ValidationError("Please select a loan.")
 
-        # Calculate remaining balances using the method from the Loan model
+        # Get remaining balances from Loan model
         balances = loan.calculate_remaining_balances()
-        remaining_principal = balances[
-            "principal_balance"
-        ]  # Adjusted to match your return structure
-        remaining_interest = balances[
-            "interest_balance"
-        ]  # Adjusted to match your return structure
+        remaining_principal = balances["principal_balance"]
+        remaining_interest = balances["interest_balance"]
+        remaining_penalty = balances["penalty_balance"]
 
         # Validate principal payment
-        if principal_payment and principal_payment > remaining_principal:
-            raise forms.ValidationError(
-                f"Principal payment of {principal_payment:,.2f} cannot exceed the remaining principal balance of {remaining_principal:,.2f}."
+        if principal_payment > remaining_principal:
+            self.add_error(
+                "principal_payment",
+                f"Principal payment of {principal_payment:,.2f} cannot exceed the remaining principal balance of {remaining_principal:,.2f}.",
             )
 
         # Validate interest payment
-        if interest_payment and interest_payment > remaining_interest:
-            raise forms.ValidationError(
-                f"Interest payment of {interest_payment:,.2f} cannot exceed the remaining interest balance of {remaining_interest:,.2f}."
+        if interest_payment > remaining_interest:
+            self.add_error(
+                "interest_payment",
+                f"Interest payment of {interest_payment:,.2f} cannot exceed the remaining interest balance of {remaining_interest:,.2f}.",
             )
 
-        # Optionally, validate that the total payment does not exceed the total balance
-        total_payment = (principal_payment or 0) + (interest_payment or 0)
-        total_remaining_balance = remaining_principal + remaining_interest
-        if total_payment > total_remaining_balance:
-            raise forms.ValidationError(
-                f"Total payment of {total_payment:,.2f} cannot exceed the total remaining balance of {total_remaining_balance:,.2f}."
+        # Validate penalty payment: must exactly equal remaining penalty if there is one
+        if remaining_penalty > 0 and penalty_payment != remaining_penalty:
+            self.add_error(
+                "penalty_payment",
+                f"Penalty payment must equal the remaining penalty of {remaining_penalty:,.2f}.",
             )
 
         return cleaned_data
 
 
-# Import form
-class ImportLoansForm(forms.Form):
-    excel_file = forms.FileField()
-    excel_file.widget.attrs["class"] = "form-control-file"
+# =================================== LoanPenaltyForm ===================================
+
+class LoanPenaltyForm(forms.ModelForm):
+    loan = forms.ModelChoiceField(
+        queryset=Loan.objects.none(),
+        label="Loan",
+        widget=forms.Select(attrs={"class": "chzn-select"}),
+    )
+    penalty_amount = forms.DecimalField(
+        label="Penalty Amount",
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+        min_value=0.01,
+        decimal_places=2,
+        max_digits=15,
+        initial=0,
+    )
+    penalty_date = forms.DateField(
+        label="Penalty Date",
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+        initial=timezone.now().date,
+    )
+    reason = forms.CharField(
+        label="Penalty Reason",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+        max_length=255,
+    )
+    account = forms.ModelChoiceField(
+        queryset=ChartOfAccounts.objects.filter(account_number="1071"),
+        label="Penalty Account",
+        widget=forms.Select(attrs={"class": "form-control"}),
+        initial=lambda: ChartOfAccounts.objects.get(account_number="1071"),
+    )
+
+    class Meta:
+        model = LoanPenalty
+        fields = ["loan", "penalty_date", "penalty_amount", "reason", "account"]
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        
+        try:
+            self.fields["loan"].queryset = Loan.objects.annotate(
+                principal_paid=Coalesce(
+                    Sum("repayments__principal_payment"), Value(0, output_field=forms.DecimalField())
+                ),
+                interest_paid=Coalesce(
+                    Sum("repayments__interest_payment"), Value(0, output_field=forms.DecimalField())
+                ),
+                penalty_paid=Coalesce(
+                    Sum("repayments__penalty_payment"), Value(0, output_field=forms.DecimalField())
+                ),
+                remaining_principal=F("principal_amount") - Coalesce(
+                    Sum("repayments__principal_payment"), Value(0, output_field=forms.DecimalField())
+                ),
+                remaining_interest=F("total_interest") - Coalesce(
+                    Sum("repayments__interest_payment"), Value(0, output_field=forms.DecimalField())
+                ),
+                remaining_penalty=Coalesce(
+                    Sum(
+                        "penalties__penalty_amount",
+                        filter=Q(penalties__is_paid=False),
+                        distinct=True,
+                    ),
+                    Value(0, output_field=forms.DecimalField()),
+                ),
+            ).filter(
+                Q(remaining_principal__gt=0) |
+                Q(remaining_interest__gt=0) |
+                Q(remaining_penalty__gt=0),
+                status__in=["disbursed", "overdue"],
+            ).distinct()
+            
+            self.fields["account"].initial = ChartOfAccounts.objects.get(account_number="1071")
+        except Exception:
+            self.fields["loan"].queryset = Loan.objects.filter(
+                status__in=["disbursed", "overdue"]
+            ).distinct()
+
+        if user:
+            self.instance.created_by = user
+

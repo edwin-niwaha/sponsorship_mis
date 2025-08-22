@@ -41,6 +41,7 @@ urlpatterns = [
         views.delete_repayment,
         name="delete_repayment",
     ),
+    path("penalty/create/", views.loan_penalty_create_view, name="loan_penalty_create"),
     path("loan-aging-report/", views.loan_aging_report, name="loan_aging_report"),
     path("loan-arrears-report/", views.loan_arrears_report, name="loan-arrears-report"),
     path("loan-portfolio/", views.loan_portfolio_report, name="loan_portfolio_report"),

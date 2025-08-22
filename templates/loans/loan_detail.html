@@ -30,8 +30,8 @@
                 <tr>
                   <th scope="row" class="bg-light">Loan Amount Disbursed</th>
                   <td class="text-right">{{ loan.principal_amount|floatformat:'2'|intcomma }}</td>
-                  <td colspan="2" class="ps-4">
-                    <span class="fw-semibold">Interest Rate:</span> {{ loan.interest_rate|floatformat:1 }}% |
+                  <td colspan="4" class="ps-4">
+                    <span class="fw-semibold">Rate:</span> {{ loan.interest_rate|floatformat:1 }}% |
                     <span class="fw-semibold">Period:</span> {{ loan.loan_period_months }} months |
                     <span class="fw-semibold">Method:</span> {{ loan.interest_method }}
                   </td>
@@ -43,16 +43,18 @@
                   <td class="text-right">{{ loan.due_date }}</td>
                 </tr>
                 <tr>
-                  <th scope="row" class="bg-light">Remaining Principal</th>
+                  <th scope="row" class="bg-light">Principal Bal</th>
                   <td class="text-right">{{ loan.calculate_remaining_balances.principal_balance|floatformat:'2'|intcomma }}</td>
-                  <th scope="row" class="bg-light">Remaining Interest</th>
+                  <th scope="row" class="bg-light">Interest Bal</th>
                   <td class="text-right">{{ loan.calculate_remaining_balances.interest_balance|floatformat:'2'|intcomma }}</td>
+                  <th scope="row" class="bg-light">Penalty Bal</th>
+                  <td class="text-right">{{ loan.calculate_remaining_balances.penalty_balance|floatformat:'2'|intcomma }}</td>
                 </tr>
                 <tr>
                   <th scope="row" class="bg-light">Total Remaining Balance</th>
-                  <td class="text-right">{{ loan.calculate_remaining_balances.principal_balance|add:loan.calculate_remaining_balances.interest_balance|floatformat:'2'|intcomma }}</td>
+                  <td class="text-right">{{ loan.calculate_remaining_balances.principal_balance|add:loan.calculate_remaining_balances.interest_balance|add:loan.calculate_remaining_balances.penalty_balance|floatformat:'2'|intcomma }}</td>
                   <th scope="row" class="bg-light te">Loan Status</th>
-                  <td class="text-right">
+                  <td colspan="3" class="text-left">
                     {% if loan.status == 'Repaid' %}
                       <span class="badge bg-light text-dark">{{ loan.status }}</span>
                     {% elif loan.status == 'Overdue' %}
@@ -78,6 +80,7 @@
                 <th scope="col">Date</th>
                 <th scope="col" class="text-end">Principal</th>
                 <th scope="col" class="text-end">Interest</th>
+                <th scope="col" class="text-end">Penalty</th>
                 <th scope="col">Account</th>
                 <th scope="col" class="text-center">Action</th>
               </tr>
@@ -88,6 +91,8 @@
                   <td>{{ repayment.repayment_date }}</td>
                   <td class="text-right">{{ repayment.principal_payment|floatformat:'2'|intcomma }}</td>
                   <td class="text-right">{{ repayment.interest_payment|floatformat:'2'|intcomma }}</td>
+                  <td class="text-right">{{ repayment.penalty_payment|floatformat:'2'|intcomma }}</td>
+
                   <td>{{ repayment.account }}</td>
                   <td class="text-center">
                     <form method="POST" action="{% url 'loans:delete_repayment' repayment.id %}" class="d-inline">
@@ -107,6 +112,7 @@
                 <th scope="row">Total</th>
                 <th class="text-right">{{ total_principal|floatformat:'2'|intcomma }}</th>
                 <th class="text-right">{{ total_interest|floatformat:'2'|intcomma }}</th>
+                <th class="text-right">{{ total_penalty|floatformat:'2'|intcomma }}</th>
                 <th colspan="2"></th>
               </tr>
             </tfoot>

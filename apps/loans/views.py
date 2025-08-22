@@ -1,7 +1,7 @@
 import logging
 from datetime import date, datetime
-
 import pytz
+from decimal import Decimal
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -16,6 +16,8 @@ from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.timezone import now
 from openpyxl import load_workbook
+
+from apps.dashboard import models
 
 logger = logging.getLogger(__name__)
 from apps.client.models import Client
@@ -33,6 +35,7 @@ from .forms import (
     LoanApplicationForm,
     LoanDisbursementForm,
     LoanRepaymentForm,
+    LoanPenaltyForm,
 )
 from .models import (
     ChartOfAccounts,
@@ -852,18 +855,85 @@ def delete_loan(request, loan_id):
 
 
 # ===================================  loan_repayment_create_view  ===================================
+# @login_required
+# @admin_or_manager_or_staff_required
+# def loan_repayment_create_view(request):
+#     form_title = "Repay Loans"
+
+#     # Annotate loans with principal and interest paid, and calculate remaining balances
+#     loans = Loan.objects.annotate(
+#         principal_paid=Coalesce(
+#             Sum("repayments__principal_payment"), Value(0, output_field=DecimalField())
+#         ),
+#         interest_paid=Coalesce(
+#             Sum("repayments__interest_payment"), Value(0, output_field=DecimalField())
+#         ),
+#         remaining_principal=F("principal_amount")
+#         - Coalesce(
+#             Sum("repayments__principal_payment"), Value(0, output_field=DecimalField())
+#         ),
+#         remaining_interest=F("total_interest")
+#         - Coalesce(
+#             Sum("repayments__interest_payment"), Value(0, output_field=DecimalField())
+#         ),
+#     ).filter(
+#         # Fetch only loans with remaining principal or interest, and status "disbursed"
+#         Q(remaining_principal__gt=0)
+#         | Q(remaining_interest__gt=0),  # Outstanding balance
+#         status__in=["disbursed", "overdue"],
+#     )
+
+#     if request.method == "POST":
+#         form = LoanRepaymentForm(request.POST)
+#         if form.is_valid():
+#             repayment = form.save(commit=False)
+#             repayment.loan = form.cleaned_data["loan"]
+#             repayment.save()
+
+#             # After saving, update loan status
+#             repayment.loan.update_status()
+
+#             messages.success(
+#                 request,
+#                 "Loan repayment submitted successfully.",
+#                 extra_tags="bg-success",
+#             )
+#             # return redirect(
+#             #     "loans:loan_detail", loan_id=repayment.loan.id
+#             # )
+#             return redirect("loans:loan_repayment_create")
+#         else:
+#             messages.error(request, "Please correct the errors below.")
+#     else:
+#         form = LoanRepaymentForm()
+
+#     return render(
+#         request,
+#         "loans/loan_repayment_form.html",
+#         {
+#             "form": form,
+#             "form_title": form_title,
+#             "loans": loans,  # Pass the filtered loans queryset to the template
+#         },
+#     )
+
+
 @login_required
 @admin_or_manager_or_staff_required
+@transaction.atomic  # Ensure database operations are within a transaction
 def loan_repayment_create_view(request):
     form_title = "Repay Loans"
 
-    # Annotate loans with principal and interest paid, and calculate remaining balances
+    # Annotate loans with principal, interest, and penalty paid, and calculate remaining balances
     loans = Loan.objects.annotate(
         principal_paid=Coalesce(
             Sum("repayments__principal_payment"), Value(0, output_field=DecimalField())
         ),
         interest_paid=Coalesce(
             Sum("repayments__interest_payment"), Value(0, output_field=DecimalField())
+        ),
+        penalty_paid=Coalesce(
+            Sum("repayments__penalty_payment"), Value(0, output_field=DecimalField())
         ),
         remaining_principal=F("principal_amount")
         - Coalesce(
@@ -873,12 +943,23 @@ def loan_repayment_create_view(request):
         - Coalesce(
             Sum("repayments__interest_payment"), Value(0, output_field=DecimalField())
         ),
+        remaining_penalty=Coalesce(
+            Sum(
+                "penalties__penalty_amount",
+                filter=Q(penalties__is_paid=False),
+                distinct=True,  # ✅ prevents duplicate counting
+            ),
+            Value(0, output_field=DecimalField()),
+        ),
     ).filter(
-        # Fetch only loans with remaining principal or interest, and status "disbursed"
-        Q(remaining_principal__gt=0)
-        | Q(remaining_interest__gt=0),  # Outstanding balance
+        Q(remaining_principal__gt=0) |
+        Q(remaining_interest__gt=0) |
+        Q(remaining_penalty__gt=0),
         status__in=["disbursed", "overdue"],
-    )
+    ).select_related('borrower').distinct()  # Optimize by fetching related borrower data
+
+    # Force queryset evaluation to avoid cursor persistence issues
+    loans = list(loans)  # Convert to list to materialize the queryset
 
     if request.method == "POST":
         form = LoanRepaymentForm(request.POST)
@@ -895,9 +976,6 @@ def loan_repayment_create_view(request):
                 "Loan repayment submitted successfully.",
                 extra_tags="bg-success",
             )
-            # return redirect(
-            #     "loans:loan_detail", loan_id=repayment.loan.id
-            # )
             return redirect("loans:loan_repayment_create")
         else:
             messages.error(request, "Please correct the errors below.")
@@ -910,7 +988,71 @@ def loan_repayment_create_view(request):
         {
             "form": form,
             "form_title": form_title,
-            "loans": loans,  # Pass the filtered loans queryset to the template
+            "loans": loans,  # Pass the materialized loans list to the template
+        },
+    )
+
+
+# =================================== LoanPenaltyForm ===================================
+
+@login_required
+@admin_or_manager_or_staff_required
+@transaction.atomic
+def loan_penalty_create_view(request):
+    form_title = "Add Loan Penalty"
+
+    # Load loans with remaining balances
+    loans = Loan.objects.annotate(
+        principal_paid=Coalesce(Sum("repayments__principal_payment"), Value(0, output_field=DecimalField())),
+        interest_paid=Coalesce(Sum("repayments__interest_payment"), Value(0, output_field=DecimalField())),
+        penalty_paid=Coalesce(Sum("repayments__penalty_payment"), Value(0, output_field=DecimalField())),
+        remaining_principal=F("principal_amount") - Coalesce(Sum("repayments__principal_payment"), Value(0, output_field=DecimalField())),
+        remaining_interest=F("total_interest") - Coalesce(Sum("repayments__interest_payment"), Value(0, output_field=DecimalField())),
+        remaining_penalty=Coalesce(
+            Sum(
+                "penalties__penalty_amount",
+                filter=Q(penalties__is_paid=False),
+                distinct=True,
+            ),
+            Value(0, output_field=DecimalField()),
+        ),
+    ).filter(
+        Q(remaining_principal__gt=0) |
+        Q(remaining_interest__gt=0) |
+        Q(remaining_penalty__gt=0),
+        status__in=["disbursed", "overdue"],
+    ).select_related("borrower").distinct()
+
+    loans = list(loans)  # Materialize queryset
+
+    if request.method == "POST":
+        form = LoanPenaltyForm(request.POST, user=request.user)
+        if form.is_valid():
+            penalty = form.save(commit=False)
+            penalty.created_by = request.user
+            penalty.save()
+
+            # Update loan status
+            penalty.loan.update_status()
+
+            messages.success(
+                request,
+                f"Penalty of {penalty.penalty_amount:,.2f} added to Loan {penalty.loan.id} successfully.",
+                extra_tags="bg-success",
+            )
+            return redirect("loans:loan_penalty_create")
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = LoanPenaltyForm(user=request.user)
+
+    return render(
+        request,
+        "loans/loan_penalty_form.html",
+        {
+            "form": form,
+            "form_title": form_title,
+            "loans": loans,
         },
     )
 
@@ -930,7 +1072,9 @@ def loan_detail_view(request, loan_id):
 
     # Calculate totals for principal and interest
     totals = repayments.aggregate(
-        total_principal=Sum("principal_payment"), total_interest=Sum("interest_payment")
+        total_principal=Sum("principal_payment"), 
+        total_interest=Sum("interest_payment"), 
+        total_penalty=Sum("penalty_payment"),
     )
 
     # Get borrower's full name
@@ -948,10 +1092,12 @@ def loan_detail_view(request, loan_id):
             "loan": loan,
             "remaining_principal": remaining_balances["principal_balance"],
             "remaining_interest": remaining_balances["interest_balance"],
+            "remaining_penalty": remaining_balances["penalty_balance"],
             "repayments": repayments,
             "borrower_name": borrower_name,
             "total_principal": totals["total_principal"] or 0,
             "total_interest": totals["total_interest"] or 0,
+            "total_penalty": totals["total_penalty"] or 0,
             "form_title": form_title,
         },
     )
@@ -1775,10 +1921,61 @@ def loan_reports_dashboard(request):
 
 
 # =================================== client_loan_statement view ===================================
+# @login_required
+# @admin_or_manager_or_staff_required
+# def client_loan_statement(request):
+#     clients = Client.objects.all().order_by("full_name")
+#     client = None
+#     statement_data = None
+
+#     if request.method == "POST":
+#         client_id = request.POST.get("client_id")
+#         if client_id:
+#             client = get_object_or_404(Client, id=client_id)
+#             loans = (
+#                 Loan.objects.filter(borrower=client)
+#                 .select_related("account")
+#                 .order_by("-created_at")
+#             )
+
+#             statement_data = []
+#             for loan in loans:
+#                 repayments = loan.repayments.all().order_by("repayment_date")
+#                 transactions = loan.transactions.all().order_by("transaction_date")
+#                 balances = loan.calculate_remaining_balances()
+#                 payment_schedule = loan.generate_payment_schedule()
+
+#                 loan_data = {
+#                     "loan": loan,
+#                     "repayments": repayments,
+#                     "transactions": transactions,
+#                     "principal_balance": balances["principal_balance"],
+#                     "interest_balance": balances["interest_balance"],
+#                     "total_balance": balances["principal_balance"]
+#                     + balances["interest_balance"],
+#                     "payment_schedule": payment_schedule,
+#                 }
+#                 statement_data.append(loan_data)
+
+#     context = {
+#         "clients": clients,
+#         "client": client,
+#         "statement_data": statement_data,
+#     }
+
+#     return render(request, "loans/loan_statement.html", context)
+
+
+
 @login_required
 @admin_or_manager_or_staff_required
 def client_loan_statement(request):
-    clients = Client.objects.all().order_by("full_name")
+    # Fetch only clients with loans that have outstanding balances
+    clients = Client.objects.filter(
+        loans__status__in=["disbursed", "overdue", "repaid"]
+    ).distinct().order_by("full_name")
+
+
     client = None
     statement_data = None
 
@@ -1786,27 +1983,44 @@ def client_loan_statement(request):
         client_id = request.POST.get("client_id")
         if client_id:
             client = get_object_or_404(Client, id=client_id)
-            loans = (
-                Loan.objects.filter(borrower=client)
-                .select_related("account")
-                .order_by("-created_at")
-            )
+            loans = Loan.objects.filter(borrower=client).select_related("account").order_by("-created_at")
 
             statement_data = []
             for loan in loans:
+                # Fetch all repayments
                 repayments = loan.repayments.all().order_by("repayment_date")
+                
+                # Sum principal, interest, and penalty payments; coalesce None -> 0
+                totals = repayments.aggregate(
+                    total_principal=Sum("principal_payment"),
+                    total_interest=Sum("interest_payment"),
+                    total_penalty=Sum("penalty_payment"),
+                )
+                total_principal_paid = totals["total_principal"] or Decimal("0.00")
+                total_interest_paid = totals["total_interest"] or Decimal("0.00")
+                total_penalty_paid = totals["total_penalty"] or Decimal("0.00")
+
+                # Calculate remaining balances
+                principal_balance = loan.principal_amount - total_principal_paid
+                interest_balance = loan.total_interest - total_interest_paid
+
+                # Total penalties applied to loan
+                total_penalties = loan.penalties.aggregate(total=Sum("penalty_amount"))["total"] or Decimal("0.00")
+                penalty_balance = total_penalties - total_penalty_paid
+
+                # Fetch transactions and payment schedule
                 transactions = loan.transactions.all().order_by("transaction_date")
-                balances = loan.calculate_remaining_balances()
                 payment_schedule = loan.generate_payment_schedule()
 
+                # Assemble loan data
                 loan_data = {
                     "loan": loan,
                     "repayments": repayments,
                     "transactions": transactions,
-                    "principal_balance": balances["principal_balance"],
-                    "interest_balance": balances["interest_balance"],
-                    "total_balance": balances["principal_balance"]
-                    + balances["interest_balance"],
+                    "principal_balance": principal_balance,
+                    "interest_balance": interest_balance,
+                    "penalty_balance": penalty_balance,
+                    "total_balance": principal_balance + interest_balance + penalty_balance,
                     "payment_schedule": payment_schedule,
                 }
                 statement_data.append(loan_data)

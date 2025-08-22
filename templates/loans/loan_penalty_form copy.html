@@ -49,55 +49,42 @@
                   </div>
                 </div>
               </div>
-              <!-- Repayment Date Field -->
+              <!-- Penalty Date Field -->
               <div class="form-group">
-                <label for="{{ form.repayment_date.id_for_label }}">{{ form.repayment_date.label }}</label>
-                {{ form.repayment_date }}
-                {% if form.repayment_date.errors %}
+                <label for="{{ form.penalty_date.id_for_label }}">{{ form.penalty_date.label }}</label>
+                {{ form.penalty_date }}
+                {% if form.penalty_date.errors %}
                   <div class="text-danger">
-                    {% for error in form.repayment_date.errors %}
+                    {% for error in form.penalty_date.errors %}
                       <small>{{ error }}</small>
                     {% endfor %}
                   </div>
                 {% endif %}
               </div>
-              <!-- Principal Payment Field -->
+              <!-- Penalty Amount Field -->
               <div class="form-group">
-                <label for="{{ form.principal_payment.id_for_label }}">{{ form.principal_payment.label }}</label>
-                {{ form.principal_payment }}
-                {% if form.principal_payment.errors %}
+                <label for="{{ form.penalty_amount.id_for_label }}">{{ form.penalty_amount.label }}</label>
+                {{ form.penalty_amount }}
+                {% if form.penalty_amount.errors %}
                   <div class="text-danger">
-                    {% for error in form.principal_payment.errors %}
+                    {% for error in form.penalty_amount.errors %}
                       <small>{{ error }}</small>
                     {% endfor %}
                   </div>
                 {% endif %}
               </div>
-              <!-- Interest Payment Field -->
+              <!-- Penalty Reason Field -->
               <div class="form-group">
-                <label for="{{ form.interest_payment.id_for_label }}">{{ form.interest_payment.label }}</label>
-                {{ form.interest_payment }}
-                {% if form.interest_payment.errors %}
+                <label for="{{ form.reason.id_for_label }}">{{ form.reason.label }}</label>
+                {{ form.reason }}
+                {% if form.reason.errors %}
                   <div class="text-danger">
-                    {% for error in form.interest_payment.errors %}
+                    {% for error in form.reason.errors %}
                       <small>{{ error }}</small>
                     {% endfor %}
                   </div>
                 {% endif %}
               </div>
-              <!-- Penalty Payment Field -->
-              <div class="form-group">
-                <label for="{{ form.penalty_payment.id_for_label }}">{{ form.penalty_payment.label }}</label>
-                {{ form.penalty_payment }}
-                {% if form.penalty_payment.errors %}
-                  <div class="text-danger">
-                    {% for error in form.penalty_payment.errors %}
-                      <small>{{ error }}</small>
-                    {% endfor %}
-                  </div>
-                {% endif %}
-              </div>
-
               <!-- Account Field -->
               <div class="form-group">
                 <label for="{{ form.account.id_for_label }}">{{ form.account.label }}</label>
@@ -112,7 +99,7 @@
               </div>
               <!-- Submit Button -->
               <div class="form-group mt-4 mb-0">
-                <button type="submit" class="btn btn-dark btn-block" onclick="return confirm('Are you sure you want to proceed?') && validateForm()">Submit Repayment</button>
+                <button type="submit" class="btn btn-dark btn-block" onclick="return confirm('Are you sure you want to add this penalty?')">Add Penalty</button>
               </div>
             </form>
           </div>
@@ -121,7 +108,7 @@
     </div>
   </div>
 
-  {% comment %} <script>
+  <script>
     $(document).ready(function() {
       // Loan balances data from Django
       const loanBalances = {
@@ -169,60 +156,5 @@
       // Trigger change event on page load to handle pre-selected loan (if any)
       $('#{{ form.loan.id_for_label }}').trigger('change');
     });
-  </script> {% endcomment %}
-  <script>
-      $(document).ready(function() {
-    // Loan balances data from Django
-    const loanBalances = {
-      {% for loan in loans %}
-        "{{ loan.id }}": {
-          principal: "{{ loan.remaining_principal|floatformat:2 }}",
-          interest: "{{ loan.remaining_interest|floatformat:2 }}",
-          penalty: "{{ loan.remaining_penalty|floatformat:2 }}"
-        }{% if not forloop.last %},{% endif %}
-      {% endfor %}
-    };
-
-    const $loanSelect = $('#{{ form.loan.id_for_label }}');
-    const $penaltyField = $('#{{ form.penalty_payment.id_for_label }}');
-
-    $loanSelect.on('change', function() {
-      const loanId = $(this).val();
-      const $viewButton = $('#view-loan-details');
-      
-      if (loanId && loanBalances[loanId]) {
-        // Update balances
-        $('#principal-balance').text(Number(loanBalances[loanId].principal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-        $('#interest-balance').text(Number(loanBalances[loanId].interest).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-        $('#penalty-balance').text(Number(loanBalances[loanId].penalty).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-        
-        // Auto-fill penalty_payment and make it read-only
-        $penaltyField.val(Number(loanBalances[loanId].penalty).toFixed(2));
-        if (Number(loanBalances[loanId].penalty) > 0) {
-          $penaltyField.prop('readonly', true);
-        } else {
-          $penaltyField.prop('readonly', false);
-          $penaltyField.val('0.00');
-        }
-
-        // Enable button and set URL
-        $viewButton.attr('href', `/loans/${loanId}/`).removeAttr('disabled').removeClass('btn-secondary').addClass('btn-info');
-      } else {
-        // Reset balances
-        $('#principal-balance').text('Select a loan');
-        $('#interest-balance').text('Select a loan');
-        $('#penalty-balance').text('Select a loan');
-        
-        // Reset penalty field
-        $penaltyField.val('0.00').prop('readonly', false);
-
-        // Disable button
-        $viewButton.attr('href', '#').attr('disabled', 'disabled').removeClass('btn-info').addClass('btn-secondary');
-      }
-    });
-
-    // Trigger change event on page load to handle pre-selected loan (if any)
-    $loanSelect.trigger('change');
-  });
-</script>
+  </script>
 {% endblock %}
