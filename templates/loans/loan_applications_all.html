@@ -51,8 +51,7 @@
                       <th>Interest</th>
                       <th>Period</th>
                       <th>Rate (%)</th>
-                      <th>Method</th>
-                      <th>Applied by</th>
+                      <th>Submitted by</th>
                       <th>Applied On</th>
                       <th>Disbursed On</th>
                       <th>Due Date</th>
@@ -70,7 +69,6 @@
                         <td class="text-right">{{ loan.total_interest|floatformat:'2'|intcomma }}</td>
                         <td class="text-center">{{ loan.loan_period_months }}</td>
                         <td class="text-center">{{ loan.interest_rate|floatformat:0 }}%</td>
-                        <td>{{ loan.interest_method }}</td>
                         <td>{{ loan.applied_by }}</td>
                         <td>{{ loan.start_date|date:'d/m/Y' }}</td>
                         <td>
