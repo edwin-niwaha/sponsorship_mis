@@ -41,15 +41,13 @@
                     <tr>
                       <th>ID</th>
                       <th>Borrower</th>
-                      <th>Purpose</th>
                       <th>Principal</th>
                       <th>Interest</th>
                       <th>Period</th>
-                      <th>Rate (%)</th>
-                      <th>Submitted by</th>
-                      <th>Applied On</th>
-                      <th>Disbursed On</th>
-                      <th>Due Date</th>
+                      <th>Rate(%)</th>
+                      <th>Submitted_By</th>
+                      <th>Applied_On</th>
+                      <th>Disbursed_On</th>
                       <th>Status</th>
                       <th class="text-center print-hide" colspan="7">Actions</th>
                     </tr>
@@ -59,7 +57,6 @@
                       <tr>
                         <td>{{ loan.id }}</td>
                         <td>{{ loan.borrower }}</td>
-                        <td>{{ loan.loan_purpose }}</td>
                         <td class="text-right">{{ loan.principal_amount|floatformat:'2'|intcomma }}</td>
                         <td class="text-right">{{ loan.total_interest|floatformat:'2'|intcomma }}</td>
                         <td class="text-center">{{ loan.loan_period_months }}</td>
@@ -73,10 +70,7 @@
                             Not Yet
                           {% endif %}
                         </td>
-                        <td>{{ loan.due_date|date:'d/m/Y' }}</td>
-
                         <td class="fw-bold">{{ loan.get_status_display }}</td>
-
                         <!-- Action Buttons -->
                         <td>
                           <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewReasonModal{{ loan.id }}" title="View Reason for Approval"><i class="mdi mdi-eye"></i></button>
