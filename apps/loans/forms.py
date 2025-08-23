@@ -531,9 +531,9 @@ class LoanRepaymentForm(forms.ModelForm):
                 Value(0, output_field=DecimalField()),
             ),
         ).filter(
-            Q(remaining_principal__gt=0) |
-            Q(remaining_interest__gt=0) |
-            Q(remaining_penalty__gt=0),
+            Q(remaining_principal__gt=0)
+            | Q(remaining_interest__gt=0)
+            | Q(remaining_penalty__gt=0),
             status="disbursed",
         )
 
@@ -623,6 +623,7 @@ class LoanRepaymentForm(forms.ModelForm):
 
 # =================================== LoanPenaltyForm ===================================
 
+
 class LoanPenaltyForm(forms.ModelForm):
     loan = forms.ModelChoiceField(
         queryset=Loan.objects.none(),
@@ -661,40 +662,53 @@ class LoanPenaltyForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
-        
+
         try:
-            self.fields["loan"].queryset = Loan.objects.annotate(
-                principal_paid=Coalesce(
-                    Sum("repayments__principal_payment"), Value(0, output_field=forms.DecimalField())
-                ),
-                interest_paid=Coalesce(
-                    Sum("repayments__interest_payment"), Value(0, output_field=forms.DecimalField())
-                ),
-                penalty_paid=Coalesce(
-                    Sum("repayments__penalty_payment"), Value(0, output_field=forms.DecimalField())
-                ),
-                remaining_principal=F("principal_amount") - Coalesce(
-                    Sum("repayments__principal_payment"), Value(0, output_field=forms.DecimalField())
-                ),
-                remaining_interest=F("total_interest") - Coalesce(
-                    Sum("repayments__interest_payment"), Value(0, output_field=forms.DecimalField())
-                ),
-                remaining_penalty=Coalesce(
-                    Sum(
-                        "penalties__penalty_amount",
-                        filter=Q(penalties__is_paid=False),
-                        distinct=True,
+            self.fields["loan"].queryset = (
+                Loan.objects.annotate(
+                    principal_paid=Coalesce(
+                        Sum("repayments__principal_payment"),
+                        Value(0, output_field=forms.DecimalField()),
                     ),
-                    Value(0, output_field=forms.DecimalField()),
-                ),
-            ).filter(
-                Q(remaining_principal__gt=0) |
-                Q(remaining_interest__gt=0) |
-                Q(remaining_penalty__gt=0),
-                status__in=["disbursed", "overdue"],
-            ).distinct()
-            
-            self.fields["account"].initial = ChartOfAccounts.objects.get(account_number="1071")
+                    interest_paid=Coalesce(
+                        Sum("repayments__interest_payment"),
+                        Value(0, output_field=forms.DecimalField()),
+                    ),
+                    penalty_paid=Coalesce(
+                        Sum("repayments__penalty_payment"),
+                        Value(0, output_field=forms.DecimalField()),
+                    ),
+                    remaining_principal=F("principal_amount")
+                    - Coalesce(
+                        Sum("repayments__principal_payment"),
+                        Value(0, output_field=forms.DecimalField()),
+                    ),
+                    remaining_interest=F("total_interest")
+                    - Coalesce(
+                        Sum("repayments__interest_payment"),
+                        Value(0, output_field=forms.DecimalField()),
+                    ),
+                    remaining_penalty=Coalesce(
+                        Sum(
+                            "penalties__penalty_amount",
+                            filter=Q(penalties__is_paid=False),
+                            distinct=True,
+                        ),
+                        Value(0, output_field=forms.DecimalField()),
+                    ),
+                )
+                .filter(
+                    Q(remaining_principal__gt=0)
+                    | Q(remaining_interest__gt=0)
+                    | Q(remaining_penalty__gt=0),
+                    status__in=["disbursed", "overdue"],
+                )
+                .distinct()
+            )
+
+            self.fields["account"].initial = ChartOfAccounts.objects.get(
+                account_number="1071"
+            )
         except Exception:
             self.fields["loan"].queryset = Loan.objects.filter(
                 status__in=["disbursed", "overdue"]
@@ -702,4 +716,3 @@ class LoanPenaltyForm(forms.ModelForm):
 
         if user:
             self.instance.created_by = user
-

@@ -48,35 +48,72 @@ logger = logging.getLogger(__name__)
 
 
 # =================================== Loan Applications View ===================================
+# @login_required
+# @admin_or_manager_or_staff_required
+# def loan_applications_view(request):
+#     user = request.user
+#     search_query = request.GET.get("search")
+#     page = request.GET.get("page")
+
+#     # Get all loan applications based on search criteria
+#     # queryset = get_loan_queryset(search_query)
+#     queryset = get_loan_queryset(search_query).filter(
+#         status__in=["pending", "boo_approved", "hof_approved"]
+#     )
+
+#     # Apply role-based filtering for staff or guest
+#     if user.profile.role in ["staff", "guest"]:
+#         queryset = queryset.filter(applied_by=user)
+
+#     # Paginate the results
+#     loans = paginate_queryset(queryset, page)
+
+#     context = {
+#         "loans": loans,
+#         "table_title": "Loan Applications",
+#         "search_query": search_query,  # Pass search query for input retention
+#     }
+
+#     return render(request, "loans/loan_applications.html", context)
+
+
 @login_required
 @admin_or_manager_or_staff_required
 def loan_applications_view(request):
     user = request.user
-    search_query = request.GET.get("search")
-    page = request.GET.get("page")
+    search_query = request.GET.get("search", "")
+    page = request.GET.get("page", 1)
+    per_page = 25  # Number of items per page
 
-    # Get all loan applications based on search criteria
-    # queryset = get_loan_queryset(search_query)
+    # Get filtered loan applications
     queryset = get_loan_queryset(search_query).filter(
         status__in=["pending", "boo_approved", "hof_approved"]
     )
 
-    # Apply role-based filtering for staff or guest
+    # Apply role-based filtering
     if user.profile.role in ["staff", "guest"]:
         queryset = queryset.filter(applied_by=user)
 
-    # Paginate the results
-    loans = paginate_queryset(queryset, page)
+    # Set up pagination
+    paginator = Paginator(queryset, per_page)
+    try:
+        loans = paginator.page(page)
+    except PageNotAnInteger:
+        loans = paginator.page(1)
+    except EmptyPage:
+        loans = paginator.page(paginator.num_pages)
 
     context = {
         "loans": loans,
         "table_title": "Loan Applications",
-        "search_query": search_query,  # Pass search query for input retention
+        "search_query": search_query,
+        "page_obj": loans,  # For pagination template access
     }
 
     return render(request, "loans/loan_applications.html", context)
 
 
+# =================================== All Loan Applications View ===================================
 @login_required
 @admin_or_manager_or_staff_required
 def loan_applications_all_view(request):
@@ -86,15 +123,6 @@ def loan_applications_all_view(request):
 
     # Get all loan applications based on search criteria
     queryset = get_loan_queryset(search_query)
-    # queryset = get_loan_queryset(search_query).filter(
-    #     status__in=[
-    #         "pending",
-    #         "boo_approved",
-    #         "hof_approved",
-    #         "ed_approved",
-    #         "disbursed",
-    #     ]
-    # )
 
     # Apply role-based filtering for staff or guest
     if user.profile.role in ["staff", "guest"]:
@@ -120,7 +148,7 @@ def get_loan_queryset(search_query):
 
 
 def paginate_queryset(queryset, page_number):
-    paginator = Paginator(queryset, 50)
+    paginator = Paginator(queryset, 25)
     try:
         return paginator.page(page_number)
     except PageNotAnInteger:
@@ -925,38 +953,48 @@ def loan_repayment_create_view(request):
     form_title = "Repay Loans"
 
     # Annotate loans with principal, interest, and penalty paid, and calculate remaining balances
-    loans = Loan.objects.annotate(
-        principal_paid=Coalesce(
-            Sum("repayments__principal_payment"), Value(0, output_field=DecimalField())
-        ),
-        interest_paid=Coalesce(
-            Sum("repayments__interest_payment"), Value(0, output_field=DecimalField())
-        ),
-        penalty_paid=Coalesce(
-            Sum("repayments__penalty_payment"), Value(0, output_field=DecimalField())
-        ),
-        remaining_principal=F("principal_amount")
-        - Coalesce(
-            Sum("repayments__principal_payment"), Value(0, output_field=DecimalField())
-        ),
-        remaining_interest=F("total_interest")
-        - Coalesce(
-            Sum("repayments__interest_payment"), Value(0, output_field=DecimalField())
-        ),
-        remaining_penalty=Coalesce(
-            Sum(
-                "penalties__penalty_amount",
-                filter=Q(penalties__is_paid=False),
-                distinct=True,  # ✅ prevents duplicate counting
+    loans = (
+        Loan.objects.annotate(
+            principal_paid=Coalesce(
+                Sum("repayments__principal_payment"),
+                Value(0, output_field=DecimalField()),
             ),
-            Value(0, output_field=DecimalField()),
-        ),
-    ).filter(
-        Q(remaining_principal__gt=0) |
-        Q(remaining_interest__gt=0) |
-        Q(remaining_penalty__gt=0),
-        status__in=["disbursed", "overdue"],
-    ).select_related('borrower').distinct()  # Optimize by fetching related borrower data
+            interest_paid=Coalesce(
+                Sum("repayments__interest_payment"),
+                Value(0, output_field=DecimalField()),
+            ),
+            penalty_paid=Coalesce(
+                Sum("repayments__penalty_payment"),
+                Value(0, output_field=DecimalField()),
+            ),
+            remaining_principal=F("principal_amount")
+            - Coalesce(
+                Sum("repayments__principal_payment"),
+                Value(0, output_field=DecimalField()),
+            ),
+            remaining_interest=F("total_interest")
+            - Coalesce(
+                Sum("repayments__interest_payment"),
+                Value(0, output_field=DecimalField()),
+            ),
+            remaining_penalty=Coalesce(
+                Sum(
+                    "penalties__penalty_amount",
+                    filter=Q(penalties__is_paid=False),
+                    distinct=True,  # ✅ prevents duplicate counting
+                ),
+                Value(0, output_field=DecimalField()),
+            ),
+        )
+        .filter(
+            Q(remaining_principal__gt=0)
+            | Q(remaining_interest__gt=0)
+            | Q(remaining_penalty__gt=0),
+            status__in=["disbursed", "overdue"],
+        )
+        .select_related("borrower")
+        .distinct()
+    )  # Optimize by fetching related borrower data
 
     # Force queryset evaluation to avoid cursor persistence issues
     loans = list(loans)  # Convert to list to materialize the queryset
@@ -995,6 +1033,7 @@ def loan_repayment_create_view(request):
 
 # =================================== LoanPenaltyForm ===================================
 
+
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
@@ -1002,26 +1041,48 @@ def loan_penalty_create_view(request):
     form_title = "Add Loan Penalty"
 
     # Load loans with remaining balances
-    loans = Loan.objects.annotate(
-        principal_paid=Coalesce(Sum("repayments__principal_payment"), Value(0, output_field=DecimalField())),
-        interest_paid=Coalesce(Sum("repayments__interest_payment"), Value(0, output_field=DecimalField())),
-        penalty_paid=Coalesce(Sum("repayments__penalty_payment"), Value(0, output_field=DecimalField())),
-        remaining_principal=F("principal_amount") - Coalesce(Sum("repayments__principal_payment"), Value(0, output_field=DecimalField())),
-        remaining_interest=F("total_interest") - Coalesce(Sum("repayments__interest_payment"), Value(0, output_field=DecimalField())),
-        remaining_penalty=Coalesce(
-            Sum(
-                "penalties__penalty_amount",
-                filter=Q(penalties__is_paid=False),
-                distinct=True,
+    loans = (
+        Loan.objects.annotate(
+            principal_paid=Coalesce(
+                Sum("repayments__principal_payment"),
+                Value(0, output_field=DecimalField()),
             ),
-            Value(0, output_field=DecimalField()),
-        ),
-    ).filter(
-        Q(remaining_principal__gt=0) |
-        Q(remaining_interest__gt=0) |
-        Q(remaining_penalty__gt=0),
-        status__in=["disbursed", "overdue"],
-    ).select_related("borrower").distinct()
+            interest_paid=Coalesce(
+                Sum("repayments__interest_payment"),
+                Value(0, output_field=DecimalField()),
+            ),
+            penalty_paid=Coalesce(
+                Sum("repayments__penalty_payment"),
+                Value(0, output_field=DecimalField()),
+            ),
+            remaining_principal=F("principal_amount")
+            - Coalesce(
+                Sum("repayments__principal_payment"),
+                Value(0, output_field=DecimalField()),
+            ),
+            remaining_interest=F("total_interest")
+            - Coalesce(
+                Sum("repayments__interest_payment"),
+                Value(0, output_field=DecimalField()),
+            ),
+            remaining_penalty=Coalesce(
+                Sum(
+                    "penalties__penalty_amount",
+                    filter=Q(penalties__is_paid=False),
+                    distinct=True,
+                ),
+                Value(0, output_field=DecimalField()),
+            ),
+        )
+        .filter(
+            Q(remaining_principal__gt=0)
+            | Q(remaining_interest__gt=0)
+            | Q(remaining_penalty__gt=0),
+            status__in=["disbursed", "overdue"],
+        )
+        .select_related("borrower")
+        .distinct()
+    )
 
     loans = list(loans)  # Materialize queryset
 
@@ -1072,8 +1133,8 @@ def loan_detail_view(request, loan_id):
 
     # Calculate totals for principal and interest
     totals = repayments.aggregate(
-        total_principal=Sum("principal_payment"), 
-        total_interest=Sum("interest_payment"), 
+        total_principal=Sum("principal_payment"),
+        total_interest=Sum("interest_payment"),
         total_penalty=Sum("penalty_payment"),
     )
 
@@ -1966,15 +2027,15 @@ def loan_reports_dashboard(request):
 #     return render(request, "loans/loan_statement.html", context)
 
 
-
 @login_required
 @admin_or_manager_or_staff_required
 def client_loan_statement(request):
     # Fetch only clients with loans that have outstanding balances
-    clients = Client.objects.filter(
-        loans__status__in=["disbursed", "overdue", "repaid"]
-    ).distinct().order_by("full_name")
-
+    clients = (
+        Client.objects.filter(loans__status__in=["disbursed", "overdue", "repaid"])
+        .distinct()
+        .order_by("full_name")
+    )
 
     client = None
     statement_data = None
@@ -1983,13 +2044,17 @@ def client_loan_statement(request):
         client_id = request.POST.get("client_id")
         if client_id:
             client = get_object_or_404(Client, id=client_id)
-            loans = Loan.objects.filter(borrower=client).select_related("account").order_by("-created_at")
+            loans = (
+                Loan.objects.filter(borrower=client)
+                .select_related("account")
+                .order_by("-created_at")
+            )
 
             statement_data = []
             for loan in loans:
                 # Fetch all repayments
                 repayments = loan.repayments.all().order_by("repayment_date")
-                
+
                 # Sum principal, interest, and penalty payments; coalesce None -> 0
                 totals = repayments.aggregate(
                     total_principal=Sum("principal_payment"),
@@ -2005,7 +2070,9 @@ def client_loan_statement(request):
                 interest_balance = loan.total_interest - total_interest_paid
 
                 # Total penalties applied to loan
-                total_penalties = loan.penalties.aggregate(total=Sum("penalty_amount"))["total"] or Decimal("0.00")
+                total_penalties = loan.penalties.aggregate(total=Sum("penalty_amount"))[
+                    "total"
+                ] or Decimal("0.00")
                 penalty_balance = total_penalties - total_penalty_paid
 
                 # Fetch transactions and payment schedule
@@ -2020,7 +2087,9 @@ def client_loan_statement(request):
                     "principal_balance": principal_balance,
                     "interest_balance": interest_balance,
                     "penalty_balance": penalty_balance,
-                    "total_balance": principal_balance + interest_balance + penalty_balance,
+                    "total_balance": principal_balance
+                    + interest_balance
+                    + penalty_balance,
                     "payment_schedule": payment_schedule,
                 }
                 statement_data.append(loan_data)

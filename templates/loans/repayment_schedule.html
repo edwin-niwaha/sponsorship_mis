@@ -7,41 +7,38 @@
       <div class="col-md-12">
         <h2 class="text-left text-primary">Repayment Schedule for Loan ID: {{ loan.id }}</h2>
         <hr class="bg-info" style="height: 3px;" />
-
         <div class="row mb-4">
-          <!-- Left Column -->
-          <div class="col-md-6">
-            <p>
-              <strong>Borrower:</strong> {{ loan.borrower }}
-            </p>
-            <p>
-              <strong>Principal Amount:</strong> <span class="text-end">{{ loan.principal_amount|floatformat:'2'|intcomma }}</span>
-            </p>
-            <p>
-              <strong>Interest Rate:</strong> {{ loan.interest_rate|floatformat:1 }}%
-            </p>
-            <p>
-              <strong>Loan Period:</strong> {{ loan_period_years|floatformat:1 }} years ({{ loan.loan_period_months }} months)
-            </p>
-            <p>
-              <strong>Period Type:</strong> {{ loan.interest_method|title }}
-            </p>
-          </div>
-
-          <!-- Right Column -->
-          <div class="col-md-6">
-            <p>
-              <strong>Monthly Payment:</strong> <span class="text-end">{{ monthly_payment|floatformat:'2'|intcomma }}</span>
-            </p>
-            <p>
-              <strong>Total Cost of Loan:</strong> <span class="text-end">{{ total_cost_of_loan|floatformat:'2'|intcomma }}</span>
-            </p>
-            <p>
-              <strong>Total Interest:</strong> <span class="text-end">{{ total_interest|floatformat:'2'|intcomma }}</span>
-            </p>
+          <div class="col-12">
+            <table class="table table-bordered table-striped">
+              <tbody>
+                <tr>
+                  <th scope="row">Borrower</th>
+                  <td>{{ loan.borrower }}</td>
+                  <th scope="row">Interest Rate</th>
+                  <td>{{ loan.interest_rate|floatformat:1 }}%</td>
+                </tr>
+                <tr>
+                  <th scope="row">Principal Amount</th>
+                  <td class="text-end">{{ loan.principal_amount|floatformat:'2'|intcomma }}</td>
+                  <th scope="row">Loan Period</th>
+                  <td>{{ loan_period_years|floatformat:1 }} years ({{ loan.loan_period_months }} months) | {{ loan.interest_method|title }}</td>
+                </tr>
+                <tr>
+                  <th scope="row">Total Interest</th>
+                  <td class="text-end">{{ total_interest|floatformat:'2'|intcomma }}</td>
+                  <th scope="row">Monthly Payment</th>
+                  <td>{{ monthly_payment|floatformat:'2'|intcomma }}</td>
+                </tr>
+                <tr>
+                  <th scope="row">Total Cost of Loan</th>
+                  <td class="text-end">{{ total_cost_of_loan|floatformat:'2'|intcomma }}</td>
+                  <th scope="row">Loan Purpose</th>
+                  <td>{{ loan.loan_purpose|default:'No purpose provided' }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
-
         <hr class="bg-info" style="height: 3px;" />
       </div>
 

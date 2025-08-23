@@ -337,7 +337,9 @@ class Loan(models.Model):
         total_interest_paid = self.repayments.aggregate(total=Sum("interest_payment"))[
             "total"
         ] or Decimal("0.00")
-        total_penalty_paid = self.repayments.aggregate(total=Sum("penalty_payment"))["total"] or Decimal("0.00")
+        total_penalty_paid = self.repayments.aggregate(total=Sum("penalty_payment"))[
+            "total"
+        ] or Decimal("0.00")
 
         # Calculate remaining balances
         principal_balance = max(self.principal_amount - total_repaid, Decimal("0.00"))
@@ -345,24 +347,27 @@ class Loan(models.Model):
             self.total_interest - total_interest_paid, Decimal("0.00")
         )
         penalty_balance = max(
-            self.penalties.filter(is_paid=False).aggregate(total=Sum("penalty_amount"))["total"] or Decimal("0.00"),
-            Decimal("0.00")
+            self.penalties.filter(is_paid=False).aggregate(total=Sum("penalty_amount"))[
+                "total"
+            ]
+            or Decimal("0.00"),
+            Decimal("0.00"),
         )
 
         return {
             "principal_balance": principal_balance,
             "interest_balance": interest_balance,
             "penalty_balance": penalty_balance,
-
         }
-
 
     def update_status(self):
         """Update loan status based on current status, balance, and due date."""
         # Calculate total remaining balance
         balances = self.calculate_remaining_balances()
         total_remaining_balance = (
-            balances["principal_balance"] + balances["interest_balance"] + balances["penalty_balance"]
+            balances["principal_balance"]
+            + balances["interest_balance"]
+            + balances["penalty_balance"]
         )
 
         # Status transitions based on remaining balance, due date, and current status
@@ -447,9 +452,10 @@ class Loan(models.Model):
             penalty_date__lte=due_date, is_paid=False
         ).aggregate(total=Sum("penalty_amount"))["total"] or Decimal("0.00")
 
-        remaining_due_balance = max(total_amount_due + total_penalty - total_paid, Decimal("0.00"))
+        remaining_due_balance = max(
+            total_amount_due + total_penalty - total_paid, Decimal("0.00")
+        )
         return remaining_due_balance.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-
 
 
 # =================================== LoanDisbursement Model ===================================
@@ -744,6 +750,7 @@ class LoanRepayment(models.Model):
 
 # =================================== LoanPenalty Model ===================================
 
+
 class LoanPenalty(models.Model):
     loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name="penalties")
     penalty_date = models.DateField(default=timezone.now, verbose_name="Penalty Date")
@@ -785,7 +792,9 @@ class LoanPenalty(models.Model):
         if self.penalty_amount <= 0:
             raise ValidationError("Penalty amount must be positive.")
         if self.remaining_amount is None or self.remaining_amount < 0:
-            raise ValidationError("Remaining penalty amount cannot be negative or null.")
+            raise ValidationError(
+                "Remaining penalty amount cannot be negative or null."
+            )
 
     def save(self, *args, **kwargs):
         # Set remaining_amount for new penalties
