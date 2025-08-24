@@ -119,6 +119,7 @@ class Loan(models.Model):
         decimal_places=2,
         verbose_name="Principal Amount",
     )
+    start_date = models.DateField(verbose_name="Loan Application Date")
     interest_rate = models.DecimalField(
         max_digits=5,
         decimal_places=2,
@@ -128,7 +129,6 @@ class Loan(models.Model):
             MaxValueValidator(30),  # Ensures the value does not exceed 30
         ],
     )
-    start_date = models.DateField(verbose_name="Loan Application Date")
     disbursement_date = models.DateField(
         blank=True, null=True, verbose_name="Disbursement Date"
     )
