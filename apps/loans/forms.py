@@ -97,20 +97,18 @@ class LoanApplicationForm(forms.ModelForm):
                     "min": 0,
                 }
             ),
+            "start_date": forms.DateInput(
+                attrs={
+                    "class": "form-control",
+                    "type": "date",
+                }
+            ),
             "interest_rate": forms.NumberInput(
                 attrs={
                     "class": "form-control",
                     "placeholder": "Enter interest rate (%)",
                     "min": 0,
                     "step": 0.01,
-                }
-            ),
-            "interest_method": forms.Select(attrs={"class": "form-control"}),
-            "start_date": forms.DateInput(
-                attrs={
-                    "class": "form-control",
-                    "type": "date",
-                    "placeholder": "Select start date",
                 }
             ),
             "loan_period_months": forms.NumberInput(

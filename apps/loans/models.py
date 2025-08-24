@@ -128,7 +128,7 @@ class Loan(models.Model):
             MaxValueValidator(30),  # Ensures the value does not exceed 30
         ],
     )
-    start_date = models.DateField(verbose_name="Start Date")
+    start_date = models.DateField(verbose_name="Loan Application Date")
     disbursement_date = models.DateField(
         blank=True, null=True, verbose_name="Disbursement Date"
     )
