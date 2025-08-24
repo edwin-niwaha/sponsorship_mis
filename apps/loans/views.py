@@ -1,7 +1,8 @@
 import logging
 from datetime import date, datetime
-import pytz
 from decimal import Decimal
+
+import pytz
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -11,13 +12,11 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
 from django.db.models import DecimalField, F, Q, Sum, Value
 from django.db.models.functions import Coalesce
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.html import strip_tags
-from django.utils.timezone import now
 from openpyxl import load_workbook
-
-from apps.dashboard import models
 
 logger = logging.getLogger(__name__)
 from apps.client.models import Client
@@ -34,8 +33,8 @@ from .forms import (
     LoanAllDisbursementForm,
     LoanApplicationForm,
     LoanDisbursementForm,
-    LoanRepaymentForm,
     LoanPenaltyForm,
+    LoanRepaymentForm,
 )
 from .models import (
     ChartOfAccounts,
@@ -48,35 +47,6 @@ logger = logging.getLogger(__name__)
 
 
 # =================================== Loan Applications View ===================================
-# @login_required
-# @admin_or_manager_or_staff_required
-# def loan_applications_view(request):
-#     user = request.user
-#     search_query = request.GET.get("search")
-#     page = request.GET.get("page")
-
-#     # Get all loan applications based on search criteria
-#     # queryset = get_loan_queryset(search_query)
-#     queryset = get_loan_queryset(search_query).filter(
-#         status__in=["pending", "boo_approved", "hof_approved"]
-#     )
-
-#     # Apply role-based filtering for staff or guest
-#     if user.profile.role in ["staff", "guest"]:
-#         queryset = queryset.filter(applied_by=user)
-
-#     # Paginate the results
-#     loans = paginate_queryset(queryset, page)
-
-#     context = {
-#         "loans": loans,
-#         "table_title": "Loan Applications",
-#         "search_query": search_query,  # Pass search query for input retention
-#     }
-
-#     return render(request, "loans/loan_applications.html", context)
-
-
 @login_required
 @admin_or_manager_or_staff_required
 def loan_applications_view(request):
@@ -234,6 +204,85 @@ def send_loan_application_email(
         return False
 
 
+# @login_required
+# def loan_apply(request):
+#     form_title = "Loan Application Form"
+#     form = LoanApplicationForm(request.POST or None)
+#     borrowers = Client.objects.all().order_by("id")
+
+#     logged_in_user = request.user
+#     user_role = getattr(logged_in_user.profile, "role", "guest")
+
+#     if request.method == "POST":
+#         if form.is_valid():
+#             borrower_id = request.POST.get("id")
+#             borrower = get_object_or_404(Client, pk=borrower_id)
+
+#             # Check if the borrower has an active loan
+#             running_loan = Loan.objects.filter(
+#                 borrower=borrower, status__in=["overdue"]
+#             ).exists()
+#             if running_loan:
+#                 messages.warning(
+#                     request,
+#                     f"{borrower} already has an overdue loan balance and cannot apply for a new loan. Please settle the outstanding amount before applying for a new loan.",
+#                     extra_tags="bg-warning",
+#                 )
+#                 return redirect("loans:apply_for_loan")
+
+#             try:
+#                 # Save the loan application
+#                 application = form.save(commit=False)
+#                 application.borrower = borrower  # Explicitly assign borrower
+#                 application.disbursement_date = now()
+#                 application.applied_by = logged_in_user
+#                 application.applied_by_role = user_role
+#                 application.save()
+
+#                 # Extract client (borrower) name
+#                 client_name = (
+#                     borrower.get_full_name()
+#                     if hasattr(borrower, "get_full_name")
+#                     else str(borrower)
+#                 )
+
+#                 # Send email to logged-in user
+#                 send_loan_application_email(
+#                     recipient_name=logged_in_user.username,
+#                     recipient_email=logged_in_user.email,
+#                     application_id=application.id,
+#                     client_name=client_name,
+#                     is_applicant=True,
+#                 )
+
+#                 # Send email to loan officer
+#                 boo_email = settings.BOO_EMAIL
+#                 send_loan_application_email(
+#                     recipient_name="Loan Officer",
+#                     recipient_email=boo_email,
+#                     application_id=application.id,
+#                     client_name=client_name,
+#                     is_applicant=False,
+#                 )
+
+#                 messages.success(
+#                     request,
+#                     "Loan application submitted successfully!",
+#                     extra_tags="bg-success",
+#                 )
+#                 return redirect("loans:apply_for_loan")
+
+#             except ValidationError as e:
+#                 messages.error(request, str(e), extra_tags="bg-danger")
+
+#     context = {
+#         "form": form,
+#         "form_title": form_title,
+#         "borrowers": borrowers,
+#     }
+#     return render(request, "loans/apply_for_loan.html", context)
+
+
 @login_required
 def loan_apply(request):
     form_title = "Loan Application Form"
@@ -253,18 +302,19 @@ def loan_apply(request):
                 borrower=borrower, status__in=["overdue"]
             ).exists()
             if running_loan:
-                messages.warning(
-                    request,
-                    f"{borrower} already has an overdue loan balance and cannot apply for a new loan. Please settle the outstanding amount before applying for a new loan.",
-                    extra_tags="bg-warning",
-                )
+                error_message = f"{borrower} already has an overdue loan balance and cannot apply for a new loan. Please settle the outstanding amount before applying for a new loan."
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return JsonResponse(
+                        {"success": False, "message": error_message}, status=400
+                    )
+                messages.warning(request, error_message, extra_tags="bg-warning")
                 return redirect("loans:apply_for_loan")
 
             try:
                 # Save the loan application
                 application = form.save(commit=False)
-                application.borrower = borrower  # Explicitly assign borrower
-                application.disbursement_date = now()
+                application.borrower = borrower
+                application.disbursement_date = timezone.now()
                 application.applied_by = logged_in_user
                 application.applied_by_role = user_role
                 application.save()
@@ -295,15 +345,19 @@ def loan_apply(request):
                     is_applicant=False,
                 )
 
-                messages.success(
-                    request,
-                    "Loan application submitted successfully!",
-                    extra_tags="bg-success",
-                )
+                success_message = "Loan application submitted successfully!"
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return JsonResponse({"success": True, "message": success_message})
+                messages.success(request, success_message, extra_tags="bg-success")
                 return redirect("loans:apply_for_loan")
 
             except ValidationError as e:
-                messages.error(request, str(e), extra_tags="bg-danger")
+                error_message = str(e)
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return JsonResponse(
+                        {"success": False, "message": error_message}, status=400
+                    )
+                messages.error(request, error_message, extra_tags="bg-danger")
 
     context = {
         "form": form,

@@ -1,12 +1,13 @@
-from django import forms
+import logging
 from decimal import Decimal
+
+from django import forms
 from django.db.models import DecimalField, F, Q, Sum, Value
 from django.db.models.functions import Coalesce
-from django.utils.timezone import now
 from django.utils import timezone
-from .models import ChartOfAccounts, Loan, LoanDisbursement, LoanRepayment, LoanPenalty
+from django.utils.timezone import now
 
-import logging
+from .models import ChartOfAccounts, Loan, LoanDisbursement, LoanPenalty, LoanRepayment
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,7 @@ class LoanApplicationForm(forms.ModelForm):
             "disbursement_date",
             "due_date",
             "status",
+            "interest_method",
             "total_interest",
             "approved_by_boo",
             "approved_by_hof",
@@ -122,7 +124,7 @@ class LoanApplicationForm(forms.ModelForm):
                 attrs={
                     "class": "form-control",
                     "placeholder": "Enter reason for approval",
-                    "rows": 3,
+                    "rows": 2,
                 }
             ),
         }

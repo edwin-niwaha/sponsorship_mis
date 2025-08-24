@@ -6,13 +6,11 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Sum
 from django.utils import timezone
-from django.db import transaction
 
 from apps.client.models import Client
-
 
 PAYMENT_METHOD_CHOICES = [
     ("bank_transfer", "Bank Transfer"),
@@ -202,7 +200,7 @@ class Loan(models.Model):
         blank=False,
         null=False,
         verbose_name="Reason for Approval",
-        default="Approval granted based on the borrower's ",
+        default="Approval granted based on the borrower's savings history.",
     )
     applied_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

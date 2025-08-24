@@ -1,3 +1,7 @@
+import uuid
+
+import requests
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
@@ -5,11 +9,8 @@ from django.http import HttpResponseBadRequest, HttpResponseRedirect, JsonRespon
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-import requests
-import uuid
-import json
 from django.views.decorators.csrf import csrf_exempt
-from django.conf import settings
+
 from apps.child.models import Child
 from apps.sponsor.models import Sponsor
 from apps.staff.models import Staff
@@ -26,8 +27,8 @@ from .forms import (
 )
 from .models import (
     ChildSponsorship,
-    StaffSponsorship,
     Payment,
+    StaffSponsorship,
 )
 
 

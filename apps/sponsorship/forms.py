@@ -1,6 +1,5 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator, RegexValidator
 
 from .models import ChildSponsorship, StaffSponsorship
 

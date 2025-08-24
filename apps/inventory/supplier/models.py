@@ -2,8 +2,6 @@ import phonenumbers
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-from phonenumber_field.modelfields import PhoneNumberField
-
 
 # class Supplier(models.Model):
 #     name = models.CharField(max_length=255, verbose_name="Supplier Name")
