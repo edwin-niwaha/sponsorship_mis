@@ -1,14 +1,18 @@
 from datetime import date
 from decimal import ROUND_DOWN, Decimal
-
+from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.utils import timezone
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 from apps.client.models import Client
 
@@ -432,29 +436,78 @@ class Loan(models.Model):
             "value": self.id,
         }
 
+    # def calculate_total_amount_due_balance(self, due_date, total_amount_due):
+    #     # Get repayments made on or before the due date
+    #     repayments = self.repayments.filter(repayment_date__lte=due_date).aggregate(
+    #         total_principal=Sum("principal_payment"),
+    #         total_interest=Sum("interest_payment"),
+    #         total_penalty=Sum("penalty_payment"),
+    #     )
+
+    #     total_principal_paid = repayments["total_principal"] or Decimal("0.00")
+    #     total_interest_paid = repayments["total_interest"] or Decimal("0.00")
+    #     total_penalty_paid = repayments["total_penalty"] or Decimal("0.00")
+    #     total_paid = total_principal_paid + total_interest_paid + total_penalty_paid
+
+    #     # Calculate remaining due balance
+    #     total_penalty = self.penalties.filter(
+    #         penalty_date__lte=due_date, is_paid=False
+    #     ).aggregate(total=Sum("penalty_amount"))["total"] or Decimal("0.00")
+
+    #     remaining_due_balance = max(
+    #         total_amount_due + total_penalty - total_paid, Decimal("0.00")
+    #     )
+    #     return remaining_due_balance.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+
     def calculate_total_amount_due_balance(self, due_date, total_amount_due):
-        # Get repayments made on or before the due date
-        repayments = self.repayments.filter(repayment_date__lte=due_date).aggregate(
-            total_principal=Sum("principal_payment"),
-            total_interest=Sum("interest_payment"),
-            total_penalty=Sum("penalty_payment"),
-        )
+        try:
+            # Ensure due_date is a date object
+            if isinstance(due_date, datetime):
+                due_date = due_date.date()
 
-        total_principal_paid = repayments["total_principal"] or Decimal("0.00")
-        total_interest_paid = repayments["total_interest"] or Decimal("0.00")
-        total_penalty_paid = repayments["total_penalty"] or Decimal("0.00")
-        total_paid = total_principal_paid + total_interest_paid + total_penalty_paid
+            # Validate input parameters
+            if not isinstance(due_date, date):
+                logger.error(f"Invalid due_date type for Loan {self.id}: {type(due_date)}")
+                raise ValidationError("due_date must be a date object")
+            if not isinstance(total_amount_due, (Decimal, int, float)):
+                logger.error(f"Invalid total_amount_due type for Loan {self.id}: {type(total_amount_due)}")
+                raise ValidationError("total_amount_due must be a numeric value")
 
-        # Calculate remaining due balance
-        total_penalty = self.penalties.filter(
-            penalty_date__lte=due_date, is_paid=False
-        ).aggregate(total=Sum("penalty_amount"))["total"] or Decimal("0.00")
+            # Get repayments made on or before the due date
+            repayments = self.repayments.filter(
+                repayment_date__lte=due_date,
+                principal_payment__isnull=False,
+                interest_payment__isnull=False,
+                penalty_payment__isnull=False
+            ).aggregate(
+                total_principal=Sum("principal_payment", default=Decimal("0.00")),
+                total_interest=Sum("interest_payment", default=Decimal("0.00")),
+                total_penalty=Sum("penalty_payment", default=Decimal("0.00")),
+            )
 
-        remaining_due_balance = max(
-            total_amount_due + total_penalty - total_paid, Decimal("0.00")
-        )
-        return remaining_due_balance.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+            total_principal_paid = repayments["total_principal"] or Decimal("0.00")
+            total_interest_paid = repayments["total_interest"] or Decimal("0.00")
+            total_penalty_paid = repayments["total_penalty"] or Decimal("0.00")
+            total_paid = total_principal_paid + total_interest_paid + total_penalty_paid
 
+            # Calculate penalties up to the due date
+            total_penalty = self.penalties.filter(
+                penalty_date__lte=due_date,
+                is_paid=False,
+                penalty_amount__isnull=False
+            ).aggregate(
+                total=Sum("penalty_amount", default=Decimal("0.00"))
+            )["total"] or Decimal("0.00")
+
+            # Calculate remaining due balance
+            remaining_due_balance = max(
+                total_amount_due + total_penalty - total_paid, Decimal("0.00")
+            )
+            return remaining_due_balance.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+
+        except Exception as e:
+            logger.error(f"Error in calculate_total_amount_due_balance for Loan {self.id}: {str(e)}", exc_info=True)
+            raise
 
 # =================================== LoanDisbursement Model ===================================
 class LoanDisbursement(models.Model):

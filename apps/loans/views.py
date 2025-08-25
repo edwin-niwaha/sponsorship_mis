@@ -2514,6 +2514,7 @@ def loan_due_overdue_report(request):
     try:
         timezone.activate(pytz.timezone("Africa/Nairobi"))
     except pytz.exceptions.UnknownTimeZoneError:
+        logger.error("Unknown timezone: Africa/Nairobi, falling back to UTC")
         timezone.activate(pytz.UTC)
 
     # Get selected date from GET parameters or default to today
@@ -2522,9 +2523,7 @@ def loan_due_overdue_report(request):
         try:
             selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
         except ValueError:
-            logger.warning(
-                f"Invalid date format for selected_date: {selected_date_str}"
-            )
+            logger.warning(f"Invalid date format for selected_date: {selected_date_str}")
             selected_date = timezone.now().date()
     else:
         selected_date = timezone.now().date()
@@ -2543,8 +2542,10 @@ def loan_due_overdue_report(request):
             )
             if total_balance <= 0:
                 continue
+
             schedule = loan.generate_payment_schedule()
             total_amount_due = total_balance
+
             if loan.due_date and loan.due_date < selected_date:
                 total_amount_due = total_balance
             else:
@@ -2568,23 +2569,18 @@ def loan_due_overdue_report(request):
                         ),
                         total_balance,
                     )
+
             total_amount_due_balance = loan.calculate_total_amount_due_balance(
                 due_date=selected_date, total_amount_due=total_amount_due
             )
             if total_amount_due_balance <= 0:
                 continue
             if not loan.disbursement_date or loan.loan_period_months <= 0:
+                logger.warning(f"Invalid loan data for Loan {loan.id}: disbursement_date={loan.disbursement_date}, loan_period_months={loan.loan_period_months}")
                 continue
-        except Exception as e:
-            logger.error(
-                f"Error calculating balances or schedule for Loan {loan.id}: {e}"
-            )
-            continue
 
-        try:
             if loan.due_date and loan.due_date < selected_date:
                 days_overdue = (selected_date - loan.due_date).days
-                total_amount_due = total_balance
                 total_amount_due_balance = loan.calculate_total_amount_due_balance(
                     due_date=selected_date, total_amount_due=total_amount_due
                 )
@@ -2605,6 +2601,7 @@ def loan_due_overdue_report(request):
                     }
                 )
                 continue
+
             overdue_payments = [
                 p
                 for p in schedule
@@ -2653,11 +2650,8 @@ def loan_due_overdue_report(request):
                         "days_overdue": days_overdue,
                     }
                 )
-        except Exception as e:
-            logger.error(f"Error processing overdue for Loan {loan.id}: {e}")
-            continue
+                continue
 
-        try:
             due_payments = [
                 p
                 for p in schedule
@@ -2697,8 +2691,9 @@ def loan_due_overdue_report(request):
                         "total_amount_due_balance": total_amount_due_balance,
                     }
                 )
+
         except Exception as e:
-            logger.error(f"Error processing due loans for Loan {loan.id}: {e}")
+            logger.error(f"Error processing Loan {loan.id}: {str(e)}", exc_info=True)
             continue
 
     due_loans = sorted(
