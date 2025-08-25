@@ -426,7 +426,7 @@ class LoanRepaymentForm(forms.ModelForm):
             Q(remaining_principal__gt=0)
             | Q(remaining_interest__gt=0)
             | Q(remaining_penalty__gt=0),
-            status="disbursed",
+            status__in=["disbursed", "overdue"],
         )
 
     def clean(self):

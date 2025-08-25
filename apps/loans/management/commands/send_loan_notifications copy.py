@@ -83,21 +83,46 @@ class Command(BaseCommand):
         try:
             balances = loan.calculate_remaining_balances()
             total_balance = balances["principal_balance"] + balances["interest_balance"]
-            if (
-                total_balance <= 0
-                or not loan.disbursement_date
-                or loan.loan_period_months <= 0
-            ):
+            # Generate payment schedule early to calculate total_amount_due_balance
+            schedule = loan.generate_payment_schedule()
+            # Calculate total_amount_due for due or overdue scenarios
+            total_amount_due = total_balance  # Default to total_balance for simplicity
+            if loan.due_date and loan.due_date < today:
+                # Overdue past maturity
+                total_amount_due = total_balance
+            else:
+                # Check for overdue or due payments
+                payments = [
+                    p
+                    for p in schedule
+                    if isinstance(p["payment_due_date"], (date, datetime))
+                    and (
+                        p["payment_due_date"].date()
+                        if isinstance(p["payment_due_date"], datetime)
+                        else p["payment_due_date"]
+                    )
+                    <= today
+                    and p["principal_payment"] + p["interest_payment"] > 0
+                ]
+                if payments:
+                    total_amount_due = min(
+                        sum(
+                            p["principal_payment"] + p["interest_payment"]
+                            for p in payments
+                        ),
+                        total_balance,
+                    )
+            total_amount_due_balance = loan.calculate_total_amount_due_balance(
+                due_date=today, total_amount_due=total_amount_due
+            )
+            if total_balance <= 0 or total_amount_due_balance <= 0:
+                return 0, 0
+            if not loan.disbursement_date or loan.loan_period_months <= 0:
                 return 0, 0
         except Exception as e:
-            logger.error(f"Error calculating balances for Loan {loan.id}: {e}")
-            return 0, 1
-
-        # Generate payment schedule
-        try:
-            schedule = loan.generate_payment_schedule()
-        except Exception as e:
-            logger.error(f"Error generating payment schedule for Loan {loan.id}: {e}")
+            logger.error(
+                f"Error calculating balances or schedule for Loan {loan.id}: {e}"
+            )
             return 0, 1
 
         sent, failed = 0, 0
@@ -185,6 +210,8 @@ class Command(BaseCommand):
             total_amount_due_balance = loan.calculate_total_amount_due_balance(
                 due_date=today, total_amount_due=total_amount_due
             )
+            if total_amount_due_balance <= 0:  # Skip if total_amount_due_balance <= 0
+                return sent, failed
             overdue_summary.append(
                 {
                     "loan_id": loan.id,
@@ -272,6 +299,10 @@ class Command(BaseCommand):
                     total_amount_due_balance = loan.calculate_total_amount_due_balance(
                         due_date=today, total_amount_due=total_amount_due
                     )
+                    if (
+                        total_amount_due_balance <= 0
+                    ):  # Skip if total_amount_due_balance <= 0
+                        return sent, failed
                     overdue_summary.append(
                         {
                             "loan_id": loan.id,
@@ -426,7 +457,7 @@ class Command(BaseCommand):
             timezone.activate(pytz.UTC)
 
         today = timezone.now().date()
-        loans = Loan.objects.filter(status="disbursed")
+        loans = Loan.objects.filter(status__in=["disbursed", "overdue"])
         url = "https://sponsorwithpendeza.org/loans/due-overdue-report/"
         due_summary, overdue_summary = [], []
         sent, failed = 0, 0

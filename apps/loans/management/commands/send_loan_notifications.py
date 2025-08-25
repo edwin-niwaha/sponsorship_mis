@@ -11,7 +11,6 @@ from apps.loans.models import Loan
 
 logger = logging.getLogger(__name__)
 
-
 class Command(BaseCommand):
     help = "Sends professional HTML email notifications for loans due today and overdue, with summary to BOO and HOF"
 
@@ -82,7 +81,11 @@ class Command(BaseCommand):
         # Calculate balances
         try:
             balances = loan.calculate_remaining_balances()
-            total_balance = balances["principal_balance"] + balances["interest_balance"]
+            total_balance = (
+                balances["principal_balance"]
+                + balances["interest_balance"]
+                + balances["penalty_balance"]
+            )
             # Generate payment schedule early to calculate total_amount_due_balance
             schedule = loan.generate_payment_schedule()
             # Calculate total_amount_due for due or overdue scenarios
@@ -155,6 +158,9 @@ class Command(BaseCommand):
                 {
                     "loan_id": loan.id,
                     "borrower_name": borrower.full_name,
+                    "principal_balance": balances["principal_balance"],
+                    "interest_balance": balances["interest_balance"],
+                    "penalty_balance": balances["penalty_balance"],
                     "total_amount_due": total_amount_due,
                     "total_amount_due_balance": total_amount_due_balance,
                     "total_balance": total_balance,
@@ -166,6 +172,9 @@ class Command(BaseCommand):
             text_content = (
                 f"Dear {borrower.full_name},\n\n"
                 f"Your payment for Loan ID: {loan.id} is due today, {today.strftime('%Y-%m-%d')}.\n"
+                f"Principal Balance: UGX {balances['principal_balance']:,.2f}\n"
+                f"Interest Balance: UGX {balances['interest_balance']:,.2f}\n"
+                f"Penalty Balance: UGX {balances['penalty_balance']:,.2f}\n"
                 f"Amount Due: UGX {total_amount_due:,.2f}\n"
                 f"Amount Due Balance: UGX {total_amount_due_balance:,.2f}\n"
                 f"Outstanding Balance: UGX {total_balance:,.2f}\n"
@@ -180,6 +189,9 @@ class Command(BaseCommand):
                     <thead>
                         <tr>
                             <th>Loan ID</th>
+                            <th class="text-right">Principal Balance</th>
+                            <th class="text-right">Interest Balance</th>
+                            <th class="text-right">Penalty Balance</th>
                             <th class="text-right">Amount Due Balance</th>
                             <th class="text-right">Outstanding Balance</th>
                         </tr>
@@ -187,6 +199,9 @@ class Command(BaseCommand):
                     <tbody>
                         <tr>
                             <td>{loan.id}</td>
+                            <td class="text-right">UGX {balances['principal_balance']:,.2f}</td>
+                            <td class="text-right">UGX {balances['interest_balance']:,.2f}</td>
+                            <td class="text-right">UGX {balances['penalty_balance']:,.2f}</td>
                             <td class="text-right">UGX {total_amount_due_balance:,.2f}</td>
                             <td class="text-right">UGX {total_balance:,.2f}</td>
                         </tr>
@@ -216,6 +231,9 @@ class Command(BaseCommand):
                 {
                     "loan_id": loan.id,
                     "borrower_name": borrower.full_name,
+                    "principal_balance": balances["principal_balance"],
+                    "interest_balance": balances["interest_balance"],
+                    "penalty_balance": balances["penalty_balance"],
                     "total_amount_due": total_amount_due,
                     "total_amount_due_balance": total_amount_due_balance,
                     "total_balance": total_balance,
@@ -228,6 +246,9 @@ class Command(BaseCommand):
             text_content = (
                 f"Dear {borrower.full_name},\n\n"
                 f"Your payment for Loan ID: {loan.id} is overdue as of {today.strftime('%Y-%m-%d')}.\n"
+                f"Principal Balance: UGX {balances['principal_balance']:,.2f}\n"
+                f"Interest Balance: UGX {balances['interest_balance']:,.2f}\n"
+                f"Penalty Balance: UGX {balances['penalty_balance']:,.2f}\n"
                 f"Amount Due: UGX {total_amount_due:,.2f}\n"
                 f"Amount Due Balance: UGX {total_amount_due_balance:,.2f}\n"
                 f"Outstanding Balance: UGX {total_balance:,.2f}\n"
@@ -243,6 +264,9 @@ class Command(BaseCommand):
                     <thead>
                         <tr>
                             <th>Loan ID</th>
+                            <th class="text-right">Principal Balance</th>
+                            <th class="text-right">Interest Balance</th>
+                            <th class="text-right">Penalty Balance</th>
                             <th class="text-right">Amount Due Balance</th>
                             <th class="text-right">Outstanding Balance</th>
                         </tr>
@@ -250,6 +274,9 @@ class Command(BaseCommand):
                     <tbody>
                         <tr>
                             <td>{loan.id}</td>
+                            <td class="text-right">UGX {balances['principal_balance']:,.2f}</td>
+                            <td class="text-right">UGX {balances['interest_balance']:,.2f}</td>
+                            <td class="text-right">UGX {balances['penalty_balance']:,.2f}</td>
                             <td class="text-right">UGX {total_amount_due_balance:,.2f}</td>
                             <td class="text-right">UGX {total_balance:,.2f}</td>
                         </tr>
@@ -307,6 +334,9 @@ class Command(BaseCommand):
                         {
                             "loan_id": loan.id,
                             "borrower_name": borrower.full_name,
+                            "principal_balance": balances["principal_balance"],
+                            "interest_balance": balances["interest_balance"],
+                            "penalty_balance": balances["penalty_balance"],
                             "total_amount_due": total_amount_due,
                             "total_amount_due_balance": total_amount_due_balance,
                             "total_balance": total_balance,
@@ -319,6 +349,9 @@ class Command(BaseCommand):
                     text_content = (
                         f"Dear {borrower.full_name},\n\n"
                         f"Your payment for Loan ID: {loan.id} is overdue as of {today.strftime('%Y-%m-%d')}.\n"
+                        f"Principal Balance: UGX {balances['principal_balance']:,.2f}\n"
+                        f"Interest Balance: UGX {balances['interest_balance']:,.2f}\n"
+                        f"Penalty Balance: UGX {balances['penalty_balance']:,.2f}\n"
                         f"Amount Due: UGX {total_amount_due:,.2f}\n"
                         f"Amount Due Balance: UGX {total_amount_due_balance:,.2f}\n"
                         f"Outstanding Balance: UGX {total_balance:,.2f}\n"
@@ -334,6 +367,9 @@ class Command(BaseCommand):
                             <thead>
                                 <tr>
                                     <th>Loan ID</th>
+                                    <th class="text-right">Principal Balance</th>
+                                    <th class="text-right">Interest Balance</th>
+                                    <th class="text-right">Penalty Balance</th>
                                     <th class="text-right">Amount Due Balance</th>
                                     <th class="text-right">Outstanding Balance</th>
                                 </tr>
@@ -341,6 +377,9 @@ class Command(BaseCommand):
                             <tbody>
                                 <tr>
                                     <td>{loan.id}</td>
+                                    <td class="text-right">UGX {balances['principal_balance']:,.2f}</td>
+                                    <td class="text-right">UGX {balances['interest_balance']:,.2f}</td>
+                                    <td class="text-right">UGX {balances['penalty_balance']:,.2f}</td>
                                     <td class="text-right">UGX {total_amount_due_balance:,.2f}</td>
                                     <td class="text-right">UGX {total_balance:,.2f}</td>
                                 </tr>
@@ -370,6 +409,9 @@ class Command(BaseCommand):
         due_rows = "".join(
             f"<tr><td><a href='{url}#{loan['loan_id']}'>{loan['loan_id']}</a></td>"
             f"<td>{loan['borrower_name']}</td>"
+            f"<td class='text-right'>UGX {loan['principal_balance']:,.2f}</td>"
+            f"<td class='text-right'>UGX {loan['interest_balance']:,.2f}</td>"
+            f"<td class='text-right'>UGX {loan['penalty_balance']:,.2f}</td>"
             f"<td class='text-right'>UGX {loan['total_amount_due_balance']:,.2f}</td>"
             f"<td class='text-right'>UGX {loan['total_balance']:,.2f}</td></tr>"
             for loan in due_summary
@@ -377,6 +419,9 @@ class Command(BaseCommand):
         overdue_rows = "".join(
             f"<tr><td><a href='{url}#{loan['loan_id']}'>{loan['loan_id']}</a></td>"
             f"<td>{loan['borrower_name']}</td>"
+            f"<td class='text-right'>UGX {loan['principal_balance']:,.2f}</td>"
+            f"<td class='text-right'>UGX {loan['interest_balance']:,.2f}</td>"
+            f"<td class='text-right'>UGX {loan['penalty_balance']:,.2f}</td>"
             f"<td class='text-right'>UGX {loan['total_amount_due_balance']:,.2f}</td>"
             f"<td class='text-right'>UGX {loan['total_balance']:,.2f}</td></tr>"
             for loan in overdue_summary
@@ -388,12 +433,14 @@ class Command(BaseCommand):
         due_amount_due_balance = sum(
             loan["total_amount_due_balance"] for loan in due_summary
         )
+        due_penalty_balance = sum(loan["penalty_balance"] for loan in due_summary)
         overdue_count = len(overdue_summary)
         overdue_amount = sum(loan["total_amount_due"] for loan in overdue_summary)
         overdue_balance = sum(loan["total_balance"] for loan in overdue_summary)
         overdue_amount_due_balance = sum(
             loan["total_amount_due_balance"] for loan in overdue_summary
         )
+        overdue_penalty_balance = sum(loan["penalty_balance"] for loan in overdue_summary)
 
         text_content = (
             f"Dear Team,\n\nLoan Summary for {today.strftime('%Y-%m-%d')}:\n\n"
@@ -401,6 +448,9 @@ class Command(BaseCommand):
             + (
                 "\n".join(
                     f"Loan ID: {loan['loan_id']}, Borrower: {loan['borrower_name']}, "
+                    f"Principal Balance: UGX {loan['principal_balance']:,.2f}, "
+                    f"Interest Balance: UGX {loan['interest_balance']:,.2f}, "
+                    f"Penalty Balance: UGX {loan['penalty_balance']:,.2f}, "
                     f"Amount Due: UGX {loan['total_amount_due']:,.2f}, "
                     f"Amount Due Balance: UGX {loan['total_amount_due_balance']:,.2f}, "
                     f"Balance: UGX {loan['total_balance']:,.2f}, "
@@ -409,6 +459,7 @@ class Command(BaseCommand):
                 )
                 + f"\nTotal Amount Due: UGX {due_amount:,.2f}\n"
                 + f"Total Amount Due Balance: UGX {due_amount_due_balance:,.2f}\n"
+                + f"Total Penalty Balance: UGX {due_penalty_balance:,.2f}\n"
                 + f"Total Balance: UGX {due_balance:,.2f}\n"
                 if due_summary
                 else "None\n"
@@ -417,6 +468,9 @@ class Command(BaseCommand):
             + (
                 "\n".join(
                     f"Loan ID: {loan['loan_id']}, Borrower: {loan['borrower_name']}, "
+                    f"Principal Balance: UGX {loan['principal_balance']:,.2f}, "
+                    f"Interest Balance: UGX {loan['interest_balance']:,.2f}, "
+                    f"Penalty Balance: UGX {loan['penalty_balance']:,.2f}, "
                     f"Amount Due: UGX {loan['total_amount_due']:,.2f}, "
                     f"Amount Due Balance: UGX {loan['total_amount_due_balance']:,.2f}, "
                     f"Balance: UGX {loan['total_balance']:,.2f}, "
@@ -426,6 +480,7 @@ class Command(BaseCommand):
                 )
                 + f"\nTotal Amount Overdue: UGX {overdue_amount:,.2f}\n"
                 + f"Total Amount Due Balance: UGX {overdue_amount_due_balance:,.2f}\n"
+                + f"Total Penalty Balance: UGX {overdue_penalty_balance:,.2f}\n"
                 + f"Total Balance: UGX {overdue_balance:,.2f}\n"
                 if overdue_summary
                 else "None\n"
@@ -436,12 +491,16 @@ class Command(BaseCommand):
             f"""
             <p>Dear Team,</p>
             <h5>Loans Due Today ({due_count})</h5>
-            {f'<table class="table table-striped"><thead><tr><th>Loan ID</th><th>Borrower</th><th class="text-right">Amount Due Balance</th><th class="text-right">Outstanding Balance</th></tr></thead><tbody>{due_rows}</tbody></table>'
+            {f'<table class="table table-striped"><thead><tr><th>Loan ID</th><th>Borrower</th><th class="text-right">Principal Balance</th><th class="text-right">Interest Balance</th><th class="text-right">Penalty Balance</th><th class="text-right">Amount Due Balance</th><th class="text-right">Outstanding Balance</th></tr></thead><tbody>{due_rows}</tbody></table>'
+            f'<p>Total Amount Due: <strong>UGX {due_amount:,.2f}</strong></p>'
             f'<p>Total Amount Due Balance: <strong>UGX {due_amount_due_balance:,.2f}</strong></p>'
+            f'<p>Total Penalty Balance: <strong>UGX {due_penalty_balance:,.2f}</strong></p>'
             f'<p>Total Outstanding Balance: <strong>UGX {due_balance:,.2f}</strong></p>' if due_summary else '<p class="text-muted">No loans due today.</p>'}
             <h5 class="mt-4">Overdue Loans ({overdue_count})</h5>
-            {f'<table class="table table-striped"><thead><tr><th>Loan ID</th><th>Borrower</th><th class="text-right">Amount Due Balance</th><th class="text-right">Outstanding Balance</th></tr></thead><tbody>{overdue_rows}</tbody></table>'
+            {f'<table class="table table-striped"><thead><tr><th>Loan ID</th><th>Borrower</th><th class="text-right">Principal Balance</th><th class="text-right">Interest Balance</th><th class="text-right">Penalty Balance</th><th class="text-right">Amount Due Balance</th><th class="text-right">Outstanding Balance</th></tr></thead><tbody>{overdue_rows}</tbody></table>'
+            f'<p>Total Amount Overdue: <strong>UGX {overdue_amount:,.2f}</strong></p>'
             f'<p>Total Amount Due Balance: <strong>UGX {overdue_amount_due_balance:,.2f}</strong></p>'
+            f'<p>Total Penalty Balance: <strong>UGX {overdue_penalty_balance:,.2f}</strong></p>'
             f'<p>Total Outstanding Balance: <strong>UGX {overdue_balance:,.2f}</strong></p>' if overdue_summary else '<p class="text-muted">No overdue loans.</p>'}
             <p class="mt-4"><a href="{url}" class="btn btn-view btn-lg d-inline-flex align-items-center"><i class="bi bi-eye-fill"></i> View All Loans</a></p>
             """,
