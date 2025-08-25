@@ -11,6 +11,7 @@ from apps.loans.models import Loan
 
 logger = logging.getLogger(__name__)
 
+
 class Command(BaseCommand):
     help = "Sends professional HTML email notifications for loans due today and overdue, with summary to BOO and HOF"
 
@@ -440,7 +441,9 @@ class Command(BaseCommand):
         overdue_amount_due_balance = sum(
             loan["total_amount_due_balance"] for loan in overdue_summary
         )
-        overdue_penalty_balance = sum(loan["penalty_balance"] for loan in overdue_summary)
+        overdue_penalty_balance = sum(
+            loan["penalty_balance"] for loan in overdue_summary
+        )
 
         text_content = (
             f"Dear Team,\n\nLoan Summary for {today.strftime('%Y-%m-%d')}:\n\n"

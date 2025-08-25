@@ -2507,6 +2507,7 @@ def client_loan_statement(request):
 #     }
 #     return render(request, "loans/due_overdue_report.html", context)
 
+
 @login_required
 @admin_or_manager_or_staff_required
 def loan_due_overdue_report(request):
@@ -2717,9 +2718,7 @@ def loan_due_overdue_report(request):
     due_loans_total_due_balance = sum(
         loan["total_amount_due_balance"] for loan in due_loans
     )
-    due_loans_total_penalty_balance = sum(
-        loan["penalty_balance"] for loan in due_loans
-    )
+    due_loans_total_penalty_balance = sum(loan["penalty_balance"] for loan in due_loans)
     overdue_loans_count = len(overdue_loans)
     overdue_loans_total_amount = sum(loan["total_amount_due"] for loan in overdue_loans)
     overdue_loans_total_balance = sum(loan["total_balance"] for loan in overdue_loans)
