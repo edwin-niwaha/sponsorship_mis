@@ -852,7 +852,6 @@ def approve_loan(request, loan_id):
 
 # =================================== Approve All Loans View ===================================
 @login_required
-@admin_or_manager_required
 def approve_all_loans(request):
     current_user = request.user
     role = current_user.profile.role
