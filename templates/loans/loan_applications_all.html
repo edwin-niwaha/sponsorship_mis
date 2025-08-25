@@ -67,11 +67,15 @@
                         <td class="fw-bold">
                           <span class="badge {% if loan.status == 'overdue' %}
                               
+                              
                               bg-danger
+
 
                             {% else %}
                               
+                              
                               bg-primary
+
 
                             {% endif %}">
                             {{ loan.get_status_display }}
@@ -163,6 +167,14 @@
                               
                               
                               
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
                               &search={{ search_query }}
                             {% endif %}"
                             aria-label="First">
@@ -172,6 +184,22 @@
                         <li class="page-item">
                           <a class="page-link"
                             href="?page={{ page_obj.previous_page_number }}{% if search_query %}
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
                               
                               
                               
@@ -202,6 +230,22 @@
                               
                               
                               
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
                               &search={{ search_query }}
                             {% endif %}">
                             {{ num }}
@@ -222,6 +266,22 @@
                               
                               
                               
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
                               &search={{ search_query }}
                             {% endif %}"
                             aria-label="Next">
@@ -231,6 +291,22 @@
                         <li class="page-item">
                           <a class="page-link"
                             href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
                               
                               
                               

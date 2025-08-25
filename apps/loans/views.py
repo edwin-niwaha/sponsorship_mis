@@ -84,27 +84,63 @@ def loan_applications_view(request):
 
 
 # =================================== All Loan Applications View ===================================
+# @login_required
+# @admin_or_manager_or_staff_required
+# def loan_applications_all_view(request):
+#     user = request.user
+#     search_query = request.GET.get("search")
+#     page = request.GET.get("page")
+
+#     # Get all loan applications based on search criteria
+#     queryset = get_loan_queryset(search_query)
+
+#     # Apply role-based filtering for staff or guest
+#     if user.profile.role in ["staff", "guest"]:
+#         queryset = queryset.filter(applied_by=user)
+
+#     # Paginate the results
+#     loans = paginate_queryset(queryset, page)
+
+#     context = {
+#         "loans": loans,
+#         "table_title": "All Loan Applications",
+#         "search_query": search_query,  # Pass search query for input retention
+#     }
+
+#     return render(request, "loans/loan_applications_all.html", context)
+
+
 @login_required
 @admin_or_manager_or_staff_required
 def loan_applications_all_view(request):
     user = request.user
-    search_query = request.GET.get("search")
-    page = request.GET.get("page")
+    search_query = request.GET.get("search", "")
+    page = request.GET.get("page", 1)
+    per_page = 25  # Number of items per page
 
-    # Get all loan applications based on search criteria
-    queryset = get_loan_queryset(search_query)
+    # Get filtered loan applications
+    queryset = get_loan_queryset(search_query).filter(
+        status__in=["pending", "boo_approved", "hof_approved"]
+    )
 
-    # Apply role-based filtering for staff or guest
+    # Apply role-based filtering
     if user.profile.role in ["staff", "guest"]:
         queryset = queryset.filter(applied_by=user)
 
-    # Paginate the results
-    loans = paginate_queryset(queryset, page)
+    # Set up pagination
+    paginator = Paginator(queryset, per_page)
+    try:
+        loans = paginator.page(page)
+    except PageNotAnInteger:
+        loans = paginator.page(1)
+    except EmptyPage:
+        loans = paginator.page(paginator.num_pages)
 
     context = {
         "loans": loans,
         "table_title": "All Loan Applications",
-        "search_query": search_query,  # Pass search query for input retention
+        "search_query": search_query,
+        "page_obj": loans,  # For pagination template access
     }
 
     return render(request, "loans/loan_applications_all.html", context)
@@ -118,7 +154,7 @@ def get_loan_queryset(search_query):
 
 
 def paginate_queryset(queryset, page_number):
-    paginator = Paginator(queryset, 25)
+    paginator = Paginator(queryset, 1)
     try:
         return paginator.page(page_number)
     except PageNotAnInteger:
