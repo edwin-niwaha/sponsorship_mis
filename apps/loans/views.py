@@ -223,18 +223,19 @@ def send_loan_application_email(
 #                 borrower=borrower, status__in=["overdue"]
 #             ).exists()
 #             if running_loan:
-#                 messages.warning(
-#                     request,
-#                     f"{borrower} already has an overdue loan balance and cannot apply for a new loan. Please settle the outstanding amount before applying for a new loan.",
-#                     extra_tags="bg-warning",
-#                 )
+#                 error_message = f"{borrower} already has an overdue loan balance and cannot apply for a new loan. Please settle the outstanding amount before applying for a new loan."
+#                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+#                     return JsonResponse(
+#                         {"success": False, "message": error_message}, status=400
+#                     )
+#                 messages.warning(request, error_message, extra_tags="bg-warning")
 #                 return redirect("loans:apply_for_loan")
 
 #             try:
 #                 # Save the loan application
 #                 application = form.save(commit=False)
-#                 application.borrower = borrower  # Explicitly assign borrower
-#                 application.disbursement_date = now()
+#                 application.borrower = borrower
+#                 application.disbursement_date = timezone.now()
 #                 application.applied_by = logged_in_user
 #                 application.applied_by_role = user_role
 #                 application.save()
@@ -265,15 +266,19 @@ def send_loan_application_email(
 #                     is_applicant=False,
 #                 )
 
-#                 messages.success(
-#                     request,
-#                     "Loan application submitted successfully!",
-#                     extra_tags="bg-success",
-#                 )
+#                 success_message = "Loan application submitted successfully!"
+#                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+#                     return JsonResponse({"success": True, "message": success_message})
+#                 messages.success(request, success_message, extra_tags="bg-success")
 #                 return redirect("loans:apply_for_loan")
 
 #             except ValidationError as e:
-#                 messages.error(request, str(e), extra_tags="bg-danger")
+#                 error_message = str(e)
+#                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+#                     return JsonResponse(
+#                         {"success": False, "message": error_message}, status=400
+#                     )
+#                 messages.error(request, error_message, extra_tags="bg-danger")
 
 #     context = {
 #         "form": form,
@@ -297,12 +302,28 @@ def loan_apply(request):
             borrower_id = request.POST.get("id")
             borrower = get_object_or_404(Client, pk=borrower_id)
 
-            # Check if the borrower has an active loan
-            running_loan = Loan.objects.filter(
-                borrower=borrower, status__in=["overdue"]
-            ).exists()
-            if running_loan:
-                error_message = f"{borrower} already has an overdue loan balance and cannot apply for a new loan. Please settle the outstanding amount before applying for a new loan."
+            # Check if the borrower has any running loans with a non-zero balance
+            running_loans = Loan.objects.filter(
+                borrower=borrower, status__in=["disbursed", "overdue"]
+            )
+
+            has_running_balance = False
+            for loan in running_loans:
+                balances = loan.calculate_remaining_balances()
+                total_balance = (
+                    balances["principal_balance"]
+                    + balances["interest_balance"]
+                    + balances["penalty_balance"]
+                )
+                if total_balance > Decimal("0.00"):
+                    has_running_balance = True
+                    break
+
+            if has_running_balance:
+                error_message = (
+                    f"{borrower} has an existing loan with an outstanding balance. "
+                    "Please settle the outstanding amount before applying for a new loan."
+                )
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     return JsonResponse(
                         {"success": False, "message": error_message}, status=400
@@ -609,36 +630,72 @@ def disburse_loan(request):
 @admin_or_manager_required
 def disburse_all_loans(request):
     # Get all approved loans
-    # approved_loans = Loan.objects.filter(status="approved")
-    approved_loans = Loan.objects.filter(status__in=["overdue", "approved"])
+    approved_loans = Loan.objects.filter(
+        status="approved"
+    )  # Only "approved" loans, excluding "overdue"
 
-    # Ensure there are approved loans to disburse
-    if not approved_loans:
+    # Filter out loans for borrowers with running loan balances
+    eligible_loans = []
+    ineligible_loans = []
+
+    for loan in approved_loans:
+        # Check if the borrower has any running loans (disbursed or overdue with non-zero balance)
+        running_loans = Loan.objects.filter(
+            borrower=loan.borrower, status__in=["disbursed", "overdue"]
+        ).exclude(
+            id=loan.id
+        )  # Exclude the current loan being considered
+
+        has_running_balance = False
+        for running_loan in running_loans:
+            balances = running_loan.calculate_remaining_balances()
+            total_balance = (
+                balances["principal_balance"]
+                + balances["interest_balance"]
+                + balances["penalty_balance"]
+            )
+            if total_balance > Decimal("0.00"):
+                has_running_balance = True
+                break
+
+        if not has_running_balance:
+            eligible_loans.append(loan)
+        else:
+            ineligible_loans.append(loan)
+
+    # If no eligible loans are available, show a warning and redirect
+    if not eligible_loans:
         messages.warning(
             request,
-            "No approved loans available for disbursement.",
+            "No approved loans available for disbursement. Some borrowers may have existing running loan balances.",
             extra_tags="bg-warning",
         )
-        return redirect(
-            "loans:disbursed_loans"
-        )  # Redirect to a loan list or another appropriate page
+        return redirect("loans:disbursed_loans")
 
     form_title = "Disburse All Approved Loans"
     form = LoanAllDisbursementForm(request.POST or None)
 
     if request.method == "POST":
         if form.is_valid():
-            # Call the custom save method and pass approved loans
-            disbursed_count = form.save(approved_loans)
+            # Call the custom save method and pass eligible loans
+            disbursed_count = form.save(eligible_loans)
 
-            # Show a message with how many loans were disbursed
+            # Show success message with the number of disbursed loans
             messages.success(
                 request,
                 f"{disbursed_count} loans have been successfully disbursed.",
                 extra_tags="bg-success",
             )
-            return redirect("loans:disburse_all_loans")
 
+            # If there were ineligible loans, inform the user
+            if ineligible_loans:
+                messages.warning(
+                    request,
+                    f"{len(ineligible_loans)} approved loans were not disbursed due to existing running loan balances.",
+                    extra_tags="bg-warning",
+                )
+
+            return redirect("loans:disburse_all_loans")
         else:
             messages.error(
                 request,
@@ -648,7 +705,7 @@ def disburse_all_loans(request):
 
     return render(
         request,
-        "loans/disburse_loan.html",
+        "loans/disburse_all_loans.html",
         {
             "form_title": form_title,
             "form": form,
@@ -797,23 +854,52 @@ def approve_loan(request, loan_id):
 @login_required
 @admin_or_manager_required
 def approve_all_loans(request):
-    # Filter for loans that are pending approval
-    pending_loans = Loan.objects.filter(status="pending")
+    current_user = request.user
+    role = current_user.profile.role
 
-    if not pending_loans.exists():
-        messages.info(request, "No pending loans to approve.", extra_tags="bg-info")
+    # Determine the current approval stage based on user role
+    if role == "boo":
+        pending_status = "pending"
+        new_status = "boo_approved"
+        approved_by_field = "approved_by_boo"
+    elif role == "hof":
+        pending_status = "boo_approved"
+        new_status = "hof_approved"
+        approved_by_field = "approved_by_hof"
+    elif role == "ed":
+        pending_status = "hof_approved"
+        new_status = "approved"
+        approved_by_field = "approved_by_ed"
+    else:
+        messages.error(
+            request,
+            "You are not authorized to approve loans at this stage.",
+            extra_tags="bg-danger",
+        )
         return redirect("loans:loan_applications")
 
-    # Approve each loan
+    # Filter for loans at the current approval stage
+    pending_loans = Loan.objects.filter(status=pending_status)
+
+    if not pending_loans.exists():
+        messages.info(
+            request,
+            f"No {pending_status.replace('_', ' ').title()} loans to approve.",
+            extra_tags="bg-info",
+        )
+        return redirect("loans:loan_applications")
+
+    # Approve each loan, setting the approved_by_field to the current_user
     for loan in pending_loans:
-        loan.status = "approved"
-        loan.approved_date = timezone.now()
-        loan.approved_by = request.user
+        loan.status = new_status
+        setattr(loan, approved_by_field, current_user)
+        if role == "ed":
+            loan.approved_date = timezone.now()
         loan.save()
 
     messages.success(
         request,
-        "All pending loans have been approved successfully.",
+        f"All {pending_status.replace('_', ' ').title()} loans have been approved successfully.",
         extra_tags="bg-success",
     )
     return redirect("loans:loan_applications")

@@ -57,14 +57,26 @@
                         <td class="text-center">{{ loan.interest_rate|floatformat:0 }}%</td>
                         <td>{{ loan.start_date|date:'d/m/Y' }}</td>
                         <td>
-                          {% if loan.status == 'disbursed' %}
+                          {% if loan.status == 'disbursed' or loan.status == 'overdue' %}
                             {{ loan.disbursement_date|date:'d/m/Y' }}
                           {% else %}
                             Not Yet
                           {% endif %}
                         </td>
                         <td>{{ loan.due_date|date:'d/m/Y' }}</td>
-                        <td class="fw-bold">{{ loan.get_status_display }}</td>
+                        <td class="fw-bold">
+                          <span class="badge {% if loan.status == 'overdue' %}
+                              
+                              bg-danger
+
+                            {% else %}
+                              
+                              bg-primary
+
+                            {% endif %}">
+                            {{ loan.get_status_display }}
+                          </span>
+                        </td>
 
                         <!-- Action Buttons -->
                         <td class="text-center print-hide">
@@ -147,6 +159,10 @@
                               
                               
                               
+                              
+                              
+                              
+                              
                               &search={{ search_query }}
                             {% endif %}"
                             aria-label="First">
@@ -156,6 +172,10 @@
                         <li class="page-item">
                           <a class="page-link"
                             href="?page={{ page_obj.previous_page_number }}{% if search_query %}
+                              
+                              
+                              
+                              
                               
                               
                               
@@ -178,6 +198,10 @@
                               
                               
                               
+                              
+                              
+                              
+                              
                               &search={{ search_query }}
                             {% endif %}">
                             {{ num }}
@@ -194,6 +218,10 @@
                               
                               
                               
+                              
+                              
+                              
+                              
                               &search={{ search_query }}
                             {% endif %}"
                             aria-label="Next">
@@ -203,6 +231,10 @@
                         <li class="page-item">
                           <a class="page-link"
                             href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}
+                              
+                              
+                              
+                              
                               
                               
                               

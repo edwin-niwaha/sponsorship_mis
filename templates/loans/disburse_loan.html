@@ -10,6 +10,8 @@
             Go back
           </button>
         </a>
+        <a href="{% url 'loans:disburse_all_loans' %}" class="btn btn-success" title="Disburse All Loans"><i class="mdi mdi-check-circle mr-2"></i>Disburse All Loans</a>
+
         <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'loans:disbursed_loans' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
       </div>
     </div>
