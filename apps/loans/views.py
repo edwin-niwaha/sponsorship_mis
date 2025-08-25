@@ -154,7 +154,7 @@ def get_loan_queryset(search_query):
 
 
 def paginate_queryset(queryset, page_number):
-    paginator = Paginator(queryset, 1)
+    paginator = Paginator(queryset, 25)
     try:
         return paginator.page(page_number)
     except PageNotAnInteger:
