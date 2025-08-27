@@ -467,10 +467,14 @@ class Loan(models.Model):
 
             # Validate input parameters
             if not isinstance(due_date, date):
-                logger.error(f"Invalid due_date type for Loan {self.id}: {type(due_date)}")
+                logger.error(
+                    f"Invalid due_date type for Loan {self.id}: {type(due_date)}"
+                )
                 raise ValidationError("due_date must be a date object")
             if not isinstance(total_amount_due, (Decimal, int, float)):
-                logger.error(f"Invalid total_amount_due type for Loan {self.id}: {type(total_amount_due)}")
+                logger.error(
+                    f"Invalid total_amount_due type for Loan {self.id}: {type(total_amount_due)}"
+                )
                 raise ValidationError("total_amount_due must be a numeric value")
 
             # Get repayments made on or before the due date
@@ -478,7 +482,7 @@ class Loan(models.Model):
                 repayment_date__lte=due_date,
                 principal_payment__isnull=False,
                 interest_payment__isnull=False,
-                penalty_payment__isnull=False
+                penalty_payment__isnull=False,
             ).aggregate(
                 total_principal=Sum("principal_payment", default=Decimal("0.00")),
                 total_interest=Sum("interest_payment", default=Decimal("0.00")),
@@ -492,12 +496,12 @@ class Loan(models.Model):
 
             # Calculate penalties up to the due date
             total_penalty = self.penalties.filter(
-                penalty_date__lte=due_date,
-                is_paid=False,
-                penalty_amount__isnull=False
-            ).aggregate(
-                total=Sum("penalty_amount", default=Decimal("0.00"))
-            )["total"] or Decimal("0.00")
+                penalty_date__lte=due_date, is_paid=False, penalty_amount__isnull=False
+            ).aggregate(total=Sum("penalty_amount", default=Decimal("0.00")))[
+                "total"
+            ] or Decimal(
+                "0.00"
+            )
 
             # Calculate remaining due balance
             remaining_due_balance = max(
@@ -506,8 +510,12 @@ class Loan(models.Model):
             return remaining_due_balance.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
 
         except Exception as e:
-            logger.error(f"Error in calculate_total_amount_due_balance for Loan {self.id}: {str(e)}", exc_info=True)
+            logger.error(
+                f"Error in calculate_total_amount_due_balance for Loan {self.id}: {str(e)}",
+                exc_info=True,
+            )
             raise
+
 
 # =================================== LoanDisbursement Model ===================================
 class LoanDisbursement(models.Model):

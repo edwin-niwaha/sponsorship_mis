@@ -53,7 +53,7 @@ def loan_applications_view(request):
     user = request.user
     search_query = request.GET.get("search", "")
     page = request.GET.get("page", 1)
-    per_page = 25  # Number of items per page
+    per_page = 50  # Number of items per page
 
     # Get filtered loan applications
     queryset = get_loan_queryset(search_query).filter(
@@ -116,16 +116,31 @@ def loan_applications_all_view(request):
     user = request.user
     search_query = request.GET.get("search", "")
     page = request.GET.get("page", 1)
-    per_page = 25  # Number of items per page
+    per_page = 100
+    sort_by = request.GET.get("sort", "id")  # default sort
+    show_bad = request.GET.get("bad", "false")  # toggle bad loans
 
     # Get filtered loan applications
-    queryset = get_loan_queryset(search_query).filter(
-        status__in=["pending", "boo_approved", "hof_approved"]
-    )
+    queryset = get_loan_queryset(search_query)
 
     # Apply role-based filtering
     if user.profile.role in ["staff", "guest"]:
         queryset = queryset.filter(applied_by=user)
+
+    # Show only bad loans if ?bad=true
+    if show_bad.lower() == "true":
+        queryset = queryset.filter(
+            Q(borrower_id__isnull=True)
+            | ~Q(
+                borrower_id__in=queryset.model._meta.get_field(
+                    "borrower"
+                ).related_model.objects.values_list("id", flat=True)
+            )
+        )
+
+    # Apply sorting
+    if sort_by in ["id", "-id", "borrower_id", "-borrower_id"]:
+        queryset = queryset.order_by(sort_by)
 
     # Set up pagination
     paginator = Paginator(queryset, per_page)
@@ -138,14 +153,19 @@ def loan_applications_all_view(request):
 
     context = {
         "loans": loans,
-        "table_title": "All Loan Applications",
+        "table_title": (
+            "All Loan Applications" if show_bad != "true" else "Bad Loan Applications"
+        ),
         "search_query": search_query,
-        "page_obj": loans,  # For pagination template access
+        "page_obj": loans,
+        "current_sort": sort_by,
+        "show_bad": show_bad,
     }
 
     return render(request, "loans/loan_applications_all.html", context)
 
 
+# ===========================================
 def get_loan_queryset(search_query):
     queryset = Loan.objects.prefetch_related("disbursements").all().order_by("id")
     if search_query:
@@ -154,7 +174,7 @@ def get_loan_queryset(search_query):
 
 
 def paginate_queryset(queryset, page_number):
-    paginator = Paginator(queryset, 25)
+    paginator = Paginator(queryset, 50)
     try:
         return paginator.page(page_number)
     except PageNotAnInteger:
@@ -1122,6 +1142,91 @@ def delete_loan(request, loan_id):
 #     )
 
 
+# @login_required
+# @admin_or_manager_or_staff_required
+# @transaction.atomic  # Ensure database operations are within a transaction
+# def loan_repayment_create_view(request):
+#     form_title = "Repay Loans"
+
+#     # Annotate loans with principal, interest, and penalty paid, and calculate remaining balances
+#     loans = (
+#         Loan.objects.annotate(
+#             principal_paid=Coalesce(
+#                 Sum("repayments__principal_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             interest_paid=Coalesce(
+#                 Sum("repayments__interest_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             penalty_paid=Coalesce(
+#                 Sum("repayments__penalty_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             remaining_principal=F("principal_amount")
+#             - Coalesce(
+#                 Sum("repayments__principal_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             remaining_interest=F("total_interest")
+#             - Coalesce(
+#                 Sum("repayments__interest_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             remaining_penalty=Coalesce(
+#                 Sum(
+#                     "penalties__penalty_amount",
+#                     filter=Q(penalties__is_paid=False),
+#                     distinct=True,  # ✅ prevents duplicate counting
+#                 ),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#         )
+#         .filter(
+#             Q(remaining_principal__gt=0)
+#             | Q(remaining_interest__gt=0)
+#             | Q(remaining_penalty__gt=0),
+#             status__in=["disbursed", "overdue"],
+#         )
+#         .select_related("borrower")
+#         .distinct()
+#     )  # Optimize by fetching related borrower data
+
+#     # Force queryset evaluation to avoid cursor persistence issues
+#     loans = list(loans)  # Convert to list to materialize the queryset
+
+#     if request.method == "POST":
+#         form = LoanRepaymentForm(request.POST)
+#         if form.is_valid():
+#             repayment = form.save(commit=False)
+#             repayment.loan = form.cleaned_data["loan"]
+#             repayment.save()
+
+#             # After saving, update loan status
+#             repayment.loan.update_status()
+
+#             messages.success(
+#                 request,
+#                 "Loan repayment submitted successfully.",
+#                 extra_tags="bg-success",
+#             )
+#             return redirect("loans:loan_repayment_create")
+#         else:
+#             messages.error(request, "Please correct the errors below.")
+#     else:
+#         form = LoanRepaymentForm()
+
+#     return render(
+#         request,
+#         "loans/loan_repayment_form.html",
+#         {
+#             "form": form,
+#             "form_title": form_title,
+#             "loans": loans,  # Pass the materialized loans list to the template
+#         },
+#     )
+
+
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic  # Ensure database operations are within a transaction
@@ -1129,7 +1234,7 @@ def loan_repayment_create_view(request):
     form_title = "Repay Loans"
 
     # Annotate loans with principal, interest, and penalty paid, and calculate remaining balances
-    loans = (
+    loans_qs = (
         Loan.objects.annotate(
             principal_paid=Coalesce(
                 Sum("repayments__principal_payment"),
@@ -1170,16 +1275,25 @@ def loan_repayment_create_view(request):
         )
         .select_related("borrower")
         .distinct()
-    )  # Optimize by fetching related borrower data
+    )
 
     # Force queryset evaluation to avoid cursor persistence issues
-    loans = list(loans)  # Convert to list to materialize the queryset
+    loans = list(loans_qs)
+
+    # ✅ Filter out loans with missing/invalid borrower
+    loans = [loan for loan in loans if getattr(loan, "borrower", None)]
 
     if request.method == "POST":
         form = LoanRepaymentForm(request.POST)
         if form.is_valid():
             repayment = form.save(commit=False)
             repayment.loan = form.cleaned_data["loan"]
+
+            # ✅ Guard against missing borrower before saving
+            if not getattr(repayment.loan, "borrower", None):
+                messages.error(request, "This loan has no valid borrower attached.")
+                return redirect("loans:loan_repayment_create")
+
             repayment.save()
 
             # After saving, update loan status
@@ -1202,7 +1316,7 @@ def loan_repayment_create_view(request):
         {
             "form": form,
             "form_title": form_title,
-            "loans": loans,  # Pass the materialized loans list to the template
+            "loans": loans,  # Pass the safe loans list to the template
         },
     )
 
@@ -2523,7 +2637,9 @@ def loan_due_overdue_report(request):
         try:
             selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
         except ValueError:
-            logger.warning(f"Invalid date format for selected_date: {selected_date_str}")
+            logger.warning(
+                f"Invalid date format for selected_date: {selected_date_str}"
+            )
             selected_date = timezone.now().date()
     else:
         selected_date = timezone.now().date()
@@ -2576,7 +2692,9 @@ def loan_due_overdue_report(request):
             if total_amount_due_balance <= 0:
                 continue
             if not loan.disbursement_date or loan.loan_period_months <= 0:
-                logger.warning(f"Invalid loan data for Loan {loan.id}: disbursement_date={loan.disbursement_date}, loan_period_months={loan.loan_period_months}")
+                logger.warning(
+                    f"Invalid loan data for Loan {loan.id}: disbursement_date={loan.disbursement_date}, loan_period_months={loan.loan_period_months}"
+                )
                 continue
 
             if loan.due_date and loan.due_date < selected_date:
