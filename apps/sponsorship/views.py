@@ -90,7 +90,7 @@ def child_sponsorship(request):
     sponsors = Sponsor.objects.filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/sponsorship/child_sponsorship.html",
+        "sponsorship/child_sponsorship.html",
         {
             "form": form,
             "form_name": "Child Sponsorship",
@@ -112,7 +112,7 @@ def child_sponsorship_report(request):
             children = Child.objects.all().filter(is_departed=False).order_by("id")
             return render(
                 request,
-                "sdms/sponsorship/child_sponsorship_rpt.html",
+                "sponsorship/child_sponsorship_rpt.html",
                 {
                     "table_title": "child-to-sponsor report",
                     "children": children,
@@ -127,7 +127,7 @@ def child_sponsorship_report(request):
         children = Child.objects.all().filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/sponsorship/child_sponsorship_rpt.html",
+        "sponsorship/child_sponsorship_rpt.html",
         {"table_title": "sponsorship report - child", "children": children},
     )
 
@@ -144,7 +144,7 @@ def sponsor_to_child_rpt(request):
             sponsor_to_child = ChildSponsorship.objects.filter(sponsor_id=sponsor_id)
             return render(
                 request,
-                "sdms/sponsorship/sponsor_to_child_rpt.html",
+                "sponsorship/sponsor_to_child_rpt.html",
                 {
                     "table_title": "sponsor-to-child report",
                     "sponsors": sponsors,
@@ -158,7 +158,7 @@ def sponsor_to_child_rpt(request):
             messages.error(request, "No sponsor selected.", extra_tags="bg-danger")
     return render(
         request,
-        "sdms/sponsorship/sponsor_to_child_rpt.html",
+        "sponsorship/sponsor_to_child_rpt.html",
         {"table_title": "sponsorship report - sponsor", "sponsors": sponsors},
     )
 
@@ -187,7 +187,7 @@ def edit_child_sponsorship(request, sponsorship_id):
 
     return render(
         request,
-        "sdms/sponsorship/child_sponsorship_edit.html",
+        "sponsorship/child_sponsorship_edit.html",
         {
             "form_name": "CHILD SPONSORSHIP UPDATE",
             "form": form,
@@ -291,7 +291,7 @@ def staff_sponsorship_create(request):
     sponsors = Sponsor.objects.filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/sponsorship/staff_sponsorship.html",
+        "sponsorship/staff_sponsorship.html",
         {
             "form": form,
             "form_name": "Staff Sponsorship",
@@ -313,7 +313,7 @@ def staff_sponsorship_report(request):
             active_staff = Staff.objects.all().filter(is_departed=False).order_by("id")
             return render(
                 request,
-                "sdms/sponsorship/staff_sponsorship_rpt.html",
+                "sponsorship/staff_sponsorship_rpt.html",
                 {
                     "table_title": "Staff Sponsorship Report",
                     "active_staff": active_staff,
@@ -329,7 +329,7 @@ def staff_sponsorship_report(request):
         active_staff = Staff.objects.all().filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/sponsorship/staff_sponsorship_rpt.html",
+        "sponsorship/staff_sponsorship_rpt.html",
         {"table_title": "sponsorship report - Staff", "active_staff": active_staff},
     )
 
@@ -346,7 +346,7 @@ def sponsor_to_staff_rpt(request):
             sponsor_to_staff = StaffSponsorship.objects.filter(sponsor_id=sponsor_id)
             return render(
                 request,
-                "sdms/sponsorship/sponsor_to_staff_rpt.html",
+                "sponsorship/sponsor_to_staff_rpt.html",
                 {
                     "table_title": "sponsorship report - sponsor",
                     "sponsors": sponsors,
@@ -360,7 +360,7 @@ def sponsor_to_staff_rpt(request):
             messages.error(request, "No sponsor selected.", extra_tags="bg-danger")
     return render(
         request,
-        "sdms/sponsorship/sponsor_to_staff_rpt.html",
+        "sponsorship/sponsor_to_staff_rpt.html",
         {"table_title": "sponsorship report - sponsor", "sponsors": sponsors},
     )
 
@@ -389,7 +389,7 @@ def edit_staff_sponsorship(request, sponsorship_id):
 
     return render(
         request,
-        "sdms/sponsorship/staff_sponsorship_edit.html",
+        "sponsorship/staff_sponsorship_edit.html",
         {
             "form_name": "STAFF SPONSORSHIP UPDATE",
             "form": form,
@@ -448,7 +448,7 @@ def terminate_staff_sponsorship(request, sponsorship_id):
 #         "currency": "UGX",
 #         "form_title": "Secure Flutterwave Payment",
 #     }
-#     return render(request, "sdms/sponsorship/payment_flutter.html", context)
+#     return render(request, "sponsorship/payment_flutter.html", context)
 
 
 # =================================== Render Payment Form ===================================
@@ -464,7 +464,7 @@ def initiate_payment(request):
         if not total_amount or not email:
             return render(
                 request,
-                "sdms/sponsorship/payment_flutter.html",
+                "sponsorship/payment_flutter.html",
                 {"error": "Please provide both email and amount."},
             )
 
@@ -475,7 +475,7 @@ def initiate_payment(request):
         except ValueError:
             return render(
                 request,
-                "sdms/sponsorship/payment_flutter.html",
+                "sponsorship/payment_flutter.html",
                 {"error": "Invalid amount. Please enter a valid number."},
             )
 
@@ -523,25 +523,25 @@ def initiate_payment(request):
                 payment.save()
                 return render(
                     request,
-                    "sdms/sponsorship/payment_flutter.html",
+                    "sponsorship/payment_flutter.html",
                     {"error": "Payment initiation failed. Please try again."},
                 )
 
         except requests.exceptions.RequestException:
             return render(
                 request,
-                "sdms/sponsorship/payment_flutter.html",
+                "sponsorship/payment_flutter.html",
                 {"error": "Payment initiation failed due to a network error."},
             )
         except ValueError:
             return render(
                 request,
-                "sdms/sponsorship/payment_flutter.html",
+                "sponsorship/payment_flutter.html",
                 {"error": "Payment initiation failed due to invalid response."},
             )
 
     elif request.method == "GET":
-        return render(request, "sdms/sponsorship/payment_flutter.html")
+        return render(request, "sponsorship/payment_flutter.html")
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -558,20 +558,20 @@ def payment_callback(request):
                 payment.save()
                 return render(
                     request,
-                    "sdms/sponsorship/payment_success.html",
+                    "sponsorship/payment_success.html",
                     {"message": "Payment was successful!"},
                 )
 
             except Payment.DoesNotExist:
                 return render(
                     request,
-                    "sdms/sponsorship/payment_flutter.html",
+                    "sponsorship/payment_flutter.html",
                     {"error": "Payment not found."},
                 )
 
         return render(
             request,
-            "sdms/sponsorship/payment_flutter.html",
+            "sponsorship/payment_flutter.html",
             {"error": "Payment failed."},
         )
 

@@ -41,15 +41,14 @@
                     <tr>
                       <th>ID</th>
                       <th>Borrower</th>
-                      <th>Loan Purpose</th>
+                      <th>Purpose</th>
                       <th>Principal</th>
                       <th>Interest</th>
                       <th>Period</th>
-                      <th>Rate (%)</th>
-                      <th>Method</th>
-                      <th>Applied by</th>
-                      <th>Applied On</th>
-                      <th>Disbursed On</th>
+                      <th>Rate</th>
+                      <th>Submitted</th>
+                      <th>Applied</th>
+                      <th>Disbursed</th>
                       <th>Due Date</th>
                       <th>Status</th>
                       <th class="text-center print-hide" colspan="7">Actions</th>
@@ -65,7 +64,6 @@
                         <td class="text-right">{{ loan.total_interest|floatformat:'2'|intcomma }}</td>
                         <td class="text-center">{{ loan.loan_period_months }}</td>
                         <td class="text-center">{{ loan.interest_rate|floatformat:0 }}%</td>
-                        <td>{{ loan.interest_method }}</td>
                         <td>{{ loan.applied_by }}</td>
                         <td>{{ loan.start_date|date:'d/m/Y' }}</td>
                         <td>

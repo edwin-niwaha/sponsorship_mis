@@ -41,15 +41,14 @@
                     <tr>
                       <th>ID</th>
                       <th>Borrower</th>
-                      <th>Loan Purpose</th>
+                      <th>Purpose</th>
                       <th>Principal</th>
                       <th>Interest</th>
                       <th>Period</th>
-                      <th>Rate (%)</th>
-                      <th>Method</th>
-                      <th>Applied by</th>
-                      <th>Applied On</th>
-                      <th>Disbursed On</th>
+                      <th>Rate</th>
+                      <th>Submitted by</th>
+                      <th>Applied</th>
+                      <th>Disbursed</th>
                       <th>Due Date</th>
                       <th>Status</th>
                       <th class="text-center print-hide" colspan="7">Actions</th>
@@ -65,7 +64,6 @@
                         <td class="text-right">{{ loan.total_interest|floatformat:'2'|intcomma }}</td>
                         <td class="text-center">{{ loan.loan_period_months }}</td>
                         <td class="text-center">{{ loan.interest_rate|floatformat:0 }}%</td>
-                        <td>{{ loan.interest_method }}</td>
                         <td>{{ loan.applied_by }}</td>
                         <td>{{ loan.start_date|date:'d/m/Y' }}</td>
                         <td>
@@ -80,7 +78,7 @@
                         <td class="fw-bold">{{ loan.get_status_display }}</td>
 
                         <!-- Action Buttons -->
-                        <td>
+                        {% comment %} <td>
                           <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewReasonModal{{ loan.id }}" title="View Reason for Approval"><i class="mdi mdi-eye"></i></button>
                           <!-- Modal for viewing Reason for Approval -->
                           <div class="modal fade" id="viewReasonModal{{ loan.id }}" tabindex="-1" aria-labelledby="viewReasonModalLabel{{ loan.id }}" aria-hidden="true">
@@ -102,7 +100,7 @@
                               </div>
                             </div>
                           </div>
-                        </td>
+                        </td> {% endcomment %}
 
                         <td>
                           {% if loan.status == 'ed_rejected' or loan.status == 'hof_rejected' %}
@@ -125,7 +123,7 @@
                           {% endif %}
                         </td>
 
-                        {% if loan.status not in 'approved disbursed' %}
+                        {% comment %} {% if loan.status not in 'approved disbursed' %}
                           {% with role=user.profile.role %}
                             {% if role in 'administrator boo hof ed' %}
                               <td class="text-center print-hide">
@@ -144,12 +142,12 @@
                               </td>
                             {% endif %}
                           {% endwith %}
-                        {% endif %}
+                        {% endif %} {% endcomment %}
 
                         <td>
                           <a href="{% url 'loans:repayment_schedule' loan.id %}" class="btn btn-info btn-sm" title="View Repayment Schedule"><i class="mdi mdi-calendar-text"></i></a>
                         </td>
-                        <td class="text-center print-hide">
+                        {% comment %} <td class="text-center print-hide">
                           {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
                             <!-- Delete Button with Modal -->
                             <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ loan.id }}" title="Delete Loan"><i class="mdi mdi-trash-can"></i></button>
@@ -175,7 +173,7 @@
                               </div>
                             </div>
                           {% endif %}
-                        </td>
+                        </td> {% endcomment %}
                       </tr>
                     {% endfor %}
                   </tbody>

@@ -75,7 +75,7 @@ def child_list(request):
 
     return render(
         request,
-        "sdms/child/child_list.html",
+        "child/child_list.html",
         {
             "records": records,
             "table_title": "Children List",
@@ -108,7 +108,7 @@ def child_list_detailed(request):
 
     return render(
         request,
-        "sdms/child/child_list_detailed.html",
+        "child/child_list_detailed.html",
         {"records": records, "table_title": "Children List"},
     )
 
@@ -127,7 +127,7 @@ def child_details(request, pk):
         "age": age,
         "profile_picture": profile_picture,
     }
-    return render(request, "sdms/child/child_profile_rpt.html", context)
+    return render(request, "child/child_profile_rpt.html", context)
 
 
 # =================================== Register Child ===================================
@@ -157,7 +157,7 @@ def register_child(request):
 
     return render(
         request,
-        "sdms/child/child_register.html",
+        "child/child_register.html",
         {"form_name": "Child Registration", "form": form},
     )
 
@@ -166,7 +166,7 @@ def register_child(request):
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
-def update_child(request, pk, template_name="sdms/child/child_update.html"):
+def update_child(request, pk, template_name="child/child_update.html"):
     try:
         child_record = Child.objects.get(pk=pk)
     except Child.DoesNotExist:
@@ -258,7 +258,7 @@ def update_picture(request):
 
     return render(
         request,
-        "sdms/child/profile_picture.html",
+        "child/profile_picture.html",
         {
             "form": form,
             "form_name": "Upload Child Profile Picture",
@@ -279,7 +279,7 @@ def profile_pictures(request):
             children = Child.objects.all().filter(is_departed=False).order_by("id")
             return render(
                 request,
-                "sdms/child/profile_picture_rpt.html",
+                "child/profile_picture_rpt.html",
                 {
                     "table_title": "Profile Picture",
                     "children": children,
@@ -295,7 +295,7 @@ def profile_pictures(request):
         children = Child.objects.all().filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/child/profile_picture_rpt.html",
+        "child/profile_picture_rpt.html",
         {"table_title": "Profile Picture", "children": children},
     )
 
@@ -359,7 +359,7 @@ def child_progress(request):
     children = Child.objects.all().filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/child/progress.html",
+        "child/progress.html",
         {"form": form, "form_name": "Child Progress Form", "children": children},
     )
 
@@ -376,7 +376,7 @@ def child_progress_report(request):
             children = Child.objects.all().filter(is_departed=False).order_by("id")
             return render(
                 request,
-                "sdms/child/progress_rpt.html",
+                "child/progress_rpt.html",
                 {
                     "table_title": "Progress Report",
                     "children": children,
@@ -392,7 +392,7 @@ def child_progress_report(request):
         children = Child.objects.all().filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/child/progress_rpt.html",
+        "child/progress_rpt.html",
         {"table_title": "Progress Report", "children": children},
     )
 
@@ -451,7 +451,7 @@ def child_correspondence(request):
     children = Child.objects.all().filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/child/correspondence.html",
+        "child/correspondence.html",
         {"form": form, "form_name": "Child Correspondence Form", "children": children},
     )
 
@@ -468,7 +468,7 @@ def child_correspondence_report(request):
             children = Child.objects.all().filter(is_departed=False).order_by("id")
             return render(
                 request,
-                "sdms/child/correspondence_rpt.html",
+                "child/correspondence_rpt.html",
                 {
                     "table_title": "Correspondence Report",
                     "children": children,
@@ -484,7 +484,7 @@ def child_correspondence_report(request):
         children = Child.objects.all().filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/child/correspondence_rpt.html",
+        "child/correspondence_rpt.html",
         {"table_title": "Correspondence Report", "children": children},
     )
 
@@ -540,7 +540,7 @@ def child_incident(request):
     children = Child.objects.all().filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/child/incident.html",
+        "child/incident.html",
         {"form": form, "form_name": "Child Incident Form", "children": children},
     )
 
@@ -557,7 +557,7 @@ def child_incident_report(request):
             children = Child.objects.all().filter(is_departed=False).order_by("id")
             return render(
                 request,
-                "sdms/child/incident_rpt.html",
+                "child/incident_rpt.html",
                 {
                     "table_title": "Incident Report",
                     "children": children,
@@ -573,7 +573,7 @@ def child_incident_report(request):
         children = Child.objects.all().filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/child/incident_rpt.html",
+        "child/incident_rpt.html",
         {"table_title": "Incident Report", "children": children},
     )
 
@@ -625,7 +625,7 @@ def delete_incident(request, pk):
 #     children = Child.objects.filter(is_departed=False).order_by("id")
 #     return render(
 #         request,
-#         "sdms/child/child_depature.html",
+#         "child/child_depature.html",
 #         {"form": form, "form_name": "Child Depature Form", "children": children},
 #     )
 
@@ -668,7 +668,7 @@ def child_departure(request):
     children = Child.objects.filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/child/child_depature.html",
+        "child/child_depature.html",
         {"form": form, "form_name": "Child Depature Form", "children": children},
     )
 
@@ -702,7 +702,7 @@ def child_depature_list(request):
 
     return render(
         request,
-        "sdms/child/child_depature_list.html",
+        "child/child_depature_list.html",
         {"records": records, "table_title": "Departed Children"},
     )
 
@@ -723,7 +723,7 @@ def reinstate_child(request, pk):
 
         return redirect("child_depature_list")
 
-    return render(request, "sdms/child/child_depature_list.html", {"child": child})
+    return render(request, "child/child_depature_list.html", {"child": child})
 
 
 # =================================== Process and Import Excel data ===================================
@@ -750,7 +750,7 @@ def import_child_data(request):
         form = UploadForm()
     return render(
         request,
-        "sdms/child/bulk_import.html",
+        "child/bulk_import.html",
         {"form_name": "Import Children - Excel", "form": form},
     )
 
@@ -836,7 +836,7 @@ def import_details(request):
     records = Child.objects.all().filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/child/bulk_import_rpt.html",
+        "child/bulk_import_rpt.html",
         {"table_title": "Imported Children - Excel", "records": records},
     )
 
@@ -869,7 +869,7 @@ def update_guardian_contacts(request):
         return HttpResponseRedirect(reverse("imported_data"))
 
     # Render the form if not a POST request
-    return render(request, "sdms/child/bulk_import_rpt.html")
+    return render(request, "child/bulk_import_rpt.html")
 
 
 # =================================== Delete selected individual ===================================
@@ -914,4 +914,4 @@ def birthday_list(request):
         "table_title": "Children's Birthdays",
         "children_with_birthday": children_with_birthday,
     }
-    return render(request, "sdms/child/birthday_list.html", context)
+    return render(request, "child/birthday_list.html", context)

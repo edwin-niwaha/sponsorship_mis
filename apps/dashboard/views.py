@@ -1,20 +1,26 @@
 import json
-from datetime import date, timedelta
-
+from datetime import date, timedelta, datetime
+from django.utils import timezone
+import pytz
+import logging
+from datetime import date, datetime
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, F, FloatField, Sum
 from django.db.models.functions import Coalesce, ExtractYear
 from django.http import JsonResponse
 from django.shortcuts import render
-
+from decimal import Decimal
 from apps.child.models import Child
 from apps.finance.models import ChildPayments, StaffPayments
 from apps.inventory.products.models import Category, Product
 from apps.inventory.sales.models import Sale
-from apps.loans.models import Loan, LoanRepayment
+from apps.loans.models import Loan, LoanRepayment, LoanDisbursement
 from apps.sponsor.models import Sponsor
 from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
 from apps.users.decorators import admin_or_manager_or_staff_required
+
+logger = logging.getLogger(__name__)
+
 
 from .utils import (
     get_top_selling_products,
@@ -429,68 +435,249 @@ def sales_data_api(request):
 
 
 # =================================== LOANS DASHBOARD ===================================
+
+
 @login_required
 @admin_or_manager_or_staff_required
 def loans_dashboard(request):
-    # Count loans by status
+    today = timezone.now().date()
+
+    # Loan counts
     new_loan_applications = Loan.objects.filter(status="pending").count()
-    approved_loans = Loan.objects.filter(status="approved").count()
-    closed_loans = Loan.objects.filter(status="closed").count()
-    rejected_loans = Loan.objects.filter(status="rejected").count()
-    loans_issued = Loan.objects.filter(status="disbursed").count()
-    active_loans = Loan.objects.filter(status="disbursed").count()  # Adjust as needed
-    overdue_loans = Loan.objects.filter(status="overdue").count()
+    approved_loans = Loan.objects.filter(
+        status__in=["approved", "boo_approved", "hof_approved", "ed_approved"]
+    ).count()
+    rejected_loans = Loan.objects.filter(
+        status__in=["rejected", "ed_rejected", "hof_rejected"]
+    ).count()
+    disbursed_loans = (
+        Loan.objects.filter(status__in=["disbursed", "overdue", "repaid"])
+        .prefetch_related("disbursements")
+        .count()
+    )
 
-    # Total repayments
+    # Initialize aggregates
+    due_loans = []
+    overdue_loans = []
+    total_principal_receivable = Decimal("0.00")
+    total_interest_receivable = Decimal("0.00")
+    total_penalty_receivable = Decimal("0.00")
+
+    # Process loans for due/overdue and receivables
+    loans = Loan.objects.filter(status__in=["disbursed", "overdue"]).select_related(
+        "borrower"
+    )
+    for loan in loans:
+        try:
+            if not loan.disbursement_date or loan.loan_period_months <= 0:
+                continue
+            balances = loan.calculate_remaining_balances()
+            total_balance = (
+                balances["principal_balance"]
+                + balances["interest_balance"]
+                + balances["penalty_balance"]
+            )
+            if total_balance <= 0:
+                continue
+
+            # Update receivables
+            total_principal_receivable += balances["principal_balance"]
+            total_interest_receivable += balances["interest_balance"]
+            total_penalty_receivable += balances["penalty_balance"]
+
+            # Due and overdue calculations
+            schedule = loan.generate_payment_schedule()
+            total_amount_due = total_balance  # Default to total balance
+            due_payments = [
+                p
+                for p in schedule
+                if isinstance(p["payment_due_date"], (date, datetime))
+                and (
+                    p["payment_due_date"].date()
+                    if isinstance(p["payment_due_date"], datetime)
+                    else p["payment_due_date"]
+                )
+                == today
+                and p["principal_payment"] + p["interest_payment"] > 0
+            ]
+            if due_payments:
+                total_amount_due = min(
+                    sum(
+                        p["principal_payment"] + p["interest_payment"]
+                        for p in due_payments
+                    ),
+                    total_balance,
+                )
+                total_amount_due_balance = loan.calculate_total_amount_due_balance(
+                    due_date=today, total_amount_due=total_amount_due
+                )
+                if total_amount_due_balance > 0:
+                    due_loans.append(
+                        {
+                            "total_balance": total_balance,
+                            "total_amount_due_balance": total_amount_due_balance,
+                            "penalty_balance": balances["penalty_balance"],
+                        }
+                    )
+
+            overdue_payments = [
+                p
+                for p in schedule
+                if isinstance(p["payment_due_date"], (date, datetime))
+                and (
+                    p["payment_due_date"].date()
+                    if isinstance(p["payment_due_date"], datetime)
+                    else p["payment_due_date"]
+                )
+                < today
+                and p["principal_payment"] + p["interest_payment"] > 0
+            ]
+            if overdue_payments or (loan.due_date and loan.due_date < today):
+                total_amount_due = (
+                    total_balance
+                    if (loan.due_date and loan.due_date < today)
+                    else min(
+                        sum(
+                            p["principal_payment"] + p["interest_payment"]
+                            for p in overdue_payments
+                        ),
+                        total_balance,
+                    )
+                )
+                total_amount_due_balance = loan.calculate_total_amount_due_balance(
+                    due_date=today, total_amount_due=total_amount_due
+                )
+                if total_amount_due_balance > 0:
+                    overdue_loans.append(
+                        {
+                            "total_balance": total_balance,
+                            "total_amount_due_balance": total_amount_due_balance,
+                            "penalty_balance": balances["penalty_balance"],
+                        }
+                    )
+        except Exception as e:
+            logger.error(f"Error processing loan {loan.id}: {e}")
+            continue
+
+    # Aggregates for due/overdue
+    due_loans_count = len(due_loans)
+    due_loans_total_due_balance = sum(
+        loan["total_amount_due_balance"] for loan in due_loans
+    )
+    due_loans_total_penalty_balance = sum(loan["penalty_balance"] for loan in due_loans)
+    due_loans_total_balance = sum(loan["total_balance"] for loan in due_loans)
+    overdue_loans_count = len(overdue_loans)
+    overdue_loans_total_due_balance = sum(
+        loan["total_amount_due_balance"] for loan in overdue_loans
+    )
+    overdue_loans_total_penalty_balance = sum(
+        loan["penalty_balance"] for loan in overdue_loans
+    )
+    overdue_loans_total_balance = sum(loan["total_balance"] for loan in overdue_loans)
+
+    # Repayments
     total_repayments = LoanRepayment.objects.aggregate(
-        total_principal=Sum("principal_payment"),
-        total_interest=Sum("interest_payment"),
+        total_principal=Sum("principal_payment", default=Decimal("0.00")),
+        total_interest=Sum("interest_payment", default=Decimal("0.00")),
+        total_penalty=Sum("penalty_payment", default=Decimal("0.00")),
     )
-
-    # Calculate total repayments as a dictionary
     total_repayments_amount = {
-        "total_principal": total_repayments["total_principal"] or 0,
-        "total_interest": total_repayments["total_interest"] or 0,
-        "total_amount": (total_repayments["total_principal"] or 0)
-        + (total_repayments["total_interest"] or 0),
+        "total_principal": total_repayments["total_principal"] or Decimal("0.00"),
+        "total_interest": total_repayments["total_interest"] or Decimal("0.00"),
+        "total_penalty": total_repayments["total_penalty"] or Decimal("0.00"),
+        "total_amount": (
+            (total_repayments["total_principal"] or Decimal("0.00"))
+            + (total_repayments["total_interest"] or Decimal("0.00"))
+            + (total_repayments["total_penalty"] or Decimal("0.00"))
+        ),
     }
 
-    # Calculate total loan receivable and total interest receivable
-    total_loans = Loan.objects.filter(status="disbursed").aggregate(
-        total_loan_receivable=Sum(
-            "principal_amount"
-        ),  # Total principal amount of all loans
-        total_interest_receivable=Sum(
-            "total_interest"
-        ),  # Total interest amount from loans
-    )
-
-    # Prepare the total loan amounts
+    # Receivables
     total_loans_amount = {
-        "total_loan_receivable": (total_loans["total_loan_receivable"] or 0)
-        - total_repayments_amount["total_principal"],
-        "total_interest_receivable": (total_loans["total_interest_receivable"] or 0)
-        - total_repayments_amount["total_interest"],
+        "total_principal_receivable": max(total_principal_receivable, Decimal("0.00")),
+        "total_interest_receivable": max(total_interest_receivable, Decimal("0.00")),
+        "total_penalty_receivable": max(total_penalty_receivable, Decimal("0.00")),
+        "total_outstanding": max(
+            total_principal_receivable
+            + total_interest_receivable
+            + total_penalty_receivable,
+            Decimal("0.00"),
+        ),
     }
 
-    # Ensure values don't drop below zero
-    total_loans_amount["total_loan_receivable"] = max(
-        total_loans_amount["total_loan_receivable"], 0
-    )
-    total_loans_amount["total_interest_receivable"] = max(
-        total_loans_amount["total_interest_receivable"], 0
-    )
+    # Recent activity
+    recent_activity = []
+    for repayment in LoanRepayment.objects.select_related("loan").order_by(
+        "-repayment_date"
+    )[:5]:
+        try:
+            balances = repayment.loan.calculate_remaining_balances()
+            total_balance = (
+                balances["principal_balance"]
+                + balances["interest_balance"]
+                + balances["penalty_balance"]
+            )
+            recent_activity.append(
+                {
+                    "type": "Repayment",
+                    "loan_id": repayment.loan.id,
+                    "amount": repayment.total_payment,
+                    "date": repayment.repayment_date,
+                    "total_balance": total_balance,
+                    "status": repayment.loan.status,
+                }
+            )
+        except Exception as e:
+            logger.error(
+                f"Error processing repayment for loan {repayment.loan.id}: {e}"
+            )
+            continue
+
+    for disbursement in LoanDisbursement.objects.select_related("loan").order_by(
+        "-loan__disbursement_date"
+    )[:5]:
+        try:
+            if not disbursement.loan.disbursement_date:
+                continue
+            balances = disbursement.loan.calculate_remaining_balances()
+            total_balance = (
+                balances["principal_balance"]
+                + balances["interest_balance"]
+                + balances["penalty_balance"]
+            )
+            recent_activity.append(
+                {
+                    "type": "Disbursement",
+                    "loan_id": disbursement.loan.id,
+                    "amount": disbursement.disbursed_amount,
+                    "date": disbursement.loan.disbursement_date,
+                    "total_balance": total_balance,
+                    "status": disbursement.loan.status,
+                }
+            )
+        except Exception as e:
+            logger.error(
+                f"Error processing disbursement for loan {disbursement.loan.id}: {e}"
+            )
+            continue
+    recent_activity = sorted(recent_activity, key=lambda x: x["date"], reverse=True)[:5]
 
     context = {
         "new_loan_applications": new_loan_applications,
         "approved_loans": approved_loans,
-        "closed_loans": closed_loans,
         "rejected_loans": rejected_loans,
-        "loans_issued": loans_issued,
-        "active_loans": active_loans,
-        "overdue_loans": overdue_loans,
+        "disbursed_loans": disbursed_loans,
+        "due_loans_count": due_loans_count,
+        "due_loans_total_due_balance": due_loans_total_due_balance,
+        "due_loans_total_penalty_balance": due_loans_total_penalty_balance,
+        "due_loans_total_balance": due_loans_total_balance,
+        "overdue_loans_count": overdue_loans_count,
+        "overdue_loans_total_due_balance": overdue_loans_total_due_balance,
+        "overdue_loans_total_penalty_balance": overdue_loans_total_penalty_balance,
+        "overdue_loans_total_balance": overdue_loans_total_balance,
         "total_repayments": total_repayments_amount,
-        "total_loans": total_loans_amount,  # Add total loans to the context
+        "total_loans": total_loans_amount,
+        "recent_activity": recent_activity,
     }
 
     return render(request, "main/loans_dashboard.html", context)

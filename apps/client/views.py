@@ -46,7 +46,7 @@ def client_list(request):
 
     return render(
         request,
-        "sdms/client/client_list.html",
+        "client/client_list.html",
         {"records": records, "table_title": "Clients List"},
     )
 
@@ -80,7 +80,7 @@ def register_client(request):
 
     return render(
         request,
-        "sdms/client/client_register.html",
+        "client/client_register.html",
         {"form_name": "Client Registration", "form": form},
     )
 
@@ -89,7 +89,7 @@ def register_client(request):
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
-def update_client(request, pk, template_name="sdms/client/client_update.html"):
+def update_client(request, pk, template_name="client/client_update.html"):
     try:
         client_record = Client.objects.get(pk=pk)
     except Client.DoesNotExist:
@@ -159,7 +159,7 @@ def import_client_data(request):
         form = ImportClientsForm()
     return render(
         request,
-        "sdms/client/bulk_import.html",
+        "client/bulk_import.html",
         {"form_name": "Import Clients - Excel", "form": form},
     )
 
@@ -231,7 +231,7 @@ def seven_hills_registration_view(request):
         "form": form,
     }
 
-    return render(request, "sdms/client/seven_hills_register.html", context)
+    return render(request, "client/seven_hills_register.html", context)
 
 
 # =================================== Fetch and display all Seven Hills Registration details ===================================
@@ -266,7 +266,7 @@ def seven_hills_list(request):
     # Pass both the full queryset and paginated records to the template
     return render(
         request,
-        "sdms/client/seven_hills_list.html",
+        "client/seven_hills_list.html",
         {
             "records": records,  # Paginated records for display
             "table_title": "Seven Hills Members List",
@@ -278,9 +278,7 @@ def seven_hills_list(request):
 # =================================== Update Seven Hills data ===================================
 @login_required
 @transaction.atomic
-def update_seven_hills(
-    request, pk, template_name="sdms/client/seven_hills_update.html"
-):
+def update_seven_hills(request, pk, template_name="client/seven_hills_update.html"):
     try:
         record = SevenHillsRegistration.objects.get(pk=pk)
     except SevenHillsRegistration.DoesNotExist:
@@ -322,4 +320,4 @@ def seven_hills_details(request, pk):
     age = record.calculate_age()
 
     context = {"table_title": "Profile Report", "record": record, "age": age}
-    return render(request, "sdms/client/seven_hills_profile_rpt.html", context)
+    return render(request, "client/seven_hills_profile_rpt.html", context)

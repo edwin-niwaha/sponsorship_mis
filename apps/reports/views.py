@@ -87,7 +87,7 @@ def reports_dash(request):
         "non_sponsored_staff_count": non_sponsored_staff_count,
         "departed_staff_count": departed_staff_count,
     }
-    return render(request, "sdms/reports/_reports_dash_.html", context)
+    return render(request, "reports/_reports_dash_.html", context)
 
 
 # =================================== All Children Master List ===================================
@@ -114,7 +114,7 @@ def children_master_list(request):
 
     return render(
         request,
-        "sdms/reports/children_master_list.html",
+        "reports/children_master_list.html",
         {"records": records, "table_title": "Children Master List"},
     )
 
@@ -137,7 +137,7 @@ def all_children(request):
 
     return render(
         request,
-        "sdms/reports/all_children.html",
+        "reports/all_children.html",
         {"records": records, "table_title": "All Children"},
     )
 
@@ -171,7 +171,7 @@ def sponsored_children(request):
 
     return render(
         request,
-        "sdms/reports/sponsored_children.html",
+        "reports/sponsored_children.html",
         {"records": records, "table_title": "All Sponsored Children"},
     )
 
@@ -196,7 +196,7 @@ def un_sponsored_children(request):
 
     return render(
         request,
-        "sdms/reports/non_sponsored_children.html",
+        "reports/non_sponsored_children.html",
         {"records": records, "table_title": "All Non-Sponsored Children"},
     )
 
@@ -223,7 +223,7 @@ def departed_children(request):
 
     return render(
         request,
-        "sdms/reports/departed_children.html",
+        "reports/departed_children.html",
         {"records": records, "table_title": "All Departed Children"},
     )
 
@@ -246,7 +246,7 @@ def departed_sponsors(request):
 
     return render(
         request,
-        "sdms/reports/departed_sponsors.html",
+        "reports/departed_sponsors.html",
         {"records": records, "table_title": "All Departed Sponsors"},
     )
 
@@ -270,7 +270,7 @@ def sponsor_payments_child(request):
 
     return render(
         request,
-        "sdms/reports/payments_child.html",
+        "reports/payments_child.html",
         {
             "records": records,
             "table_title": "Sponsor Payments - Child",
@@ -300,7 +300,7 @@ def sponsor_payments_staff(request):
 
     return render(
         request,
-        "sdms/reports/payments_staff.html",
+        "reports/payments_staff.html",
         {
             "records": records,
             "table_title": "Sponsor Payments - Staff",
@@ -338,7 +338,7 @@ def sponsored_staff(request):
 
     return render(
         request,
-        "sdms/reports/sponsored_staff.html",
+        "reports/sponsored_staff.html",
         {"records": records, "table_title": "All Sponsored Staff"},
     )
 
@@ -363,7 +363,7 @@ def non_sponsored_staff(request):
 
     return render(
         request,
-        "sdms/reports/non_sponsored_staff.html",
+        "reports/non_sponsored_staff.html",
         {"records": records, "table_title": "All Non-Sponsored Staff"},
     )
 
@@ -386,6 +386,6 @@ def departed_staff(request):
 
     return render(
         request,
-        "sdms/reports/departed_staff.html",
+        "reports/departed_staff.html",
         {"records": records, "table_title": "All Departed Staff"},
     )

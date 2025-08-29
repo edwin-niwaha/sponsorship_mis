@@ -69,7 +69,7 @@ def child_sponsor_payment(request):
     sponsors = Sponsor.objects.filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/finance/child_sponsor_payments.html",
+        "finance/child_sponsor_payments.html",
         {
             "form": form,
             "form_name": "Child-Sponsor Payments",
@@ -118,7 +118,7 @@ def sponsor_payment_without_child(request):
     sponsors = Sponsor.objects.filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/finance/sponsor_payment_without_child.html",
+        "finance/sponsor_payment_without_child.html",
         {
             "form": form,
             "form_name": "Sponsor Payments (Without Child)",
@@ -167,7 +167,7 @@ def donor_payment_view(request):
 
     return render(
         request,
-        "sdms/finance/donor_payments.html",
+        "finance/donor_payments.html",
         {
             "form": form,
             "form_name": " One time contributions",
@@ -194,7 +194,7 @@ def donor_payment_list_view(request):
 
     return render(
         request,
-        "sdms/finance/donor_payments_list.html",
+        "finance/donor_payments_list.html",
         {"donor_payments": donor_payments, "search_query": search_query},
     )
 
@@ -249,7 +249,7 @@ def staff_sponsor_payment(request):
     sponsors = Sponsor.objects.filter(is_departed=False).order_by("id")
     return render(
         request,
-        "sdms/finance/staff_sponsor_payments.html",
+        "finance/staff_sponsor_payments.html",
         {
             "form": form,
             "form_name": "Staff-Sponsor Payments",
@@ -297,7 +297,7 @@ def edit_child_payment(request, payment_id):
 
     return render(
         request,
-        "sdms/finance/child_payment_edit.html",
+        "finance/child_payment_edit.html",
         {
             "form_name": "PAYEMENT UPDATE",
             "form": form,
@@ -355,7 +355,7 @@ def edit_staff_payment(request, payment_id):
 
     return render(
         request,
-        "sdms/finance/staff_payment_edit.html",
+        "finance/staff_payment_edit.html",
         {
             "form_name": "PAYEMENT UPDATE",
             "form": form,
@@ -437,7 +437,7 @@ def child_sponsor_payments_report(request):
     return generate_payments_report(
         request,
         "Child - Sponsor Payments Report",
-        "sdms/finance/child_sponsor_payments_rpt.html",
+        "finance/child_sponsor_payments_rpt.html",
         ChildPayments,
     )
 
@@ -448,6 +448,6 @@ def staff_sponsor_payments_report(request):
     return generate_payments_report(
         request,
         "Staff - Sponsor Payments Report",
-        "sdms/finance/staff_sponsor_payments_rpt.html",
+        "finance/staff_sponsor_payments_rpt.html",
         StaffPayments,
     )
