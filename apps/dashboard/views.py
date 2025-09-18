@@ -1,20 +1,20 @@
 import json
-from datetime import date, timedelta, datetime
-from django.utils import timezone
-import pytz
 import logging
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+from decimal import Decimal
+
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, F, FloatField, Sum
 from django.db.models.functions import Coalesce, ExtractYear
 from django.http import JsonResponse
 from django.shortcuts import render
-from decimal import Decimal
+from django.utils import timezone
+
 from apps.child.models import Child
 from apps.finance.models import ChildPayments, StaffPayments
 from apps.inventory.products.models import Category, Product
 from apps.inventory.sales.models import Sale
-from apps.loans.models import Loan, LoanRepayment, LoanDisbursement
+from apps.loans.models import Loan, LoanDisbursement, LoanRepayment
 from apps.sponsor.models import Sponsor
 from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
 from apps.users.decorators import admin_or_manager_or_staff_required

@@ -1,6 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
-
+from phonenumber_field.formfields import PhoneNumberField
 from .models import ChildSponsorship, StaffSponsorship
 
 
@@ -92,49 +92,44 @@ class StaffSponsorshipEditForm(BaseSponsorshipEditForm):
 
 
 # =================================== Payment Form for Flutterwave ===================================
-# class PaymentForm(forms.Form):
-#     customer_name = forms.CharField(
-#         max_length=200,
-#         required=True,
-#         widget=forms.TextInput(
-#             attrs={
-#                 "class": "form-control form-control-lg",
-#                 "placeholder": "Enter your full name",
-#                 "style": "border-color: #127D61;",
-#             }
-#         ),
-#         validators=[
-#             RegexValidator(
-#                 regex=r"^[\w\s\-\.]+$",
-#                 message="Name can only contain letters, numbers, spaces, hyphens, and periods",
-#             )
-#         ],
-#         label="Full Name",
-#     )
-#     customer_email = forms.EmailField(
-#         required=True,
-#         widget=forms.EmailInput(
-#             attrs={
-#                 "class": "form-control form-control-lg",
-#                 "placeholder": "Enter your email",
-#                 "style": "border-color: #127D61;",
-#             }
-#         ),
-#         label="Email Address",
-#     )
-#     amount = forms.DecimalField(
-#         max_digits=10,
-#         decimal_places=2,
-#         required=True,
-#         validators=[MinValueValidator(0.01)],
-#         widget=forms.NumberInput(
-#             attrs={
-#                 "class": "form-control form-control-lg",
-#                 "placeholder": "Enter amount",
-#                 "min": "0.01",
-#                 "step": "0.01",
-#                 "style": "border-color: #127D61;",
-#             }
-#         ),
-#         label="Donation Amount (UGX)",
-#     )
+# class DonationForm(forms.Form):
+#     name = forms.CharField(max_length=200, required=True)
+#     email = forms.EmailField(required=True)
+#     phone_number = forms.CharField(max_length=15, required=True)
+#     amount = forms.DecimalField(min_value=1.00, decimal_places=2, required=True)
+
+
+
+class DonationForm(forms.Form):
+    name = forms.CharField(
+        max_length=200,
+        required=True,
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "placeholder": "Your full name"
+        })
+    )
+    phone_number = PhoneNumberField(
+        region="UG",  # set default region, e.g., Uganda
+        required=True,
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "placeholder": "+256..."
+        })
+    )
+    amount = forms.DecimalField(
+        min_value=1.00,
+        max_digits=10,      # up to 9,999,999.99
+        decimal_places=2,
+        required=True,
+        widget=forms.NumberInput(attrs={
+            "class": "form-control",
+            "placeholder": "Enter amount"
+        })
+    )
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get("amount")
+        if amount and amount < 1:
+            raise forms.ValidationError("Minimum donation is 1 unit.")
+        return amount

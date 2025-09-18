@@ -64,10 +64,14 @@ urlpatterns = [
         views.edit_staff_sponsorship,
         name="edit_staff_sponsorship",
     ),
-    path(
-        "initiate-payment/",
-        csrf_exempt(views.initiate_payment),
-        name="initiate_payment",
-    ),
-    path("payment/callback/", views.payment_callback, name="payment_callback"),
+    # path(
+    #     "initiate-payment/",
+    #     csrf_exempt(views.initiate_payment),
+    #     name="initiate_payment",
+    # ),
+    # path("payment/callback/", views.payment_callback, name="payment_callback"),
+
+    path('donation/', views.donation_form, name='donation_form'),
+    path('initiate-payment/<int:donation_id>/', views.initiate_payment, name='initiate_payment'),
+    path('callback/', views.momo_callback, name='momo_callback'),
 ]

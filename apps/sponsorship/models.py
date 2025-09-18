@@ -1,6 +1,7 @@
 # Third-party Imports
 import uuid
-
+from django.core.validators import MinValueValidator
+from phonenumber_field.modelfields import PhoneNumberField
 from django.contrib.auth.models import User
 from django.db import models
 
@@ -93,137 +94,58 @@ class StaffSponsorship(models.Model):
 
 
 # =================================== PAYMENT MODEL ===================================
-# class Payment(models.Model):
-#     STATUS_CHOICES = (
-#         ('pending', 'Pending'),
-#         ('success', 'Success'),
-#         ('failed', 'Failed'),
-#         ('cancelled', 'Cancelled'),
-#     )
 
-#     PAYMENT_METHOD_CHOICES = (
-#         ('card', 'Card'),
-#         ('mobilemoney', 'Mobile Money'),
-#         ('ussd', 'USSD'),
-#         ('banktransfer', 'Bank Transfer'),
-#     )
-
-#     transaction_id = models.UUIDField(
-#         default=uuid.uuid4,
-#         editable=False,
-#         unique=True,
-#         help_text="Unique internal transaction ID"
-#     )
-#     user = models.ForeignKey(
-#         User,
-#         on_delete=models.CASCADE,
-#         null=True,
-#         blank=True,
-#         help_text="Associated user, if authenticated"
-#     )
-#     amount = models.DecimalField(
-#         max_digits=10,
-#         decimal_places=2,
-#         validators=[MinValueValidator(0.01)],
-#         help_text="Payment amount in the specified currency"
-#     )
-#     currency = models.CharField(
-#         max_length=3,
-#         default='UGX',
-#         validators=[
-#             RegexValidator(
-#                 regex='^(UGX|NGN|USD|KES|GHS|ZAR)$',
-#                 message="Currency must be one of: UGX, NGN, USD, KES, GHS, ZAR"
-#             )
-#         ],
-#         help_text="Currency code (e.g., UGX, USD)"
-#     )
-#     status = models.CharField(
-#         max_length=20,
-#         choices=STATUS_CHOICES,
-#         default='pending',
-#         help_text="Current status of the payment"
-#     )
-#     customer_name = models.CharField(
-#         max_length=200,
-#         validators=[
-#             RegexValidator(
-#                 regex=r'^[\w\s\-\.]+$',
-#                 message="Name can only contain letters, numbers, spaces, hyphens, and periods"
-#             )
-#         ],
-#         help_text="Customer's full name"
-#     )
-#     customer_email = models.EmailField(
-#         help_text="Customer's email address"
-#     )
-#     transaction_ref = models.CharField(
-#         max_length=100,
-#         unique=True,
-#         help_text="Unique Flutterwave transaction reference"
-#     )
-#     flutterwave_transaction_id = models.CharField(
-#         max_length=100,
-#         null=True,
-#         blank=True,
-#         help_text="Flutterwave's transaction ID"
-#     )
-#     payment_method = models.CharField(
-#         max_length=20,
-#         choices=PAYMENT_METHOD_CHOICES,
-#         null=True,
-#         blank=True,
-#         help_text="Payment method used"
-#     )
-#     created_at = models.DateTimeField(
-#         auto_now_add=True,
-#         editable=False,
-#         help_text="Timestamp when payment was created"
-#     )
-#     updated_at = models.DateTimeField(
-#         auto_now=True,
-#         help_text="Timestamp of last update"
-#     )
-#     meta = models.JSONField(
-#         null=True,
-#         blank=True,
-#         help_text="Additional metadata from Flutterwave"
-#     )
-
-#     class Meta:
-#         ordering = ['-created_at']
-#         indexes = [
-#             models.Index(fields=['transaction_ref']),
-#             models.Index(fields=['status']),
-#         ]
-#         constraints = [
-#             models.UniqueConstraint(fields=['transaction_ref'], name='unique_transaction_ref')
-#         ]
-
-#     def __str__(self):
-#         return f"{self.customer_name} - {self.amount} {self.currency} ({self.status}) - {self.transaction_ref}"
-
-#     def masked_email(self):
-#         """Return a partially masked email for display purposes."""
-#         if not self.customer_email:
-#             return ""
-#         local, domain = self.customer_email.split('@')
-#         masked_local = local[:2] + '****' + local[-2:] if len(local) > 4 else local
-#         return f"{masked_local}@{domain}"
-
-
-class Payment(models.Model):
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        help_text="Associated user, if authenticated",
-    )
-    email = models.EmailField()
-    first_name = models.CharField(max_length=20, blank=True, null=True)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    reference = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
-    status = models.CharField(max_length=20, default="pending")
+class Donor(models.Model):
+    name = models.CharField(max_length=200, blank=False)
+    phone_number = PhoneNumberField(blank=False, help_text="Format: +256xxxxxxxxx")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['phone_number']),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['phone_number'], name='unique_donor_phone'),
+        ]
+
+    def __str__(self):
+        return self.name
+
+class Donation(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    )
+
+    donor = models.ForeignKey(Donor, on_delete=models.CASCADE, related_name='donations')
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(1.00)],
+        blank=False,
+    )
+    transaction_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    momo_reference_id = models.UUIDField(unique=True, editable=False, null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['momo_reference_id']),
+            models.Index(fields=['transaction_id']),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['momo_reference_id'], name='unique_momo_reference'),
+            models.UniqueConstraint(fields=['transaction_id'], name='unique_transaction_id', condition=models.Q(transaction_id__isnull=False)),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self.momo_reference_id:
+            self.momo_reference_id = uuid.uuid4()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.donor.name} - {self.amount} - {self.status}"

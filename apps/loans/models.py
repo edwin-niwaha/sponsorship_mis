@@ -1,16 +1,15 @@
-from datetime import date
-from decimal import ROUND_DOWN, Decimal
+import logging
 from datetime import date, datetime
+from decimal import ROUND_DOWN, Decimal
+
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models import Sum, Q
+from django.db.models import Sum
 from django.utils import timezone
-
-import logging
 
 logger = logging.getLogger(__name__)
 
