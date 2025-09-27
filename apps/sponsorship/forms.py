@@ -99,33 +99,29 @@ class StaffSponsorshipEditForm(BaseSponsorshipEditForm):
 #     amount = forms.DecimalField(min_value=1.00, decimal_places=2, required=True)
 
 
-
 class DonationForm(forms.Form):
     name = forms.CharField(
         max_length=200,
         required=True,
-        widget=forms.TextInput(attrs={
-            "class": "form-control",
-            "placeholder": "Your full name"
-        })
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "placeholder": "Your full name"}
+        ),
     )
     phone_number = PhoneNumberField(
         region="UG",  # set default region, e.g., Uganda
         required=True,
-        widget=forms.TextInput(attrs={
-            "class": "form-control",
-            "placeholder": "+256..."
-        })
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "placeholder": "+256..."}
+        ),
     )
     amount = forms.DecimalField(
         min_value=1.00,
-        max_digits=10,      # up to 9,999,999.99
+        max_digits=10,  # up to 9,999,999.99
         decimal_places=2,
         required=True,
-        widget=forms.NumberInput(attrs={
-            "class": "form-control",
-            "placeholder": "Enter amount"
-        })
+        widget=forms.NumberInput(
+            attrs={"class": "form-control", "placeholder": "Enter amount"}
+        ),
     )
 
     def clean_amount(self):

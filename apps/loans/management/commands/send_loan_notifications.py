@@ -560,10 +560,18 @@ class Command(BaseCommand):
         """
         # Gather recipient emails from settings
         recipients = [
-            email for email in [settings.BOO_EMAIL, settings.HOF_EMAIL] if email
+            email
+            for email in [
+                settings.BOO_EMAIL,
+                settings.PROGS_ADMIN_EMAIL,
+                settings.HOF_EMAIL,
+            ]
+            if email
         ]
         if not recipients:
-            logger.warning("No valid BOO_EMAIL or HOF_EMAIL provided")
+            logger.warning(
+                "No valid BOO_EMAIL, PROGS_ADMIN_EMAIL, or HOF_EMAIL provided"
+            )
             return 0, 0
 
         # Sort due_summary and overdue_summary by loan_id for consistent reporting

@@ -256,6 +256,7 @@ BOO_EMAIL = str(os.getenv("BOO_EMAIL"))
 HOF_EMAIL = str(os.getenv("HOF_EMAIL"))
 ED_EMAIL = str(os.getenv("ED_EMAIL"))
 ACCOUNTANT_EMAIL = str(os.getenv("ACCOUNTANT_EMAIL"))
+PROGS_ADMIN_EMAIL = str(os.getenv("PROGS_ADMIN_EMAIL"))
 
 SESSION_COOKIE_AGE = 3600  # 60 * 60 Session duration in seconds
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Expire session when browser closes

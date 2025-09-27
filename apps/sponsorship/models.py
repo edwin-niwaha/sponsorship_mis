@@ -95,6 +95,7 @@ class StaffSponsorship(models.Model):
 
 # =================================== PAYMENT MODEL ===================================
 
+
 class Donor(models.Model):
     name = models.CharField(max_length=200, blank=False)
     phone_number = PhoneNumberField(blank=False, help_text="Format: +256xxxxxxxxx")
@@ -103,43 +104,54 @@ class Donor(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['phone_number']),
+            models.Index(fields=["phone_number"]),
         ]
         constraints = [
-            models.UniqueConstraint(fields=['phone_number'], name='unique_donor_phone'),
+            models.UniqueConstraint(fields=["phone_number"], name="unique_donor_phone"),
         ]
 
     def __str__(self):
         return self.name
 
+
 class Donation(models.Model):
     STATUS_CHOICES = (
-        ('pending', 'Pending'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed'),
+        ("pending", "Pending"),
+        ("completed", "Completed"),
+        ("failed", "Failed"),
     )
 
-    donor = models.ForeignKey(Donor, on_delete=models.CASCADE, related_name='donations')
+    donor = models.ForeignKey(Donor, on_delete=models.CASCADE, related_name="donations")
     amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         validators=[MinValueValidator(1.00)],
         blank=False,
     )
-    transaction_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    transaction_id = models.CharField(
+        max_length=100, unique=True, null=True, blank=True
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    momo_reference_id = models.UUIDField(unique=True, editable=False, null=True, blank=True)
+    momo_reference_id = models.UUIDField(
+        unique=True, editable=False, null=True, blank=True
+    )
 
     class Meta:
         indexes = [
-            models.Index(fields=['momo_reference_id']),
-            models.Index(fields=['transaction_id']),
+            models.Index(fields=["momo_reference_id"]),
+            models.Index(fields=["transaction_id"]),
         ]
         constraints = [
-            models.UniqueConstraint(fields=['momo_reference_id'], name='unique_momo_reference'),
-            models.UniqueConstraint(fields=['transaction_id'], name='unique_transaction_id', condition=models.Q(transaction_id__isnull=False)),
+            models.UniqueConstraint(
+                fields=["momo_reference_id"], name="unique_momo_reference"
+            ),
+            models.UniqueConstraint(
+                fields=["transaction_id"],
+                name="unique_transaction_id",
+                condition=models.Q(transaction_id__isnull=False),
+            ),
         ]
 
     def save(self, *args, **kwargs):

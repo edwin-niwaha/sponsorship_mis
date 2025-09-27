@@ -31,13 +31,14 @@ from .forms import (
 )
 from .models import (
     ChildSponsorship,
-    Donation, 
+    Donation,
     Donor,
     StaffSponsorship,
 )
 
 # Set up logging
 logger = logging.getLogger(__name__)
+
 
 # =================================== Child Sponsorship ===================================
 @login_required
@@ -571,6 +572,7 @@ def terminate_staff_sponsorship(request, sponsorship_id):
 
 # =================================== donation_form ===================================
 
+
 # ------------------------
 # Generate OAuth Token
 # ------------------------
@@ -601,24 +603,26 @@ def get_momo_token():
             logger.error(f"Token response missing access_token: {response.text}")
         return token
     except requests.RequestException as e:
-        logger.error(f"Token generation failed: {e} | {getattr(e.response, 'text', '')}")
+        logger.error(
+            f"Token generation failed: {e} | {getattr(e.response, 'text', '')}"
+        )
         return None
+
 
 # ------------------------
 # Donation Form View
 # ------------------------
 def donation_form(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = DonationForm(request.POST)
         if form.is_valid():
-            name = form.cleaned_data['name']
-            phone_number = form.cleaned_data['phone_number']
-            amount = form.cleaned_data['amount']
+            name = form.cleaned_data["name"]
+            phone_number = form.cleaned_data["phone_number"]
+            amount = form.cleaned_data["amount"]
 
             try:
                 donor, created = Donor.objects.get_or_create(
-                    phone_number=phone_number,
-                    defaults={'name': name}
+                    phone_number=phone_number, defaults={"name": name}
                 )
 
                 donation = Donation.objects.create(
@@ -628,15 +632,16 @@ def donation_form(request):
                     status="pending",
                 )
 
-                return redirect('initiate_payment', donation_id=donation.id)
+                return redirect("initiate_payment", donation_id=donation.id)
 
             except Exception as e:
                 logger.error(f"Donation creation failed: {e}")
                 form.add_error(None, "Failed to process donation. Please try again.")
 
-        return render(request, 'sponsorship/donation_form.html', {'form': form})
+        return render(request, "sponsorship/donation_form.html", {"form": form})
 
-    return render(request, 'sponsorship/donation_form.html', {'form': DonationForm()})
+    return render(request, "sponsorship/donation_form.html", {"form": DonationForm()})
+
 
 # ------------------------
 # Initiate Payment
@@ -644,14 +649,16 @@ def donation_form(request):
 def initiate_payment(request, donation_id):
     donation = get_object_or_404(Donation, id=donation_id)
 
-    if donation.status != 'pending':
-        return JsonResponse({'error': 'Payment already processed'}, status=400)
+    if donation.status != "pending":
+        return JsonResponse({"error": "Payment already processed"}, status=400)
 
     token = get_momo_token()
     if not token:
-        donation.status = 'failed'
+        donation.status = "failed"
         donation.save()
-        return JsonResponse({'error': 'Failed to authenticate with MoMo API'}, status=500)
+        return JsonResponse(
+            {"error": "Failed to authenticate with MoMo API"}, status=500
+        )
 
     url = f"https://{settings.MTN_ENVIRONMENT}.momodeveloper.mtn.com/collection/v1_0/requesttopay"
     headers = {
@@ -666,7 +673,7 @@ def initiate_payment(request, donation_id):
 
     payload = {
         "amount": str(donation.amount),
-        "currency": "EUR" if settings.MTN_ENVIRONMENT=="sandbox" else "UGX",
+        "currency": "EUR" if settings.MTN_ENVIRONMENT == "sandbox" else "UGX",
         "externalId": str(donation.momo_reference_id),
         "payer": {
             "partyIdType": "MSISDN",
@@ -681,51 +688,58 @@ def initiate_payment(request, donation_id):
         if response.status_code in [200, 202]:
             donation.transaction_id = donation.momo_reference_id
             donation.save()
-            return JsonResponse({'message': 'Payment request sent. Awaiting confirmation.'})
+            return JsonResponse(
+                {"message": "Payment request sent. Awaiting confirmation."}
+            )
         else:
-            donation.status = 'failed'
+            donation.status = "failed"
             donation.save()
-            logger.error(f"Payment initiation failed for donation {donation_id}: {response.text}")
-            return JsonResponse({'error': f'Payment initiation failed: {response.text}'}, status=400)
+            logger.error(
+                f"Payment initiation failed for donation {donation_id}: {response.text}"
+            )
+            return JsonResponse(
+                {"error": f"Payment initiation failed: {response.text}"}, status=400
+            )
 
     except requests.RequestException as e:
-        donation.status = 'failed'
+        donation.status = "failed"
         donation.save()
         logger.error(f"Payment request failed for donation {donation_id}: {e}")
-        return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({"error": str(e)}, status=500)
+
 
 # ------------------------
 # MoMo Callback Handler
 # ------------------------
 @csrf_exempt
 def momo_callback(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         try:
             data = json.loads(request.body.decode("utf-8"))
         except Exception:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
 
-        reference_id = data.get('externalId')
-        transaction_id = data.get('financialTransactionId')
-        status = data.get('status')
+        reference_id = data.get("externalId")
+        transaction_id = data.get("financialTransactionId")
+        status = data.get("status")
 
         if not all([reference_id, transaction_id, status]):
-            return JsonResponse({'error': 'Invalid callback data'}, status=400)
+            return JsonResponse({"error": "Invalid callback data"}, status=400)
 
         try:
             donation = Donation.objects.get(momo_reference_id=reference_id)
         except Donation.DoesNotExist:
-            return JsonResponse({'error': 'Donation not found'}, status=404)
+            return JsonResponse({"error": "Donation not found"}, status=404)
 
-        if status == 'SUCCESSFUL':
-            donation.status = 'completed'
+        if status == "SUCCESSFUL":
+            donation.status = "completed"
             donation.transaction_id = transaction_id
-        elif status in ['FAILED', 'REJECTED']:
-            donation.status = 'failed'
+        elif status in ["FAILED", "REJECTED"]:
+            donation.status = "failed"
         else:
-            return JsonResponse({'error': 'Invalid status'}, status=400)
+            return JsonResponse({"error": "Invalid status"}, status=400)
 
         donation.save()
-        return JsonResponse({'message': 'Callback processed'})
+        return JsonResponse({"message": "Callback processed"})
 
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+    return JsonResponse({"error": "Invalid request"}, status=400)
