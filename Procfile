@@ -1,2 +1,2 @@
-release: python manage.py migrate
-web: gunicorn core.wsgi --timeout 120 --workers 2 --threads 4 --log-level debug
+web: python manage.py migrate && gunicorn core.wsgi:application --bind 0.0.0.0:$PORT
+worker: celery -A core worker --loglevel=info
