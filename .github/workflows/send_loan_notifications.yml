@@ -31,4 +31,5 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BOO_EMAIL: ${{ secrets.BOO_EMAIL }}
           HOF_EMAIL: ${{ secrets.HOF_EMAIL }}
+          PROGS_ADMIN_EMAIL: ${{ secrets.PROGS_ADMIN_EMAIL }}
         run: python manage.py send_loan_notifications
