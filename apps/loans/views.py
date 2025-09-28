@@ -17,7 +17,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.html import strip_tags
 from openpyxl import load_workbook
-from apps.loans.tasks import send_email_task  # Import the task
+from apps.loans.tasks import send_email_task, send_loan_application_email_task, build_html_template
 
 logger = logging.getLogger(__name__)
 from apps.client.models import Client
@@ -165,80 +165,186 @@ def paginate_queryset(queryset, page_number):
 # =================================== Loan Apply View ===================================
 
 
-def send_loan_application_email(
-    recipient_name, client_name, recipient_email, application_id, is_applicant=True
-):
-    """
-    Sends an email notification for loan application status or request for officer approval.
+# def send_loan_application_email(
+#     recipient_name, client_name, recipient_email, application_id, is_applicant=True
+# ):
+#     """
+#     Sends an email notification for loan application status or request for officer approval.
 
-    Args:
-        recipient_name (str): Name of the recipient.
-        recipient_email (str): Email address of the recipient.
-        application_id (str): Unique ID of the loan application.
-        is_applicant (bool): True if the email is for the applicant, False for the officer.
+#     Args:
+#         recipient_name (str): Name of the recipient.
+#         recipient_email (str): Email address of the recipient.
+#         application_id (str): Unique ID of the loan application.
+#         is_applicant (bool): True if the email is for the applicant, False for the officer.
 
-    Returns:
-        bool: True if the email was sent successfully, False otherwise.
-    """
-    applicant_dashboard_url = "https://sponsorwithpendeza.org/loans/applications/"
-    officer_review_url = "https://sponsorwithpendeza.org/loans/applications/"
-    subject = (
-        "Your Loan Application Submitted"
-        if is_applicant
-        else "New Loan Application for Review"
-    )
+#     Returns:
+#         bool: True if the email was sent successfully, False otherwise.
+#     """
+#     applicant_dashboard_url = "https://sponsorwithpendeza.org/loans/applications/"
+#     officer_review_url = "https://sponsorwithpendeza.org/loans/applications/"
+#     subject = (
+#         "Your Loan Application Submitted"
+#         if is_applicant
+#         else "New Loan Application for Review"
+#     )
 
-    if is_applicant:
-        email_body = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; color: #333;">
-            <div style="max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-                <h2 style="color: #2E86C1; text-align: center;">Loan Application Submitted on Behalf of Client</h2>
-                <p>Hello <strong>{recipient_name}</strong>,</p>
-                <p>A loan application has been successfully submitted on behalf of <strong>{client_name}</strong>. The application ID is <strong>{application_id}</strong>. You can track the status of this application by clicking the button below:</p>
-                <div style="text-align: center; margin: 20px 0;">
-                    <a href="{applicant_dashboard_url}" style="background-color: #2E86C1; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 5px;">View Application Status</a>
-                </div>
-                <p>Thank you for assisting clients with their financial needs through Pendeza Uganda.</p>
-                <p style="color: #888;">- Pendeza Uganda - Finance Department</p>
-            </div>
-        </body>
-        </html>
-        """
+#     if is_applicant:
+#         email_body = f"""
+#         <html>
+#         <body style="font-family: Arial, sans-serif; color: #333;">
+#             <div style="max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+#                 <h2 style="color: #2E86C1; text-align: center;">Loan Application Submitted on Behalf of Client</h2>
+#                 <p>Hello <strong>{recipient_name}</strong>,</p>
+#                 <p>A loan application has been successfully submitted on behalf of <strong>{client_name}</strong>. The application ID is <strong>{application_id}</strong>. You can track the status of this application by clicking the button below:</p>
+#                 <div style="text-align: center; margin: 20px 0;">
+#                     <a href="{applicant_dashboard_url}" style="background-color: #2E86C1; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 5px;">View Application Status</a>
+#                 </div>
+#                 <p>Thank you for assisting clients with their financial needs through Pendeza Uganda.</p>
+#                 <p style="color: #888;">- Pendeza Uganda - Finance Department</p>
+#             </div>
+#         </body>
+#         </html>
+#         """
 
-    else:
-        email_body = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; color: #333;">
-            <div style="max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-                <h2 style="color: #C0392B; text-align: center;">Loan Application Approval Needed</h2>
-                <p>Hello <strong>{recipient_name}</strong>,</p>
-                <p>A new loan application with ID <strong>{application_id}</strong> is awaiting your review. Please review and process the application by clicking the button below:</p>
-                <div style="text-align: center; margin: 20px 0;">
-                    <a href="{officer_review_url}" style="background-color: #C0392B; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 5px;">Review Application</a>
-                </div>
-                <p>Thank you for your prompt attention to this matter.</p>
-                <p style="color: #888;">- Pendeza Uganda - Finance Department</p>
-            </div>
-        </body>
-        </html>
-        """
+#     else:
+#         email_body = f"""
+#         <html>
+#         <body style="font-family: Arial, sans-serif; color: #333;">
+#             <div style="max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+#                 <h2 style="color: #C0392B; text-align: center;">Loan Application Approval Needed</h2>
+#                 <p>Hello <strong>{recipient_name}</strong>,</p>
+#                 <p>A new loan application with ID <strong>{application_id}</strong> is awaiting your review. Please review and process the application by clicking the button below:</p>
+#                 <div style="text-align: center; margin: 20px 0;">
+#                     <a href="{officer_review_url}" style="background-color: #C0392B; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 5px;">Review Application</a>
+#                 </div>
+#                 <p>Thank you for your prompt attention to this matter.</p>
+#                 <p style="color: #888;">- Pendeza Uganda - Finance Department</p>
+#             </div>
+#         </body>
+#         </html>
+#         """
 
-    from_email = getattr(settings, "EMAIL_HOST_USER", None)
-    to = [recipient_email]
+#     from_email = getattr(settings, "EMAIL_HOST_USER", None)
+#     to = [recipient_email]
 
-    try:
-        email = EmailMultiAlternatives(subject, strip_tags(email_body), from_email, to)
-        email.attach_alternative(email_body, "text/html")
-        email.send()
-        return True
-    except Exception as e:
-        logger.error(f"Error sending email to {recipient_email}: {str(e)}")
-        return False
+#     try:
+#         email = EmailMultiAlternatives(subject, strip_tags(email_body), from_email, to)
+#         email.attach_alternative(email_body, "text/html")
+#         email.send()
+#         return True
+#     except Exception as e:
+#         logger.error(f"Error sending email to {recipient_email}: {str(e)}")
+#         return False
+
+# @login_required
+# def loan_apply(request):
+#     form_title = "Loan Application Form"
+#     form = LoanApplicationForm(request.POST or None)
+#     borrowers = Client.objects.all().order_by("id")
+
+#     logged_in_user = request.user
+#     user_role = getattr(logged_in_user.profile, "role", "guest")
+
+#     if request.method == "POST":
+#         if form.is_valid():
+#             borrower_id = request.POST.get("id")
+#             borrower = get_object_or_404(Client, pk=borrower_id)
+
+#             # Check if the borrower has any running loans with a non-zero balance
+#             running_loans = Loan.objects.filter(
+#                 borrower=borrower, status__in=["disbursed", "overdue"]
+#             )
+
+#             has_running_balance = False
+#             for loan in running_loans:
+#                 balances = loan.calculate_remaining_balances()
+#                 total_balance = (
+#                     balances["principal_balance"]
+#                     + balances["interest_balance"]
+#                     + balances["penalty_balance"]
+#                 )
+#                 if total_balance > Decimal("0.00"):
+#                     has_running_balance = True
+#                     break
+
+#             if has_running_balance:
+#                 error_message = (
+#                     f"{borrower} has an existing loan with an outstanding balance. "
+#                     "Please settle the outstanding amount before applying for a new loan."
+#                 )
+#                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+#                     return JsonResponse(
+#                         {"success": False, "message": error_message}, status=400
+#                     )
+#                 messages.warning(request, error_message, extra_tags="bg-warning")
+#                 return redirect("loans:apply_for_loan")
+
+#             try:
+#                 # Save the loan application
+#                 application = form.save(commit=False)
+#                 application.borrower = borrower
+#                 application.disbursement_date = timezone.now()
+#                 application.applied_by = logged_in_user
+#                 application.applied_by_role = user_role
+#                 application.save()
+
+#                 # Extract client (borrower) name
+#                 client_name = (
+#                     borrower.get_full_name()
+#                     if hasattr(borrower, "get_full_name")
+#                     else str(borrower)
+#                 )
+
+#                 # Send email to logged-in user
+#                 send_loan_application_email(
+#                     recipient_name=logged_in_user.username,
+#                     recipient_email=logged_in_user.email,
+#                     application_id=application.id,
+#                     client_name=client_name,
+#                     is_applicant=True,
+#                 )
+
+#                 # Send email to loan officer
+#                 boo_email = settings.BOO_EMAIL
+#                 send_loan_application_email(
+#                     recipient_name="Loan Officer",
+#                     recipient_email=boo_email,
+#                     application_id=application.id,
+#                     client_name=client_name,
+#                     is_applicant=False,
+#                 )
+
+#                 success_message = "Loan application submitted successfully!"
+#                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+#                     return JsonResponse({"success": True, "message": success_message})
+#                 messages.success(request, success_message, extra_tags="bg-success")
+#                 return redirect("loans:apply_for_loan")
+
+#             except ValidationError as e:
+#                 error_message = str(e)
+#                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+#                     return JsonResponse(
+#                         {"success": False, "message": error_message}, status=400
+#                     )
+#                 messages.error(request, error_message, extra_tags="bg-danger")
+
+#     context = {
+#         "form": form,
+#         "form_title": form_title,
+#         "borrowers": borrowers,
+#     }
+#     return render(request, "loans/apply_for_loan.html", context)
 
 
 @login_required
 def loan_apply(request):
+    """
+    Handles the loan application process:
+    - Validates the submitted form
+    - Checks for existing running loans with outstanding balances
+    - Creates a new loan application if valid
+    - Sends asynchronous email notifications (to applicant & loan officer)
+    """
     form_title = "Loan Application Form"
     form = LoanApplicationForm(request.POST or None)
     borrowers = Client.objects.all().order_by("id")
@@ -251,7 +357,7 @@ def loan_apply(request):
             borrower_id = request.POST.get("id")
             borrower = get_object_or_404(Client, pk=borrower_id)
 
-            # Check if the borrower has any running loans with a non-zero balance
+            # 🔎 Step 1: Check running loans with outstanding balances
             running_loans = Loan.objects.filter(
                 borrower=borrower, status__in=["disbursed", "overdue"]
             )
@@ -260,9 +366,9 @@ def loan_apply(request):
             for loan in running_loans:
                 balances = loan.calculate_remaining_balances()
                 total_balance = (
-                    balances["principal_balance"]
-                    + balances["interest_balance"]
-                    + balances["penalty_balance"]
+                    balances.get("principal_balance", Decimal("0.00"))
+                    + balances.get("interest_balance", Decimal("0.00"))
+                    + balances.get("penalty_balance", Decimal("0.00"))
                 )
                 if total_balance > Decimal("0.00"):
                     has_running_balance = True
@@ -281,7 +387,7 @@ def loan_apply(request):
                 return redirect("loans:apply_for_loan")
 
             try:
-                # Save the loan application
+                # 💾 Step 2: Save new loan application
                 application = form.save(commit=False)
                 application.borrower = borrower
                 application.disbursement_date = timezone.now()
@@ -289,15 +395,14 @@ def loan_apply(request):
                 application.applied_by_role = user_role
                 application.save()
 
-                # Extract client (borrower) name
                 client_name = (
                     borrower.get_full_name()
                     if hasattr(borrower, "get_full_name")
                     else str(borrower)
                 )
 
-                # Send email to logged-in user
-                send_loan_application_email(
+                # 📧 Step 3: Queue emails asynchronously
+                send_loan_application_email_task.delay(
                     recipient_name=logged_in_user.username,
                     recipient_email=logged_in_user.email,
                     application_id=application.id,
@@ -305,9 +410,8 @@ def loan_apply(request):
                     is_applicant=True,
                 )
 
-                # Send email to loan officer
                 boo_email = settings.BOO_EMAIL
-                send_loan_application_email(
+                send_loan_application_email_task.delay(
                     recipient_name="Loan Officer",
                     recipient_email=boo_email,
                     application_id=application.id,
@@ -315,6 +419,7 @@ def loan_apply(request):
                     is_applicant=False,
                 )
 
+                # ✅ Step 4: Respond success
                 success_message = "Loan application submitted successfully!"
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     return JsonResponse({"success": True, "message": success_message})
@@ -323,12 +428,32 @@ def loan_apply(request):
 
             except ValidationError as e:
                 error_message = str(e)
+                logger.error(f"Validation error while applying for loan: {error_message}")
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     return JsonResponse(
                         {"success": False, "message": error_message}, status=400
                     )
                 messages.error(request, error_message, extra_tags="bg-danger")
 
+            except Exception as e:
+                logger.exception(f"Unexpected error in loan_apply view: {str(e)}")
+                error_message = "An unexpected error occurred while processing the loan application."
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return JsonResponse(
+                        {"success": False, "message": error_message}, status=500
+                    )
+                messages.error(request, error_message, extra_tags="bg-danger")
+
+        else:
+            # 🚫 Step 5: Form invalid
+            error_message = "Please correct the errors below."
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse(
+                    {"success": False, "message": error_message}, status=400
+                )
+            messages.error(request, error_message, extra_tags="bg-danger")
+
+    # 🎨 Render form page
     context = {
         "form": form,
         "form_title": form_title,
@@ -799,57 +924,6 @@ def disburse_all_loans(request):
 #     return redirect("loans:loan_applications")
 
 
-def get_html_template(content, title):
-    """
-    Generates an HTML email template (adapted from previous).
-    """
-    return f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-        <style>
-            body {{ font-family: Arial, sans-serif; background-color: #f4f7fa; }}
-            .card {{ border-radius: 10px; max-width: 600px; margin: 0 auto; }}
-            .card-header {{ background-color: #007bff; padding: 1rem; }}
-            .card-body {{ padding: 30px; background-color: #ffffff; }}
-            .btn-view {{ 
-                background-color: #4CAF50; 
-                color: white; 
-                padding: 12px 20px; 
-                text-decoration: none; 
-                border-radius: 5px; 
-                font-size: 16px; 
-                display: inline-block;
-                transition: all 0.3s ease; 
-                border: none;
-            }}
-            .btn-view:hover {{ 
-                background-color: #218838; 
-                transform: translateY(-2px); 
-                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            }}
-            .footer {{ font-size: 0.85rem; color: #6c757d; text-align: center; }}
-        </style>
-    </head>
-    <body>
-        <div class="container my-4">
-            <div class="card shadow-sm">
-                <div class="card-header text-white text-center">
-                    <h3 class="mb-0">{title}</h3>
-                </div>
-                <div class="card-body">{content}</div>
-                <div class="card-footer footer">
-                    Pendeza Uganda - Loan Management System (LMS)
-                </div>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-
 @login_required
 def approve_loan(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
@@ -861,7 +935,6 @@ def approve_loan(request, loan_id):
         loan.approved_by_boo = current_user
         loan.save()
 
-        # Email for HOF only (removed PROGS_ADMIN_EMAIL)
         subject = f"Loan {loan.id} Approved by BOO"
         text_content = (
             f"Dear Team,\n\n"
@@ -869,7 +942,7 @@ def approve_loan(request, loan_id):
             f"has been approved by {current_user.username}. Please review for HOF approval.\n"
             f"Details: {url}\n\nBest regards,\nPendeza Uganda"
         )
-        html_content = get_html_template(
+        html_content = build_html_template(
             f"""
             <p>Dear Team,</p>
             <p>Loan <strong>{loan.id}</strong> for <strong>{loan.borrower.full_name}</strong> 
@@ -894,7 +967,6 @@ def approve_loan(request, loan_id):
         loan.approved_by_hof = current_user
         loan.save()
 
-        # Email for ED only (removed PROGS_ADMIN_EMAIL)
         subject = f"Loan {loan.id} Approved by HOF"
         text_content = (
             f"Dear Team,\n\n"
@@ -902,7 +974,7 @@ def approve_loan(request, loan_id):
             f"has been approved by {current_user.username}. Please review for ED approval.\n"
             f"Details: {url}\n\nBest regards,\nPendeza Uganda"
         )
-        html_content = get_html_template(
+        html_content = build_html_template(
             f"""
             <p>Dear Team,</p>
             <p>Loan <strong>{loan.id}</strong> for <strong>{loan.borrower.full_name}</strong> 
@@ -928,7 +1000,6 @@ def approve_loan(request, loan_id):
         loan.approved_date = timezone.now()
         loan.save()
 
-        # Email for BOO, HOF, and Accountant only (removed PROGS_ADMIN_EMAIL)
         subject = f"Loan {loan.id} Fully Approved by ED"
         text_content = (
             f"Dear Team,\n\n"
@@ -936,7 +1007,7 @@ def approve_loan(request, loan_id):
             f"has been fully approved by {current_user.username}. Please proceed with the disbursement of the loan.\n"
             f"Details: {request.build_absolute_uri('/loans/disburse/')}\n\nBest regards,\nPendeza Uganda"
         )
-        html_content = get_html_template(
+        html_content = build_html_template(
             f"""
             <p>Dear Team,</p>
             <p>We are pleased to inform you that the loan <strong>{loan.id}</strong> for 
@@ -949,7 +1020,11 @@ def approve_loan(request, loan_id):
             """,
             subject,
         )
-        recipients = [email for email in [settings.BOO_EMAIL, settings.HOF_EMAIL, settings.ACCOUNTANT_EMAIL] if email]
+        recipients = [
+            email
+            for email in [settings.BOO_EMAIL, settings.HOF_EMAIL, settings.ACCOUNTANT_EMAIL]
+            if email
+        ]
         if recipients:
             send_email_task.delay(subject, text_content, html_content, recipients)
         else:
@@ -966,6 +1041,7 @@ def approve_loan(request, loan_id):
         return redirect("loans:loan_applications")
 
     return redirect("loans:loan_applications")
+
 
 # =================================== Approve All Loans View ===================================
 @login_required
