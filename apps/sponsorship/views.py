@@ -6,11 +6,15 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from base64 import b64encode
 from django import forms
-from .models import Donor, Donation
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
-from django.http import HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
+from django.http import (
+    HttpResponseBadRequest,
+    HttpResponseRedirect,
+    JsonResponse,
+    HttpResponse,
+)
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -22,17 +26,17 @@ from apps.users.decorators import (
     admin_or_manager_required,
 )
 
+from .momo_helpers import generate_uuid, create_access_token, request_to_pay
+import re
+
 from .forms import (
     ChildSponsorshipEditForm,
     ChildSponsorshipForm,
     StaffSponsorshipEditForm,
     StaffSponsorshipForm,
-    DonationForm,
 )
 from .models import (
     ChildSponsorship,
-    Donation,
-    Donor,
     StaffSponsorship,
 )
 
@@ -447,299 +451,132 @@ def terminate_staff_sponsorship(request, sponsorship_id):
     return HttpResponseBadRequest("Invalid request")
 
 
-# =================================== payment_flutter_view ===================================
-# @login_required
-# @csrf_exempt
-# def initiate_payment(request):
-#     if request.method == "POST":
-#         total_amount = request.POST.get("total_amount")
-#         email = request.POST.get("email")
-
-#         if not total_amount or not email:
-#             return render(
-#                 request,
-#                 "sponsorship/payment_flutter.html",
-#                 {"error": "Please provide both email and amount."},
-#             )
-
-#         try:
-#             total_amount = float(total_amount)
-#             if total_amount <= 0:
-#                 raise ValueError("Amount must be positive")
-#         except ValueError:
-#             return render(
-#                 request,
-#                 "sponsorship/payment_flutter.html",
-#                 {"error": "Invalid amount. Please enter a valid number."},
-#             )
-
-#         reference = str(uuid.uuid4())
-#         user = request.user
-
-#         flutterwave_url = "https://api.flutterwave.com/v3/payments"
-#         secret_key = settings.FLUTTERWAVE_SECRET_KEY
-
-#         payload = {
-#             "tx_ref": reference,
-#             "amount": total_amount,
-#             "currency": "UGX",
-#             "redirect_url": "http://127.0.0.1:8000/payment/callback",
-#             "payment_options": "card,mobilemoneyghana,mpesa,ussd",
-#             "customer": {"email": email},
-#         }
-
-#         headers = {
-#             "Authorization": f"Bearer {secret_key}",
-#             "Content-Type": "application/json",
-#         }
-
-#         try:
-#             payment = Payment(
-#                 user=user,
-#                 email=email,
-#                 total_amount=total_amount,
-#                 reference=reference,
-#                 status="pending",
-#             )
-#             payment.save()
-
-#             response = requests.post(flutterwave_url, json=payload, headers=headers)
-#             response_data = response.json()
-
-#             if response_data.get("status") == "success" and response_data.get(
-#                 "data", {}
-#             ).get("link"):
-#                 return HttpResponseRedirect(
-#                     response_data["data"]["link"]
-#                 )  # Redirect to Flutterwave payment link
-#             else:
-#                 payment.status = "failed"
-#                 payment.save()
-#                 return render(
-#                     request,
-#                     "sponsorship/payment_flutter.html",
-#                     {"error": "Payment initiation failed. Please try again."},
-#                 )
-
-#         except requests.exceptions.RequestException:
-#             return render(
-#                 request,
-#                 "sponsorship/payment_flutter.html",
-#                 {"error": "Payment initiation failed due to a network error."},
-#             )
-#         except ValueError:
-#             return render(
-#                 request,
-#                 "sponsorship/payment_flutter.html",
-#                 {"error": "Payment initiation failed due to invalid response."},
-#             )
-
-#     elif request.method == "GET":
-#         return render(request, "sponsorship/payment_flutter.html")
-
-#     return JsonResponse({"error": "Method not allowed"}, status=405)
-
-# def payment_callback(request):
-#     if request.method == "GET":
-#         status = request.GET.get("status")
-#         tx_ref = request.GET.get("tx_ref")
-
-#         if status == "successful":
-#             try:
-#                 payment = Payment.objects.get(reference=tx_ref)
-#                 payment.status = "successful"
-#                 payment.save()
-#                 return render(
-#                     request,
-#                     "sponsorship/payment_success.html",
-#                     {"message": "Payment was successful!"},
-#                 )
-
-#             except Payment.DoesNotExist:
-#                 return render(
-#                     request,
-#                     "sponsorship/payment_flutter.html",
-#                     {"error": "Payment not found."},
-#                 )
-
-#         return render(
-#             request,
-#             "sponsorship/payment_flutter.html",
-#             {"error": "Payment failed."},
-#         )
-
-#     return JsonResponse({"error": "Method not allowed"}, status=405)
-
-# =================================== donation_form ===================================
-
-
-# ------------------------
-# Generate OAuth Token
-# ------------------------
-def get_momo_token():
-    """
-    Generate OAuth token for MTN MoMo API (Collection) – supports sandbox and live.
-    """
-    url = f"https://{settings.MTN_ENVIRONMENT}.momodeveloper.mtn.com/collection/token/"
-    # https://sandbox.momodeveloper.mtn.com/collection/token/
-
-    # Basic Auth using API_USER and API_KEY
-    auth_string = f"{settings.MTN_API_USER}:{settings.MTN_API_KEY}"
-    b64_auth = b64encode(auth_string.encode()).decode()
-
-    headers = {
-        "Authorization": f"Basic {b64_auth}",
-        "Ocp-Apim-Subscription-Key": settings.MTN_SUBSCRIPTION_KEY,
-        "Content-Type": "application/x-www-form-urlencoded",
-    }
-
-    data = {"grant_type": "client_credentials"}
-
-    try:
-        response = requests.post(url, headers=headers, data=data, timeout=10)
-        response.raise_for_status()
-        token = response.json().get("access_token")
-        if not token:
-            logger.error(f"Token response missing access_token: {response.text}")
-        return token
-    except requests.RequestException as e:
-        logger.error(
-            f"Token generation failed: {e} | {getattr(e.response, 'text', '')}"
-        )
-        return None
-
-
-# ------------------------
-# Donation Form View
-# ------------------------
-def donation_form(request):
+# ---------------- MoMo Payment Initiation View ---------------- #
+def initiate_payment(request):
     if request.method == "POST":
-        form = DonationForm(request.POST)
-        if form.is_valid():
-            name = form.cleaned_data["name"]
-            phone_number = form.cleaned_data["phone_number"]
-            amount = form.cleaned_data["amount"]
+        phone = request.POST.get("phone", "").strip()
+        amount = request.POST.get("amount", "").strip()
 
-            try:
-                donor, created = Donor.objects.get_or_create(
-                    phone_number=phone_number, defaults={"name": name}
-                )
+        # ✅ Validation
+        if not re.match(r"^256\d{9}$", phone):
+            messages.error(
+                request, "Invalid phone number (must start with 256 and be 12 digits)."
+            )
+            return render(request, "sponsorship/initiate_payment.html")
 
-                donation = Donation.objects.create(
-                    donor=donor,
-                    amount=amount,
-                    momo_reference_id=uuid.uuid4(),  # Unique reference
-                    status="pending",
-                )
+        try:
+            amount_int = int(float(amount))
+            if amount_int < 500:
+                raise ValueError
+        except ValueError:
+            messages.error(request, "Amount must be a number ≥ 500 UGX.")
+            return render(request, "sponsorship/initiate_payment.html")
 
-                return redirect("initiate_payment", donation_id=donation.id)
+        # ✅ Credentials from settings
+        subscription_key = settings.SUBSCRIPTION_KEY
+        api_user_id = settings.MOMO_API_USER
+        api_key = settings.MOMO_API_KEY
 
-            except Exception as e:
-                logger.error(f"Donation creation failed: {e}")
-                form.add_error(None, "Failed to process donation. Please try again.")
+        access_token = create_access_token(api_user_id, api_key, subscription_key)
+        if not access_token:
+            messages.error(request, "Failed to obtain access token.")
+            return render(request, "sponsorship/initiate_payment.html")
 
-        return render(request, "sponsorship/donation_form.html", {"form": form})
-
-    return render(request, "sponsorship/donation_form.html", {"form": DonationForm()})
-
-
-# ------------------------
-# Initiate Payment
-# ------------------------
-def initiate_payment(request, donation_id):
-    donation = get_object_or_404(Donation, id=donation_id)
-
-    if donation.status != "pending":
-        return JsonResponse({"error": "Payment already processed"}, status=400)
-
-    token = get_momo_token()
-    if not token:
-        donation.status = "failed"
-        donation.save()
-        return JsonResponse(
-            {"error": "Failed to authenticate with MoMo API"}, status=500
+        transaction_id = generate_uuid()
+        status, response_text = request_to_pay(
+            access_token, subscription_key, phone, amount_int, transaction_id
         )
 
-    url = f"https://{settings.MTN_ENVIRONMENT}.momodeveloper.mtn.com/collection/v1_0/requesttopay"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "X-Reference-Id": str(donation.momo_reference_id),
-        "X-Target-Environment": settings.MTN_ENVIRONMENT,  # 'sandbox' or 'live'
-        # "X-Callback-Url": settings.MTN_CALLBACK_URL,
-        "X-Callback-Url": "https://webhook.site/f35306b9-033c-4fec-b855-a269b26e543a",
-        "Ocp-Apim-Subscription-Key": settings.MTN_SUBSCRIPTION_KEY,
-        "Content-Type": "application/json",
-    }
-
-    payload = {
-        "amount": str(donation.amount),
-        "currency": "EUR" if settings.MTN_ENVIRONMENT == "sandbox" else "UGX",
-        "externalId": str(donation.momo_reference_id),
-        "payer": {
-            "partyIdType": "MSISDN",
-            "partyId": str(donation.donor.phone_number),
-        },
-        "payerMessage": "Donation Payment",
-        "payeeNote": "Thank you for your donation",
-    }
-
-    try:
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
-        if response.status_code in [200, 202]:
-            donation.transaction_id = donation.momo_reference_id
-            donation.save()
-            return JsonResponse(
-                {"message": "Payment request sent. Awaiting confirmation."}
+        if status == 202:
+            messages.success(
+                request, f"Payment initiated successfully! Ref ID: {transaction_id}"
+            )
+            # Pass transaction_id and amount to the template
+            return render(
+                request,
+                "sponsorship/initiate_payment.html",
+                {
+                    "transaction_id": transaction_id,
+                    "amount": amount_int,
+                    "user_id": api_user_id,
+                    "api_key": api_key,
+                },
             )
         else:
-            donation.status = "failed"
-            donation.save()
-            logger.error(
-                f"Payment initiation failed for donation {donation_id}: {response.text}"
-            )
-            return JsonResponse(
-                {"error": f"Payment initiation failed: {response.text}"}, status=400
-            )
+            messages.error(request, f"Payment failed ({status}): {response_text}")
+            return render(request, "sponsorship/initiate_payment.html")
 
-    except requests.RequestException as e:
-        donation.status = "failed"
-        donation.save()
-        logger.error(f"Payment request failed for donation {donation_id}: {e}")
-        return JsonResponse({"error": str(e)}, status=500)
+    return render(request, "sponsorship/initiate_payment.html")
 
 
-# ------------------------
-# MoMo Callback Handler
-# ------------------------
+# ---------------- Auto Status Check ---------------- #
+def get_transaction_status(request, ref_id, user_id, api_key):
+    """Auto-checks payment status."""
+    sub_key = settings.SUBSCRIPTION_KEY
+
+    # Get token
+    token_res = requests.post(
+        "https://sandbox.momodeveloper.mtn.com/collection/token/",  # Change to production URL for live
+        auth=requests.auth.HTTPBasicAuth(user_id, api_key),
+        headers={"Ocp-Apim-Subscription-Key": sub_key},
+        timeout=10,
+    )
+    if token_res.status_code != 200:
+        return JsonResponse(
+            {"status": "error", "message": "Token failed", "details": token_res.text}
+        )
+
+    token = token_res.json().get("access_token")
+
+    # Query transaction
+    url = f"https://sandbox.momodeveloper.mtn.com/collection/v1_0/requesttopay/{ref_id}"  # Change to production URL for live
+    res = requests.get(
+        url,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Ocp-Apim-Subscription-Key": sub_key,
+            "X-Target-Environment": "sandbox",  # Change to 'production' for live
+        },
+        timeout=10,
+    )
+
+    if res.status_code == 200:
+        return JsonResponse(res.json())
+    else:
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "Failed to fetch status",
+                "details": res.text,
+            }
+        )
+
+
+# ---------------- MoMo Callback Handler ---------------- #
 @csrf_exempt
 def momo_callback(request):
+    """Logs MTN callback JSON locally for review."""
     if request.method == "POST":
         try:
-            data = json.loads(request.body.decode("utf-8"))
-        except Exception:
+            content = json.loads(request.body)
+            with open("momo_callback_log.json", "a") as f:
+                json.dump(content, f)
+                f.write("\n")
+            return JsonResponse({"status": "ok"})
+        except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON"}, status=400)
+    return JsonResponse({"error": "Invalid method"}, status=405)
 
-        reference_id = data.get("externalId")
-        transaction_id = data.get("financialTransactionId")
-        status = data.get("status")
 
-        if not all([reference_id, transaction_id, status]):
-            return JsonResponse({"error": "Invalid callback data"}, status=400)
+def thank_you(request):
+    transaction_id = request.GET.get("ref", "N/A")
+    amount = request.GET.get("amount", "N/A")
+    phone = request.GET.get("phone", "N/A")
 
-        try:
-            donation = Donation.objects.get(momo_reference_id=reference_id)
-        except Donation.DoesNotExist:
-            return JsonResponse({"error": "Donation not found"}, status=404)
+    context = {
+        "transaction_id": transaction_id,
+        "amount": amount,
+        "phone": phone,
+    }
+    return render(request, "sponsorship/thank_you.html", context)
 
-        if status == "SUCCESSFUL":
-            donation.status = "completed"
-            donation.transaction_id = transaction_id
-        elif status in ["FAILED", "REJECTED"]:
-            donation.status = "failed"
-        else:
-            return JsonResponse({"error": "Invalid status"}, status=400)
-
-        donation.save()
-        return JsonResponse({"message": "Callback processed"})
-
-    return JsonResponse({"error": "Invalid request"}, status=400)

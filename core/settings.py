@@ -3,6 +3,8 @@ from pathlib import Path
 
 import dj_database_url
 from dotenv import load_dotenv
+from decouple import config
+
 
 load_dotenv()
 
@@ -243,14 +245,13 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = str(os.getenv("GOOGLE_KEY"))
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = str(os.getenv("GOOGLE_SECRET"))
 
 
-
 # Celery Configuration
-CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'Africa/Nairobi'  # Adjust to your timezone (e.g., Uganda)
+CELERY_BROKER_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "Africa/Nairobi"  # Adjust to your timezone (e.g., Uganda)
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # Helps with connection issues
 
 # =================================== EMAIL CONFIGURATIONS ===================================
@@ -322,8 +323,10 @@ FLUTTERWAVE_ENCRYPTION_KEY = os.getenv("FLUTTERWAVE_ENCRYPTION_KEY")
 
 
 # MTN Mobile Money API configuration
-MTN_SUBSCRIPTION_KEY = os.getenv("MTN_SUBSCRIPTION_KEY")
-MTN_API_USER = os.getenv("MTN_API_USER")
-MTN_API_KEY = os.getenv("MTN_API_KEY")
-MTN_ENVIRONMENT = os.getenv("MTN_ENVIRONMENT", "sandbox")  # default to sandbox
-MTN_CALLBACK_URL = os.getenv("MTN_CALLBACK_URL")
+# MTN_ENVIRONMENT = os.getenv("MTN_ENVIRONMENT", "sandbox")
+SUBSCRIPTION_KEY = os.getenv("SUBSCRIPTION_KEY")
+MOMO_API_USER = os.getenv("MOMO_API_USER")
+MOMO_API_KEY = os.getenv("MOMO_API_KEY")
+CALLBACK_URL = os.getenv(
+    "CALLBACK_URL", default="https://sponsorwithpendeza.org/callback/"
+)

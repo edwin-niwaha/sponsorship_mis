@@ -1,5 +1,7 @@
 # Third-party Imports
 import uuid
+from django.db import models
+from django.utils import timezone
 from django.core.validators import MinValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
 from django.contrib.auth.models import User
@@ -96,68 +98,25 @@ class StaffSponsorship(models.Model):
 # =================================== PAYMENT MODEL ===================================
 
 
-class Donor(models.Model):
-    name = models.CharField(max_length=200, blank=False)
-    phone_number = PhoneNumberField(blank=False, help_text="Format: +256xxxxxxxxx")
-    created_at = models.DateTimeField(auto_now_add=True)
+class MoMoTransaction(models.Model):
+    STATUS_CHOICES = [
+        ("PENDING", "Pending"),
+        ("SUCCESSFUL", "Successful"),
+        ("FAILED", "Failed"),
+    ]
+
+    reference_id = models.CharField(max_length=100, unique=True)
+    external_id = models.CharField(max_length=100, blank=True, null=True)
+    phone_number = models.CharField(max_length=15)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=5, default="UGX")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PENDING")
+    payer_message = models.CharField(max_length=255, blank=True, null=True)
+    payee_note = models.CharField(max_length=255, blank=True, null=True)
+    user_id = models.CharField(max_length=100, blank=True, null=True)
+    api_key = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        indexes = [
-            models.Index(fields=["phone_number"]),
-        ]
-        constraints = [
-            models.UniqueConstraint(fields=["phone_number"], name="unique_donor_phone"),
-        ]
-
     def __str__(self):
-        return self.name
-
-
-class Donation(models.Model):
-    STATUS_CHOICES = (
-        ("pending", "Pending"),
-        ("completed", "Completed"),
-        ("failed", "Failed"),
-    )
-
-    donor = models.ForeignKey(Donor, on_delete=models.CASCADE, related_name="donations")
-    amount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        validators=[MinValueValidator(1.00)],
-        blank=False,
-    )
-    transaction_id = models.CharField(
-        max_length=100, unique=True, null=True, blank=True
-    )
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    momo_reference_id = models.UUIDField(
-        unique=True, editable=False, null=True, blank=True
-    )
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["momo_reference_id"]),
-            models.Index(fields=["transaction_id"]),
-        ]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["momo_reference_id"], name="unique_momo_reference"
-            ),
-            models.UniqueConstraint(
-                fields=["transaction_id"],
-                name="unique_transaction_id",
-                condition=models.Q(transaction_id__isnull=False),
-            ),
-        ]
-
-    def save(self, *args, **kwargs):
-        if not self.momo_reference_id:
-            self.momo_reference_id = uuid.uuid4()
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.donor.name} - {self.amount} - {self.status}"
+        return f"{self.phone_number} - {self.amount} UGX ({self.status})"

@@ -17,7 +17,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.html import strip_tags
 from openpyxl import load_workbook
-from apps.loans.tasks import send_email_task, send_loan_application_email_task, build_html_template
+from apps.loans.tasks import (
+    send_email_task,
+    send_loan_application_email_task,
+    build_html_template,
+)
 
 logger = logging.getLogger(__name__)
 from apps.client.models import Client
@@ -428,7 +432,9 @@ def loan_apply(request):
 
             except ValidationError as e:
                 error_message = str(e)
-                logger.error(f"Validation error while applying for loan: {error_message}")
+                logger.error(
+                    f"Validation error while applying for loan: {error_message}"
+                )
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     return JsonResponse(
                         {"success": False, "message": error_message}, status=400
@@ -807,9 +813,9 @@ def disburse_all_loans(request):
 #                     <h2 style="color: #2c3e50; text-align: center;">Loan Approval Notification</h2>
 #                     <p style="font-size: 16px; color: #34495e; line-height: 1.6;">Dear HOF,</p>
 #                     <p style="font-size: 16px; color: #34495e; line-height: 1.6;">
-#                         Loan <strong style="color: #e74c3c;">{loan.id}</strong> for <strong style="color: #e74c3c;">{loan.borrower.full_name}</strong> 
-#                         (Amount: <strong style="color: #e74c3c;">UGX {loan.principal_amount:,.2f}</strong>) has been approved by 
-#                         <strong style="color: #e74c3c;">{current_user.username}</strong>. 
+#                         Loan <strong style="color: #e74c3c;">{loan.id}</strong> for <strong style="color: #e74c3c;">{loan.borrower.full_name}</strong>
+#                         (Amount: <strong style="color: #e74c3c;">UGX {loan.principal_amount:,.2f}</strong>) has been approved by
+#                         <strong style="color: #e74c3c;">{current_user.username}</strong>.
 #                         Please review for HOF approval.
 #                     </p>
 #                     <p style="text-align: center;">
@@ -849,9 +855,9 @@ def disburse_all_loans(request):
 #                     <h2 style="color: #2c3e50; text-align: center;">Loan Approval Notification</h2>
 #                     <p style="font-size: 16px; color: #34495e; line-height: 1.6;">Dear ED,</p>
 #                     <p style="font-size: 16px; color: #34495e; line-height: 1.6;">
-#                         Loan <strong style="color: #e74c3c;">{loan.id}</strong> for <strong style="color: #e74c3c;">{loan.borrower.full_name}</strong> 
-#                         (Amount: <strong style="color: #e74c3c;">UGX {loan.principal_amount:,.2f}</strong>) has been approved by 
-#                         <strong style="color: #e74c3c;">{current_user.username}</strong>. 
+#                         Loan <strong style="color: #e74c3c;">{loan.id}</strong> for <strong style="color: #e74c3c;">{loan.borrower.full_name}</strong>
+#                         (Amount: <strong style="color: #e74c3c;">UGX {loan.principal_amount:,.2f}</strong>) has been approved by
+#                         <strong style="color: #e74c3c;">{current_user.username}</strong>.
 #                         Please review for ED approval.
 #                     </p>
 #                     <p style="text-align: center;">
@@ -928,7 +934,7 @@ def disburse_all_loans(request):
 def approve_loan(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
     current_user = request.user
-    url = request.build_absolute_uri('/loans/applications/')
+    url = request.build_absolute_uri("/loans/applications/")
 
     if loan.status == "pending" and current_user.profile.role == "boo":
         loan.status = "boo_approved"
@@ -960,7 +966,9 @@ def approve_loan(request, loan_id):
         else:
             logger.warning("No valid HOF_EMAIL provided for BOO approval notification")
 
-        messages.success(request, f"Loan {loan.id} approved by BOO.", extra_tags="bg-success")
+        messages.success(
+            request, f"Loan {loan.id} approved by BOO.", extra_tags="bg-success"
+        )
 
     elif loan.status == "boo_approved" and current_user.profile.role == "hof":
         loan.status = "hof_approved"
@@ -992,7 +1000,9 @@ def approve_loan(request, loan_id):
         else:
             logger.warning("No valid ED_EMAIL provided for HOF approval notification")
 
-        messages.success(request, f"Loan {loan.id} approved by HOF.", extra_tags="bg-success")
+        messages.success(
+            request, f"Loan {loan.id} approved by HOF.", extra_tags="bg-success"
+        )
 
     elif loan.status == "hof_approved" and current_user.profile.role == "ed":
         loan.status = "approved"
@@ -1022,15 +1032,23 @@ def approve_loan(request, loan_id):
         )
         recipients = [
             email
-            for email in [settings.BOO_EMAIL, settings.HOF_EMAIL, settings.ACCOUNTANT_EMAIL]
+            for email in [
+                settings.BOO_EMAIL,
+                settings.HOF_EMAIL,
+                settings.ACCOUNTANT_EMAIL,
+            ]
             if email
         ]
         if recipients:
             send_email_task.delay(subject, text_content, html_content, recipients)
         else:
-            logger.warning("No valid BOO_EMAIL, HOF_EMAIL, or ACCOUNTANT_EMAIL provided for ED approval notification")
+            logger.warning(
+                "No valid BOO_EMAIL, HOF_EMAIL, or ACCOUNTANT_EMAIL provided for ED approval notification"
+            )
 
-        messages.success(request, f"Loan {loan.id} fully approved by ED.", extra_tags="bg-success")
+        messages.success(
+            request, f"Loan {loan.id} fully approved by ED.", extra_tags="bg-success"
+        )
 
     else:
         messages.error(

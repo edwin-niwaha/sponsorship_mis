@@ -6,6 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 # Generic task to send an email
 def build_html_template(content: str, title: str) -> str:
     """
@@ -79,7 +80,6 @@ def send_email_task(subject, text_content, html_content, recipients):
         logger.error(f"Failed to send email to {', '.join(recipients)}: {e}")
         return False
 
-    
 
 # Task to send loan application email
 @shared_task

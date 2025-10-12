@@ -1,0 +1,128 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transaction Successful - Pendeza Uganda</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+
+    <style>
+      body {
+        background-color: #f8f9fa;
+        padding: 60px 0;
+      }
+      .card {
+        border-radius: 16px;
+      }
+      .success-title {
+        color: #127d61;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: center;
+      }
+      .success-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background-color: #127d61;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .success-icon i {
+        color: #fff;
+        font-size: 16px;
+      }
+      .powered {
+        margin-top: 30px;
+        text-align: center;
+        font-size: 13px;
+        color: #6c757d;
+      }
+      .powered a {
+        color: #f79420;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .powered a:hover {
+        text-decoration: underline;
+      }
+      @media print {
+        .no-print {
+          display: none !important;
+        }
+        body {
+          padding: 0;
+          background-color: #fff;
+        }
+      }
+    </style>
+  </head>
+
+  <body class="d-flex align-items-center justify-content-center">
+    <div class="container">
+      <div class="card shadow-lg border-0 mx-auto" style="max-width: 450px;">
+        <div class="card-body text-center">
+          <!-- ✅ Success Title with small tick -->
+          <h4 class="success-title mb-3">
+            Transaction Successful!
+            <span class="success-icon"><i class="bi bi-check-lg"></i></span>
+          </h4>
+
+          <p class="text-muted small mb-4">
+            Thank you for your generous donation. Your support helps transform lives through
+            <strong>Pendeza Uganda</strong>.
+          </p>
+
+          <!-- ✅ Receipt Table -->
+          <table class="table table-bordered text-start small mb-3">
+            <tbody>
+              <tr>
+                <th>Amount</th>
+                <td>UGX {{ amount|floatformat:'2'|intcomma }}</td>
+              </tr>
+              <tr>
+                <th>Transaction ID</th>
+                <td>{{ transaction_id }}</td>
+              </tr>
+              <tr>
+                <th>Date</th>
+                <td id="current-date"></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="alert alert-success small mb-3">
+            <strong>Thank you for making a difference!</strong>
+          </div>
+
+          <!-- ✅ Buttons -->
+          <div class="d-flex gap-2 no-print">
+            <button onclick="window.print()" class="btn btn-outline-success w-50"><i class="bi bi-printer"></i> Print Receipt</button>
+            <a href="{% url 'initiate_payment' %}" class="btn w-50 text-white" style="background-color: #F79420;"><i class="bi bi-arrow-repeat"></i> Donate Again</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⚡ Powered by -->
+      <footer class="powered no-print">
+        ⚡ Powered by <a href="https://perpetual-web-vert.vercel.app/" target="_blank">Perpetual Tech</a>
+      </footer>
+    </div>
+
+    <!-- ✅ Script for current date (dd/mm/yyyy) -->
+    <script>
+      const today = new Date()
+      const formattedDate = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear()
+      document.getElementById('current-date').textContent = formattedDate
+    </script>
+  </body>
+</html>
