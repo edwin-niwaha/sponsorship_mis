@@ -36,13 +36,16 @@
                     {% endfor %}
                   </div>
                 {% endif %}
-                <!-- Display Principal and Interest Balances -->
+                <!-- Display Principal, Interest, and Penalty Balances -->
                 <div id="loan-balances" class="mt-2 d-flex justify-content-start align-items-center bg-light p-2 rounded border">
                   <div class="me-4">
                     <strong>Principal:</strong> <span id="principal-balance" class="badge bg-primary text-white">Select a loan</span>
                   </div>
-                  <div>
+                  <div class="me-4">
                     <strong>Interest:</strong> <span id="interest-balance" class="badge bg-info text-white">Select a loan</span>
+                  </div>
+                  <div>
+                    <strong>Penalty:</strong> <span id="penalty-balance" class="badge bg-warning text-dark">Select a loan</span>
                   </div>
                 </div>
               </div>
@@ -82,6 +85,19 @@
                   </div>
                 {% endif %}
               </div>
+              <!-- Penalty Payment Field -->
+              <div class="form-group">
+                <label for="{{ form.penalty_payment.id_for_label }}">{{ form.penalty_payment.label }}</label>
+                {{ form.penalty_payment }}
+                {% if form.penalty_payment.errors %}
+                  <div class="text-danger">
+                    {% for error in form.penalty_payment.errors %}
+                      <small>{{ error }}</small>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+
               <!-- Account Field -->
               <div class="form-group">
                 <label for="{{ form.account.id_for_label }}">{{ form.account.label }}</label>
@@ -104,51 +120,60 @@
       </div>
     </div>
   </div>
-
+  <!-- jQuery for dynamic behavior -->
   <script>
-    $(document).ready(function() {
-      // Loan balances data from Django
-      const loanBalances = {
-        {% for loan in loans %}
-          "{{ loan.id }}": {
-            principal: "{{ loan.remaining_principal|floatformat:2 }}",
-            interest: "{{ loan.remaining_interest|floatformat:2 }}"
-          }{% if not forloop.last %},{% endif %}
-        {% endfor %}
-      };
+      $(document).ready(function() {
+    // Loan balances data from Django
+    const loanBalances = {
+      {% for loan in loans %}
+        "{{ loan.id }}": {
+          principal: "{{ loan.remaining_principal|floatformat:2 }}",
+          interest: "{{ loan.remaining_interest|floatformat:2 }}",
+          penalty: "{{ loan.remaining_penalty|floatformat:2 }}"
+        }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    };
 
-      // Update balances and button state when a loan is selected
-      $('#{{ form.loan.id_for_label }}').on('change', function() {
-        const loanId = $(this).val();
-        const $viewButton = $('#view-loan-details');
+    const $loanSelect = $('#{{ form.loan.id_for_label }}');
+    const $penaltyField = $('#{{ form.penalty_payment.id_for_label }}');
+
+    $loanSelect.on('change', function() {
+      const loanId = $(this).val();
+      const $viewButton = $('#view-loan-details');
+      
+      if (loanId && loanBalances[loanId]) {
+        // Update balances
+        $('#principal-balance').text(Number(loanBalances[loanId].principal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        $('#interest-balance').text(Number(loanBalances[loanId].interest).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        $('#penalty-balance').text(Number(loanBalances[loanId].penalty).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
         
-        if (loanId && loanBalances[loanId]) {
-          // Update balances
-          $('#principal-balance').text(Number(loanBalances[loanId].principal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-          $('#interest-balance').text(Number(loanBalances[loanId].interest).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-          
-          // Enable button and set URL
-          $viewButton
-            .attr('href', `/loans/${loanId}/`) // Assumes URL pattern is /loans/<loan_id>/
-            .removeAttr('disabled')
-            .removeClass('btn-secondary')
-            .addClass('btn-info');
+        // Auto-fill penalty_payment and make it read-only
+        $penaltyField.val(Number(loanBalances[loanId].penalty).toFixed(2));
+        if (Number(loanBalances[loanId].penalty) > 0) {
+          $penaltyField.prop('readonly', true);
         } else {
-          // Reset balances
-          $('#principal-balance').text('Select a loan');
-          $('#interest-balance').text('Select a loan');
-          
-          // Disable button
-          $viewButton
-            .attr('href', '#')
-            .attr('disabled', 'disabled')
-            .removeClass('btn-info')
-            .addClass('btn-secondary');
+          $penaltyField.prop('readonly', false);
+          $penaltyField.val('0.00');
         }
-      });
 
-      // Trigger change event on page load to handle pre-selected loan (if any)
-      $('#{{ form.loan.id_for_label }}').trigger('change');
+        // Enable button and set URL
+        $viewButton.attr('href', `/loans/${loanId}/`).removeAttr('disabled').removeClass('btn-secondary').addClass('btn-info');
+      } else {
+        // Reset balances
+        $('#principal-balance').text('Select a loan');
+        $('#interest-balance').text('Select a loan');
+        $('#penalty-balance').text('Select a loan');
+        
+        // Reset penalty field
+        $penaltyField.val('0.00').prop('readonly', false);
+
+        // Disable button
+        $viewButton.attr('href', '#').attr('disabled', 'disabled').removeClass('btn-info').addClass('btn-secondary');
+      }
     });
-  </script>
+
+    // Trigger change event on page load to handle pre-selected loan (if any)
+    $loanSelect.trigger('change');
+  });
+</script>
 {% endblock %}

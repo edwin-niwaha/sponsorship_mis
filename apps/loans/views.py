@@ -1289,78 +1289,135 @@ def delete_loan(request, loan_id):
 
 
 # ===================================  loan_repayment_create_view  ===================================
+# @login_required
+# @admin_or_manager_or_staff_required
+# @transaction.atomic  # Ensure database operations are within a transaction
+# def loan_repayment_create_view(request):
+#     form_title = "Repay Loans"
+
+#     # Annotate loans with principal, interest, and penalty paid, and calculate remaining balances
+#     loans_qs = (
+#         Loan.objects.annotate(
+#             principal_paid=Coalesce(
+#                 Sum("repayments__principal_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             interest_paid=Coalesce(
+#                 Sum("repayments__interest_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             penalty_paid=Coalesce(
+#                 Sum("repayments__penalty_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             remaining_principal=F("principal_amount")
+#             - Coalesce(
+#                 Sum("repayments__principal_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             remaining_interest=F("total_interest")
+#             - Coalesce(
+#                 Sum("repayments__interest_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             remaining_penalty=Coalesce(
+#                 Sum(
+#                     "penalties__penalty_amount",
+#                     filter=Q(penalties__is_paid=False),
+#                     distinct=True,  # ✅ prevents duplicate counting
+#                 ),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#         )
+#         .filter(
+#             Q(remaining_principal__gt=0)
+#             | Q(remaining_interest__gt=0)
+#             | Q(remaining_penalty__gt=0),
+#             status__in=["disbursed", "overdue"],
+#         )
+#         .select_related("borrower")
+#         .distinct()
+#     )
+
+#     # Force queryset evaluation to avoid cursor persistence issues
+#     loans = list(loans_qs)
+
+#     # ✅ Filter out loans with missing/invalid borrower
+#     loans = [loan for loan in loans if getattr(loan, "borrower", None)]
+
+#     if request.method == "POST":
+#         form = LoanRepaymentForm(request.POST)
+#         if form.is_valid():
+#             repayment = form.save(commit=False)
+#             repayment.loan = form.cleaned_data["loan"]
+
+#             # ✅ Guard against missing borrower before saving
+#             if not getattr(repayment.loan, "borrower", None):
+#                 messages.error(request, "This loan has no valid borrower attached.")
+#                 return redirect("loans:loan_repayment_create")
+
+#             repayment.save()
+
+#             # After saving, update loan status
+#             repayment.loan.update_status()
+
+#             messages.success(
+#                 request,
+#                 "Loan repayment submitted successfully.",
+#                 extra_tags="bg-success",
+#             )
+#             return redirect("loans:loan_repayment_create")
+#         else:
+#             messages.error(request, "Please correct the errors below.")
+#     else:
+#         form = LoanRepaymentForm()
+
+#     return render(
+#         request,
+#         "loans/loan_repayment_form.html",
+#         {
+#             "form": form,
+#             "form_title": form_title,
+#             "loans": loans,  # Pass the safe loans list to the template
+#         },
+#     )
+
 @login_required
 @admin_or_manager_or_staff_required
-@transaction.atomic  # Ensure database operations are within a transaction
+@transaction.atomic
 def loan_repayment_create_view(request):
     form_title = "Repay Loans"
-
-    # Annotate loans with principal, interest, and penalty paid, and calculate remaining balances
+    # Fetch loans with non-zero balances and valid status
     loans_qs = (
-        Loan.objects.annotate(
-            principal_paid=Coalesce(
-                Sum("repayments__principal_payment"),
-                Value(0, output_field=DecimalField()),
-            ),
-            interest_paid=Coalesce(
-                Sum("repayments__interest_payment"),
-                Value(0, output_field=DecimalField()),
-            ),
-            penalty_paid=Coalesce(
-                Sum("repayments__penalty_payment"),
-                Value(0, output_field=DecimalField()),
-            ),
-            remaining_principal=F("principal_amount")
-            - Coalesce(
-                Sum("repayments__principal_payment"),
-                Value(0, output_field=DecimalField()),
-            ),
-            remaining_interest=F("total_interest")
-            - Coalesce(
-                Sum("repayments__interest_payment"),
-                Value(0, output_field=DecimalField()),
-            ),
-            remaining_penalty=Coalesce(
-                Sum(
-                    "penalties__penalty_amount",
-                    filter=Q(penalties__is_paid=False),
-                    distinct=True,  # ✅ prevents duplicate counting
-                ),
-                Value(0, output_field=DecimalField()),
-            ),
-        )
-        .filter(
-            Q(remaining_principal__gt=0)
-            | Q(remaining_interest__gt=0)
-            | Q(remaining_penalty__gt=0),
-            status__in=["disbursed", "overdue"],
-        )
+        Loan.objects.filter(status__in=["disbursed", "overdue"])
         .select_related("borrower")
-        .distinct()
     )
-
-    # Force queryset evaluation to avoid cursor persistence issues
-    loans = list(loans_qs)
-
-    # ✅ Filter out loans with missing/invalid borrower
-    loans = [loan for loan in loans if getattr(loan, "borrower", None)]
+    # Calculate balances using model method and filter out fully paid loans
+    loans = []
+    for loan in loans_qs:
+        if not getattr(loan, "borrower", None):
+            continue  # Skip loans with missing borrowers
+        balances = loan.calculate_remaining_balances()
+        if (
+            balances["principal_balance"] > 0
+            or balances["interest_balance"] > 0
+            or balances["penalty_balance"] > 0
+        ):
+            loan.remaining_principal = balances["principal_balance"]
+            loan.remaining_interest = balances["interest_balance"]
+            loan.remaining_penalty = balances["penalty_balance"]
+            loans.append(loan)
 
     if request.method == "POST":
         form = LoanRepaymentForm(request.POST)
         if form.is_valid():
             repayment = form.save(commit=False)
             repayment.loan = form.cleaned_data["loan"]
-
-            # ✅ Guard against missing borrower before saving
             if not getattr(repayment.loan, "borrower", None):
                 messages.error(request, "This loan has no valid borrower attached.")
                 return redirect("loans:loan_repayment_create")
-
             repayment.save()
-
-            # After saving, update loan status
             repayment.loan.update_status()
-
             messages.success(
                 request,
                 "Loan repayment submitted successfully.",
@@ -1371,72 +1428,127 @@ def loan_repayment_create_view(request):
             messages.error(request, "Please correct the errors below.")
     else:
         form = LoanRepaymentForm()
-
     return render(
         request,
         "loans/loan_repayment_form.html",
         {
             "form": form,
             "form_title": form_title,
-            "loans": loans,  # Pass the safe loans list to the template
+            "loans": loans,
         },
     )
 
-
 # =================================== LoanPenaltyForm ===================================
 
+
+# @login_required
+# @admin_or_manager_or_staff_required
+# @transaction.atomic
+# def loan_penalty_create_view(request):
+#     form_title = "Add Loan Penalty"
+
+#     # Load loans with remaining balances
+#     loans = (
+#         Loan.objects.annotate(
+#             principal_paid=Coalesce(
+#                 Sum("repayments__principal_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             interest_paid=Coalesce(
+#                 Sum("repayments__interest_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             penalty_paid=Coalesce(
+#                 Sum("repayments__penalty_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             remaining_principal=F("principal_amount")
+#             - Coalesce(
+#                 Sum("repayments__principal_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             remaining_interest=F("total_interest")
+#             - Coalesce(
+#                 Sum("repayments__interest_payment"),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#             remaining_penalty=Coalesce(
+#                 Sum(
+#                     "penalties__penalty_amount",
+#                     filter=Q(penalties__is_paid=False),
+#                     distinct=True,
+#                 ),
+#                 Value(0, output_field=DecimalField()),
+#             ),
+#         )
+#         .filter(
+#             Q(remaining_principal__gt=0)
+#             | Q(remaining_interest__gt=0)
+#             | Q(remaining_penalty__gt=0),
+#             status__in=["disbursed", "overdue"],
+#         )
+#         .select_related("borrower")
+#         .distinct()
+#     )
+
+#     loans = list(loans)  # Materialize queryset
+
+#     if request.method == "POST":
+#         form = LoanPenaltyForm(request.POST, user=request.user)
+#         if form.is_valid():
+#             penalty = form.save(commit=False)
+#             penalty.created_by = request.user
+#             penalty.save()
+
+#             # Update loan status
+#             penalty.loan.update_status()
+
+#             messages.success(
+#                 request,
+#                 f"Penalty of {penalty.penalty_amount:,.2f} added to Loan {penalty.loan.id} successfully.",
+#                 extra_tags="bg-success",
+#             )
+#             return redirect("loans:loan_penalty_create")
+#         else:
+#             messages.error(request, "Please correct the errors below.")
+#     else:
+#         form = LoanPenaltyForm(user=request.user)
+
+#     return render(
+#         request,
+#         "loans/loan_penalty_form.html",
+#         {
+#             "form": form,
+#             "form_title": form_title,
+#             "loans": loans,
+#         },
+#     )
 
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
 def loan_penalty_create_view(request):
     form_title = "Add Loan Penalty"
-
-    # Load loans with remaining balances
-    loans = (
-        Loan.objects.annotate(
-            principal_paid=Coalesce(
-                Sum("repayments__principal_payment"),
-                Value(0, output_field=DecimalField()),
-            ),
-            interest_paid=Coalesce(
-                Sum("repayments__interest_payment"),
-                Value(0, output_field=DecimalField()),
-            ),
-            penalty_paid=Coalesce(
-                Sum("repayments__penalty_payment"),
-                Value(0, output_field=DecimalField()),
-            ),
-            remaining_principal=F("principal_amount")
-            - Coalesce(
-                Sum("repayments__principal_payment"),
-                Value(0, output_field=DecimalField()),
-            ),
-            remaining_interest=F("total_interest")
-            - Coalesce(
-                Sum("repayments__interest_payment"),
-                Value(0, output_field=DecimalField()),
-            ),
-            remaining_penalty=Coalesce(
-                Sum(
-                    "penalties__penalty_amount",
-                    filter=Q(penalties__is_paid=False),
-                    distinct=True,
-                ),
-                Value(0, output_field=DecimalField()),
-            ),
-        )
-        .filter(
-            Q(remaining_principal__gt=0)
-            | Q(remaining_interest__gt=0)
-            | Q(remaining_penalty__gt=0),
-            status__in=["disbursed", "overdue"],
-        )
+    # Fetch loans with non-zero balances and valid status
+    loans_qs = (
+        Loan.objects.filter(status__in=["disbursed", "overdue"])
         .select_related("borrower")
-        .distinct()
     )
-
-    loans = list(loans)  # Materialize queryset
+    # Calculate balances using model method and filter out fully paid loans
+    loans = []
+    for loan in loans_qs:
+        if not getattr(loan, "borrower", None):
+            continue  # Skip loans with missing borrowers
+        balances = loan.calculate_remaining_balances()
+        if (
+            balances["principal_balance"] > 0
+            or balances["interest_balance"] > 0
+            or balances["penalty_balance"] > 0
+        ):
+            loan.remaining_principal = balances["principal_balance"]
+            loan.remaining_interest = balances["interest_balance"]
+            loan.remaining_penalty = balances["penalty_balance"]
+            loans.append(loan)
 
     if request.method == "POST":
         form = LoanPenaltyForm(request.POST, user=request.user)
@@ -1444,10 +1556,8 @@ def loan_penalty_create_view(request):
             penalty = form.save(commit=False)
             penalty.created_by = request.user
             penalty.save()
-
             # Update loan status
             penalty.loan.update_status()
-
             messages.success(
                 request,
                 f"Penalty of {penalty.penalty_amount:,.2f} added to Loan {penalty.loan.id} successfully.",
@@ -1458,7 +1568,6 @@ def loan_penalty_create_view(request):
             messages.error(request, "Please correct the errors below.")
     else:
         form = LoanPenaltyForm(user=request.user)
-
     return render(
         request,
         "loans/loan_penalty_form.html",
@@ -1468,7 +1577,6 @@ def loan_penalty_create_view(request):
             "loans": loans,
         },
     )
-
 
 # ===================================  loan_detail_view  ===================================
 @login_required

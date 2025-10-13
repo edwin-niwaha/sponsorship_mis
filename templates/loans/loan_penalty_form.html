@@ -36,7 +36,7 @@
                     {% endfor %}
                   </div>
                 {% endif %}
-                <!-- Display Principal, Interest, and Penalty Balances -->
+                <!-- Display Principal, Interest, Penalty, and Total Balances -->
                 <div id="loan-balances" class="mt-2 d-flex justify-content-start align-items-center bg-light p-2 rounded border">
                   <div class="me-4">
                     <strong>Principal:</strong> <span id="principal-balance" class="badge bg-primary text-white">Select a loan</span>
@@ -44,8 +44,11 @@
                   <div class="me-4">
                     <strong>Interest:</strong> <span id="interest-balance" class="badge bg-info text-white">Select a loan</span>
                   </div>
-                  <div>
+                  <div class="me-4">
                     <strong>Penalty:</strong> <span id="penalty-balance" class="badge bg-warning text-dark">Select a loan</span>
+                  </div>
+                  <div>
+                    <strong>Total:</strong> <span id="total-balance" class="badge bg-secondary text-white">Select a loan</span>
                   </div>
                 </div>
               </div>
@@ -107,19 +110,21 @@
       </div>
     </div>
   </div>
-
   <script>
     $(document).ready(function() {
       // Loan balances data from Django
       const loanBalances = {
         {% for loan in loans %}
           "{{ loan.id }}": {
-            principal: "{{ loan.remaining_principal|floatformat:2 }}",
-            interest: "{{ loan.remaining_interest|floatformat:2 }}",
-            penalty: "{{ loan.remaining_penalty|floatformat:2 }}"
+            principal: "{{ loan.remaining_principal|floatformat:2|default:'0.00' }}",
+            interest: "{{ loan.remaining_interest|floatformat:2|default:'0.00' }}",
+            penalty: "{{ loan.remaining_penalty|floatformat:2|default:'0.00' }}"
           }{% if not forloop.last %},{% endif %}
         {% endfor %}
       };
+
+      // Debug: Log loanBalances to console
+      console.log('Loan Balances:', loanBalances);
 
       // Update balances and button state when a loan is selected
       $('#{{ form.loan.id_for_label }}').on('change', function() {
@@ -128,9 +133,18 @@
         
         if (loanId && loanBalances[loanId]) {
           // Update balances
-          $('#principal-balance').text(Number(loanBalances[loanId].principal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-          $('#interest-balance').text(Number(loanBalances[loanId].interest).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-          $('#penalty-balance').text(Number(loanBalances[loanId].penalty).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+          const principal = Number(loanBalances[loanId].principal);
+          const interest = Number(loanBalances[loanId].interest);
+          const penalty = Number(loanBalances[loanId].penalty);
+          const total = principal + interest + penalty;
+          
+          $('#principal-balance').text(principal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+          $('#interest-balance').text(interest.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+          $('#penalty-balance').text(penalty.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+          $('#total-balance').text(total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+          
+          // Debug: Log selected loan balances
+          console.log(`Selected Loan ${loanId}: Principal=${principal}, Interest=${interest}, Penalty=${penalty}, Total=${total}`);
           
           // Enable button and set URL
           $viewButton
@@ -143,6 +157,10 @@
           $('#principal-balance').text('Select a loan');
           $('#interest-balance').text('Select a loan');
           $('#penalty-balance').text('Select a loan');
+          $('#total-balance').text('Select a loan');
+          
+          // Debug: Log reset state
+          console.log('No loan selected, resetting balances');
           
           // Disable button
           $viewButton
