@@ -340,6 +340,133 @@ def paginate_queryset(queryset, page_number):
 #     return render(request, "loans/apply_for_loan.html", context)
 
 
+# @login_required
+# def loan_apply(request):
+#     """
+#     Handles the loan application process:
+#     - Validates the submitted form
+#     - Checks for existing running loans with outstanding balances
+#     - Creates a new loan application if valid
+#     - Sends asynchronous email notifications (to applicant & loan officer)
+#     """
+#     form_title = "Loan Application Form"
+#     form = LoanApplicationForm(request.POST or None)
+#     borrowers = Client.objects.all().order_by("id")
+
+#     logged_in_user = request.user
+#     user_role = getattr(logged_in_user.profile, "role", "guest")
+
+#     if request.method == "POST":
+#         if form.is_valid():
+#             borrower_id = request.POST.get("id")
+#             borrower = get_object_or_404(Client, pk=borrower_id)
+
+#             # 🔎 Step 1: Check running loans with outstanding balances
+#             running_loans = Loan.objects.filter(
+#                 borrower=borrower, status__in=["disbursed", "overdue"]
+#             )
+
+#             has_running_balance = False
+#             for loan in running_loans:
+#                 balances = loan.calculate_remaining_balances()
+#                 total_balance = (
+#                     balances.get("principal_balance", Decimal("0.00"))
+#                     + balances.get("interest_balance", Decimal("0.00"))
+#                     + balances.get("penalty_balance", Decimal("0.00"))
+#                 )
+#                 if total_balance > Decimal("0.00"):
+#                     has_running_balance = True
+#                     break
+
+#             if has_running_balance:
+#                 error_message = (
+#                     f"{borrower} has an existing loan with an outstanding balance. "
+#                     "Please settle the outstanding amount before applying for a new loan."
+#                 )
+#                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+#                     return JsonResponse(
+#                         {"success": False, "message": error_message}, status=400
+#                     )
+#                 messages.warning(request, error_message, extra_tags="bg-warning")
+#                 return redirect("loans:apply_for_loan")
+
+#             try:
+#                 # 💾 Step 2: Save new loan application
+#                 application = form.save(commit=False)
+#                 application.borrower = borrower
+#                 application.disbursement_date = timezone.now()
+#                 application.applied_by = logged_in_user
+#                 application.applied_by_role = user_role
+#                 application.save()
+
+#                 client_name = (
+#                     borrower.get_full_name()
+#                     if hasattr(borrower, "get_full_name")
+#                     else str(borrower)
+#                 )
+
+#                 # 📧 Step 3: Queue emails asynchronously
+#                 send_loan_application_email_task.delay(
+#                     recipient_name=logged_in_user.username,
+#                     recipient_email=logged_in_user.email,
+#                     application_id=application.id,
+#                     client_name=client_name,
+#                     is_applicant=True,
+#                 )
+
+#                 boo_email = settings.BOO_EMAIL
+#                 send_loan_application_email_task.delay(
+#                     recipient_name="Loan Officer",
+#                     recipient_email=boo_email,
+#                     application_id=application.id,
+#                     client_name=client_name,
+#                     is_applicant=False,
+#                 )
+
+#                 # ✅ Step 4: Respond success
+#                 success_message = "Loan application submitted successfully!"
+#                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+#                     return JsonResponse({"success": True, "message": success_message})
+#                 messages.success(request, success_message, extra_tags="bg-success")
+#                 return redirect("loans:apply_for_loan")
+
+#             except ValidationError as e:
+#                 error_message = str(e)
+#                 logger.error(
+#                     f"Validation error while applying for loan: {error_message}"
+#                 )
+#                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+#                     return JsonResponse(
+#                         {"success": False, "message": error_message}, status=400
+#                     )
+#                 messages.error(request, error_message, extra_tags="bg-danger")
+
+#             except Exception as e:
+#                 logger.exception(f"Unexpected error in loan_apply view: {str(e)}")
+#                 error_message = "An unexpected error occurred while processing the loan application."
+#                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+#                     return JsonResponse(
+#                         {"success": False, "message": error_message}, status=500
+#                     )
+#                 messages.error(request, error_message, extra_tags="bg-danger")
+
+#         else:
+#             # 🚫 Step 5: Form invalid
+#             error_message = "Please correct the errors below."
+#             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+#                 return JsonResponse(
+#                     {"success": False, "message": error_message}, status=400
+#                 )
+#             messages.error(request, error_message, extra_tags="bg-danger")
+
+#     # 🎨 Render form page
+#     context = {
+#         "form": form,
+#         "form_title": form_title,
+#         "borrowers": borrowers,
+#     }
+#     return render(request, "loans/apply_for_loan.html", context)
+
 @login_required
 def loan_apply(request):
     """
@@ -347,7 +474,6 @@ def loan_apply(request):
     - Validates the submitted form
     - Checks for existing running loans with outstanding balances
     - Creates a new loan application if valid
-    - Sends asynchronous email notifications (to applicant & loan officer)
     """
     form_title = "Loan Application Form"
     form = LoanApplicationForm(request.POST or None)
@@ -399,31 +525,7 @@ def loan_apply(request):
                 application.applied_by_role = user_role
                 application.save()
 
-                client_name = (
-                    borrower.get_full_name()
-                    if hasattr(borrower, "get_full_name")
-                    else str(borrower)
-                )
-
-                # 📧 Step 3: Queue emails asynchronously
-                send_loan_application_email_task.delay(
-                    recipient_name=logged_in_user.username,
-                    recipient_email=logged_in_user.email,
-                    application_id=application.id,
-                    client_name=client_name,
-                    is_applicant=True,
-                )
-
-                boo_email = settings.BOO_EMAIL
-                send_loan_application_email_task.delay(
-                    recipient_name="Loan Officer",
-                    recipient_email=boo_email,
-                    application_id=application.id,
-                    client_name=client_name,
-                    is_applicant=False,
-                )
-
-                # ✅ Step 4: Respond success
+                # ✅ Step 3: Respond success
                 success_message = "Loan application submitted successfully!"
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     return JsonResponse({"success": True, "message": success_message})
@@ -451,7 +553,7 @@ def loan_apply(request):
                 messages.error(request, error_message, extra_tags="bg-danger")
 
         else:
-            # 🚫 Step 5: Form invalid
+            # 🚫 Step 4: Form invalid
             error_message = "Please correct the errors below."
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                 return JsonResponse(
@@ -934,37 +1036,11 @@ def disburse_all_loans(request):
 def approve_loan(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
     current_user = request.user
-    url = request.build_absolute_uri("/loans/applications/")
 
     if loan.status == "pending" and current_user.profile.role == "boo":
         loan.status = "boo_approved"
         loan.approved_by_boo = current_user
         loan.save()
-
-        subject = f"Loan {loan.id} Approved by BOO"
-        text_content = (
-            f"Dear Team,\n\n"
-            f"Loan {loan.id} for {loan.borrower.full_name} (Amount: UGX {loan.principal_amount:,.2f}) "
-            f"has been approved by {current_user.username}. Please review for HOF approval.\n"
-            f"Details: {url}\n\nBest regards,\nPendeza Uganda"
-        )
-        html_content = build_html_template(
-            f"""
-            <p>Dear Team,</p>
-            <p>Loan <strong>{loan.id}</strong> for <strong>{loan.borrower.full_name}</strong> 
-            (Amount: <strong>UGX {loan.principal_amount:,.2f}</strong>) has been approved by 
-            <strong>{current_user.username}</strong>. Please review for HOF approval.</p>
-            <p class="text-center">
-                <a href="{url}" class="btn-view">Approve Loan</a>
-            </p>
-            """,
-            subject,
-        )
-        recipients = [email for email in [settings.HOF_EMAIL] if email]
-        if recipients:
-            send_email_task.delay(subject, text_content, html_content, recipients)
-        else:
-            logger.warning("No valid HOF_EMAIL provided for BOO approval notification")
 
         messages.success(
             request, f"Loan {loan.id} approved by BOO.", extra_tags="bg-success"
@@ -975,31 +1051,6 @@ def approve_loan(request, loan_id):
         loan.approved_by_hof = current_user
         loan.save()
 
-        subject = f"Loan {loan.id} Approved by HOF"
-        text_content = (
-            f"Dear Team,\n\n"
-            f"Loan {loan.id} for {loan.borrower.full_name} (Amount: UGX {loan.principal_amount:,.2f}) "
-            f"has been approved by {current_user.username}. Please review for ED approval.\n"
-            f"Details: {url}\n\nBest regards,\nPendeza Uganda"
-        )
-        html_content = build_html_template(
-            f"""
-            <p>Dear Team,</p>
-            <p>Loan <strong>{loan.id}</strong> for <strong>{loan.borrower.full_name}</strong> 
-            (Amount: <strong>UGX {loan.principal_amount:,.2f}</strong>) has been approved by 
-            <strong>{current_user.username}</strong>. Please review for ED approval.</p>
-            <p class="text-center">
-                <a href="{url}" class="btn-view">Approve Loan</a>
-            </p>
-            """,
-            subject,
-        )
-        recipients = [email for email in [settings.ED_EMAIL] if email]
-        if recipients:
-            send_email_task.delay(subject, text_content, html_content, recipients)
-        else:
-            logger.warning("No valid ED_EMAIL provided for HOF approval notification")
-
         messages.success(
             request, f"Loan {loan.id} approved by HOF.", extra_tags="bg-success"
         )
@@ -1009,42 +1060,6 @@ def approve_loan(request, loan_id):
         loan.approved_by_ed = current_user
         loan.approved_date = timezone.now()
         loan.save()
-
-        subject = f"Loan {loan.id} Fully Approved by ED"
-        text_content = (
-            f"Dear Team,\n\n"
-            f"Loan {loan.id} for {loan.borrower.full_name} (Amount: UGX {loan.principal_amount:,.2f}) "
-            f"has been fully approved by {current_user.username}. Please proceed with the disbursement of the loan.\n"
-            f"Details: {request.build_absolute_uri('/loans/disburse/')}\n\nBest regards,\nPendeza Uganda"
-        )
-        html_content = build_html_template(
-            f"""
-            <p>Dear Team,</p>
-            <p>We are pleased to inform you that the loan <strong>{loan.id}</strong> for 
-            <strong>{loan.borrower.full_name}</strong> (Amount: <strong>UGX {loan.principal_amount:,.2f}</strong>) 
-            has been fully approved by <strong>{current_user.username}</strong>.</p>
-            <p>Please proceed with the disbursement of the loan.</p>
-            <p class="text-center">
-                <a href="{request.build_absolute_uri('/loans/disburse/')}" class="btn-view">Disburse the Loan</a>
-            </p>
-            """,
-            subject,
-        )
-        recipients = [
-            email
-            for email in [
-                settings.BOO_EMAIL,
-                settings.HOF_EMAIL,
-                settings.ACCOUNTANT_EMAIL,
-            ]
-            if email
-        ]
-        if recipients:
-            send_email_task.delay(subject, text_content, html_content, recipients)
-        else:
-            logger.warning(
-                "No valid BOO_EMAIL, HOF_EMAIL, or ACCOUNTANT_EMAIL provided for ED approval notification"
-            )
 
         messages.success(
             request, f"Loan {loan.id} fully approved by ED.", extra_tags="bg-success"
@@ -1117,6 +1132,97 @@ def approve_all_loans(request):
 
 
 # =================================== Reject Loan View ===================================
+# @login_required
+# @admin_or_manager_required
+# def reject_loan(request, loan_id):
+#     loan = get_object_or_404(Loan, id=loan_id)
+
+#     # Check if the loan is already approved
+#     if loan.status == "approved":
+#         messages.error(
+#             request,
+#             f"Loan {loan.id} cannot be rejected because it is already approved.",
+#             extra_tags="bg-warning",
+#         )
+#         return redirect("loans:loan_applications")
+
+#     # Define the rejection process based on the current loan status
+#     rejection_status = None
+#     rejection_reason = "Please review this loan"
+
+#     if loan.status == "boo_approved":
+#         rejection_status = "hof_rejected"
+#     elif loan.status == "hof_approved":
+#         rejection_status = "ed_rejected"
+#     else:
+#         messages.error(
+#             request,
+#             f"Loan {loan.id} cannot be rejected because its status is {loan.status}.",
+#             extra_tags="bg-warning",
+#         )
+#         return redirect("loans:loan_applications")
+
+#     # Update loan status and reason for rejection
+#     loan.status = rejection_status
+#     loan.reason_for_rejection = rejection_reason
+#     loan.save()
+
+#     # Send appropriate email notifications
+#     if rejection_status == "hof_rejected":
+#         send_email_to_boo(loan)
+#     elif rejection_status == "ed_rejected":
+#         send_email_to_boo_and_hof(loan)
+
+#     # Display success message
+#     messages.info(request, f"Loan {loan.id} has been rejected.", extra_tags="bg-danger")
+
+#     return redirect("loans:loan_applications")
+
+
+# def send_email_to_boo(loan):
+#     subject = f"Loan {loan.id} Rejected by HOF"
+#     message = f"""
+#     <html>
+#         <body style="font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px;">
+#             <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+#                 <h2 style="color: #2c3e50; text-align: center;">Loan Rejection Notification</h2>
+#                 <p style="font-size: 16px; color: #34495e;">Dear Team,</p>
+#                 <p style="font-size: 16px; color: #34495e;">The loan <strong style="color: #e74c3c;">{loan.id}</strong> for <strong style="color: #e74c3c;">{loan.borrower.full_name}</strong> (Amount: <strong style="color: #e74c3c;">UGX {loan.principal_amount:,.2f}</strong>) has been rejected by the Head of Finance.</p>
+#                 <p style="font-size: 16px; color: #34495e;">Please review the loan details and take appropriate actions.</p>
+#             </div>
+#         </body>
+#     </html>
+#     """
+#     email = EmailMessage(
+#         subject, message, settings.EMAIL_HOST_USER, [settings.BOO_EMAIL]
+#     )
+#     email.content_subtype = "html"
+#     email.send()
+
+
+# def send_email_to_boo_and_hof(loan):
+#     subject = f"Loan {loan.id} Rejected by ED"
+#     message = f"""
+#     <html>
+#         <body style="font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px;">
+#             <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+#                 <h2 style="color: #2c3e50; text-align: center;">Loan Rejection Notification</h2>
+#                 <p style="font-size: 16px; color: #34495e;">Dear Team,</p>
+#                 <p style="font-size: 16px; color: #34495e;">The loan <strong style="color: #e74c3c;">{loan.id}</strong> for <strong style="color: #e74c3c;">{loan.borrower.full_name}</strong> (Amount: <strong style="color: #e74c3c;">UGX {loan.principal_amount:,.2f}</strong>) has been rejected by the Executive Director.</p>
+#                 <p style="font-size: 16px; color: #34495e;">Please review the loan details and take appropriate actions.</p>
+#             </div>
+#         </body>
+#     </html>
+#     """
+#     email = EmailMessage(
+#         subject,
+#         message,
+#         settings.EMAIL_HOST_USER,
+#         [settings.BOO_EMAIL, settings.HOF_EMAIL],
+#     )
+#     email.content_subtype = "html"
+#     email.send()
+
 @login_required
 @admin_or_manager_required
 def reject_loan(request, loan_id):
@@ -1152,61 +1258,10 @@ def reject_loan(request, loan_id):
     loan.reason_for_rejection = rejection_reason
     loan.save()
 
-    # Send appropriate email notifications
-    if rejection_status == "hof_rejected":
-        send_email_to_boo(loan)
-    elif rejection_status == "ed_rejected":
-        send_email_to_boo_and_hof(loan)
-
     # Display success message
     messages.info(request, f"Loan {loan.id} has been rejected.", extra_tags="bg-danger")
 
     return redirect("loans:loan_applications")
-
-
-def send_email_to_boo(loan):
-    subject = f"Loan {loan.id} Rejected by HOF"
-    message = f"""
-    <html>
-        <body style="font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px;">
-            <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
-                <h2 style="color: #2c3e50; text-align: center;">Loan Rejection Notification</h2>
-                <p style="font-size: 16px; color: #34495e;">Dear Team,</p>
-                <p style="font-size: 16px; color: #34495e;">The loan <strong style="color: #e74c3c;">{loan.id}</strong> for <strong style="color: #e74c3c;">{loan.borrower.full_name}</strong> (Amount: <strong style="color: #e74c3c;">UGX {loan.principal_amount:,.2f}</strong>) has been rejected by the Head of Finance.</p>
-                <p style="font-size: 16px; color: #34495e;">Please review the loan details and take appropriate actions.</p>
-            </div>
-        </body>
-    </html>
-    """
-    email = EmailMessage(
-        subject, message, settings.EMAIL_HOST_USER, [settings.BOO_EMAIL]
-    )
-    email.content_subtype = "html"
-    email.send()
-
-
-def send_email_to_boo_and_hof(loan):
-    subject = f"Loan {loan.id} Rejected by ED"
-    message = f"""
-    <html>
-        <body style="font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px;">
-            <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
-                <h2 style="color: #2c3e50; text-align: center;">Loan Rejection Notification</h2>
-                <p style="font-size: 16px; color: #34495e;">Dear Team,</p>
-                <p style="font-size: 16px; color: #34495e;">The loan <strong style="color: #e74c3c;">{loan.id}</strong> for <strong style="color: #e74c3c;">{loan.borrower.full_name}</strong> (Amount: <strong style="color: #e74c3c;">UGX {loan.principal_amount:,.2f}</strong>) has been rejected by the Executive Director.</p>
-                <p style="font-size: 16px; color: #34495e;">Please review the loan details and take appropriate actions.</p>
-            </div>
-        </body>
-    </html>
-    """
-    email = EmailMessage(
-        subject,
-        message,
-        settings.EMAIL_HOST_USER,
-        [settings.BOO_EMAIL, settings.HOF_EMAIL],
-    )
-    email.content_subtype = "html"
-    email.send()
 
 
 # =================================== Delete Loan View ===================================
