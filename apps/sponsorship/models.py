@@ -96,8 +96,6 @@ class StaffSponsorship(models.Model):
 
 
 # =================================== PAYMENT MODEL ===================================
-
-
 class MoMoTransaction(models.Model):
     STATUS_CHOICES = [
         ("PENDING", "Pending"),
@@ -115,8 +113,16 @@ class MoMoTransaction(models.Model):
     payee_note = models.CharField(max_length=255, blank=True, null=True)
     user_id = models.CharField(max_length=100, blank=True, null=True)
     api_key = models.CharField(max_length=255, blank=True, null=True)
+    
+    # ✅ NEW DONOR FIELDS
+    donor_name = models.CharField(max_length=100, blank=True, null=True)
+    donor_email = models.EmailField(max_length=254, blank=True, null=True)
+    
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.phone_number} - {self.amount} UGX ({self.status})"
+        return f"{self.donor_name or self.phone_number} - {self.amount} UGX ({self.status})"
+
+    class Meta:
+        ordering = ['-created_at']

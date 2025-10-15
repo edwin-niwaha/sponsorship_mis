@@ -91,41 +91,4 @@ class StaffSponsorshipEditForm(BaseSponsorshipEditForm):
         }
 
 
-# =================================== Payment Form for Flutterwave ===================================
-# class DonationForm(forms.Form):
-#     name = forms.CharField(max_length=200, required=True)
-#     email = forms.EmailField(required=True)
-#     phone_number = forms.CharField(max_length=15, required=True)
-#     amount = forms.DecimalField(min_value=1.00, decimal_places=2, required=True)
-
-
-class DonationForm(forms.Form):
-    name = forms.CharField(
-        max_length=200,
-        required=True,
-        widget=forms.TextInput(
-            attrs={"class": "form-control", "placeholder": "Your full name"}
-        ),
-    )
-    phone_number = PhoneNumberField(
-        region="UG",  # set default region, e.g., Uganda
-        required=True,
-        widget=forms.TextInput(
-            attrs={"class": "form-control", "placeholder": "+256..."}
-        ),
-    )
-    amount = forms.DecimalField(
-        min_value=1.00,
-        max_digits=10,  # up to 9,999,999.99
-        decimal_places=2,
-        required=True,
-        widget=forms.NumberInput(
-            attrs={"class": "form-control", "placeholder": "Enter amount"}
-        ),
-    )
-
-    def clean_amount(self):
-        amount = self.cleaned_data.get("amount")
-        if amount and amount < 1:
-            raise forms.ValidationError("Minimum donation is 1 unit.")
-        return amount
+# =================================== Payment Form ===================================

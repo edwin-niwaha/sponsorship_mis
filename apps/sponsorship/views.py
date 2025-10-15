@@ -38,6 +38,7 @@ from .forms import (
 from .models import (
     ChildSponsorship,
     StaffSponsorship,
+    MoMoTransaction
 )
 
 # Set up logging
@@ -452,27 +453,82 @@ def terminate_staff_sponsorship(request, sponsorship_id):
 
 
 # ---------------- MoMo Payment Initiation View ---------------- #
+# def initiate_payment(request):
+#     if request.method == "POST":
+#         phone = request.POST.get("phone", "").strip()
+#         amount = request.POST.get("amount", "").strip()
+
+#         # ✅ Validation
+#         if not re.match(r"^256\d{9}$", phone):
+#             messages.error(
+#                 request, "Invalid phone number (must start with 256 and be 12 digits)."
+#             )
+#             return render(request, "sponsorship/initiate_payment.html")
+
+#         try:
+#             amount_int = int(float(amount))
+#             if amount_int < 500:
+#                 raise ValueError
+#         except ValueError:
+#             messages.error(request, "Amount must be a number ≥ 500 UGX.")
+#             return render(request, "sponsorship/initiate_payment.html")
+
+#         # ✅ Credentials from settings
+#         subscription_key = settings.SUBSCRIPTION_KEY
+#         api_user_id = settings.MOMO_API_USER
+#         api_key = settings.MOMO_API_KEY
+
+#         access_token = create_access_token(api_user_id, api_key, subscription_key)
+#         if not access_token:
+#             messages.error(request, "Failed to obtain access token.")
+#             return render(request, "sponsorship/initiate_payment.html")
+
+#         transaction_id = generate_uuid()
+#         status, response_text = request_to_pay(
+#             access_token, subscription_key, phone, amount_int, transaction_id
+#         )
+
+#         if status == 202:
+#             messages.success(
+#                 request, f"Payment initiated successfully! Ref ID: {transaction_id}"
+#             )
+#             # Pass transaction_id and amount to the template
+#             return render(
+#                 request,
+#                 "sponsorship/initiate_payment.html",
+#                 {
+#                     "transaction_id": transaction_id,
+#                     "amount": amount_int,
+#                     "user_id": api_user_id,
+#                     "api_key": api_key,
+#                 },
+#             )
+#         else:
+#             messages.error(request, f"Payment failed ({status}): {response_text}")
+#             return render(request, "sponsorship/initiate_payment.html")
+
+#     return render(request, "sponsorship/initiate_payment.html")
+
+
 def initiate_payment(request):
     if request.method == "POST":
+        donor_name = request.POST.get("name", "").strip() or None
+        donor_email = request.POST.get("email", "").strip() or None
         phone = request.POST.get("phone", "").strip()
         amount = request.POST.get("amount", "").strip()
 
-        # ✅ Validation
         if not re.match(r"^256\d{9}$", phone):
-            messages.error(
-                request, "Invalid phone number (must start with 256 and be 12 digits)."
-            )
+            messages.error(request, "Invalid phone number.", extra_tags="bg-danger")
             return render(request, "sponsorship/initiate_payment.html")
 
         try:
             amount_int = int(float(amount))
-            if amount_int < 500:
+            if amount_int < 5000:
                 raise ValueError
         except ValueError:
-            messages.error(request, "Amount must be a number ≥ 500 UGX.")
+            messages.error(request, "Amount must be ≥ 5,000 UGX.", extra_tags="bg-danger")
             return render(request, "sponsorship/initiate_payment.html")
 
-        # ✅ Credentials from settings
         subscription_key = settings.SUBSCRIPTION_KEY
         api_user_id = settings.MOMO_API_USER
         api_key = settings.MOMO_API_KEY
@@ -488,10 +544,8 @@ def initiate_payment(request):
         )
 
         if status == 202:
-            messages.success(
-                request, f"Payment initiated successfully! Ref ID: {transaction_id}"
-            )
-            # Pass transaction_id and amount to the template
+            # messages.success(request, f"Payment initiated! Ref: {transaction_id}")
+            messages.success(request, "Payment sent to your phone! Please approve now.", extra_tags="bg-success")
             return render(
                 request,
                 "sponsorship/initiate_payment.html",
@@ -500,10 +554,13 @@ def initiate_payment(request):
                     "amount": amount_int,
                     "user_id": api_user_id,
                     "api_key": api_key,
+                    "donor_name": donor_name,
+                    "donor_email": donor_email,
+                    "phone": phone,  # ✅ FIXED: PASS TO TEMPLATE
                 },
             )
         else:
-            messages.error(request, f"Payment failed ({status}): {response_text}")
+            messages.error(request, f"Payment failed ({status})")
             return render(request, "sponsorship/initiate_payment.html")
 
     return render(request, "sponsorship/initiate_payment.html")
@@ -568,15 +625,33 @@ def momo_callback(request):
     return JsonResponse({"error": "Invalid method"}, status=405)
 
 
+# ---------------- Thank You Page ---------------- #
 def thank_you(request):
     transaction_id = request.GET.get("ref", "N/A")
     amount = request.GET.get("amount", "N/A")
     phone = request.GET.get("phone", "N/A")
+    donor_name = request.GET.get("name", None)
+    donor_email = request.GET.get("email", None)
+
+    # ✅ SAVE ONLY ONCE (no duplicates)
+    if transaction_id != "N/A":
+        MoMoTransaction.objects.get_or_create(
+            reference_id=transaction_id,
+            defaults={
+                "phone_number": phone,
+                "amount": int(amount) if amount != "N/A" else 0,
+                "donor_name": donor_name,
+                "donor_email": donor_email,
+                "status": "SUCCESSFUL",
+            }
+        )
 
     context = {
         "transaction_id": transaction_id,
         "amount": amount,
-        "phone": phone,
+        "phone": phone,  # ✅ NOW WORKS!
+        "donor_name": donor_name,
+        "donor_email": donor_email,
     }
     return render(request, "sponsorship/thank_you.html", context)
 
