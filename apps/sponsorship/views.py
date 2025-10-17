@@ -1,23 +1,23 @@
 import json
-import requests
-import uuid
 import logging
+import re
+
+import requests
 from django.conf import settings
-from django.views.decorators.csrf import csrf_exempt
-from base64 import b64encode
-from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.http import (
     HttpResponseBadRequest,
     HttpResponseRedirect,
     JsonResponse,
-    HttpResponse,
 )
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+
 from apps.child.models import Child
 from apps.sponsor.models import Sponsor
 from apps.staff.models import Staff
@@ -26,20 +26,14 @@ from apps.users.decorators import (
     admin_or_manager_required,
 )
 
-from .momo_helpers import generate_uuid, create_access_token, request_to_pay
-import re
-
 from .forms import (
     ChildSponsorshipEditForm,
     ChildSponsorshipForm,
     StaffSponsorshipEditForm,
     StaffSponsorshipForm,
 )
-from .models import (
-    ChildSponsorship,
-    StaffSponsorship,
-    MoMoTransaction
-)
+from .models import ChildSponsorship, MoMoTransaction, StaffSponsorship
+from .momo_helpers import create_access_token, generate_uuid, request_to_pay
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -453,63 +447,6 @@ def terminate_staff_sponsorship(request, sponsorship_id):
 
 
 # ---------------- MoMo Payment Initiation View ---------------- #
-# def initiate_payment(request):
-#     if request.method == "POST":
-#         phone = request.POST.get("phone", "").strip()
-#         amount = request.POST.get("amount", "").strip()
-
-#         # ✅ Validation
-#         if not re.match(r"^256\d{9}$", phone):
-#             messages.error(
-#                 request, "Invalid phone number (must start with 256 and be 12 digits)."
-#             )
-#             return render(request, "sponsorship/initiate_payment.html")
-
-#         try:
-#             amount_int = int(float(amount))
-#             if amount_int < 500:
-#                 raise ValueError
-#         except ValueError:
-#             messages.error(request, "Amount must be a number ≥ 500 UGX.")
-#             return render(request, "sponsorship/initiate_payment.html")
-
-#         # ✅ Credentials from settings
-#         subscription_key = settings.SUBSCRIPTION_KEY
-#         api_user_id = settings.MOMO_API_USER
-#         api_key = settings.MOMO_API_KEY
-
-#         access_token = create_access_token(api_user_id, api_key, subscription_key)
-#         if not access_token:
-#             messages.error(request, "Failed to obtain access token.")
-#             return render(request, "sponsorship/initiate_payment.html")
-
-#         transaction_id = generate_uuid()
-#         status, response_text = request_to_pay(
-#             access_token, subscription_key, phone, amount_int, transaction_id
-#         )
-
-#         if status == 202:
-#             messages.success(
-#                 request, f"Payment initiated successfully! Ref ID: {transaction_id}"
-#             )
-#             # Pass transaction_id and amount to the template
-#             return render(
-#                 request,
-#                 "sponsorship/initiate_payment.html",
-#                 {
-#                     "transaction_id": transaction_id,
-#                     "amount": amount_int,
-#                     "user_id": api_user_id,
-#                     "api_key": api_key,
-#                 },
-#             )
-#         else:
-#             messages.error(request, f"Payment failed ({status}): {response_text}")
-#             return render(request, "sponsorship/initiate_payment.html")
-
-#     return render(request, "sponsorship/initiate_payment.html")
-
-
 def initiate_payment(request):
     if request.method == "POST":
         donor_name = request.POST.get("name", "").strip() or None
@@ -526,7 +463,9 @@ def initiate_payment(request):
             if amount_int < 5000:
                 raise ValueError
         except ValueError:
-            messages.error(request, "Amount must be ≥ 5,000 UGX.", extra_tags="bg-danger")
+            messages.error(
+                request, "Amount must be ≥ 5,000 UGX.", extra_tags="bg-danger"
+            )
             return render(request, "sponsorship/initiate_payment.html")
 
         subscription_key = settings.SUBSCRIPTION_KEY
@@ -545,7 +484,11 @@ def initiate_payment(request):
 
         if status == 202:
             # messages.success(request, f"Payment initiated! Ref: {transaction_id}")
-            messages.success(request, "Payment sent to your phone! Please approve now.", extra_tags="bg-success")
+            messages.success(
+                request,
+                "Payment sent to your phone! Please approve now.",
+                extra_tags="bg-success",
+            )
             return render(
                 request,
                 "sponsorship/initiate_payment.html",
@@ -643,7 +586,7 @@ def thank_you(request):
                 "donor_name": donor_name,
                 "donor_email": donor_email,
                 "status": "SUCCESSFUL",
-            }
+            },
         )
 
     context = {
@@ -655,3 +598,39 @@ def thank_you(request):
     }
     return render(request, "sponsorship/thank_you.html", context)
 
+
+# ---------------- MoMo Transaction List View ---------------- #
+@login_required
+@admin_or_manager_required
+@transaction.atomic
+def momo_transaction_list(request):
+    search_query = request.GET.get("search", "")
+    transactions = MoMoTransaction.objects.all()
+
+    if search_query:
+        transactions = (
+            transactions.filter(donor_name__icontains=search_query)
+            | transactions.filter(phone_number__icontains=search_query)
+            | transactions.filter(reference_id__icontains=search_query)
+        )
+
+    paginator = Paginator(transactions, 25)
+    page_number = request.GET.get("page")
+    records = paginator.get_page(page_number)
+
+    context = {
+        "records": records,
+        "table_title": "MoMo Transactions",
+    }
+    return render(request, "sponsorship/momo_trans_list.html", context)
+
+
+# ---------------- MoMo Transaction Delete View ---------------- #
+@login_required
+@admin_or_manager_required
+@transaction.atomic
+def delete_momo_transaction(request, pk):
+    transaction = get_object_or_404(MoMoTransaction, pk=pk)
+    transaction.delete()
+    messages.success(request, "Transaction deleted successfully.")
+    return redirect("momo_transaction_list")

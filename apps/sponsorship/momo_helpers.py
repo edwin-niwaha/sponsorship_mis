@@ -1,4 +1,7 @@
-import uuid, random, requests
+import random
+import uuid
+
+import requests
 
 BASE_URL = "https://sandbox.momodeveloper.mtn.com"  # Change to (https://momodeveloper.mtn.com) URL for live
 

@@ -83,27 +83,26 @@
           <table class="table table-bordered text-start small mb-3">
             <tbody>
               <tr>
-                <th>Amount</th>
+                <th>Amount Sent</th>
                 <td>UGX {{ amount|floatformat:'0'|intcomma }}</td>
               </tr>
               <tr>
+                <th>Sent By</th>
+                <td>
+                  {{ donor_name|default:'Not provided' }}<br />
+                  <small>
+                    {{ phone|default:'' }}{% if donor_email %}
+                      | {{ donor_email }}
+                    {% endif %}
+                  </small>
+                </td>
+              </tr>
+              <tr>
                 <th>Transaction ID</th>
-                <td>{{ transaction_id }}</td>
+                <td>{{ transaction_id|slice:':4' }}****{{ transaction_id|slice:'-4:' }}</td>
               </tr>
               <tr>
-                <th>Phone</th>
-                <td>{{ phone }}</td>
-              </tr>
-              <tr>
-                <th>Name</th>
-                <td>{{ donor_name|default:'Not provided' }}</td>
-              </tr>
-              <tr>
-                <th>Email</th>
-                <td>{{ donor_email|default:'Not provided' }}</td>
-              </tr>
-              <tr>
-                <th>Date</th>
+                <th>Transaction Date</th>
                 <td id="current-date"></td>
               </tr>
             </tbody>

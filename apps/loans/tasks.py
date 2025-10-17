@@ -1,8 +1,9 @@
+import logging
+
 from celery import shared_task
+from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.utils.html import strip_tags
-from django.conf import settings
-import logging
 
 logger = logging.getLogger(__name__)
 

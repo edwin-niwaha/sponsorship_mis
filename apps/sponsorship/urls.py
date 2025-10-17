@@ -1,4 +1,5 @@
 from django.urls import path
+
 from . import views
 
 urlpatterns = [
@@ -71,4 +72,10 @@ urlpatterns = [
         name="get_transaction_status",
     ),
     path("thank-you/", views.thank_you, name="thank_you"),
+    path("transactions/", views.momo_transaction_list, name="momo_transaction_list"),
+    path(
+        "transactions/delete/<int:pk>/",
+        views.delete_momo_transaction,
+        name="delete_momo_transaction",
+    ),
 ]

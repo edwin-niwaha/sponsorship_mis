@@ -1,11 +1,6 @@
 # Third-party Imports
-import uuid
 from django.db import models
 from django.utils import timezone
-from django.core.validators import MinValueValidator
-from phonenumber_field.modelfields import PhoneNumberField
-from django.contrib.auth.models import User
-from django.db import models
 
 # Local App Imports
 from apps.child.models import Child
@@ -113,11 +108,11 @@ class MoMoTransaction(models.Model):
     payee_note = models.CharField(max_length=255, blank=True, null=True)
     user_id = models.CharField(max_length=100, blank=True, null=True)
     api_key = models.CharField(max_length=255, blank=True, null=True)
-    
+
     # ✅ NEW DONOR FIELDS
     donor_name = models.CharField(max_length=100, blank=True, null=True)
     donor_email = models.EmailField(max_length=254, blank=True, null=True)
-    
+
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -125,4 +120,4 @@ class MoMoTransaction(models.Model):
         return f"{self.donor_name or self.phone_number} - {self.amount} UGX ({self.status})"
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]

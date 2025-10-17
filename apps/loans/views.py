@@ -1,27 +1,19 @@
 import logging
 from datetime import date, datetime
 from decimal import Decimal
+
 import pytz
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from django.db.models import DecimalField, F, Q, Sum, Value
-from django.db.models.functions import Coalesce
+from django.db.models import F, Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.utils.html import strip_tags
 from openpyxl import load_workbook
-from apps.loans.tasks import (
-    send_email_task,
-    send_loan_application_email_task,
-    build_html_template,
-)
 
 logger = logging.getLogger(__name__)
 from apps.client.models import Client
@@ -466,6 +458,7 @@ def paginate_queryset(queryset, page_number):
 #         "borrowers": borrowers,
 #     }
 #     return render(request, "loans/apply_for_loan.html", context)
+
 
 @login_required
 def loan_apply(request):
@@ -1223,6 +1216,7 @@ def approve_all_loans(request):
 #     email.content_subtype = "html"
 #     email.send()
 
+
 @login_required
 @admin_or_manager_required
 def reject_loan(request, loan_id):
@@ -1382,15 +1376,15 @@ def delete_loan(request, loan_id):
 #         },
 #     )
 
+
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
 def loan_repayment_create_view(request):
     form_title = "Repay Loans"
     # Fetch loans with non-zero balances and valid status
-    loans_qs = (
-        Loan.objects.filter(status__in=["disbursed", "overdue"])
-        .select_related("borrower")
+    loans_qs = Loan.objects.filter(status__in=["disbursed", "overdue"]).select_related(
+        "borrower"
     )
     # Calculate balances using model method and filter out fully paid loans
     loans = []
@@ -1437,6 +1431,7 @@ def loan_repayment_create_view(request):
             "loans": loans,
         },
     )
+
 
 # =================================== LoanPenaltyForm ===================================
 
@@ -1524,15 +1519,15 @@ def loan_repayment_create_view(request):
 #         },
 #     )
 
+
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
 def loan_penalty_create_view(request):
     form_title = "Add Loan Penalty"
     # Fetch loans with non-zero balances and valid status
-    loans_qs = (
-        Loan.objects.filter(status__in=["disbursed", "overdue"])
-        .select_related("borrower")
+    loans_qs = Loan.objects.filter(status__in=["disbursed", "overdue"]).select_related(
+        "borrower"
     )
     # Calculate balances using model method and filter out fully paid loans
     loans = []
@@ -1577,6 +1572,7 @@ def loan_penalty_create_view(request):
             "loans": loans,
         },
     )
+
 
 # ===================================  loan_detail_view  ===================================
 @login_required

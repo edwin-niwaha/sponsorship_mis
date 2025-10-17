@@ -17,9 +17,30 @@
               <hr>
               <h5 class="text-center mb-4" style="color: #127D61;">Transform Lives with Your Donation
               </h5>
-              {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} small">{{ message }}</div>
-              {% endfor %}
+              {% if messages %}
+                {% for message in messages %}
+                  <div class="alert small mb-3 
+                    {% if 'bg-success' in message.tags or message.tags == 'success' %}alert-success
+                    {% elif 'bg-danger' in message.tags or message.tags == 'error' %}alert-danger
+                    {% elif 'bg-warning' in message.tags or message.tags == 'warning' %}alert-warning
+                    {% elif 'bg-info' in message.tags or message.tags == 'info' %}alert-info
+                    {% else %}alert-secondary{% endif %}
+                  " role="alert">
+                    <strong>
+                      {% if 'bg-success' in message.tags or message.tags == 'success' %}
+                        <i class="bi bi-check-circle-fill me-1"></i>
+                      {% elif 'bg-danger' in message.tags or message.tags == 'error' %}
+                        <i class="bi bi-x-circle-fill me-1"></i>
+                      {% elif 'bg-warning' in message.tags or message.tags == 'warning' %}
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                      {% elif 'bg-info' in message.tags or message.tags == 'info' %}
+                        <i class="bi bi-info-circle-fill me-1"></i>
+                      {% endif %}
+                      {{ message }}
+                    </strong>
+                  </div>
+                {% endfor %}
+              {% endif %}
               <form method="POST" id="donationForm" novalidate>
                 {% csrf_token %}
                 
