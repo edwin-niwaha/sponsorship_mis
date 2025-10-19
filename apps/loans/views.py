@@ -22,6 +22,11 @@ from apps.users.decorators import (
     admin_or_manager_required,
     admin_required,
 )
+from django.http import HttpResponse
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils.dataframe import dataframe_to_rows
+from datetime import datetime
 
 from .forms import (
     ChartOfAccountsForm,
@@ -1434,92 +1439,6 @@ def loan_repayment_create_view(request):
 
 
 # =================================== LoanPenaltyForm ===================================
-
-
-# @login_required
-# @admin_or_manager_or_staff_required
-# @transaction.atomic
-# def loan_penalty_create_view(request):
-#     form_title = "Add Loan Penalty"
-
-#     # Load loans with remaining balances
-#     loans = (
-#         Loan.objects.annotate(
-#             principal_paid=Coalesce(
-#                 Sum("repayments__principal_payment"),
-#                 Value(0, output_field=DecimalField()),
-#             ),
-#             interest_paid=Coalesce(
-#                 Sum("repayments__interest_payment"),
-#                 Value(0, output_field=DecimalField()),
-#             ),
-#             penalty_paid=Coalesce(
-#                 Sum("repayments__penalty_payment"),
-#                 Value(0, output_field=DecimalField()),
-#             ),
-#             remaining_principal=F("principal_amount")
-#             - Coalesce(
-#                 Sum("repayments__principal_payment"),
-#                 Value(0, output_field=DecimalField()),
-#             ),
-#             remaining_interest=F("total_interest")
-#             - Coalesce(
-#                 Sum("repayments__interest_payment"),
-#                 Value(0, output_field=DecimalField()),
-#             ),
-#             remaining_penalty=Coalesce(
-#                 Sum(
-#                     "penalties__penalty_amount",
-#                     filter=Q(penalties__is_paid=False),
-#                     distinct=True,
-#                 ),
-#                 Value(0, output_field=DecimalField()),
-#             ),
-#         )
-#         .filter(
-#             Q(remaining_principal__gt=0)
-#             | Q(remaining_interest__gt=0)
-#             | Q(remaining_penalty__gt=0),
-#             status__in=["disbursed", "overdue"],
-#         )
-#         .select_related("borrower")
-#         .distinct()
-#     )
-
-#     loans = list(loans)  # Materialize queryset
-
-#     if request.method == "POST":
-#         form = LoanPenaltyForm(request.POST, user=request.user)
-#         if form.is_valid():
-#             penalty = form.save(commit=False)
-#             penalty.created_by = request.user
-#             penalty.save()
-
-#             # Update loan status
-#             penalty.loan.update_status()
-
-#             messages.success(
-#                 request,
-#                 f"Penalty of {penalty.penalty_amount:,.2f} added to Loan {penalty.loan.id} successfully.",
-#                 extra_tags="bg-success",
-#             )
-#             return redirect("loans:loan_penalty_create")
-#         else:
-#             messages.error(request, "Please correct the errors below.")
-#     else:
-#         form = LoanPenaltyForm(user=request.user)
-
-#     return render(
-#         request,
-#         "loans/loan_penalty_form.html",
-#         {
-#             "form": form,
-#             "form_title": form_title,
-#             "loans": loans,
-#         },
-#     )
-
-
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
@@ -1917,11 +1836,12 @@ def ledger_report_view(request):
 
 
 # =================================== Loan Aging Report view ===================================
+
+
 @login_required
 @admin_or_manager_or_staff_required
 def loan_aging_report(request):
     today = timezone.now().date()
-
     # Define aging buckets
     aging_buckets = {
         "Current (0 Days)": [],
@@ -1933,7 +1853,6 @@ def loan_aging_report(request):
         "181-365 Days (LOSS)": [],
         "Over 365 Days (LOSS)": [],
     }
-
     # Initialize totals
     grand_totals = {
         "total_principal": Decimal("0.00"),
@@ -1943,13 +1862,11 @@ def loan_aging_report(request):
         "total_outstanding_balance": Decimal("0.00"),
         "total_paid": Decimal("0.00"),
     }
-
     # Fetch disbursed and overdue loans
     disbursed_loans = Loan.objects.filter(
         status__in=["overdue", "disbursed"],
         due_date__isnull=False,
     ).select_related("borrower")
-
     bucket_totals = {
         key: {
             "total_principal": Decimal("0.00"),
@@ -1961,10 +1878,10 @@ def loan_aging_report(request):
         }
         for key in aging_buckets
     }
+    all_loans_for_export = []
 
     for loan in disbursed_loans:
         try:
-            # Calculate remaining balances
             remaining_balances = loan.calculate_remaining_balances()
             remaining_principal = remaining_balances["principal_balance"]
             remaining_interest = remaining_balances["interest_balance"]
@@ -1972,14 +1889,9 @@ def loan_aging_report(request):
             outstanding_balance = (
                 remaining_principal + remaining_interest + penalty_balance
             )
-
-            # Filter loans with outstanding balance > 0
             if outstanding_balance <= 0:
                 continue
-
-            # Calculate days overdue, ensuring non-negative values
             days_overdue = max((today - loan.due_date).days, 0) if loan.due_date else 0
-
             loan_info = {
                 "loan_id": loan.id,
                 "borrower": loan.borrower.full_name,
@@ -1999,8 +1911,6 @@ def loan_aging_report(request):
                 )
                 or Decimal("0.00"),
             }
-
-            # Categorize loans into buckets
             bucket_key = (
                 "Current (0 Days)"
                 if days_overdue <= 0
@@ -2030,10 +1940,8 @@ def loan_aging_report(request):
                     )
                 )
             )
-
             aging_buckets[bucket_key].append(loan_info)
-
-            # Update bucket totals
+            all_loans_for_export.append({**loan_info, "bucket": bucket_key})
             bucket_totals[bucket_key]["total_principal"] += loan.principal_amount
             bucket_totals[bucket_key]["total_principal_due"] += remaining_principal
             bucket_totals[bucket_key]["total_interest_due"] += remaining_interest
@@ -2042,50 +1950,187 @@ def loan_aging_report(request):
                 "total_outstanding_balance"
             ] += outstanding_balance
             bucket_totals[bucket_key]["total_paid"] += loan_info["total_paid"]
-
-            # Update grand totals
             grand_totals["total_principal"] += loan.principal_amount
             grand_totals["total_principal_due"] += remaining_principal
             grand_totals["total_interest_due"] += remaining_interest
             grand_totals["total_penalty_due"] += penalty_balance
             grand_totals["total_outstanding_balance"] += outstanding_balance
             grand_totals["total_paid"] += loan_info["total_paid"]
-
         except Exception as e:
             logger.error(f"Error processing loan {loan.id}: {e}")
             continue
 
-    # Sort and paginate each bucket
-    paginated_buckets = {}
+    # Sort each bucket
     for bucket_key in aging_buckets:
-        # Sort by start_date
         aging_buckets[bucket_key] = sorted(
             aging_buckets[bucket_key],
             key=lambda x: x["start_date"] or timezone.datetime.min,
         )
-        # Paginate
-        paginator = Paginator(aging_buckets[bucket_key], 10)  # 10 loans per page
-        page_number = request.GET.get(
-            f'page_{bucket_key.replace(" ", "_").replace("(", "").replace(")", "")}'
+
+    # **FIXED: CORRECT FORMATTING**
+    formatted_bucket_totals = {}
+    for bucket_key in aging_buckets:  # **THIS IS THE KEY FIX**
+        formatted_bucket_totals[bucket_key] = {
+            "total_principal": f"{float(bucket_totals[bucket_key]['total_principal']):,.0f}",
+            "total_principal_due": f"{float(bucket_totals[bucket_key]['total_principal_due']):,.0f}",
+            "total_interest_due": f"{float(bucket_totals[bucket_key]['total_interest_due']):,.0f}",
+            "total_penalty_due": f"{float(bucket_totals[bucket_key]['total_penalty_due']):,.0f}",
+            "total_outstanding_balance": f"{float(bucket_totals[bucket_key]['total_outstanding_balance']):,.0f}",
+            "total_paid": f"{float(bucket_totals[bucket_key]['total_paid']):,.0f}",
+        }
+
+    formatted_grand_totals = {
+        "total_principal": f"{float(grand_totals['total_principal']):,.0f}",
+        "total_principal_due": f"{float(grand_totals['total_principal_due']):,.0f}",
+        "total_interest_due": f"{float(grand_totals['total_interest_due']):,.0f}",
+        "total_penalty_due": f"{float(grand_totals['total_penalty_due']):,.0f}",
+        "total_outstanding_balance": f"{float(grand_totals['total_outstanding_balance']):,.0f}",
+        "total_paid": f"{float(grand_totals['total_paid']):,.0f}",
+    }
+
+    if request.GET.get("export") == "excel":
+        return export_loan_aging_to_excel(
+            all_loans_for_export, bucket_totals, grand_totals
         )
-        try:
-            page_obj = paginator.page(page_number)
-        except PageNotAnInteger:
-            page_obj = paginator.page(1)
-        except EmptyPage:
-            page_obj = paginator.page(paginator.num_pages)
-        paginated_buckets[bucket_key] = page_obj
 
     return render(
         request,
         "loans/loan_aging_report.html",
         {
-            "paginated_buckets": paginated_buckets,
+            "buckets": aging_buckets,
+            "formatted_bucket_totals": formatted_bucket_totals,
+            "formatted_grand_totals": formatted_grand_totals,
             "bucket_totals": bucket_totals,
             "grand_totals": grand_totals,
             "table_title": "Loan Aging Report",
+            "total_loans": sum(len(loans) for loans in aging_buckets.values()),
         },
     )
+
+
+def export_loan_aging_to_excel(all_loans, bucket_totals, grand_totals):
+    # Create workbook and worksheet
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Loan Aging Report"
+
+    # Styles
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(
+        start_color="365A79", end_color="365A79", fill_type="solid"
+    )
+    total_font = Font(bold=True)
+    total_fill = PatternFill(
+        start_color="D9EAD3", end_color="D9EAD3", fill_type="solid"
+    )
+    thin_border = Border(
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
+    )
+    center_align = Alignment(horizontal="center")
+    right_align = Alignment(horizontal="right")
+
+    # Headers
+    headers = [
+        "Bucket",
+        "ID",
+        "Borrower",
+        "Loan Amount",
+        "Rate (%)",
+        "Period (Months)",
+        "Issue Date",
+        "Maturity Date",
+        "Days Overdue",
+        "Overdue Principal",
+        "Overdue Interest",
+        "Overdue Penalty",
+        "Outstanding Balance",
+        "Total Paid",
+    ]
+
+    # Write headers
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center_align
+        cell.border = thin_border
+
+    # Write data
+    for row_num, loan in enumerate(all_loans, 2):
+        ws.cell(row=row_num, column=1, value=loan["bucket"])
+        ws.cell(row=row_num, column=2, value=loan["loan_id"])
+        ws.cell(row=row_num, column=3, value=loan["borrower"])
+        ws.cell(row=row_num, column=4, value=float(loan["principal_amount"]))
+        ws.cell(row=row_num, column=5, value=loan["interest_rate"])
+        ws.cell(row=row_num, column=6, value=loan["loan_period_months"])
+        ws.cell(row=row_num, column=7, value=loan["start_date"])
+        ws.cell(row=row_num, column=8, value=loan["due_date"])
+        ws.cell(row=row_num, column=9, value=loan["days_overdue"])
+        ws.cell(row=row_num, column=10, value=float(loan["principal_due"]))
+        ws.cell(row=row_num, column=11, value=float(loan["interest_due"]))
+        ws.cell(row=row_num, column=12, value=float(loan["penalty_due"]))
+        ws.cell(row=row_num, column=13, value=float(loan["outstanding_balance"]))
+        ws.cell(row=row_num, column=14, value=float(loan["total_paid"]))
+
+        # Apply borders and alignment
+        for col in range(1, 15):
+            cell = ws.cell(row=row_num, column=col)
+            cell.border = thin_border
+            if col in [4, 10, 11, 12, 13, 14]:  # Number columns
+                cell.alignment = right_align
+            else:
+                cell.alignment = Alignment(wrap_text=True)
+
+    # Grand Totals Row
+    total_row = len(all_loans) + 2
+    ws.cell(row=total_row, column=1, value="GRAND TOTALS")
+    ws.merge_cells(f"A{total_row}:C{total_row}")
+    ws.cell(row=total_row, column=1).font = total_font
+    ws.cell(row=total_row, column=1).fill = total_fill
+
+    # Write totals
+    total_cols = [4, 10, 11, 12, 13, 14]
+    total_values = [
+        grand_totals["total_principal"],
+        grand_totals["total_principal_due"],
+        grand_totals["total_interest_due"],
+        grand_totals["total_penalty_due"],
+        grand_totals["total_outstanding_balance"],
+        grand_totals["total_paid"],
+    ]
+
+    for col, value in zip(total_cols, total_values, strict=True):
+        cell = ws.cell(row=total_row, column=col, value=float(value))
+        cell.font = total_font
+        cell.fill = total_fill
+        cell.alignment = right_align
+        cell.border = thin_border
+
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 20)
+        ws.column_dimensions[column_letter].width = adjusted_width
+
+    # Create response
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    filename = f"Loan_Aging_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    wb.save(response)
+    return response
 
 
 # =================================== Loan Arrears Report view ===================================
@@ -2094,7 +2139,7 @@ def loan_aging_report(request):
 def loan_arrears_report(request):
     today = timezone.now().date()
 
-    # Define arrears categories with human-readable names
+    # Define arrears categories
     arrears_categories = {
         "0-30 Days (WATCH)": [],
         "31-60 Days (SUBSTANDARD)": [],
@@ -2105,56 +2150,42 @@ def loan_arrears_report(request):
         "Over 365 Days (LOSS)": [],
     }
 
-    # Fetch and categorize overdue loans
-    overdue_loans = (
-        Loan.objects.filter(
-            # status="disbursed",
-            status__in=["overdue", "disbursed"],
-            due_date__isnull=False,
-            due_date__lt=today,
-        )
-        .annotate(
-            total_repayment=Sum(
-                F("repayments__principal_payment") + F("repayments__interest_payment")
-            ),
-            calculated_interest=Sum("repayments__interest_payment"),
-        )
-        .select_related("borrower")
-        .values(
-            "id",
-            "borrower__full_name",
-            "principal_amount",
-            "start_date",
-            "due_date",
-            "interest_rate",
-            "loan_period_months",
-        )
-    )
+    # Initialize category totals
+    category_totals = {
+        key: {
+            "total_principal": 0,
+            "total_principal_due": 0,
+            "total_interest_due": 0,
+            "total_outstanding_balance": 0,
+        }
+        for key in arrears_categories
+    }
 
-    # Process each loan to calculate overdue balances and categorize by days overdue
+    # Initialize grand totals
+    grand_totals = {
+        "total_principal": 0,
+        "total_principal_due": 0,
+        "total_interest_due": 0,
+        "total_outstanding_balance": 0,
+    }
+
+    # Fetch overdue loans
+    overdue_loans = Loan.objects.filter(
+        status__in=["overdue", "disbursed"], due_date__isnull=False, due_date__lt=today
+    ).select_related("borrower")
+
     for loan in overdue_loans:
-        loan_id = loan["id"]
-        borrower = loan["borrower__full_name"]
-        principal_amount = loan["principal_amount"]
-        start_date = loan["start_date"]
-        due_date = loan["due_date"]
-        interest_rate = loan["interest_rate"]
-        loan_period_months = loan["loan_period_months"]
+        balances = loan.calculate_remaining_balances()
+        principal_due = balances["principal_balance"]
+        interest_due = balances["interest_balance"]
+        outstanding_balance = principal_due + interest_due
 
-        # Fetch remaining balances
-        remaining_balances = Loan.objects.get(id=loan_id).calculate_remaining_balances()
-        remaining_principal = remaining_balances["principal_balance"]
-        remaining_interest = remaining_balances["interest_balance"]
-        outstanding_balance = remaining_principal + remaining_interest
-
-        # Filter loans with outstanding balance > 0
         if outstanding_balance <= 0:
             continue
 
-        # Calculate days overdue
-        days_overdue = (today - due_date).days
+        days_overdue = (today - loan.due_date).days
 
-        # Determine the arrears category and loan status
+        # Determine category & status
         if 0 < days_overdue <= 30:
             category = "0-30 Days (WATCH)"
             status = "Watch"
@@ -2177,32 +2208,52 @@ def loan_arrears_report(request):
             category = "Over 365 Days (LOSS)"
             status = "Loss"
 
-        # Build the loan information dictionary
         loan_info = {
-            "loan_id": loan_id,
-            "borrower": borrower,
-            "principal_amount": principal_amount,
-            "start_date": start_date,
-            "due_date": due_date,
-            "interest_rate": interest_rate,
-            "loan_period_months": loan_period_months,
+            "loan_id": loan.id,
+            "borrower": loan.borrower.full_name,
+            "principal_amount": loan.principal_amount,
+            "start_date": loan.start_date,
+            "due_date": loan.due_date,
+            "interest_rate": loan.interest_rate,
+            "loan_period_months": loan.loan_period_months,
             "days_overdue": days_overdue,
-            "principal_due": remaining_principal,
-            "interest_due": remaining_interest,
+            "principal_due": principal_due,
+            "interest_due": interest_due,
             "outstanding_balance": outstanding_balance,
             "status": status,
         }
 
-        # Append loan to the appropriate arrears category
+        # Append loan to category
         arrears_categories[category].append(loan_info)
 
-    # Render the report to the template
+        # Update category totals
+        category_totals[category]["total_principal"] += loan.principal_amount
+        category_totals[category]["total_principal_due"] += principal_due
+        category_totals[category]["total_interest_due"] += interest_due
+        category_totals[category]["total_outstanding_balance"] += outstanding_balance
+
+        # Update grand totals
+        grand_totals["total_principal"] += loan.principal_amount
+        grand_totals["total_principal_due"] += principal_due
+        grand_totals["total_interest_due"] += interest_due
+        grand_totals["total_outstanding_balance"] += outstanding_balance
+
+    # Format totals for display
+    formatted_category_totals = {
+        k: {kk: f"{v:,.0f}" for kk, v in totals.items()}
+        for k, totals in category_totals.items()
+    }
+    formatted_grand_totals = {k: f"{v:,.0f}" for k, v in grand_totals.items()}
+
     return render(
         request,
         "loans/loan_arrears_report.html",
         {
             "arrears_categories": arrears_categories,
+            "category_totals": formatted_category_totals,
+            "formatted_grand_totals": formatted_grand_totals,
             "table_title": "Loan Arrears Report",
+            "now": today,
         },
     )
 
@@ -2302,81 +2353,120 @@ def loan_portfolio_report(request):
 
 
 # =================================== portfolio_at_risk view ===================================
+
+
 @login_required
 @admin_or_manager_or_staff_required
 def portfolio_at_risk(request):
-    # Fetch all loans
     loans = Loan.objects.all().order_by("id")
-
-    # Get today's date to calculate overdue days
     today = timezone.now().date()
 
-    # Initialize values for PAR calculations
+    # Totals for PAR and summaries
     total_outstanding_loans = 0
     total_past_due_30 = 0
     total_past_due_60 = 0
     total_past_due_90 = 0
+    total_past_due_120 = 0
+    total_past_due_180 = 0
 
     loan_data = []
+    total_portfolio_balance = 0
+    total_loans_count = loans.count()
 
-    # Calculate days overdue, remaining principal, interest, and PAR totals for each loan
     for loan in loans:
-        # Call to calculate remaining balances for the loan
-        remaining_balances = (
-            loan.calculate_remaining_balances()
-        )  # Make sure this method is defined in the model
-        remaining_principal = remaining_balances["principal_balance"]
-        remaining_interest = remaining_balances["interest_balance"]
+        balances = loan.calculate_remaining_balances()
+        remaining_principal = balances["principal_balance"]
+        remaining_interest = balances["interest_balance"]
+        total_balance = remaining_principal + remaining_interest
 
-        # Calculate the number of days overdue, if any
-        if loan.due_date and loan.due_date < today:
-            days_overdue = (today - loan.due_date).days
-        else:
-            days_overdue = (
-                0  # Set to 0 if the due date is in the future or loan is on time
-            )
+        # Include in total portfolio regardless of overdue
+        total_portfolio_balance += total_balance
 
-        # Add data to loan_data list
+        # Calculate days overdue
+        days_overdue = (
+            (today - loan.due_date).days
+            if loan.due_date and loan.due_date < today
+            else 0
+        )
+
+        # Skip loans with zero balance or current loans for the table
+        if total_balance <= 0 or days_overdue == 0:
+            continue
+
         loan_info = {
             "loan_id": loan.id,
-            "borrower": loan.borrower.full_name,  # Assuming Loan has a ForeignKey to a Borrower model
+            "borrower": loan.borrower.full_name,
             "principal_amount": loan.principal_amount,
-            "interest_rate": loan.interest_rate,
-            "loan_period_months": loan.loan_period_months,
             "remaining_principal": remaining_principal,
             "remaining_interest": remaining_interest,
-            "total_remaining_balance": remaining_principal + remaining_interest,
-            "start_date": loan.start_date,
+            "total_remaining_balance": total_balance,
             "due_date": loan.due_date,
             "days_overdue": days_overdue,
         }
 
-        # Add the loan_info to the total outstanding loan amounts
-        total_outstanding_loans += remaining_principal + remaining_interest
+        # Update PAR totals
+        total_outstanding_loans += total_balance
         if days_overdue >= 30:
-            total_past_due_30 += remaining_principal + remaining_interest
+            total_past_due_30 += total_balance
         if days_overdue >= 60:
-            total_past_due_60 += remaining_principal + remaining_interest
+            total_past_due_60 += total_balance
         if days_overdue >= 90:
-            total_past_due_90 += remaining_principal + remaining_interest
+            total_past_due_90 += total_balance
+        if days_overdue >= 120:
+            total_past_due_120 += total_balance
+        if days_overdue >= 180:
+            total_past_due_180 += total_balance
 
         loan_data.append(loan_info)
 
-    # Calculate PAR for different overdue periods
-    if total_outstanding_loans > 0:
-        par_30 = (total_past_due_30 / total_outstanding_loans) * 100
-        par_60 = (total_past_due_60 / total_outstanding_loans) * 100
-        par_90 = (total_past_due_90 / total_outstanding_loans) * 100
-    else:
-        par_30 = par_60 = par_90 = 0
+    # Calculate PAR percentages
+    par_30 = (
+        (total_past_due_30 / total_outstanding_loans * 100)
+        if total_outstanding_loans
+        else 0
+    )
+    par_60 = (
+        (total_past_due_60 / total_outstanding_loans * 100)
+        if total_outstanding_loans
+        else 0
+    )
+    par_90 = (
+        (total_past_due_90 / total_outstanding_loans * 100)
+        if total_outstanding_loans
+        else 0
+    )
+    par_120 = (
+        (total_past_due_120 / total_outstanding_loans * 100)
+        if total_outstanding_loans
+        else 0
+    )
+    par_180 = (
+        (total_past_due_180 / total_outstanding_loans * 100)
+        if total_outstanding_loans
+        else 0
+    )
 
-    # Prepare context for the report
+    # Summary for board presentation
+    summary = {
+        "total_loans": total_loans_count,
+        "total_outstanding_balance": total_portfolio_balance,
+        "total_overdue_30": total_past_due_30,
+        "total_overdue_60": total_past_due_60,
+        "total_overdue_90": total_past_due_90,
+        "total_overdue_120": total_past_due_120,
+        "total_overdue_180": total_past_due_180,
+    }
+
     context = {
+        "loan_data": loan_data,
         "par_30": par_30,
         "par_60": par_60,
         "par_90": par_90,
-        "loan_data": loan_data,  # Use loan_data in the context
+        "par_120": par_120,
+        "par_180": par_180,
+        "summary": summary,
         "table_title": "Loan Portfolio at Risk Report",
+        "now": timezone.now(),
     }
 
     return render(request, "loans/portfolio_at_risk_report.html", context)

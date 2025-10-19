@@ -3,93 +3,225 @@
 {% load humanize %}
 
 {% block content %}
-  <div class="form-content my-2">
+  <div class="form-content my-3">
     <div class="container-fluid">
-      <!-- Row for the header buttons -->
-      <div class="row mb-3">
+      <!-- Header buttons -->
+      <div class="row mb-4">
         <div class="col-md-12 d-flex justify-content-between align-items-center">
           <a href="{% url 'loans:loan_reports_dashboard' %}"><button type="button" class="btn btn-info font-weight-bold"><i class="mdi mdi-arrow-left-bold mr-2"></i> Go Back</button></a>
-          <button title="Print" type="button" class="btn btn-success" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i> Print</button>
+          <button type="button" class="btn btn-success" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i> Print Report</button>
         </div>
       </div>
 
-      <!-- Row for displaying PAR percentages in cards -->
-      <div class="row mb-4">
-        <div class="col-md-4">
-          <div class="card text-white bg-primary">
-            <div class="card-body text-center">
-              <h5 class="card-title">PAR 30</h5>
-              <p class="card-text display-4">{{ par_30|floatformat:'2' }}%</p>
-            </div>
-          </div>
+      <!-- Printable Report Section -->
+      <div id="printMe" class="card shadow-sm">
+        <div class="card-header bg-secondary text-white">
+          <h3 class="mb-0">{{ table_title }}</h3>
         </div>
-        <div class="col-md-4">
-          <div class="card text-white bg-warning">
-            <div class="card-body text-center">
-              <h5 class="card-title">PAR 60</h5>
-              <p class="card-text display-4">{{ par_60|floatformat:'2' }}%</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="card text-white bg-danger">
-            <div class="card-body text-center">
-              <h5 class="card-title">PAR 90</h5>
-              <p class="card-text display-4">{{ par_90|floatformat:'2' }}%</p>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Row for the table -->
-      {% comment %} <div class="row">
-        <div class="col-md-12">
-          <div id="printMe" class="card">
-            <div class="card-header bg-secondary text-white">
-              <h3 class="mb-0">{{ table_title }}</h3>
-            </div>
-            <div class="card-body">
-              <!-- Table responsive wrapper -->
-              <div class="table-responsive">
-                <table class="my-table" id="dataTable">
-                  <thead class="thead-dark">
-                    <tr>
-                      <th>Loan ID</th>
-                      <th>Borrower</th>
-                      <th>Principal</th>
-                      <th>Due Date</th>
-                      <th>Days Overdue</th>
-                      <th>Remaining Principal</th>
-                      <th>Remaining Interest</th>
-                      <th>Total Remaining Balance</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for loan in loan_data %}
-                      <tr>
-                        <td>{{ loan.loan_id }}</td>
-                        <td>{{ loan.borrower }}</td>
-                        <td>{{ loan.principal_amount|floatformat:'2'|intcomma }}</td>
-                        <td>{{ loan.due_date|date:'d/m/Y' }}</td>
-                        <td>
-                          {% if loan.days_overdue > 0 %}
-                            {{ loan.days_overdue }}
-                          {% else %}
-                            0
-                          {% endif %}
-                        </td>
-                        <td>{{ loan.remaining_principal|floatformat:'2'|intcomma }}</td>
-                        <td>{{ loan.remaining_interest|floatformat:'2'|intcomma }}</td>
-                        <td>{{ loan.total_remaining_balance|floatformat:'2'|intcomma }}</td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+        <div class="card-body">
+          <!-- PAR Summary Cards for Print (Print-optimized) -->
+          <div class="print-section mb-4">
+            <h5 class="text-muted mb-3">Portfolio at Risk (PAR) Summary</h5>
+            <div class="d-flex flex-wrap justify-content-between print-cards">
+              <div class="flex-fill m-2 print-card" style="min-width:150px;">
+                <div class="card text-white bg-primary shadow-sm h-100 border-0">
+                  <div class="card-body text-center p-2">
+                    <h6 class="card-title mb-1">PAR 30</h6>
+                    <p class="card-text display-6 mb-0">{{ par_30|floatformat:'2' }}%</p>
+                  </div>
+                </div>
+              </div>
+              <div class="flex-fill m-2 print-card" style="min-width:150px;">
+                <div class="card text-white bg-warning shadow-sm h-100 border-0">
+                  <div class="card-body text-center p-2">
+                    <h6 class="card-title mb-1">PAR 60</h6>
+                    <p class="card-text display-6 mb-0">{{ par_60|floatformat:'2' }}%</p>
+                  </div>
+                </div>
+              </div>
+              <div class="flex-fill m-2 print-card" style="min-width:150px;">
+                <div class="card text-white bg-danger shadow-sm h-100 border-0">
+                  <div class="card-body text-center p-2">
+                    <h6 class="card-title mb-1">PAR 90</h6>
+                    <p class="card-text display-6 mb-0">{{ par_90|floatformat:'2' }}%</p>
+                  </div>
+                </div>
+              </div>
+              <div class="flex-fill m-2 print-card" style="min-width:150px;">
+                <div class="card text-white bg-secondary shadow-sm h-100 border-0">
+                  <div class="card-body text-center p-2">
+                    <h6 class="card-title mb-1">PAR 120</h6>
+                    <p class="card-text display-6 mb-0">{{ par_120|floatformat:'2' }}%</p>
+                  </div>
+                </div>
+              </div>
+              <div class="flex-fill m-2 print-card" style="min-width:150px;">
+                <div class="card text-white bg-dark shadow-sm h-100 border-0">
+                  <div class="card-body text-center p-2">
+                    <h6 class="card-title mb-1">PAR 180</h6>
+                    <p class="card-text display-6 mb-0">{{ par_180|floatformat:'2' }}%</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+
+          <!-- Summary -->
+          <div class="mb-4">
+            <h5 class="text-muted">Portfolio Summary</h5>
+            <table class="table table-borderless table-sm w-50">
+              <tr>
+                <th>Total Loans:</th>
+                <td class="text-end">{{ summary.total_loans }}</td>
+              </tr>
+              <tr>
+                <th>Total Outstanding Balance:</th>
+                <td class="text-end">{{ summary.total_outstanding_balance|floatformat:'2'|intcomma }}</td>
+              </tr>
+              <tr>
+                <th>Total Overdue ≥ 30 Days:</th>
+                <td class="text-end">{{ summary.total_overdue_30|floatformat:'2'|intcomma }}</td>
+              </tr>
+              <tr>
+                <th>Total Overdue ≥ 60 Days:</th>
+                <td class="text-end">{{ summary.total_overdue_60|floatformat:'2'|intcomma }}</td>
+              </tr>
+              <tr>
+                <th>Total Overdue ≥ 90 Days:</th>
+                <td class="text-end">{{ summary.total_overdue_90|floatformat:'2'|intcomma }}</td>
+              </tr>
+              <tr>
+                <th>Total Overdue ≥ 120 Days:</th>
+                <td class="text-end">{{ summary.total_overdue_120|floatformat:'2'|intcomma }}</td>
+              </tr>
+              <tr>
+                <th>Total Overdue ≥ 180 Days:</th>
+                <td class="text-end">{{ summary.total_overdue_180|floatformat:'2'|intcomma }}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Loans Table -->
+          <div class="table-responsive">
+            <table class="my-table" id="dataTable">
+              <thead class="thead-dark">
+                <tr>
+                  <th>Loan ID</th>
+                  <th>Borrower</th>
+                  <th>Principal</th>
+                  <th>Due Date</th>
+                  <th>Days Overdue</th>
+                  <th>Remaining Principal</th>
+                  <th>Remaining Interest</th>
+                  <th>Total Remaining Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for loan in loan_data %}
+                  <tr>
+                    <td>{{ loan.loan_id }}</td>
+                    <td>{{ loan.borrower }}</td>
+                    <td>{{ loan.principal_amount|floatformat:'2'|intcomma }}</td>
+                    <td>{{ loan.due_date|date:'d/m/Y' }}</td>
+                    <td class="text-end">{{ loan.days_overdue|default_if_none:'0' }}</td>
+                    <td class="text-end">{{ loan.remaining_principal|floatformat:'2'|intcomma }}</td>
+                    <td class="text-end">{{ loan.remaining_interest|floatformat:'2'|intcomma }}</td>
+                    <td class="text-end">{{ loan.total_remaining_balance|floatformat:'2'|intcomma }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div> {% endcomment %}
+
+        <div class="card-footer text-muted text-right">Generated on: {{ now|date:'d/m/Y H:i' }}</div>
+      </div>
     </div>
   </div>
+
+  <style>
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      .print-cards .card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin-bottom: 10px !important;
+      }
+      .print-card {
+        flex: 1 1 150px !important;
+        max-width: 180px !important;
+      }
+      .table {
+        font-size: 0.85rem;
+        width: 100% !important;
+      }
+      .card-body {
+        padding: 0.75rem !important;
+      }
+      .display-6 {
+        font-size: 1.75rem !important;
+        font-weight: bold;
+      }
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .card {
+        box-shadow: none !important;
+        border: 1px solid #dee2e6 !important;
+      }
+    }
+    
+    /* Screen optimization for print cards */
+    .print-section {
+      border-top: 2px solid #dee2e6;
+      padding-top: 20px;
+    }
+  </style>
+
+  <!-- Improved Print Script -->
+  <script>
+    function printDiv(divId) {
+      const printContents = document.getElementById(divId).innerHTML
+      const originalContents = document.body.innerHTML
+    
+      // Create a new document for printing
+      const printWindow = window.open('', '_blank')
+      printWindow.document.write(`
+                                    <!DOCTYPE html>
+                                    <html>
+                                    <head>
+                                      <title>${document.title}</title>
+                                      <style>
+                                        @media print {
+                                          body { font-family: Arial, sans-serif; margin: 20px; }
+                                          .card { break-inside: avoid; page-break-inside: avoid; margin-bottom: 15px; }
+                                          table { width: 100% !important; font-size: 11px; }
+                                          th, td { padding: 6px 4px; border: 1px solid #000 !important; }
+                                          .thead-dark th { background-color: #343a40 !important; color: white; }
+                                          h3, h5 { page-break-after: avoid; }
+                                          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                        }
+                                        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+                                        .print-cards { display: flex !important; flex-wrap: wrap; justify-content: space-between; }
+                                        .print-card { flex: 1 1 150px; max-width: 180px; margin: 5px; }
+                                      </style>
+                                    </head>
+                                    <body>${printContents}</body>
+                                    </html>
+                                  `)
+      printWindow.document.close()
+    
+      printWindow.onload = function () {
+        printWindow.focus()
+        printWindow.print()
+        printWindow.onafterprint = function () {
+          printWindow.close()
+        }
+      }
+    }
+  </script>
 {% endblock %}

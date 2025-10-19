@@ -79,4 +79,9 @@ urlpatterns = [
         views.loan_due_overdue_report,
         name="due_overdue_report",
     ),
+    path(
+        "loan-aging-report/export-excel/",
+        views.export_loan_aging_to_excel,
+        name="export_ln_aging_to_excel",
+    ),
 ]
