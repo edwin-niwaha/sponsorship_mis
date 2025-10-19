@@ -4,187 +4,225 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Loan Aging Report</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
-    <!-- Bootstrap Icons -->
+    <title>{{ table_title }}</title>
+
+    <!-- Bootstrap & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+
+    <style>
+      body {
+        background-color: #f8f9fa;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 0.9rem;
+      }
+      h3,
+      h4,
+      h5 {
+        font-weight: 700;
+      }
+      .summary-card {
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+        text-align: center;
+      }
+      .bucket-header {
+        background-color: #e9eff6;
+        padding: 10px 15px;
+        border-left: 5px solid #002b5c;
+        border-radius: 4px;
+        margin-top: 30px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .table thead th {
+        background-color: #002b5c;
+        color: #fff;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .table tfoot {
+        background-color: #f1f3f4;
+        font-weight: 600;
+      }
+      .fw-bold td {
+        font-weight: 600 !important;
+      }
+      .btn {
+        border-radius: 30px;
+      }
+      
+      /* Print-friendly adjustments */
+      @media print {
+        @page {
+          size: A4 landscape;
+          margin: 1cm;
+        }
+        body {
+          zoom: 85%;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .no-print {
+          display: none !important;
+        }
+        table {
+          font-size: 10px !important;
+          table-layout: fixed !important;
+          width: 100% !important;
+          word-wrap: break-word;
+        }
+        th,
+        td {
+          padding: 4px 6px !important;
+        }
+        .table-responsive {
+          overflow: visible !important;
+        }
+        .summary-card {
+          page-break-inside: avoid !important;
+        }
+      }
+    </style>
   </head>
+
   <body>
     <div class="container-fluid my-4">
-      <!-- Navigation and Print Buttons -->
-      <div class="row mb-4 no-print">
-        <div class="col-12 d-flex justify-content-between align-items-center gap-2">
-          <a href="{% url 'loans:loan_reports_dashboard' %}" class="btn btn-primary fw-bold" aria-label="Go back to Loan Reports Dashboard"><i class="bi bi-arrow-left me-2" aria-hidden="true"></i> Go Back</a>
-          <h3 class="mb-0 fw-bold text-uppercase" id="table-title">{{ table_title|default:'Loan Aging Report' }}</h3>
-          <button type="button" class="btn btn-success fw-bold" onclick="printDiv('printMe')" aria-label="Print Report"><i class="bi bi-printer me-2" aria-hidden="true"></i> Print</button>
+      <!-- Header & Controls -->
+      <div class="row no-print align-items-center mb-4">
+        <div class="col-md-8">
+          <h3 class="text-uppercase mb-1">{{ table_title }}</h3>
+          <p class="text-muted mb-0">
+            <strong>Date:</strong> {{ now|date:'d M Y' }} &nbsp;|&nbsp;
+            <strong>Total Loans:</strong> {{ total_loans }}
+          </p>
         </div>
-        <hr /> <!-- Added hr element here -->
+        <div class="col-md-4 text-md-end text-center mt-3 mt-md-0">
+          <a href="{% url 'loans:loan_reports_dashboard' %}" class="btn btn-primary fw-bold me-2"><i class="bi bi-arrow-left me-1"></i> Dashboard</a>
+          <button class="btn btn-outline-secondary fw-bold" onclick="window.print()"><i class="bi bi-printer me-1"></i> Print</button>
+        </div>
       </div>
 
-      <!-- Report Content -->
-      <div id="printMe" class="card shadow-sm border-0">
-        <div class="card-body">
-          <!-- Screen View: Separate Tables per Bucket -->
-          <div class="table-responsive d-print-none">
-            {% for bucket, page_obj in paginated_buckets.items %}
-              <h4 class="mt-4 fw-semibold">{{ bucket }} ({{ page_obj.paginator.count }} Loans)</h4>
+      <!-- Key Summary Cards -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <div class="summary-card text-center">
+            <h5>Total Principal</h5>
+            <p class="fs-4 fw-bold text-dark mb-0">{{ formatted_grand_totals.total_principal }}</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="summary-card text-center">
+            <h5>Total Outstanding</h5>
+            <p class="fs-4 fw-bold text-primary mb-0">{{ formatted_grand_totals.total_outstanding_balance }}</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="summary-card text-center">
+            <h5>Total Principal Due</h5>
+            <p class="fs-4 fw-bold text-danger mb-0">{{ formatted_grand_totals.total_principal_due }}</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="summary-card text-center">
+            <h5>Total Paid</h5>
+            <p class="fs-4 fw-bold text-success mb-0">{{ formatted_grand_totals.total_paid }}</p>
+          </div>
+        </div>
+      </div>
 
-              {% if page_obj %}
-                <table class="table table-striped table-hover table-sm" id="dataTable_{{ forloop.counter }}" aria-labelledby="table-title-{{ forloop.counter }}">
-                  <thead class="table-dark">
-                    <tr>
-                      <th scope="col">ID</th>
-                      <th scope="col">Borrower</th>
-                      <th scope="col" class="text-end">Loan</th>
-                      <th scope="col">Rate (%)</th>
-                      <th scope="col">Period (Months)</th>
-                      <th scope="col" aria-sort="ascending">
-                        Issue Date <i class="bi bi-sort-up ms-1" aria-hidden="true"></i>
-                      </th>
-                      <th scope="col">Maturity</th>
-                      <th scope="col">Days Overdue</th>
-                      <th scope="col" class="text-end">Overdue Principal</th>
-                      <th scope="col" class="text-end">Overdue Interest</th>
-                      <th scope="col" class="text-end">Overdue Penalty</th>
-                      <th scope="col" class="text-end">Outstanding Balance</th>
-                      <th scope="col" class="text-end">Total Paid</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for loan in page_obj %}
-                      <tr>
-                        <td>{{ loan.loan_id|default:'N/A' }}</td>
-                        <td>{{ loan.borrower|default:'N/A' }}</td>
-                        <td class="text-end">{{ loan.principal_amount|floatformat:'2'|intcomma|default:'0' }}</td>
-                        <td>{{ loan.interest_rate|default:'N/A' }}</td>
-                        <td>{{ loan.loan_period_months|default:'N/A' }}</td>
-                        <td>{{ loan.start_date|date:'d/m/Y'|default:'N/A' }}</td>
-                        <td>{{ loan.due_date|date:'d/m/Y'|default:'N/A' }}</td>
-                        <td>{{ loan.days_overdue|default:'0' }}</td>
-                        <td class="text-end">{{ loan.principal_due|floatformat:'2'|intcomma|default:'0' }}</td>
-                        <td class="text-end">{{ loan.interest_due|floatformat:'2'|intcomma|default:'0' }}</td>
-                        <td class="text-end">{{ loan.penalty_due|floatformat:'2'|intcomma|default:'0' }}</td>
-                        <td class="text-end">{{ loan.outstanding_balance|floatformat:'2'|intcomma|default:'0' }}</td>
-                        <td class="text-end">{{ loan.total_paid|floatformat:'2'|intcomma|default:'0' }}</td>
-                      </tr>
-                    {% empty %}
-                      <tr>
-                        <td colspan="13" class="text-center text-muted">No loans in this category.</td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-
-                <!-- Pagination for Bucket -->
-                {% if page_obj.has_other_pages %}
-                  <nav aria-label="Pagination for {{ bucket }}" class="mt-3">
-                    <ul class="pagination pagination-sm justify-content-center">
-                      {% if page_obj.has_previous %}
-                        <li class="page-item">
-                          <a class="page-link" href="?page_{{ bucket|slugify }}={{ page_obj.previous_page_number }}" aria-label="Previous page for {{ bucket }}">&laquo; Previous</a>
-                        </li>
-                      {% else %}
-                        <li class="page-item disabled">
-                          <span class="page-link">&laquo; Previous</span>
-                        </li>
-                      {% endif %}
-
-                      {% for num in page_obj.paginator.page_range %}
-                        {% if page_obj.number == num %}
-                          <li class="page-item active" aria-current="page">
-                            <span class="page-link">{{ num }}</span>
-                          </li>
-                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                          <li class="page-item">
-                            <a class="page-link" href="?page_{{ bucket|slugify }}={{ num }}">{{ num }}</a>
-                          </li>
-                        {% endif %}
-                      {% endfor %}
-
-                      {% if page_obj.has_next %}
-                        <li class="page-item">
-                          <a class="page-link" href="?page_{{ bucket|slugify }}={{ page_obj.next_page_number }}" aria-label="Next page for {{ bucket }}">Next &raquo;</a>
-                        </li>
-                      {% else %}
-                        <li class="page-item disabled">
-                          <span class="page-link">Next &raquo;</span>
-                        </li>
-                      {% endif %}
-                    </ul>
-                  </nav>
-                {% endif %}
-              {% else %}
-                <p class="text-muted">No loans in this category.</p>
-              {% endif %}
-            {% endfor %}
+      <!-- Report Tables -->
+      <div id="printMe">
+        {% for bucket_key, loans in buckets.items %}
+          <!-- Bucket Header (always visible) -->
+          <div class="bucket-header">
+            <h5 class="mb-0">{{ bucket_key }}</h5>
+            <span class="badge bg-primary fs-6">{{ loans|length }} Loans</span>
           </div>
 
-          <!-- Print View: Single Table -->
-          <div class="d-none d-print-block compact-table">
-            <table class="table table-sm" aria-labelledby="table-title">
-              <thead class="table-dark">
+          <div class="table-responsive mb-4">
+            <table class="table table-bordered table-hover align-middle table-sm">
+              <thead>
                 <tr>
-                  <th scope="col">Bucket</th>
-                  <th scope="col">ID</th>
-                  <th scope="col">Borrower</th>
-                  <th scope="col" class="text-end">Loan</th>
-                  <th scope="col">Rate (%)</th>
-                  <th scope="col">Period (Months)</th>
-                  <th scope="col">Issue Date</th>
-                  <th scope="col">Maturity Date</th>
-                  <th scope="col">Days Overdue</th>
-                  <th scope="col" class="text-end">Overdue Principal</th>
-                  <th scope="col" class="text-end">Overdue Interest</th>
-                  <th scope="col" class="text-end">Overdue Penalty</th>
-                  <th scope="col" class="text-end">Outstanding Balance</th>
-                  <th scope="col" class="text-end">Total Paid</th>
+                  <th>ID</th>
+                  <th>Borrower</th>
+                  <th class="text-end">Loan</th>
+                  <th>Rate (%)</th>
+                  <th>Months</th>
+                  <th>Issue Date</th>
+                  <th>Maturity</th>
+                  <th>Days Overdue</th>
+                  <th class="text-end">Principal Due</th>
+                  <th class="text-end">Interest Due</th>
+                  <th class="text-end">Penalty</th>
+                  <th class="text-end">Outstanding</th>
+                  <th class="text-end">Paid</th>
                 </tr>
               </thead>
               <tbody>
-                {% for loan in all_loans %}
+                {% if loans %}
+                  {% for loan in loans %}
+                    <tr>
+                      <td>{{ loan.loan_id|default:'N/A' }}</td>
+                      <td>{{ loan.borrower|default:'N/A' }}</td>
+                      <td class="text-end">{{ loan.principal_amount|floatformat:'0'|intcomma }}</td>
+                      <td>{{ loan.interest_rate|default:'-' }}</td>
+                      <td>{{ loan.loan_period_months|default:'-' }}</td>
+                      <td>{{ loan.start_date|date:'d/m/Y'|default:'-' }}</td>
+                      <td>{{ loan.due_date|date:'d/m/Y'|default:'-' }}</td>
+                      <td class="text-center">{{ loan.days_overdue|default:'0' }}</td>
+                      <td class="text-end">{{ loan.principal_due|floatformat:'0'|intcomma }}</td>
+                      <td class="text-end">{{ loan.interest_due|floatformat:'0'|intcomma }}</td>
+                      <td class="text-end">{{ loan.penalty_due|floatformat:'0'|intcomma }}</td>
+                      <td class="text-end">{{ loan.outstanding_balance|floatformat:'0'|intcomma }}</td>
+                      <td class="text-end">{{ loan.total_paid|floatformat:'0'|intcomma }}</td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
                   <tr>
-                    <td>{{ loan.bucket }}</td>
-                    <td>{{ loan.loan_id|default:'N/A' }}</td>
-                    <td>{{ loan.borrower|default:'N/A' }}</td>
-                    <td class="text-end">{{ loan.principal_amount|floatformat:'2'|intcomma|default:'0' }}</td>
-                    <td>{{ loan.interest_rate|default:'N/A' }}</td>
-                    <td>{{ loan.loan_period_months|default:'N/A' }}</td>
-                    <td>{{ loan.start_date|date:'d/m/Y'|default:'N/A' }}</td>
-                    <td>{{ loan.due_date|date:'d/m/Y'|default:'N/A' }}</td>
-                    <td>{{ loan.days_overdue|default:'0' }}</td>
-                    <td class="text-end">{{ loan.principal_due|floatformat:'2'|intcomma|default:'0' }}</td>
-                    <td class="text-end">{{ loan.interest_due|floatformat:'2'|intcomma|default:'0' }}</td>
-                    <td class="text-end">{{ loan.penalty_due|floatformat:'2'|intcomma|default:'0' }}</td>
-                    <td class="text-end">{{ loan.outstanding_balance|floatformat:'2'|intcomma|default:'0' }}</td>
-                    <td class="text-end">{{ loan.total_paid|floatformat:'2'|intcomma|default:'0' }}</td>
+                    <td colspan="13" class="text-center text-muted">No loans in this bucket.</td>
                   </tr>
-                {% empty %}
-                  <tr>
-                    <td colspan="14" class="text-center text-muted">No loans available.</td>
-                  </tr>
-                {% endfor %}
+                {% endif %}
               </tbody>
-              <tfoot class="table-light">
-                <tr class="fw-bold">
-                  <td colspan="3" class="text-end">Grand Totals:</td>
-                  <td class="text-end">{{ grand_totals.total_principal|floatformat:'2'|intcomma|default:'0' }}</td>
-                  <td colspan="5"></td>
-                  <td class="text-end">{{ grand_totals.total_principal_due|floatformat:'2'|intcomma|default:'0' }}</td>
-                  <td class="text-end">{{ grand_totals.total_interest_due|floatformat:'2'|intcomma|default:'0' }}</td>
-                  <td class="text-end">{{ grand_totals.total_penalty_due|floatformat:'2'|intcomma|default:'0' }}</td>
-                  <td class="text-end">{{ grand_totals.total_outstanding_balance|floatformat:'2'|intcomma|default:'0' }}</td>
-                  <td class="text-end">{{ grand_totals.total_paid|floatformat:'2'|intcomma|default:'0' }}</td>
-                </tr>
-              </tfoot>
             </table>
           </div>
+        {% endfor %}
+
+        <!-- Grand Totals -->
+        <div class="mt-5">
+          <h4 class="text-end fw-bold mb-3">Overall Grand Totals</h4>
+          <table class="table table-bordered text-end align-middle table-sm">
+            <thead class="table-light">
+              <tr>
+                <th>Total Principal</th>
+                <th>Total Principal Due</th>
+                <th>Total Interest Due</th>
+                <th>Total Penalty</th>
+                <th>Total Outstanding</th>
+                <th>Total Paid</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="fw-bold">
+                <td>{{ formatted_grand_totals.total_principal }}</td>
+                <td>{{ formatted_grand_totals.total_principal_due }}</td>
+                <td>{{ formatted_grand_totals.total_interest_due }}</td>
+                <td>{{ formatted_grand_totals.total_penalty_due }}</td>
+                <td>{{ formatted_grand_totals.total_outstanding_balance }}</td>
+                <td>{{ formatted_grand_totals.total_paid }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <!-- Bootstrap 5 JS (for button interactions) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
       function printDiv(divId) {
         window.print()
