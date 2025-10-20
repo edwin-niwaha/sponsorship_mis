@@ -81,6 +81,7 @@
       <!-- Top Controls -->
       <div class="d-flex justify-content-between align-items-center mb-3 no-print">
         <a href="{% url 'loans:loan_reports_dashboard' %}" class="btn btn-secondary"><i class="bi bi-arrow-left-circle"></i> Back to Dashboard</a>
+        <button id="toggleBorrowers" class="btn btn-outline-dark fw-bold me-2">Hide Borrowers</button>
         <button class="btn btn-success" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
       </div>
 
@@ -142,7 +143,7 @@
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Borrower</th>
+                  <th class="borrower">Borrower</th>
                   <th class="text-end">Principal</th>
                   <th class="text-end">Remaining Principal</th>
                   <th class="text-end">Interest Due</th>
@@ -157,7 +158,7 @@
                   {% for loan in loan_data %}
                     <tr>
                       <td>{{ loan.loan_id }}</td>
-                      <td>{{ loan.borrower }}</td>
+                      <td class="borrower">{{ loan.borrower }}</td>
                       <td class="text-end">{{ loan.principal_amount|floatformat:'0'|intcomma }}</td>
                       <td class="text-end">{{ loan.remaining_principal|floatformat:'0'|intcomma }}</td>
                       <td class="text-end">{{ loan.remaining_interest|floatformat:'0'|intcomma }}</td>
@@ -201,6 +202,12 @@
         </div>
       </div>
     </div>
+    <script>
+      document.getElementById('toggleBorrowers').onclick = () => {
+        document.querySelectorAll('.borrower').forEach((el) => el.classList.toggle('d-none'))
+        toggleBorrowers.textContent = toggleBorrowers.textContent.includes('Hide') ? 'Show Borrowers' : 'Hide Borrowers'
+      }
+    </script>
 
     <script>
       // Optional print helper

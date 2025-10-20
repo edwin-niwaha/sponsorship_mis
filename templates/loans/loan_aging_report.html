@@ -109,6 +109,8 @@
         </div>
         <div class="col-md-4 text-md-end text-center mt-3 mt-md-0">
           <a href="{% url 'loans:loan_reports_dashboard' %}" class="btn btn-primary fw-bold me-2"><i class="bi bi-arrow-left me-1"></i> Dashboard</a>
+          <button id="toggleBorrowers" class="btn btn-outline-dark fw-bold me-2">Hide Borrowers</button>
+
           <button class="btn btn-outline-secondary fw-bold" onclick="window.print()"><i class="bi bi-printer me-1"></i> Print</button>
         </div>
       </div>
@@ -153,7 +155,7 @@
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Borrower</th>
+                <th class="borrower">Borrower</th>
                 <th class="text-end">Loan</th>
                 <th>Rate (%)</th>
                 <th>Months</th>
@@ -173,7 +175,7 @@
                 {% for loan in loans %}
                   <tr class="{% if loan.days_overdue > 0 %}overdue-row{% endif %}">
                     <td>{{ loan.loan_id|default:'N/A' }}</td>
-                    <td>{{ loan.borrower|default:'N/A' }}</td>
+                    <td class="borrower">{{ loan.borrower|default:'N/A' }}</td>
                     <td class="text-end">{{ loan.principal_amount|floatformat:'0'|intcomma }}</td>
                     <td>{{ loan.interest_rate|default:'-' }}</td>
                     <td>{{ loan.loan_period_months|default:'-' }}</td>
@@ -225,6 +227,12 @@
         </table>
       </div>
     </div>
+    <script>
+      document.getElementById('toggleBorrowers').onclick = () => {
+        document.querySelectorAll('.borrower').forEach((el) => el.classList.toggle('d-none'))
+        toggleBorrowers.textContent = toggleBorrowers.textContent.includes('Hide') ? 'Show Borrowers' : 'Hide Borrowers'
+      }
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   </body>

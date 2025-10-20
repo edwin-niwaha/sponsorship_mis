@@ -8,6 +8,7 @@
       <div class="row mb-2">
         <div class="col-12 d-flex justify-content-between">
           <a href="{% url 'loans:loan_reports_dashboard' %}"><button class="btn btn-info btn-sm"><i class="mdi mdi-arrow-left mr-1"></i>Back</button></a>
+          <button id="toggleBorrowers" class="btn btn-outline-dark fw-bold me-2">Hide Borrowers</button>
           <button class="btn btn-success btn-sm" onclick="printDiv('printMe')"><i class="mdi mdi-printer"></i></button>
         </div>
       </div>
@@ -25,7 +26,7 @@
                     <thead class="table-dark">
                       <tr>
                         <th class="text-nowrap py-1">Loan ID</th>
-                        <th class="text-nowrap py-1">Borrower</th>
+                        <th class="text-nowrap py-1 borrower">Borrower</th>
                         <th class="text-end py-1">Principal</th>
                         <th class="text-center py-1">Rate</th>
                         <th class="text-center py-1">Status</th>
@@ -40,7 +41,7 @@
                       {% for loan in page_obj %}
                         <tr class="{% if loan.days_overdue > 0 %}table-danger{% endif %}">
                           <td class="py-1">{{ loan.loan_id }}</td>
-                          <td class="py-1 small text-truncate" style="max-width: 100px;" title="{{ loan.borrower }}">{{ loan.borrower }}</td>
+                          <td class="borrower" style="max-width: 100px;" title="{{ loan.borrower }}">{{ loan.borrower }}</td>
                           <td class="py-1 text-end">{{ loan.principal_amount|floatformat:0|intcomma }}</td>
                           <td class="py-1 text-center">{{ loan.interest_rate|default:'-' }}%</td>
                           <td class="py-1 text-center">
@@ -93,4 +94,10 @@
       </div>
     </div>
   </div>
+  <script>
+    document.getElementById('toggleBorrowers').onclick = () => {
+      document.querySelectorAll('.borrower').forEach((el) => el.classList.toggle('d-none'))
+      toggleBorrowers.textContent = toggleBorrowers.textContent.includes('Hide') ? 'Show Borrowers' : 'Hide Borrowers'
+    }
+  </script>
 {% endblock %}

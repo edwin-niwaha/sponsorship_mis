@@ -76,6 +76,7 @@
       <!-- Top Controls -->
       <div class="d-flex justify-content-between mb-3 no-print">
         <a href="{% url 'loans:loan_reports_dashboard' %}" class="btn btn-info fw-bold"><i class="mdi mdi-arrow-left-bold"></i> Dashboard</a>
+        <button id="toggleBorrowers" class="btn btn-outline-dark fw-bold me-2">Hide Borrowers</button>
         <button class="btn btn-success fw-bold" onclick="window.print()"><i class="mdi mdi-printer"></i> Print</button>
       </div>
 
@@ -122,7 +123,7 @@
                 <thead>
                   <tr>
                     <th>ID</th>
-                    <th>Borrower</th>
+                    <th class="borrower">Borrower</th>
                     <th class="text-end">Principal</th>
                     <th>Rate (%)</th>
                     <th>Period</th>
@@ -141,7 +142,7 @@
                     {% for loan in loans %}
                       <tr>
                         <td>{{ loan.loan_id }}</td>
-                        <td>{{ loan.borrower }}</td>
+                        <td class="borrower">{{ loan.borrower }}</td>
                         <td class="text-end">{{ loan.principal_amount|floatformat:'0'|intcomma }}</td>
                         <td>{{ loan.interest_rate }}</td>
                         <td>{{ loan.loan_period_months }}</td>
@@ -198,6 +199,12 @@
         </div>
       </div>
     </div>
+    <script>
+      document.getElementById('toggleBorrowers').onclick = () => {
+        document.querySelectorAll('.borrower').forEach((el) => el.classList.toggle('d-none'))
+        toggleBorrowers.textContent = toggleBorrowers.textContent.includes('Hide') ? 'Show Borrowers' : 'Hide Borrowers'
+      }
+    </script>
 
     <script>
       function printDiv(divId) {
