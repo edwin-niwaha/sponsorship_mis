@@ -4,56 +4,87 @@
 
 {% block content %}
   <div class="form-content my-2">
-    <div class="container-fluid">
-      <div class="row mb-3">
-        <div class="col-md-12 d-flex justify-content-between align-items-center">
-          <a href="{% url 'loans:loan_reports_dashboard' %}">
-            <button type="button" class="btn btn-info font-weight-bold">
-              <i class="mdi mdi-arrow-left-bold mr-2"></i>
-              Go Back
-            </button>
-          </a>
-          <button title="Print" type="button" class="btn btn-success" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i> Print</button>
+    <div class="container-fluid px-2">
+      <div class="row mb-2">
+        <div class="col-12 d-flex justify-content-between">
+          <a href="{% url 'loans:loan_reports_dashboard' %}"><button class="btn btn-info btn-sm"><i class="mdi mdi-arrow-left mr-1"></i>Back</button></a>
+          <button class="btn btn-success btn-sm" onclick="printDiv('printMe')"><i class="mdi mdi-printer"></i></button>
         </div>
       </div>
 
       <div class="row">
-        <div class="col-md-12">
+        <div class="col-12">
           <div id="printMe" class="card">
-            <div class="card-header bg-secondary text-white">
-              <h3 class="mb-0">{{ table_title|upper }}</h3>
+            <div class="card-header bg-secondary text-white py-2">
+              <h5 class="mb-0">{{ table_title|upper }}</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
               <div class="table-responsive">
-                {% if non_performing_loans %}
-                  <table class="table table-bordered">
-                    <thead>
+                {% if page_obj %}
+                  <table class="table table-sm mb-0">
+                    <thead class="table-dark">
                       <tr>
-                        <th>Loan ID</th>
-                        <th>Borrower</th>
-                        <th>Principal Amount</th>
-                        <th>Interest Rate</th>
-                        <th>Status</th>
-                        <th>Due Date</th>
-                        <th>Days Overdue</th>
+                        <th class="text-nowrap py-1">Loan ID</th>
+                        <th class="text-nowrap py-1">Borrower</th>
+                        <th class="text-end py-1">Principal</th>
+                        <th class="text-center py-1">Rate</th>
+                        <th class="text-center py-1">Status</th>
+                        <th class="py-1">Due Date</th>
+                        <th class="text-center py-1">Overdue</th>
+                        <th class="text-end py-1">Balance</th>
+                        <th class="py-1">Last Pmt</th>
+                        <th class="py-1">Next Pmt</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {% for loan in non_performing_loans %}
-                        <tr>
-                          <td>{{ loan.id }}</td>
-                          <td>{{ loan.borrower.full_name }}</td>
-                          <td class="text-right">{{ loan.principal_amount|floatformat:'2'|intcomma }}</td>
-                          <td>{{ loan.interest_rate }}%</td>
-                          <td>{{ loan.status }}</td>
-                          <td>{{ loan.due_date }}</td>
-                          <td>{{ loan.days_overdue }} days</td>
+                      {% for loan in page_obj %}
+                        <tr class="{% if loan.days_overdue > 0 %}table-danger{% endif %}">
+                          <td class="py-1">{{ loan.loan_id }}</td>
+                          <td class="py-1 small text-truncate" style="max-width: 100px;" title="{{ loan.borrower }}">{{ loan.borrower }}</td>
+                          <td class="py-1 text-end">{{ loan.principal_amount|floatformat:0|intcomma }}</td>
+                          <td class="py-1 text-center">{{ loan.interest_rate|default:'-' }}%</td>
+                          <td class="py-1 text-center">
+                            <span class="badge badge-sm bg-{{ loan.status|lower }}">{{ loan.status|upper }}</span>
+                          </td>
+                          <td class="py-1 small">{{ loan.due_date|date:'d/m/Y'|default:'-' }}</td>
+                          <td class="py-1 text-center {% if loan.days_overdue > 0 %}text-danger fw-bold{% endif %}">{{ loan.days_overdue }}</td>
+                          <td class="py-1 text-end">{{ loan.outstanding_balance|floatformat:0|intcomma }}</td>
+                          <td class="py-1 small">{{ loan.last_payment|date:'d/m/Y'|default:'-' }}</td>
+                          <td class="py-1 small">{{ loan.next_payment|date:'d/m/Y'|default:'-' }}</td>
                         </tr>
                       {% endfor %}
                     </tbody>
                   </table>
+
+                  <nav class="mt-2 px-2">
+                    <ul class="pagination justify-content-center mb-0">
+                      {% if page_obj.has_previous %}
+                        <li class="page-item">
+                          <a class="page-link px-2" href="?page={{ page_obj.previous_page_number }}">←</a>
+                        </li>
+                      {% endif %}
+                      {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                          <li class="page-item active">
+                            <span class="page-link px-2">{{ num }}</span>
+                          </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                          <li class="page-item">
+                            <a class="page-link px-2" href="?page={{ num }}">{{ num }}</a>
+                          </li>
+                        {% endif %}
+                      {% endfor %}
+                      {% if page_obj.has_next %}
+                        <li class="page-item">
+                          <a class="page-link px-2" href="?page={{ page_obj.next_page_number }}">→</a>
+                        </li>
+                      {% endif %}
+                    </ul>
+                  </nav>
                 {% else %}
-                  <p>No non-performing loans found.</p>
+                  <div class="text-center py-4">
+                    <p class="text-muted mb-0">No non-performing loans found.</p>
+                  </div>
                 {% endif %}
               </div>
             </div>

@@ -129,6 +129,7 @@
                     <th>Issue Date</th>
                     <th>Maturity</th>
                     <th>Days Overdue</th>
+                    <th>Next Installment Due</th>
                     <th class="text-end">Overdue Principal</th>
                     <th class="text-end">Overdue Interest</th>
                     <th class="text-end">Total Outstanding</th>
@@ -147,6 +148,7 @@
                         <td>{{ loan.start_date|date:'d/m/Y' }}</td>
                         <td>{{ loan.due_date|date:'d/m/Y' }}</td>
                         <td class="text-center">{{ loan.days_overdue }}</td>
+                        <td>{{ loan.next_due_date|date:'d/m/Y' }}</td>
                         <td class="text-end">{{ loan.principal_due|floatformat:'0'|intcomma }}</td>
                         <td class="text-end">{{ loan.interest_due|floatformat:'0'|intcomma }}</td>
                         <td class="text-end">{{ loan.outstanding_balance|floatformat:'0'|intcomma }}</td>

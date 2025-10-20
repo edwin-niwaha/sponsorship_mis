@@ -1,263 +1,273 @@
 {% extends 'sdms/base_rpts.html' %}
-{% load crispy_forms_tags %}
 {% load humanize %}
 
 {% block content %}
-  <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <a href="{% url 'loans:loan_reports_dashboard' %}" class="btn btn-primary btn-sm"><i class="bi bi-arrow-left me-1"></i>Go Back</a>
-      <!-- Date Selection Form -->
-      <form method="GET" action="{% url 'loans:due_overdue_report' %}">
-        <div class="row align-items-end">
-          <div class="col-8">
-            <label for="selected_date" class="form-label">Select Date</label>
-            <input type="date" name="selected_date" id="selected_date" class="form-control form-control-sm" value="{{ selected_date|date:'Y-m-d' }}" required />
-          </div>
-          <div class="col-4">
-            <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
-          </div>
-        </div>
+  <div class="container-fluid px-3 py-3">
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- HEADER BAR -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 border-bottom pb-2">
+      <a href="{% url 'loans:loan_reports_dashboard' %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-arrow-left me-1"></i> Back</a>
+
+      <form method="GET" action="{% url 'loans:due_overdue_report' %}" class="d-flex gap-2 align-items-center">
+        <label for="selected_date" class="small text-muted mb-0">Date:</label>
+        <input type="date" name="selected_date" id="selected_date" class="form-control form-control-sm" value="{{ selected_date|date:'Y-m-d' }}" required />
+        <button type="submit" class="btn btn-primary btn-sm px-3">Go</button>
       </form>
-      <div>
-        <button onclick="printDiv('printMe')" class="btn btn-success btn-sm"><i class="bi bi-printer me-1"></i>Print</button>
-      </div>
+
+      <button onclick="printDiv('printMe')" class="btn btn-success btn-sm"><i class="bi bi-printer me-1"></i> Print</button>
     </div>
-    <hr />
-    <div id="printMe" class="card">
-      <h1 class="h4">Loan Due and Overdue Report - {{ selected_date|date:'d/m/Y' }}</h1>
-      <hr />
-      <div class="card-body">
-        <!-- Due Loans -->
-        <h2 class="h6 mb-2">Loans Due on {{ selected_date|date:'d/m/Y' }}</h2>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- REPORT CARD -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="printMe" class="card border-0 shadow-sm">
+      <div class="card-body p-3">
+        <!-- Report Title -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="fw-bold text-dark mb-0">{{ table_title }} — {{ selected_date|date:'d/m/Y' }}</h6>
+          <small class="text-muted">Generated on {{ now|date:'d/m/Y H:i' }}</small>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- DUE LOANS -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
         {% if due_loans %}
-          <p class="mb-2">
-            <strong>Total Loans: {{ due_loans_count|intcomma }}</strong> |
-            <strong>Total Amount Due Balance: UgX {{ due_loans_total_due_balance|floatformat:'2'|intcomma }}</strong> |
-            <strong>Total Penalty Balance: UgX {{ due_loans_total_penalty_balance|floatformat:'2'|intcomma }}</strong> |
-            <strong>Total Outstanding Balance: UgX {{ due_loans_total_balance|floatformat:'2'|intcomma }}</strong>
-          </p>
-          <div class="table-responsive">
-            <table class="my-table" id="dueLoansTable">
-              <thead class="table-light">
-                <tr>
-                  <th>#</th>
-                  <th>Loan ID</th>
-                  <th>Borrower</th>
-                  <th class="text-end">Principal</th>
-                  <th>Rate(%)</th>
-                  <th>Period</th>
-                  <th>Disbursed On</th>
-                  <th>Maturity Due Date</th>
-                  <th class="text-end">Total Due Bal.</th>
-                  <th class="text-end">Principal Bal.</th>
-                  <th class="text-end">Interest Bal.</th>
-                  <th class="text-end">Penalty Bal.</th>
-                  <th class="text-end">Total Bal.</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for item in due_loans %}
+          <div class="mb-4">
+            <div class="bg-light border-start border-4 border-primary rounded p-2 mb-2">
+              <h6 class="mb-0 text-primary fw-semibold">
+                <i class="bi bi-clock me-1"></i> Loans Due Today
+                <span class="badge bg-primary-subtle text-primary ms-1">{{ due_loans_count }}</span>
+              </h6>
+              <small class="text-muted">Total Outstanding: UgX {{ due_loans_total_balance|floatformat:0|intcomma }}</small>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-sm table-striped table-bordered align-middle mb-0">
+                <thead class="table-light sticky-top">
                   <tr>
-                    <td>{{ forloop.counter0|add:due_loans.start_index }}</td>
-                    <td>{{ item.loan.id }}</td>
-                    <td>{{ item.loan.borrower.full_name }}</td>
-                    <td class="text-end">{{ item.loan.principal_amount|floatformat:'2'|intcomma }}</td>
-                    <td>{{ item.loan.interest_rate }}</td>
-                    <td>{{ item.loan.loan_period_months }}</td>
-                    <td>{{ item.disbursement_date|date:'d/m/Y' }}</td>
-                    <td>{{ item.maturity_due_date|date:'d/m/Y' }}</td>
-                    <td class="text-end">{{ item.total_amount_due_balance|floatformat:'2'|intcomma }}</td>
-                    <td class="text-end">{{ item.principal_balance|floatformat:'2'|intcomma }}</td>
-                    <td class="text-end">{{ item.interest_balance|floatformat:'2'|intcomma }}</td>
-                    <td class="text-end">{{ item.penalty_balance|floatformat:'2'|intcomma }}</td>
-                    <td class="text-end">{{ item.total_balance|floatformat:'2'|intcomma }}</td>
+                    <th>#</th>
+                    <th>ID</th>
+                    <th>Borrower</th>
+                    <th class="text-end">Principal</th>
+                    <th>Rate</th>
+                    <th>Period</th>
+                    <th>Disb</th>
+                    <th>Mat</th>
+                    <th class="text-end">Due</th>
+                    <th class="text-end">Prin</th>
+                    <th class="text-end">Int</th>
+                    <th class="text-end">Pen</th>
+                    <th class="text-end">Total</th>
                   </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {% for item in due_loans %}
+                    <tr>
+                      <td class="text-center">{{ forloop.counter0|add:due_loans.start_index|add:1 }}</td>
+                      <td class="font-monospace">{{ item.loan.id }}</td>
+                      <td class="text-truncate" style="max-width:140px;" title="{{ item.loan.borrower.full_name }}">{{ item.loan.borrower.full_name }}</td>
+                      <td class="text-end">{{ item.loan.principal_amount|floatformat:0|intcomma }}</td>
+                      <td class="text-center">{{ item.loan.interest_rate }}%</td>
+                      <td class="text-center">{{ item.loan.loan_period_months }}m</td>
+                      <td>{{ item.disbursement_date|date:'d/m' }}</td>
+                      <td>{{ item.maturity_due_date|date:'d/m' }}</td>
+                      <td class="text-end">{{ item.total_amount_due_balance|floatformat:0|intcomma }}</td>
+                      <td class="text-end">{{ item.principal_balance|floatformat:0|intcomma }}</td>
+                      <td class="text-end">{{ item.interest_balance|floatformat:0|intcomma }}</td>
+                      <td class="text-end">{{ item.penalty_balance|floatformat:0|intcomma }}</td>
+                      <td class="text-end fw-bold">{{ item.total_balance|floatformat:0|intcomma }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- ✅ FIXED DUE LOANS PAGINATION -->
+            {% if due_loans.has_other_pages %}
+              <nav class="mt-2">
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                  {% if due_loans.has_previous %}
+                    <li class="page-item">
+                      <a class="page-link"
+                        href="?selected_date={{ selected_date|date:'Y-m-d' }}&due_page={{ due_loans.previous_page_number }}{% if overdue_page %}
+                          
+                          &overdue_page={{ overdue_page }}
+                        {% endif %}">
+                        ←
+                      </a>
+                    </li>
+                  {% endif %}
+
+                  {% for num in due_loans.paginator.page_range %}
+                    <li class="page-item {% if due_loans.number == num %}active{% endif %}">
+                      <a class="page-link"
+                        href="?selected_date={{ selected_date|date:'Y-m-d' }}&due_page={{ num }}{% if overdue_page %}
+                          
+                          &overdue_page={{ overdue_page }}
+                        {% endif %}">
+                        {{ num }}
+                      </a>
+                    </li>
+                  {% endfor %}
+
+                  {% if due_loans.has_next %}
+                    <li class="page-item">
+                      <a class="page-link"
+                        href="?selected_date={{ selected_date|date:'Y-m-d' }}&due_page={{ due_loans.next_page_number }}{% if overdue_page %}
+                          
+                          &overdue_page={{ overdue_page }}
+                        {% endif %}">
+                        →
+                      </a>
+                    </li>
+                  {% endif %}
+                </ul>
+              </nav>
+            {% endif %}
           </div>
-          {% if due_loans.has_other_pages %}
-            <nav aria-label="Due Loans Pagination">
-              <ul class="pagination justify-content-center mt-2">
-                {% if due_loans.has_previous %}
-                  <li class="page-item">
-                    <a class="page-link" href="?selected_date={{ selected_date|date:'Y-m-d' }}&due_page={{ due_loans.previous_page_number }}&overdue_page={{ overdue_loans.number }}">Previous</a>
-                  </li>
-                {% endif %}
-                {% for num in due_loans.paginator.page_range %}
-                  <li class="page-item {% if due_loans.number == num %}active{% endif %}">
-                    <a class="page-link" href="?selected_date={{ selected_date|date:'Y-m-d' }}&due_page={{ num }}&overdue_page={{ overdue_loans.number }}">{{ num }}</a>
-                  </li>
-                {% endfor %}
-                {% if due_loans.has_next %}
-                  <li class="page-item">
-                    <a class="page-link" href="?selected_date={{ selected_date|date:'Y-m-d' }}&due_page={{ due_loans.next_page_number }}&overdue_page={{ overdue_loans.number }}">Next</a>
-                  </li>
-                {% endif %}
-              </ul>
-            </nav>
-          {% endif %}
-        {% else %}
-          <p class="text-muted">No installments due on {{ selected_date|date:'d/m/Y' }}.</p>
         {% endif %}
 
-        <!-- Overdue Loans -->
-        <h2 class="h6 mb-2 mt-3">Overdue Loans as of {{ selected_date|date:'d/m/Y' }}</h2>
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- OVERDUE LOANS -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
         {% if overdue_loans %}
-          <p class="mb-2">
-            <strong>Total Loans: {{ overdue_loans_count|intcomma }}</strong> |
-            <strong>Total Amount Due Balance: UgX {{ overdue_loans_total_due_balance|floatformat:'2'|intcomma }}</strong> |
-            <strong>Total Penalty Balance: UgX {{ overdue_loans_total_penalty_balance|floatformat:'2'|intcomma }}</strong> |
-            <strong>Total Outstanding Balance: UgX {{ overdue_loans_total_balance|floatformat:'2'|intcomma }}</strong>
-          </p>
+          <div class="bg-danger-subtle rounded p-2 border-start border-4 border-danger mb-2">
+            <h6 class="mb-0 text-danger fw-semibold">
+              <i class="bi bi-exclamation-triangle me-1"></i> Overdue Loans
+              <span class="badge bg-danger-subtle text-danger ms-1">{{ overdue_loans_count }}</span>
+            </h6>
+            <small class="text-muted">Total Outstanding: UgX {{ overdue_loans_total_balance|floatformat:0|intcomma }}</small>
+          </div>
+
           <div class="table-responsive">
-            <table class="my-table" id="overdueLoansTable">
-              <thead class="table-light">
+            <table class="table table-sm table-bordered align-middle mb-0">
+              <thead class="table-light sticky-top">
                 <tr>
                   <th>#</th>
-                  <th>Loan ID</th>
+                  <th>ID</th>
                   <th>Borrower</th>
                   <th class="text-end">Principal</th>
-                  <th>Rate(%)</th>
+                  <th>Rate</th>
                   <th>Period</th>
-                  <th>Disbursed On</th>
-                  <th>Maturity Due Date</th>
-                  <th class="text-end">Total Due Bal.</th>
-                  <th class="text-end">Principal Bal.</th>
-                  <th class="text-end">Interest Bal.</th>
-                  <th class="text-end">Penalty Bal.</th>
-                  <th class="text-end">Total Bal.</th>
-                  <th>Days Overdue</th>
+                  <th>Disb</th>
+                  <th class="text-danger">Mat</th>
+                  <th class="text-end">Due</th>
+                  <th class="text-end">Prin</th>
+                  <th class="text-end">Int</th>
+                  <th class="text-end">Pen</th>
+                  <th class="text-end">Total</th>
+                  <th>Days</th>
                 </tr>
               </thead>
               <tbody>
                 {% for item in overdue_loans %}
-                  <tr>
-                    <td>{{ forloop.counter0|add:overdue_loans.start_index }}</td>
-                    <td>{{ item.loan.id }}</td>
-                    <td>{{ item.loan.borrower.full_name }}</td>
-                    <td class="text-end">{{ item.loan.principal_amount|floatformat:'2'|intcomma }}</td>
-                    <td>{{ item.loan.interest_rate }}</td>
-                    <td>{{ item.loan.loan_period_months }}</td>
-                    <td>{{ item.disbursement_date|date:'d/m/Y' }}</td>
-                    <td class="text-danger">{{ item.maturity_due_date|date:'d/m/Y' }}</td>
-                    <td class="text-end">{{ item.total_amount_due_balance|floatformat:'2'|intcomma }}</td>
-                    <td class="text-end">{{ item.principal_balance|floatformat:'2'|intcomma }}</td>
-                    <td class="text-end">{{ item.interest_balance|floatformat:'2'|intcomma }}</td>
-                    <td class="text-end">{{ item.penalty_balance|floatformat:'2'|intcomma }}</td>
-                    <td class="text-end">{{ item.total_balance|floatformat:'2'|intcomma }}</td>
-                    <td class="text-center">{{ item.days_overdue }}</td>
+                  <tr class="table-danger align-middle">
+                    <td class="text-center">{{ forloop.counter0|add:overdue_loans.start_index|add:1 }}</td>
+                    <td class="font-monospace">{{ item.loan.id }}</td>
+                    <td class="text-truncate" style="max-width:140px;" title="{{ item.loan.borrower.full_name }}">{{ item.loan.borrower.full_name }}</td>
+                    <td class="text-end">{{ item.loan.principal_amount|floatformat:0|intcomma }}</td>
+                    <td class="text-center">{{ item.loan.interest_rate }}%</td>
+                    <td class="text-center">{{ item.loan.loan_period_months }}m</td>
+                    <td>{{ item.disbursement_date|date:'d/m' }}</td>
+                    <td class="text-danger">{{ item.maturity_due_date|date:'d/m' }}</td>
+                    <td class="text-end">{{ item.total_amount_due_balance|floatformat:0|intcomma }}</td>
+                    <td class="text-end">{{ item.principal_balance|floatformat:0|intcomma }}</td>
+                    <td class="text-end">{{ item.interest_balance|floatformat:0|intcomma }}</td>
+                    <td class="text-end">{{ item.penalty_balance|floatformat:0|intcomma }}</td>
+                    <td class="text-end fw-bold">{{ item.total_balance|floatformat:0|intcomma }}</td>
+                    <td class="text-center fw-bold text-danger">{{ item.days_overdue }}</td>
                   </tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
+
+          <!-- ✅ FIXED OVERDUE LOANS PAGINATION -->
           {% if overdue_loans.has_other_pages %}
-            <nav aria-label="Overdue Loans Pagination">
-              <ul class="pagination justify-content-center mt-2">
+            <nav class="mt-2">
+              <ul class="pagination pagination-sm justify-content-center mb-0">
                 {% if overdue_loans.has_previous %}
                   <li class="page-item">
-                    <a class="page-link" href="?selected_date={{ selected_date|date:'Y-m-d' }}&due_page={{ due_loans.number }}&overdue_page={{ overdue_loans.previous_page_number }}">Previous</a>
+                    <a class="page-link"
+                      href="?selected_date={{ selected_date|date:'Y-m-d' }}&overdue_page={{ overdue_loans.previous_page_number }}{% if due_page %}
+                        
+                        &due_page={{ due_page }}
+                      {% endif %}">
+                      ←
+                    </a>
                   </li>
                 {% endif %}
+
                 {% for num in overdue_loans.paginator.page_range %}
                   <li class="page-item {% if overdue_loans.number == num %}active{% endif %}">
-                    <a class="page-link" href="?selected_date={{ selected_date|date:'Y-m-d' }}&due_page={{ due_loans.number }}&overdue_page={{ num }}">{{ num }}</a>
+                    <a class="page-link"
+                      href="?selected_date={{ selected_date|date:'Y-m-d' }}&overdue_page={{ num }}{% if due_page %}
+                        
+                        &due_page={{ due_page }}
+                      {% endif %}">
+                      {{ num }}
+                    </a>
                   </li>
                 {% endfor %}
+
                 {% if overdue_loans.has_next %}
                   <li class="page-item">
-                    <a class="page-link" href="?selected_date={{ selected_date|date:'Y-m-d' }}&due_page={{ due_loans.number }}&overdue_page={{ overdue_loans.next_page_number }}">Next</a>
+                    <a class="page-link"
+                      href="?selected_date={{ selected_date|date:'Y-m-d' }}&overdue_page={{ overdue_loans.next_page_number }}{% if due_page %}
+                        
+                        &due_page={{ due_page }}
+                      {% endif %}">
+                      →
+                    </a>
                   </li>
                 {% endif %}
               </ul>
             </nav>
           {% endif %}
         {% else %}
-          <p class="text-muted">No overdue loans found as of {{ selected_date|date:'d/m/Y' }}.</p>
+          <div class="text-center py-4">
+            <i class="bi bi-calendar-check display-5 text-muted d-block mb-2"></i>
+            <p class="text-muted">No due or overdue loans on {{ selected_date|date:'d/m/Y' }}</p>
+          </div>
         {% endif %}
       </div>
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- PRINT STYLES -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
   <style>
-    body {
-      font-size: 0.85rem;
+    table th,
+    table td {
+      padding: 0.4rem 0.3rem !important;
     }
-    .card-header h1 {
-      font-size: 1.2rem;
-      margin: 0;
-    }
-    .h6 {
-      font-size: 0.9rem;
-    }
-    .my-table {
-      font-size: 0.8rem;
-    }
-    .my-table th,
-    .my-table td {
-      padding: 0.4rem;
-      line-height: 1.2;
-    }
-    .my-table th {
-      background-color: #e9ecef;
-    }
-    .card-body p {
-      font-size: 0.85rem;
-      line-height: 1.3;
-    }
-    .btn-download {
-      background: linear-gradient(45deg, #ff6f61, #ff3d00);
-      color: white;
-      padding: 0.5rem 1rem;
-      font-weight: 600;
-      font-size: 0.85rem;
-      border-radius: 8px;
-      border: none;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    }
-    .btn-download:hover {
-      background: linear-gradient(45deg, #ff3d00, #d32f2f);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-      filter: brightness(1.1);
-    }
-    .btn-download i {
-      margin-right: 0.5rem;
+    .table thead th {
+      position: sticky;
+      top: 0;
+      background-color: #f8f9fa !important;
     }
     @media print {
-      .btn-download,
-      .btn-primary,
-      .btn-success,
+      .btn,
+      form,
       .pagination,
-      .card.mb-2 {
-        display: none;
+      .border-start {
+        display: none !important;
       }
       .card {
-        box-shadow: none;
-        border: none;
+        box-shadow: none !important;
+        border: none !important;
       }
-      .card-header {
-        background-color: #e9ecef !important;
-        color: #000 !important;
-        font-size: 1rem !important;
+      table {
+        font-size: 0.75rem !important;
       }
-      .card-body {
-        padding: 0.5rem;
+      .container-fluid {
+        padding: 0 !important;
       }
-      .my-table {
-        font-size: 0.75rem;
-      }
-      .my-table th,
-      .my-table td {
-        padding: 0.3rem;
-      }
-      .h6 {
-        font-size: 0.85rem;
-      }
-      p {
-        font-size: 0.8rem;
+      th {
+        background: #ddd !important;
+        -webkit-print-color-adjust: exact;
       }
     }
   </style>
