@@ -21,6 +21,11 @@
       h5 {
         font-weight: 700;
       }
+      .table tfoot tr {
+        background-color: #f8f9fa;
+        font-weight: 600;
+      }
+      
       .summary-card {
         background-color: #fff;
         border: 1px solid #dee2e6;
@@ -110,13 +115,12 @@
         <div class="col-md-4 text-md-end text-center mt-3 mt-md-0">
           <a href="{% url 'loans:loan_reports_dashboard' %}" class="btn btn-primary fw-bold me-2"><i class="bi bi-arrow-left me-1"></i> Dashboard</a>
           <button id="toggleBorrowers" class="btn btn-outline-dark fw-bold me-2">Hide Borrowers</button>
-
           <button class="btn btn-outline-secondary fw-bold" onclick="window.print()"><i class="bi bi-printer me-1"></i> Print</button>
         </div>
       </div>
 
       <!-- Summary Cards -->
-      <div class="row g-3 mb-4">
+      {% comment %} <div class="row g-3 mb-4">
         <div class="col-md-3">
           <div class="summary-card">
             <h5>Total Principal</h5>
@@ -141,16 +145,16 @@
             <p class="fs-4 fw-bold text-success mb-0">{{ formatted_grand_totals.total_paid }}</p>
           </div>
         </div>
-      </div>
+      </div> {% endcomment %}
 
       <!-- Aging Buckets -->
-      {% for bucket_key, loans in buckets.items %}
+      {% for bucket in bucket_data %}
         <div class="bucket-header">
-          <h5 class="mb-0">{{ bucket_key }}</h5>
-          <span class="badge bg-primary fs-6">{{ loans|length }} Loans</span>
+          <h5 class="mb-0">{{ bucket.key }}</h5>
+          <span class="badge bg-primary fs-6">{{ bucket.loans|length }} Loans</span>
         </div>
 
-        <div class="table-responsive mb-4">
+        <div class="table-responsive mb-2">
           <table class="table table-bordered table-hover align-middle table-sm">
             <thead>
               <tr>
@@ -171,18 +175,18 @@
               </tr>
             </thead>
             <tbody>
-              {% if loans %}
-                {% for loan in loans %}
+              {% if bucket.loans %}
+                {% for loan in bucket.loans %}
                   <tr class="{% if loan.days_overdue > 0 %}overdue-row{% endif %}">
-                    <td>{{ loan.loan_id|default:'N/A' }}</td>
-                    <td class="borrower">{{ loan.borrower|default:'N/A' }}</td>
+                    <td>{{ loan.loan_id }}</td>
+                    <td class="borrower">{{ loan.borrower }}</td>
                     <td class="text-end">{{ loan.principal_amount|floatformat:'0'|intcomma }}</td>
-                    <td>{{ loan.interest_rate|default:'-' }}</td>
-                    <td>{{ loan.loan_period_months|default:'-' }}</td>
-                    <td>{{ loan.start_date|date:'d/m/Y'|default:'-' }}</td>
+                    <td>{{ loan.interest_rate }}</td>
+                    <td>{{ loan.loan_period_months }}</td>
+                    <td>{{ loan.start_date|date:'d/m/Y' }}</td>
                     <td>{{ loan.next_due_date|date:'d/m/Y'|default:'-' }}</td>
-                    <td>{{ loan.due_date|date:'d/m/Y'|default:'-' }}</td>
-                    <td class="text-center">{{ loan.days_overdue|default:'0' }}</td>
+                    <td>{{ loan.due_date|date:'d/m/Y' }}</td>
+                    <td class="text-center">{{ loan.days_overdue }}</td>
                     <td class="text-end">{{ loan.principal_due|floatformat:'0'|intcomma }}</td>
                     <td class="text-end">{{ loan.interest_due|floatformat:'0'|intcomma }}</td>
                     <td class="text-end">{{ loan.penalty_due|floatformat:'0'|intcomma }}</td>
@@ -197,6 +201,19 @@
               {% endif %}
             </tbody>
           </table>
+        </div>
+
+        <!-- Detailed Subtotal Summary -->
+        <div class="mt-2 mb-4 text-end pe-3">
+          <div class="p-2 rounded-3 bg-light border">
+            <strong>Subtotal for {{ bucket.key }}:</strong>
+            &nbsp; Principal: <span class="text-dark">{{ bucket.totals.total_principal }}</span>
+            &nbsp;|&nbsp; Principal Due: <span class="text-danger">{{ bucket.totals.total_principal_due }}</span>
+            &nbsp;|&nbsp; Interest Due: <span class="text-warning">{{ bucket.totals.total_interest_due }}</span>
+            &nbsp;|&nbsp; Penalty: <span class="text-muted">{{ bucket.totals.total_penalty_due }}</span>
+            &nbsp;|&nbsp; Outstanding: <span class="text-primary">{{ bucket.totals.total_outstanding_balance }}</span>
+            &nbsp;|&nbsp; Paid: <span class="text-success">{{ bucket.totals.total_paid }}</span>
+          </div>
         </div>
       {% endfor %}
 
@@ -227,10 +244,12 @@
         </table>
       </div>
     </div>
+
     <script>
       document.getElementById('toggleBorrowers').onclick = () => {
         document.querySelectorAll('.borrower').forEach((el) => el.classList.toggle('d-none'))
-        toggleBorrowers.textContent = toggleBorrowers.textContent.includes('Hide') ? 'Show Borrowers' : 'Hide Borrowers'
+        const toggleButton = document.getElementById('toggleBorrowers')
+        toggleButton.textContent = toggleButton.textContent.includes('Hide') ? 'Show Borrowers' : 'Hide Borrowers'
       }
     </script>
 
