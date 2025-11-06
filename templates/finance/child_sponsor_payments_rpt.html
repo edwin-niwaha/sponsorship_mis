@@ -3,112 +3,97 @@
 {% load humanize %}
 
 {% block content %}
-<div class="container">
+  <div class="container">
     <div class="page-header flex-wrap">
-        <h3 class="mb-0">{{ table_title|upper }}</h3>
-        <div class="d-flex">
-            <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick="printDiv('printMe')">
-                <i class="mdi mdi-printer btn-icon-prepend"></i>
-            </button>
-            <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success"
-                onclick="ExportToExcel('xlsx')">
-                <i class="mdi mdi-file-excel btn-icon-prepend"></i>
-            </button>
-            <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success"
-                onclick="Export2Doc('printMe')">
-                <i class="mdi mdi-file-word btn-icon-prepend"></i>
-            </button>
-            <a class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsor_payment' %}">
-                <i class="mdi mdi-folder-plus btn-icon-prepend"></i>
-            </a>
-            <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsor_payments_report' %}">
-                <i class="mdi mdi-chart-line btn-icon-prepend"></i>
-            </a>
-        </div>
+      <h3 class="mb-0">{{ table_title|upper }}</h3>
+      <div class="d-flex">
+        <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
+        <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success" onclick="ExportToExcel('xlsx')"><i class="mdi mdi-file-excel btn-icon-prepend"></i></button>
+        <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success" onclick="Export2Doc('printMe')"><i class="mdi mdi-file-word btn-icon-prepend"></i></button>
+        <a class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsor_payment' %}"><i class="mdi mdi-folder-plus btn-icon-prepend"></i></a>
+        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsor_payments_report' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
+      </div>
     </div>
-    <hr class="bg-info" style="height: 3px;" />
+        <hr class="border-3 border-info opacity-100" />
     <form method="POST" action="{% url 'child_sponsor_payments_report' %}">
-        {% csrf_token %}
-        <select name="id" id="sp_dropdown" class="chzn-select" required>
-            <option value="" selected disabled>Search sponsor...</option>
-            {% for sponsor in sponsors %}
-            <option value="{{ sponsor.id }}">{{ sponsor.last_name }} {{ sponsor.first_name }} &rarr;
-                {{ sponsor.prefixed_id }}</option>
-            {% endfor %}
-        </select>
-        &rarr;
-        <button title="View Sponsorship Report" type="submit" class="btn btn-sm ml-3 btn-success"
-            onclick="return validateSPForm()">
-            <i class="mdi mdi-view-list btn-icon-prepend"></i>
-        </button>
+      {% csrf_token %}
+      <select name="id" id="sp_dropdown" class="chzn-select" required>
+        <option value="" selected disabled>Search sponsor...</option>
+        {% for sponsor in sponsors %}
+          <option value="{{ sponsor.id }}">{{ sponsor.last_name }} {{ sponsor.first_name }} &rarr;
+            {{ sponsor.prefixed_id }}</option>
+        {% endfor %}
+      </select>&rarr;
+      <button title="View Sponsorship Report" type="submit" class="btn btn-sm ml-3 btn-success" onclick="return validateSPForm()"><i class="mdi mdi-view-list btn-icon-prepend"></i></button>
     </form>
 
     <div id="printMe" class="tab-pane show active">
-        <hr class="bg-info" style="height: 3px;" />
-        {% if sponsor_payments %}
+      {% if sponsor_payments %}
         <header class="text-center my-5">
-            <h3 class="text-primary" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 700; font-size: 2.5rem;">
-                {{ last_name|upper }} {{ first_name|upper }} - Payments Report
-            </h3>
-            <h2 class="text-muted" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 500; font-size: 2rem;">
-                <strong>Sponsorship Type:</strong> <span class="text-dark">{{ sponsor_payments.0.sponsor.sponsorship_type }}</span>
-            </h2>
-        </header>
-        
-        <hr class="bg-info" style="height: 3px;" />
-        <div class="table-responsive">
-            <table class="my-table">
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th class="text-right">Payment Year</th>
-                        <th class="text-right">Total Amount(UgX)</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for year, subtotal in subtotals.items %}
-                    <tr>
-                        <td style="width: 35%;"></td>
-                        <td class="text-right">{{ year }}</td>
-                        <td class="text-right">{{ subtotal|floatformat:"2"|intcomma }}</td>
-                        <td style="width: 35%;"></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <th></th>
-                        <th class="text-right">Total</th>
-                        <th class="text-right">{{ total_amount|floatformat:"2"|intcomma }}</th>
-                        <th></th>
-                    </tr>
-                </tfoot>
-            </table>
+          <h3 class="fw-bold text-primary text-uppercase">{{ last_name }} {{ first_name }} – <span class="text-success">Payments Report</span></h3>
 
-            <h4 class="text-upper">Detailed Payments:</h4>
-            <hr class="bg-info" style="height: 3px;" />
-            <table class="my-table">
-                <thead>
-                    <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Child</th>
-                        <th scope="col">Payment Date</th>
-                        <th scope="col">Month</th>
-                        <th scope="col">Year</th>
-                        <th scope="col">Received(UgX)</th>
-                        <th scope="col">Clr</th>
-                        <th class="print-hide" colspan="3" scope="col">Action</th>
-                    </tr>
-                </thead>
+          <h4 class="fw-semibold text-secondary mt-3">
+            <span class="text-primary">Sponsorship Type:</span>
+            <span class="text-dark">{{ sponsor_payments.0.sponsor.sponsorship_type }}</span>
+          </h4>
+        </header>
+
+        <hr class="border-3 border-info opacity-100" />
+
+        <div class="table-responsive">
+          <table class="my-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th class="text-right">Payment Year</th>
+                <th class="text-right">Total Amount(UgX)</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for year, subtotal in subtotals.items %}
+                <tr>
+                  <td style="width: 35%;"></td>
+                  <td class="text-right">{{ year }}</td>
+                  <td class="text-right">{{ subtotal|floatformat:'2'|intcomma }}</td>
+                  <td style="width: 35%;"></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr>
+                <th></th>
+                <th class="text-right">Total</th>
+                <th class="text-right">{{ total_amount|floatformat:'2'|intcomma }}</th>
+                <th></th>
+              </tr>
+            </tfoot>
+          </table>
+
+          <h4 class="text-upper">Detailed Payments:</h4>
+        <hr class="border-3 border-info opacity-100" />
+          <table class="my-table">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Child</th>
+                <th class="text-right" scope="col">Payment Date</th>
+                {% comment %} <th scope="col">Month</th>
+                {% endcomment %}
+                <th scope="col">Year</th>
+                <th scope="col">Received(UgX)</th>
+                <th scope="col">Clr</th>
+                <th class="print-hide" colspan="3" scope="col">Action</th>
+              </tr>
+            </thead>
                 <tbody class="table-group-divider">
                     {% for payment in sponsor_payments %}
                     <tr {% if not payment.is_valid %}style="background-color: #f2dede; color: red" {% endif %}>
                         <th scope="row">{{forloop.counter}}</th>
                         <td>{{ payment.child|default:"Other Contributions" }}</td>
-                        <td>{{ payment.payment_date }}</td>
-                        <td>{{ payment.get_month_display }}</td>
-                        <td>{{ payment.payment_year }}</td>
+                       <td class="text-right">{{ payment.payment_date|date:"d/m/Y" }}</td>
+                        {% comment %} <td>{{ payment.get_month_display }}</td>{% endcomment %}
+                        <td class="text-right">{{ payment.payment_year }}</td>
                         <td class="text-right">{{ payment.amount|floatformat:"2"|intcomma }}</td>
                         <td class="{% if payment.is_valid %}valid-payment{% else %}invalid-payment{% endif %}">
                             {% if payment.is_valid %}
@@ -164,20 +149,21 @@
                     </tr>
                     {%endfor%}
                 </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="5" class="text-right"><strong>Total</strong></td>
-                        <td class="text-right"><strong>{{ total_amount|floatformat:"2"|intcomma }}</strong></td>
-                    </tr>
-                </tfoot>
-            </table>
-
+            <tfoot>
+              <tr>
+                <td colspan="4" class="text-right">
+                  <strong>Total</strong>
+                </td>
+                <td class="text-right">
+                  <strong>{{ total_amount|floatformat:'2'|intcomma }}</strong>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
-        {% else %}
+      {% else %}
         <div class="alert alert-danger">Oops! No contributions found for the selected sponsor.</div>
-        {% endif %}
+      {% endif %}
     </div>
-
-
-</div>
-{% endblock content %}
+  </div>
+{% endblock %}

@@ -405,7 +405,7 @@ def generate_payments_report(request, report_title, template_name, payment_model
             selected_sponsor = get_object_or_404(Sponsor, id=sponsor_id)
             sponsor_payments = payment_model.objects.filter(
                 sponsor_id=sponsor_id
-            ).order_by("-payment_year")
+            ).order_by("-payment_year", "-payment_date")
 
             # Group payments by year and calculate subtotals
             payments_by_year = group_payments_by_year(sponsor_payments)
