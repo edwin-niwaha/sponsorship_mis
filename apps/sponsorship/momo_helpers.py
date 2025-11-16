@@ -25,7 +25,7 @@ def create_access_token(reference_id, api_key, subscription_key):
     url = f"{BASE_URL}/collection/token/"
     auth = requests.auth.HTTPBasicAuth(reference_id, api_key)
     headers = {"Ocp-Apim-Subscription-Key": subscription_key}
-    res = requests.post(url, headers=headers, auth=auth, timeout=10)
+    res = requests.post(url, headers=headers, auth=auth, timeout=30)
     if res.status_code == 200:
         return res.json().get("access_token")
     return None
@@ -44,5 +44,5 @@ def request_to_pay(access_token, subscription_key, phone, amount, transaction_id
         "payerMessage": "Umeskia Softwares MTN Payment",
         "payeeNote": "Thank you for using our system",
     }
-    res = requests.post(url, json=body, headers=headers, timeout=10)
+    res = requests.post(url, json=body, headers=headers, timeout=30)
     return res.status_code, res.text

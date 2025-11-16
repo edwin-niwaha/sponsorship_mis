@@ -447,67 +447,104 @@ def terminate_staff_sponsorship(request, sponsorship_id):
 
 
 # ---------------- MoMo Payment Initiation View ---------------- #
+# def initiate_payment(request):
+#     if request.method == "POST":
+#         donor_name = request.POST.get("name", "").strip() or None
+#         donor_email = request.POST.get("email", "").strip() or None
+#         phone = request.POST.get("phone", "").strip()
+#         amount = request.POST.get("amount", "").strip()
+
+#         if not re.match(r"^256\d{9}$", phone):
+#             messages.error(request, "Invalid phone number.", extra_tags="bg-danger")
+#             return render(request, "sponsorship/initiate_payment.html")
+
+#         try:
+#             amount_int = int(float(amount))
+#             if amount_int < 5000:
+#                 raise ValueError
+#         except ValueError:
+#             messages.error(
+#                 request, "Amount must be ≥ 5,000 UGX.", extra_tags="bg-danger"
+#             )
+#             return render(request, "sponsorship/initiate_payment.html")
+
+#         subscription_key = settings.SUBSCRIPTION_KEY
+#         api_user_id = settings.MOMO_API_USER
+#         api_key = settings.MOMO_API_KEY
+
+#         access_token = create_access_token(api_user_id, api_key, subscription_key)
+#         if not access_token:
+#             messages.error(request, "Failed to obtain access token.")
+#             return render(request, "sponsorship/initiate_payment.html")
+
+#         transaction_id = generate_uuid()
+#         status, response_text = request_to_pay(
+#             access_token, subscription_key, phone, amount_int, transaction_id
+#         )
+
+#         if status == 202:
+#             # messages.success(request, f"Payment initiated! Ref: {transaction_id}")
+#             messages.success(
+#                 request,
+#                 "Payment sent to your phone! Please approve now.",
+#                 extra_tags="bg-success",
+#             )
+#             return render(
+#                 request,
+#                 "sponsorship/initiate_payment.html",
+#                 {
+#                     "transaction_id": transaction_id,
+#                     "amount": amount_int,
+#                     "user_id": api_user_id,
+#                     "api_key": api_key,
+#                     "donor_name": donor_name,
+#                     "donor_email": donor_email,
+#                     "phone": phone,  # ✅ FIXED: PASS TO TEMPLATE
+#                 },
+#             )
+#         else:
+#             messages.error(request, f"Payment failed ({status})")
+#             return render(request, "sponsorship/initiate_payment.html")
+
+#     return render(request, "sponsorship/initiate_payment.html")
+
 def initiate_payment(request):
     if request.method == "POST":
-        donor_name = request.POST.get("name", "").strip() or None
-        donor_email = request.POST.get("email", "").strip() or None
         phone = request.POST.get("phone", "").strip()
         amount = request.POST.get("amount", "").strip()
+        name = request.POST.get("name", "").strip() or None
+        email = request.POST.get("email", "").strip() or None
 
         if not re.match(r"^256\d{9}$", phone):
-            messages.error(request, "Invalid phone number.", extra_tags="bg-danger")
+            messages.error(request, "Invalid phone number.", extra_tags="alert-danger")
             return render(request, "sponsorship/initiate_payment.html")
 
         try:
-            amount_int = int(float(amount))
-            if amount_int < 5000:
+            amount = int(float(amount))
+            if amount < 5000:
                 raise ValueError
         except ValueError:
-            messages.error(
-                request, "Amount must be ≥ 5,000 UGX.", extra_tags="bg-danger"
-            )
+            messages.error(request, "Amount must be 5,000 UGX or more.", extra_tags="alert-danger")
             return render(request, "sponsorship/initiate_payment.html")
 
-        subscription_key = settings.SUBSCRIPTION_KEY
-        api_user_id = settings.MOMO_API_USER
-        api_key = settings.MOMO_API_KEY
-
-        access_token = create_access_token(api_user_id, api_key, subscription_key)
-        if not access_token:
-            messages.error(request, "Failed to obtain access token.")
+        token = create_access_token(settings.MOMO_API_USER, settings.MOMO_API_KEY, settings.SUBSCRIPTION_KEY)
+        if not token:
+            messages.error(request, "Service temporarily unavailable.", extra_tags="alert-danger")
             return render(request, "sponsorship/initiate_payment.html")
 
-        transaction_id = generate_uuid()
-        status, response_text = request_to_pay(
-            access_token, subscription_key, phone, amount_int, transaction_id
-        )
+        ref = generate_uuid()
+        status, _ = request_to_pay(token, settings.SUBSCRIPTION_KEY, phone, amount, ref)
 
         if status == 202:
-            # messages.success(request, f"Payment initiated! Ref: {transaction_id}")
-            messages.success(
-                request,
-                "Payment sent to your phone! Please approve now.",
-                extra_tags="bg-success",
-            )
-            return render(
-                request,
-                "sponsorship/initiate_payment.html",
-                {
-                    "transaction_id": transaction_id,
-                    "amount": amount_int,
-                    "user_id": api_user_id,
-                    "api_key": api_key,
-                    "donor_name": donor_name,
-                    "donor_email": donor_email,
-                    "phone": phone,  # ✅ FIXED: PASS TO TEMPLATE
-                },
-            )
+            messages.success(request, "Payment request sent! Approve on your phone.", extra_tags="alert-success")
+            return render(request, "sponsorship/initiate_payment.html", {
+                "transaction_id": ref, "amount": amount, "user_id": settings.MOMO_API_USER,
+                "api_key": settings.MOMO_API_KEY, "phone": phone, "donor_name": name, "donor_email": email
+            })
         else:
-            messages.error(request, f"Payment failed ({status})")
-            return render(request, "sponsorship/initiate_payment.html")
-
+            messages.error(request, "Payment failed. Try again.", extra_tags="alert-danger")
+    
     return render(request, "sponsorship/initiate_payment.html")
-
 
 # ---------------- Auto Status Check ---------------- #
 def get_transaction_status(request, ref_id, user_id, api_key):

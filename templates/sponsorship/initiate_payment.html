@@ -1,297 +1,169 @@
 <!DOCTYPE html>
 {% load static %}
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Donate to Pendeza Uganda</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  </head>
-  <body class="bg-light">
-    <div class="container py-4">
-      <div class="row g-4 justify-content-center align-items-stretch">
-        <div class="col-12 order-1 col-md-6 order-md-2">
-          <div class="card shadow-sm h-100">
-            <div class="card-body p-4">
-              <h3 class="text-center mb-3" style="color: #127D61;">Pendeza Uganda</h3>
-              <hr>
-              <h5 class="text-center mb-4" style="color: #127D61;">Transform Lives with Your Donation
-              </h5>
-              {% if messages %}
-                {% for message in messages %}
-                  <div class="alert small mb-3 
-                    {% if 'bg-success' in message.tags or message.tags == 'success' %}alert-success
-                    {% elif 'bg-danger' in message.tags or message.tags == 'error' %}alert-danger
-                    {% elif 'bg-warning' in message.tags or message.tags == 'warning' %}alert-warning
-                    {% elif 'bg-info' in message.tags or message.tags == 'info' %}alert-info
-                    {% else %}alert-secondary{% endif %}
-                  " role="alert">
-                    <strong>
-                      {% if 'bg-success' in message.tags or message.tags == 'success' %}
-                        <i class="bi bi-check-circle-fill me-1"></i>
-                      {% elif 'bg-danger' in message.tags or message.tags == 'error' %}
-                        <i class="bi bi-x-circle-fill me-1"></i>
-                      {% elif 'bg-warning' in message.tags or message.tags == 'warning' %}
-                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                      {% elif 'bg-info' in message.tags or message.tags == 'info' %}
-                        <i class="bi bi-info-circle-fill me-1"></i>
-                      {% endif %}
-                      {{ message }}
-                    </strong>
-                  </div>
-                {% endfor %}
-              {% endif %}
-              <form method="POST" id="donationForm" novalidate>
-                {% csrf_token %}
-                
-                <!-- ✅ OPTIONAL: Donor Name -->
-                <div class="mb-3">
-                  <label class="form-label small" style="color: #127D61;">
-                    Full Name <span class="text-muted">(Optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    class="form-control form-control-sm"
-                    id="name"
-                    name="name"
-                    placeholder="Enter your full name"
-                  />
-                </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Donate to Pendeza Uganda</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    :root { --primary: #127D61; --accent: #F79420; }
+    .btn-primary { background-color: var(--accent); border: none; }
+    .btn-primary:hover { background-color: #e6851a; }
+    .text-primary { color: var(--primary) !important; }
+    .card { border: none; }
+    .preset-btn { font-size: 0.85rem; }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="row g-4 justify-content-center">
+      <!-- Form Column -->
+      <div class="col-12 col-md-6 order-md-2">
+        <div class="card shadow-sm h-100">
+          <div class="card-body p-4">
+            <h4 class="text-center mb-1 text-primary">Pendeza Uganda</h4>
+            <p class="text-center text-muted small mb-4">Transform Lives Today</p>
+            <hr class="text-primary opacity-25">
 
-                <!-- ✅ OPTIONAL: Donor Email -->
-                <div class="mb-3">
-                  <label class="form-label small" style="color: #127D61;">
-                    Email <span class="text-muted">(Optional)</span>
-                  </label>
-                  <input
-                    type="email"
-                    class="form-control form-control-sm"
-                    id="email"
-                    name="email"
-                    placeholder="email@example.com"
-                  />
+            <!-- Messages -->
+            {% if messages %}
+              {% for message in messages %}
+                <div class="alert {{ message.tags }} alert-dismissible fade show small" role="alert">
+                  {{ message }}
+                  <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
                 </div>
+              {% endfor %}
+            {% endif %}
 
-                <!-- REQUIRED: Phone Number -->
-                <div class="mb-3">
-                  <label class="form-label small" style="color: #127D61;">Phone Number (MTN - Start with 256)</label>
-                  <input
-                    type="number"
-                    class="form-control form-control-sm"
-                    id="phone"
-                    name="phone"
-                    placeholder="256XXXXXXXXX"
-                    pattern="256[0-9]{9}"
-                    required
-                  />
-                  <div class="invalid-feedback small">
-                    Please enter a valid phone number starting with 256 (12 digits).
-                  </div>
-                </div>
-                
-                <!-- REQUIRED: Amount -->
-                <div class="mb-3">
-                  <label class="form-label small" style="color: #127D61;">Amount (UGX)</label>
-                  <div class="input-group mb-2">
-                    <input
-                      type="number"
-                      class="form-control form-control-sm"
-                      id="amount"
-                      name="amount"
-                      placeholder="Custom amount (min 5,000)"
-                      min="5000"
-                      step="1"
-                      required
-                    />
-                    <div class="invalid-feedback small">
-                      Please enter an amount of 5,000 UGX or more.
-                    </div>
-                  </div>
-                  <div class="d-flex flex-wrap justify-content-between gap-2">
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary btn-sm flex-fill"
-                      onclick="document.getElementById('amount').value = 70000;"
-                    >
-                      70,000 (1 month)
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary btn-sm flex-fill"
-                      onclick="document.getElementById('amount').value = 280000;"
-                    >
-                      280,000 (1 term)
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary btn-sm flex-fill"
-                      onclick="document.getElementById('amount').value = 420000;"
-                    >
-                      420,000 (2 terms)
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary btn-sm flex-fill"
-                      onclick="document.getElementById('amount').value = 840000;"
-                    >
-                      840,000 (1 year)
-                    </button>
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  class="btn w-100 text-white"
-                  style="background-color: #F79420;"
-                  id="donateButton"
-                  disabled
-                >
-                  Donate Now
-                </button>
-              </form>
-              {% if transaction_id %}
-                <hr class="my-3" />
-                <div class="text-center">
-                  <h6 class="mb-2 small" style="color: #127D61;">Processing Your Donation...</h6>
-                  <div
-                    id="statusResult"
-                    class="alert alert-secondary small d-flex align-items-center justify-content-center"
-                  >
-                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Please approve the payment on your phone...
-                  </div>
-                </div>
-              {% endif %}
-            </div>
-            <div class="card-footer text-center small text-muted py-2">
-              <div class="container">
-                <p class="mb-1">
-                  &copy; <span id="year"></span> Pendeza Uganda | All Rights Reserved
-                </p>
-                <p class="mb-2 small">
-                  <a href="https://www.pendeza.org/contact-us" class="text-decoration-none me-2" style="color: #20c997;">
-                    Contact Us
-                  </a> |
-                  <a href="https://www.linkedin.com/company/usapendezauganda" class="text-decoration-none ms-2" style="color: #20c997;">
-                    LinkedIn
-                  </a>
-                </p>
-                <p class="small mb-0">
-                  ⚡ Powered by 
-                  <a target="_blank" href="https://perpetual-web-vert.vercel.app/"
-                    class="creator-link"
-                    style="font-family: 'Times New Roman', cursive; color: #127D61; text-decoration: none;">
-                    Perpetual Tech
-                  </a>
-                </p>
+            <!-- Donation Form -->
+            <form method="POST" id="donationForm" novalidate>
+              {% csrf_token %}
+
+              <div class="mb-3">
+                <label class="form-label small text-primary">Full Name <span class="text-muted">(Optional)</span></label>
+                <input type="text" name="name" class="form-control form-control-sm" placeholder="Your name">
               </div>
-              <script>
-                document.getElementById('year').textContent = new Date().getFullYear();
-              </script>
-            </div>
+
+              <div class="mb-3">
+                <label class="form-label small text-primary">Email <span class="text-muted">(Optional)</span></label>
+                <input type="email" name="email" class="form-control form-control-sm" placeholder="you@example.com">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label small text-primary">Phone Number <span class="text-danger">*</span></label>
+                <input type="tel" name="phone" class="form-control form-control-sm" placeholder="256XXXXXXXXX" pattern="256[0-9]{9}" required>
+                <div class="invalid-feedback">Start with 256, 12 digits total.</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label small text-primary">Amount (UGX) <span class="text-danger">*</span></label>
+                <input type="number" name="amount" id="amount" class="form-control form-control-sm mb-2" min="5000" placeholder="Enter amount (min 5,000)" required>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                  <button type="button" class="btn btn-outline-secondary preset-btn" onclick="setAmount(70000)">70K (1 mo)</button>
+                  <button type="button" class="btn btn-outline-secondary preset-btn" onclick="setAmount(280000)">280K (1 term)</button>
+                  <button type="button" class="btn btn-outline-secondary preset-btn" onclick="setAmount(420000)">420K (2 terms)</button>
+                  <button type="button" class="btn btn-outline-secondary preset-btn" onclick="setAmount(840000)">840K (1 yr)</button>
+                </div>
+                <div class="invalid-feedback">Minimum: 5,000 UGX</div>
+              </div>
+
+              <button type="submit" id="donateBtn" class="btn btn-primary text-white w-100" disabled>
+                Donate Now
+              </button>
+            </form>
+
+            <!-- Processing Status -->
+            {% if transaction_id %}
+              <hr class="my-4">
+              <div class="text-center">
+                <div id="statusBox" class="alert alert-info small d-flex align-items-center justify-content-center">
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Please approve payment on your phone...
+                </div>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="card-footer bg-white text-center small text-muted py-3">
+            <p class="mb-1">&copy; <span id="year"></span> Pendeza Uganda</p>
+            <p class="mb-0">
+              <a href="https://pendeza.org/contact-us" class="text-decoration-none text-success">Contact</a> |
+              <a href="https://linkedin.com/company/usapendezauganda" class="text-decoration-none text-success">LinkedIn</a>
+            </p>
+            <p class="small mt-2 mb-0">
+              Powered by <a href="https://perpetual.tech" class="text-primary text-decoration-none">Perpetual Tech</a>
+            </p>
           </div>
         </div>
-        <div class="col-12 order-2 col-md-6 order-md-1 d-flex align-items-stretch">
-          <img src="{% static 'images/kids.jpg' %}" alt="Ugandan school children smiling" 
-          class="img-fluid rounded shadow-sm h-100"
-            style="object-fit: cover; width: 100%;" width="627" height="1200" />
-        </div>
+      </div>
+
+      <!-- Image Column -->
+      <div class="col-12 col-md-6 order-md-1 d-flex align-items-center">
+        <img src="{% static 'images/kids.jpg' %}" alt="Smiling children in Uganda" class="img-fluid rounded shadow-sm" style="object-fit: cover; height: 100%; width: 100%;">
       </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-      const refId = '{{ transaction_id }}';
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const form = document.getElementById('donationForm');
+    const phone = document.querySelector('[name="phone"]');
+    const amount = document.getElementById('amount');
+    const btn = document.getElementById('donateBtn');
+
+    function validate() {
+      const validPhone = /^256\d{9}$/.test(phone.value);
+      const validAmount = parseInt(amount.value) >= 5000;
+      btn.disabled = !(validPhone && validAmount);
+      phone.classList.toggle('is-invalid', phone.value && !validPhone);
+      amount.classList.toggle('is-invalid', amount.value && !validAmount);
+    }
+
+    function setAmount(val) { amount.value = val; validate(); }
+
+    [phone, amount].forEach(el => el.addEventListener('input', validate));
+    form.addEventListener('submit', () => {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+    });
+
+    {% if transaction_id %}
+      const ref = '{{ transaction_id }}';
       const userId = '{{ user_id }}';
       const apiKey = '{{ api_key }}';
-      const amount = '{{ amount|default:"your" }}';
-      const maxAttempts = 60;
+      const finalAmount = '{{ amount }}';
       let attempts = 0;
 
       function checkStatus() {
-        if (attempts >= maxAttempts) {
-          const statusBox = document.getElementById('statusResult');
-          statusBox.className = 'alert alert-warning small';
-          statusBox.innerHTML = 'Payment timed out. Please try again.';
+        if (attempts++ > 60) {
+          document.getElementById('statusBox').outerHTML = '<div class="alert alert-warning small">Timed out. Try again.</div>';
           return;
         }
-
-        fetch(`/sponsorship/transaction-status/${refId}/${userId}/${apiKey}/`, {
-          headers: { 'Accept': 'application/json' }
-        })
-          .then((res) => {
-            if (!res.ok) throw new Error('Network response was not ok');
-            return res.json();
-          })
-          .then((data) => {
-            const statusBox = document.getElementById('statusResult');
-            if (data.status === 'error' || data.reason) {
-              statusBox.className = 'alert alert-danger small';
-              statusBox.innerHTML = 'Error: ' + (data.message || data.reason || 'Payment failed');
-              return;
-            }
-
-            const status = data.status || data.statusCode || 'PENDING';
-            if (status === 'SUCCESSFUL') {
-              statusBox.className = 'alert alert-success small';
-              statusBox.innerHTML = `Thank you for your generous donation of ${amount} UGX!`;
+        fetch(`/sponsorship/transaction-status/${ref}/${userId}/${apiKey}/`)
+          .then(r => r.json())
+          .then(d => {
+            if (d.status === 'SUCCESSFUL') {
+              document.getElementById('statusBox').outerHTML = `<div class="alert alert-success small">Thank you for donating ${finalAmount} UGX!</div>`;
               setTimeout(() => {
-                // ✅ FIXED: USE TEMPLATE VALUES (not form inputs!)
-                const phone = encodeURIComponent('{{ phone|default:"" }}');
-                const name = encodeURIComponent('{{ donor_name|default:"" }}');
-                const email = encodeURIComponent('{{ donor_email|default:"" }}');
-                window.location.href = `/sponsorship/thank-you/?ref=${encodeURIComponent(refId)}&amount=${amount}&phone=${phone}&name=${name}&email=${email}`;
-              }, 3000);
-            } else if (status === 'FAILED') {
-              statusBox.className = 'alert alert-danger small';
-              statusBox.innerHTML = `Payment failed: ${data.reason || 'Unknown error'}. Please try again.`;
+                const params = new URLSearchParams({
+                  ref, amount: finalAmount, phone: '{{ phone }}', name: '{{ donor_name|default:"" }}', email: '{{ donor_email|default:"" }}'
+                });
+                window.location = '/sponsorship/thank-you/?' + params;
+              }, 2500);
+            } else if (d.status === 'FAILED') {
+              document.getElementById('statusBox').outerHTML = '<div class="alert alert-danger small">Payment failed. Try again.</div>';
             } else {
-              statusBox.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Status: ${status}`;
-              statusBox.className = 'alert alert-secondary small d-flex align-items-center justify-content-center';
-              attempts++;
               setTimeout(checkStatus, 5000);
             }
           })
-          .catch((error) => {
-            const statusBox = document.getElementById('statusResult');
-            statusBox.className = 'alert alert-danger small';
-            statusBox.innerHTML = 'Error: Unable to check payment status. Please try again.';
-            console.error('Status check failed:', error);
-          });
+          .catch(() => setTimeout(checkStatus, 5000));
       }
-
-      // ✅ UPDATED VALIDATION (Name & Email OPTIONAL)
-      const form = document.getElementById('donationForm');
-      const nameInput = document.getElementById('name');
-      const emailInput = document.getElementById('email');
-      const phoneInput = document.getElementById('phone');
-      const amountInput = document.getElementById('amount');
-      const donateButton = document.getElementById('donateButton');
-
-      function validateForm() {
-        const phoneValid = phoneInput.value.match(/^256\d{9}$/);
-        const amountValid = parseInt(amountInput.value) >= 5000;
-        // ✅ Name & Email are OPTIONAL - always valid
-        donateButton.disabled = !(phoneValid && amountValid);
-        
-        // Validation styling
-        phoneInput.classList.toggle('is-valid', phoneValid);
-        phoneInput.classList.toggle('is-invalid', !phoneValid && phoneInput.value.length > 0);
-        amountInput.classList.toggle('is-valid', amountValid);
-        amountInput.classList.toggle('is-invalid', !amountValid && amountInput.value.length > 0);
-      }
-
-      // Event listeners
-      [nameInput, emailInput, phoneInput, amountInput].forEach(input => {
-        if (input) input.addEventListener('input', validateForm);
-      });
-
-      form.addEventListener('submit', function() {
-        donateButton.disabled = true;
-        donateButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...';
-      });
-
-      if (refId) {
-        setTimeout(checkStatus, 3000);
-      }
-    </script>
-  </body>
+      setTimeout(checkStatus, 3000);
+    {% endif %}
+  </script>
+</body>
 </html>

@@ -17,15 +17,66 @@
               <hr>
               <h5 class="text-center mb-4" style="color: #127D61;">Transform Lives with Your Donation
               </h5>
-              {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} small">{{ message }}</div>
-              {% endfor %}
+              {% if messages %}
+                {% for message in messages %}
+                  <div class="alert small mb-3 
+                    {% if 'bg-success' in message.tags or message.tags == 'success' %}alert-success
+                    {% elif 'bg-danger' in message.tags or message.tags == 'error' %}alert-danger
+                    {% elif 'bg-warning' in message.tags or message.tags == 'warning' %}alert-warning
+                    {% elif 'bg-info' in message.tags or message.tags == 'info' %}alert-info
+                    {% else %}alert-secondary{% endif %}
+                  " role="alert">
+                    <strong>
+                      {% if 'bg-success' in message.tags or message.tags == 'success' %}
+                        <i class="bi bi-check-circle-fill me-1"></i>
+                      {% elif 'bg-danger' in message.tags or message.tags == 'error' %}
+                        <i class="bi bi-x-circle-fill me-1"></i>
+                      {% elif 'bg-warning' in message.tags or message.tags == 'warning' %}
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                      {% elif 'bg-info' in message.tags or message.tags == 'info' %}
+                        <i class="bi bi-info-circle-fill me-1"></i>
+                      {% endif %}
+                      {{ message }}
+                    </strong>
+                  </div>
+                {% endfor %}
+              {% endif %}
               <form method="POST" id="donationForm" novalidate>
                 {% csrf_token %}
+                
+                <!-- ✅ OPTIONAL: Donor Name -->
+                <div class="mb-3">
+                  <label class="form-label small" style="color: #127D61;">
+                    Full Name <span class="text-muted">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm"
+                    id="name"
+                    name="name"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                <!-- ✅ OPTIONAL: Donor Email -->
+                <div class="mb-3">
+                  <label class="form-label small" style="color: #127D61;">
+                    Email <span class="text-muted">(Optional)</span>
+                  </label>
+                  <input
+                    type="email"
+                    class="form-control form-control-sm"
+                    id="email"
+                    name="email"
+                    placeholder="email@example.com"
+                  />
+                </div>
+
+                <!-- REQUIRED: Phone Number -->
                 <div class="mb-3">
                   <label class="form-label small" style="color: #127D61;">Phone Number (MTN - Start with 256)</label>
                   <input
-                    type="text"
+                    type="number"
                     class="form-control form-control-sm"
                     id="phone"
                     name="phone"
@@ -37,6 +88,8 @@
                     Please enter a valid phone number starting with 256 (12 digits).
                   </div>
                 </div>
+                
+                <!-- REQUIRED: Amount -->
                 <div class="mb-3">
                   <label class="form-label small" style="color: #127D61;">Amount (UGX)</label>
                   <div class="input-group mb-2">
@@ -45,13 +98,13 @@
                       class="form-control form-control-sm"
                       id="amount"
                       name="amount"
-                      placeholder="Custom amount (min 1,000)"
-                      min="1000"
+                      placeholder="Custom amount (min 5,000)"
+                      min="5000"
                       step="1"
                       required
                     />
                     <div class="invalid-feedback small">
-                      Please enter an amount of 1,000 UGX or more.
+                      Please enter an amount of 5,000 UGX or more.
                     </div>
                   </div>
                   <div class="d-flex flex-wrap justify-content-between gap-2">
@@ -131,22 +184,13 @@
                   </a>
                 </p>
               </div>
-
               <script>
-                // Automatically update the current year
                 document.getElementById('year').textContent = new Date().getFullYear();
               </script>
             </div>
-          
           </div>
         </div>
         <div class="col-12 order-2 col-md-6 order-md-1 d-flex align-items-stretch">
-          {% comment %} <img
-            src="https://images.pexels.com/photos/19348206/pexels-photo-19348206.jpeg?auto=compress&cs=tinysrgb&h=627&fit=crop&w=1200"
-            alt="Ugandan school children smiling"
-            class="img-fluid rounded shadow-sm h-100"
-            style="object-fit: cover; width: 100%;"
-          /> {% endcomment %}
           <img src="{% static 'images/kids.jpg' %}" alt="Ugandan school children smiling" 
           class="img-fluid rounded shadow-sm h-100"
             style="object-fit: cover; width: 100%;" width="627" height="1200" />
@@ -159,7 +203,7 @@
       const userId = '{{ user_id }}';
       const apiKey = '{{ api_key }}';
       const amount = '{{ amount|default:"your" }}';
-      const maxAttempts = 60; // 5 minutes (60 * 5s = 300s)
+      const maxAttempts = 60;
       let attempts = 0;
 
       function checkStatus() {
@@ -188,9 +232,13 @@
             const status = data.status || data.statusCode || 'PENDING';
             if (status === 'SUCCESSFUL') {
               statusBox.className = 'alert alert-success small';
-              statusBox.innerHTML = `Thank you for your generous donation of ${amount} UGX! Your support transforms lives at Pendeza Uganda. You’ll receive a confirmation soon.`;
+              statusBox.innerHTML = `Thank you for your generous donation of ${amount} UGX!`;
               setTimeout(() => {
-                window.location.href = `/sponsorship/thank-you/?ref=${encodeURIComponent(refId)}&amount=${amount}`;
+                // ✅ FIXED: USE TEMPLATE VALUES (not form inputs!)
+                const phone = encodeURIComponent('{{ phone|default:"" }}');
+                const name = encodeURIComponent('{{ donor_name|default:"" }}');
+                const email = encodeURIComponent('{{ donor_email|default:"" }}');
+                window.location.href = `/sponsorship/thank-you/?ref=${encodeURIComponent(refId)}&amount=${amount}&phone=${phone}&name=${name}&email=${email}`;
               }, 3000);
             } else if (status === 'FAILED') {
               statusBox.className = 'alert alert-danger small';
@@ -210,24 +258,31 @@
           });
       }
 
-      // Client-side validation
+      // ✅ UPDATED VALIDATION (Name & Email OPTIONAL)
       const form = document.getElementById('donationForm');
+      const nameInput = document.getElementById('name');
+      const emailInput = document.getElementById('email');
       const phoneInput = document.getElementById('phone');
       const amountInput = document.getElementById('amount');
       const donateButton = document.getElementById('donateButton');
 
       function validateForm() {
         const phoneValid = phoneInput.value.match(/^256\d{9}$/);
-        const amountValid = amountInput.value >= 1000;
+        const amountValid = parseInt(amountInput.value) >= 5000;
+        // ✅ Name & Email are OPTIONAL - always valid
         donateButton.disabled = !(phoneValid && amountValid);
+        
+        // Validation styling
         phoneInput.classList.toggle('is-valid', phoneValid);
         phoneInput.classList.toggle('is-invalid', !phoneValid && phoneInput.value.length > 0);
         amountInput.classList.toggle('is-valid', amountValid);
         amountInput.classList.toggle('is-invalid', !amountValid && amountInput.value.length > 0);
       }
 
-      phoneInput.addEventListener('input', validateForm);
-      amountInput.addEventListener('input', validateForm);
+      // Event listeners
+      [nameInput, emailInput, phoneInput, amountInput].forEach(input => {
+        if (input) input.addEventListener('input', validateForm);
+      });
 
       form.addEventListener('submit', function() {
         donateButton.disabled = true;
