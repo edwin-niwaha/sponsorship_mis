@@ -92,6 +92,7 @@
                       <a class="page-link"
                         href="?selected_date={{ selected_date|date:'Y-m-d' }}&due_page={{ due_loans.previous_page_number }}{% if overdue_page %}
                           
+                          
                           &overdue_page={{ overdue_page }}
                         {% endif %}">
                         ←
@@ -104,6 +105,7 @@
                       <a class="page-link"
                         href="?selected_date={{ selected_date|date:'Y-m-d' }}&due_page={{ num }}{% if overdue_page %}
                           
+                          
                           &overdue_page={{ overdue_page }}
                         {% endif %}">
                         {{ num }}
@@ -115,6 +117,7 @@
                     <li class="page-item">
                       <a class="page-link"
                         href="?selected_date={{ selected_date|date:'Y-m-d' }}&due_page={{ due_loans.next_page_number }}{% if overdue_page %}
+                          
                           
                           &overdue_page={{ overdue_page }}
                         {% endif %}">
@@ -192,6 +195,7 @@
                     <a class="page-link"
                       href="?selected_date={{ selected_date|date:'Y-m-d' }}&overdue_page={{ overdue_loans.previous_page_number }}{% if due_page %}
                         
+                        
                         &due_page={{ due_page }}
                       {% endif %}">
                       ←
@@ -204,6 +208,7 @@
                     <a class="page-link"
                       href="?selected_date={{ selected_date|date:'Y-m-d' }}&overdue_page={{ num }}{% if due_page %}
                         
+                        
                         &due_page={{ due_page }}
                       {% endif %}">
                       {{ num }}
@@ -215,6 +220,7 @@
                   <li class="page-item">
                     <a class="page-link"
                       href="?selected_date={{ selected_date|date:'Y-m-d' }}&overdue_page={{ overdue_loans.next_page_number }}{% if due_page %}
+                        
                         
                         &due_page={{ due_page }}
                       {% endif %}">

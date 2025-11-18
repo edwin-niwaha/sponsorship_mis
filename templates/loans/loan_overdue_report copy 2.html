@@ -1,0 +1,297 @@
+{% extends 'sdms/base_rpts.html' %}
+{% load humanize %}
+
+{% block content %}
+  <div class="container-fluid px-3 py-3">
+    <!-- HEADER BAR -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 border-bottom pb-2">
+      <a href="{% url 'loans:loan_reports_dashboard' %}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back
+      </a>
+
+      <form method="GET" action="{% url 'loans:due_overdue_report' %}" class="d-flex gap-2 align-items-center">
+        <label for="selected_date" class="small text-muted mb-0">Date:</label>
+        <input type="date" name="selected_date" id="selected_date" class="form-control form-control-sm"
+               value="{{ selected_date|date:'Y-m-d' }}" required />
+        <button type="submit" class="btn btn-primary btn-sm px-3">Go</button>
+      </form>
+
+      <button onclick="printDiv('printMe')" class="btn btn-success btn-sm">
+        <i class="bi bi-printer me-1"></i> Print
+      </button>
+    </div>
+
+    <!-- GLOBAL SEARCH -->
+    <div class="input-group mb-3" style="max-width: 500px;">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input type="text" id="globalSearch" class="form-control form-control-sm"
+             placeholder="Search borrower, ID, amount, days..." />
+      <button class="btn btn-outline-secondary btn-sm" type="button" id="clearSearch">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div id="printMe" class="card border-0 shadow-sm">
+      <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="fw-bold text-dark mb-0">{{ table_title }} — {{ selected_date|date:'d/m/Y' }}</h6>
+          <small class="text-muted">Generated on {{ now|date:'d/m/Y H:i' }}</small>
+        </div>
+
+        <!-- DUE LOANS -->
+        {% if due_loans %}
+          <div class="mb-5">
+            <div class="bg-light border-start border-4 border-primary rounded p-2 mb-2">
+              <h6 class="mb-0 text-primary fw-semibold">
+                <i class="bi bi-clock me-1"></i> Loans Due Today
+                <span class="badge bg-primary-subtle text-primary ms-1">{{ due_loans.paginator.count }}</span>
+              </h6>
+              <small class="text-muted">Total Outstanding: UgX {{ due_loans_total_balance|floatformat:0|intcomma }}</small>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-sm table-striped table-bordered align-middle mb-0">
+                <thead class="table-light sticky-top">
+                  <tr>
+                    <th>#</th>
+                    <th>ID</th>
+                    <th>Borrower</th>
+                    <th class="text-end">Principal</th>
+                    <th>Rate</th>
+                    <th>Period</th>
+                    <th>Disbursed</th>
+                    <th>Maturity</th>
+                    <th class="text-end text-primary fw-bold">Amt Due</th>
+                    <th class="text-end">Principal</th>
+                    <th class="text-end">Interest</th>
+                    <th class="text-end">Penalty</th>
+                    <th class="text-end">Total Ln Bal</th>
+                  </tr>
+                </thead>
+                <tbody id="dueTbody">
+                  {% for item in due_loans %}
+                    <tr>
+                      <td class="text-center">{{ due_loans.start_index|add:forloop.counter0 }}</td>
+                      <td class="font-monospace">{{ item.loan.id }}</td>
+                      <td class="text-truncate" style="max-width:140px;" title="{{ item.loan.borrower.full_name }}">
+                        {{ item.loan.borrower.full_name }}
+                      </td>
+                      <td class="text-end">{{ item.loan.principal_amount|floatformat:0|intcomma }}</td>
+                      <td class="text-center">{{ item.loan.interest_rate }}%</td>
+                      <td class="text-center">{{ item.loan.loan_period_months }}m</td>
+                      <td>{{ item.disbursement_date|date:'d/m/Y' }}</td>
+                      <td>{{ item.maturity_due_date|date:'d/m/Y' }}</td>
+                      <td class="text-end text-primary fw-bold">{{ item.total_amount_due_balance|floatformat:0|intcomma }}</td>
+                      <td class="text-end">{{ item.principal_balance|floatformat:0|intcomma }}</td>
+                      <td class="text-end">{{ item.interest_balance|floatformat:0|intcomma }}</td>
+                      <td class="text-end">{{ item.penalty_balance|floatformat:0|intcomma }}</td>
+                      <td class="text-end fw-bold">{{ item.total_balance|floatformat:0|intcomma }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Due Loans Pagination (JS-powered) -->
+            {% if due_loans.has_other_pages %}
+              <nav aria-label="Due loans pagination" class="mt-3">
+                <ul class="pagination pagination-sm justify-content-center mb-0" id="duePagination">
+                  <!-- JS will populate this -->
+                </ul>
+              </nav>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        <!-- OVERDUE LOANS -->
+        {% if overdue_loans %}
+          <div class="mb-4">
+            <div class="bg-danger-subtle rounded p-2 border-start border-4 border-danger mb-2">
+              <h6 class="mb-0 text-danger fw-semibold">
+                <i class="bi bi-exclamation-triangle me-1"></i> Overdue Loans
+                <span class="badge bg-danger-subtle text-danger ms-1">{{ overdue_loans.paginator.count }}</span>
+              </h6>
+              <small class="text-muted">Total Outstanding: UgX {{ overdue_loans_total_balance|floatformat:0|intcomma }}</small>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered align-middle mb-0">
+                <thead class="table-light sticky-top">
+                  <tr>
+                    <th>#</th>
+                    <th>ID</th>
+                    <th>Borrower</th>
+                    <th class="text-end">Principal</th>
+                    <th>Rate(%)</th>
+                    <th>Period(M)</th>
+                    <th>Disbursed on</th>
+                    <th class="text-danger">Maturity</th>
+                    <th class="text-end text-danger fw-bold">Amt Due</th>
+                    <th class="text-end">Principal</th>
+                    <th class="text-end">Interest</th>
+                    <th class="text-end">Penalty</th>
+                    <th class="text-end">Total Ln Bal</th>
+                    <th class="text-center">Days</th>
+                  </tr>
+                </thead>
+                <tbody id="overdueTbody">
+                  {% for item in overdue_loans %}
+                    <tr class="{% if item.days_overdue > 90 %}table-danger text-white
+                               {% elif item.days_overdue > 60 %}table-warning
+                               {% elif item.days_overdue > 30 %}table-light{% endif %}">
+                      <td class="text-center">{{ overdue_loans.start_index|add:forloop.counter0 }}</td>
+                      <td class="font-monospace">{{ item.loan.id }}</td>
+                      <td class="text-truncate" style="max-width:140px;" title="{{ item.loan.borrower.full_name }}">
+                        {{ item.loan.borrower.full_name }}
+                      </td>
+                      <td class="text-end">{{ item.loan.principal_amount|floatformat:0|intcomma }}</td>
+                      <td class="text-center">{{ item.loan.interest_rate }}</td>
+                      <td class="text-center">{{ item.loan.loan_period_months }}</td>
+                      <td>{{ item.disbursement_date|date:'d/m/Y' }}</td>
+                      <td class="text-danger fw-bold">{{ item.maturity_due_date|date:'d/m/Y' }}</td>
+                      <td class="text-end text-danger fw-bold">{{ item.total_amount_due_balance|floatformat:0|intcomma }}</td>
+                      <td class="text-end">{{ item.principal_balance|floatformat:0|intcomma }}</td>
+                      <td class="text-end">{{ item.interest_balance|floatformat:0|intcomma }}</td>
+                      <td class="text-end">{{ item.penalty_balance|floatformat:0|intcomma }}</td>
+                      <td class="text-end fw-bold">{{ item.total_balance|floatformat:0|intcomma }}</td>
+                      <td class="text-right fw-bold text-danger">{{ item.days_overdue }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Overdue Loans Pagination (JS-powered) -->
+            {% if overdue_loans.has_other_pages %}
+              <nav aria-label="Overdue loans pagination" class="mt-3">
+                <ul class="pagination pagination-sm justify-content-center mb-0" id="overduePagination">
+                  <!-- JS will populate this -->
+                </ul>
+              </nav>
+            {% endif %}
+          </div>
+        {% else %}
+          {% if not due_loans %}
+            <div class="text-center py-4">
+              <i class="bi bi-calendar-check display-5 text-muted d-block mb-2"></i>
+              <p class="text-muted">No due or overdue loans on {{ selected_date|date:'d/m/Y' }}</p>
+            </div>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIENT-SIDE SEARCH + PAGINATION LOGIC (NO CUSTOM TAGS) -->
+<script>
+  // Helper: Build URL with updated params
+  function buildUrl(updates = {}) {
+    const url = new URL(window.location);
+    Object.keys(updates).forEach(key => {
+      if (updates[key] !== null && updates[key] !== undefined && updates[key] !== '') {
+        url.searchParams.set(key, updates[key]);
+      } else {
+        url.searchParams.delete(key);
+      }
+    });
+    return url.pathname + url.search;
+  }
+
+  // Render pagination (same as before)
+  function renderPagination(totalPages, currentPage, paramName, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    let html = '';
+
+    if (currentPage > 1) {
+      html += `<li class="page-item"><a class="page-link" href="${buildUrl({[paramName]: 1})}">&laquo; First</a></li>`;
+      html += `<li class="page-item"><a class="page-link" href="${buildUrl({[paramName]: currentPage - 1})}">&lsaquo; Prev</a></li>`;
+    } else {
+      html += `<li class="page-item disabled"><span class="page-link">&laquo; First</span></li>`;
+      html += `<li class="page-item disabled"><span class="page-link">&lsaquo; Prev</span></li>`;
+    }
+
+    const delta = 2;
+    const left = currentPage - delta;
+    const right = currentPage + delta + 1;
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= left && i < right)) {
+        if (i === currentPage) {
+          html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
+        } else {
+          html += `<li class="page-item"><a class="page-link" href="${buildUrl({[paramName]: i})}">${i}</a></li>`;
+        }
+      } else if (i === left - 1 || i === right) {
+        if (i > 1 && i < totalPages) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+      }
+    }
+
+    if (currentPage < totalPages) {
+      html += `<li class="page-item"><a class="page-link" href="${buildUrl({[paramName]: currentPage + 1})}">Next &rsaquo;</a></li>`;
+      html += `<li class="page-item"><a class="page-link" href="${buildUrl({[paramName]: totalPages})}">Last &raquo;</a></li>`;
+    } else {
+      html += `<li class="page-item disabled"><span class="page-link">Next &rsaquo;</span></li>`;
+      html += `<li class="page-item disabled"><span class="page-link">Last &raquo;</span></li>`;
+    }
+
+    container.innerHTML = html;
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('globalSearch');
+    const clearBtn = document.getElementById('clearSearch');
+
+    // When user types → remove pagination + show all matching rows
+    searchInput.addEventListener('input', () => {
+      const term = searchInput.value.trim().toLowerCase();
+
+      // Remove page_due and page_overdue → forces view to return ALL loans
+      if (term.length > 0) {
+        window.location = buildUrl({ page_due: null, page_overdue: null, search: term });
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      window.location = buildUrl({ page_due: null, page_overdue: null, search: null });
+    });
+
+    // Only render pagination if NOT in search mode
+    {% if not request.GET.search %}
+      {% if due_loans.has_other_pages %}
+        renderPagination({{ due_loans.paginator.num_pages }}, {{ due_loans.number }}, 'page_due', 'duePagination');
+      {% endif %}
+      {% if overdue_loans.has_other_pages %}
+        renderPagination({{ overdue_loans.paginator.num_pages }}, {{ overdue_loans.number }}, 'page_overdue', 'overduePagination');
+      {% endif %}
+    {% else %}
+      // Hide pagination when searching
+      document.querySelectorAll('#duePagination, #overduePagination').forEach(el => el.innerHTML = '');
+    {% endif %}
+  });
+
+  function printDiv(divId) {
+    const printContents = document.getElementById(divId).innerHTML;
+    const originalContents = document.body.innerHTML;
+    document.body.innerHTML = printContents;
+    window.print();
+    document.body.innerHTML = originalContents;
+    location.reload();
+  }
+</script>
+
+  <!-- Print styles -->
+  <style>
+    table th, table td { padding: 0.4rem 0.3rem !important; }
+    .table thead th { position: sticky; top: 0; background-color: #f8f9fa !important; }
+    @media print {
+      .btn, form, .pagination, .input-group { display: none !important; }
+      .card { box-shadow: none !important; border: none !important; }
+      table { font-size: 0.75rem !important; }
+      .container-fluid { padding: 0 !important; }
+      th { background: #ddd !important; -webkit-print-color-adjust: exact; }
+    }
+  </style>
+{% endblock %}

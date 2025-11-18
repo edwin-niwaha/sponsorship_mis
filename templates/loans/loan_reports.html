@@ -3,104 +3,144 @@
 {% load humanize %}
 
 {% block content %}
-  <div class="container my-4">
+  <div class="container py-3">
     <!-- Page Header -->
-    <header class="text-center mb-5">
-      <h2 class="text-uppercase fw-bold text-primary">{{ form_title }}</h2>
-      <hr class="border-primary border-3 opacity-75 mx-auto w-100" />
+    <header class="text-center mb-4">
+      <h1 class="display-6 fw-bold text-primary text-uppercase tracking-wider">{{ form_title }}</h1>
+      <p class="text-muted mb-1">Access all loan reports and management tools in one place</p>
+      <hr class="w-25 mx-auto border-primary border-2 opacity-75" />
     </header>
 
-    <!-- Reports and Management Cards -->
-    <section aria-labelledby="reports-title">
-      <!-- First Row: Four Cards -->
-      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 mb-4">
-        <!-- Loan Portfolio Card -->
-        <div class="col">
-          <a href="{% url 'loans:loan_portfolio_report' %}" class="text-decoration-none" aria-label="View Loan Portfolio Report">
-            <div class="card h-100 shadow-sm border-0">
-              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
-                <i class="bi bi-clipboard-data fs-1 mb-3 text-primary"></i>
-                <h5 class="card-title mb-0 fw-medium">Loan Portfolio</h5>
-              </div>
+    <!-- Reports Dashboard -->
+    <section class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4" aria-labelledby="reports-heading">
+      <!-- Loan Portfolio -->
+      <div class="col">
+        <a href="{% url 'loans:loan_portfolio_report' %}" class="text-decoration-none">
+          <div class="card h-100 shadow-sm border-0 rounded-4 hover-lift hover-shadow">
+            <div class="card-body text-center py-3 d-flex flex-column justify-content-center">
+              <i class="bi bi-clipboard-data fs-xl text-primary mb-3"></i>
+              <h6 class="card-title fw-semibold text-dark mb-1">Loan Portfolio</h6>
+              <p class="text-muted small mb-0">Overview of all active loans</p>
             </div>
-          </a>
-        </div>
-
-        <!-- Aging Report Card -->
-        <div class="col">
-          <a href="{% url 'loans:loan_aging_report' %}" class="text-decoration-none" aria-label="View Aging Report">
-            <div class="card h-100 shadow-sm border-0">
-              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
-                <i class="bi bi-bar-chart-line fs-1 mb-3 text-success"></i>
-                <h5 class="card-title mb-0 fw-medium">Aging Report</h5>
-              </div>
-            </div>
-          </a>
-        </div>
-
-        <!-- Arrears Report Card -->
-        <div class="col">
-          <a href="{% url 'loans:loan-arrears-report' %}" class="text-decoration-none" aria-label="View Arrears Report">
-            <div class="card h-100 shadow-sm border-0">
-              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
-                <i class="bi bi-people fs-1 mb-3 text-danger"></i>
-                <h5 class="card-title mb-0 fw-medium">Arrears Report</h5>
-              </div>
-            </div>
-          </a>
-        </div>
-
-        <!-- Portfolio at Risk (PAR) Card -->
-        <div class="col">
-          <a href="{% url 'loans:portfolio_at_risk_report' %}" class="text-decoration-none" aria-label="View Portfolio at Risk Report">
-            <div class="card h-100 shadow-sm border-0">
-              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
-                <i class="bi bi-exclamation-circle fs-1 mb-3 text-warning"></i>
-                <h5 class="card-title mb-0 fw-medium">Portfolio at Risk</h5>
-              </div>
-            </div>
-          </a>
-        </div>
+          </div>
+        </a>
       </div>
 
-      <!-- Second Row: Three Cards -->
-      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-3 g-4">
-        <!-- Non-Performing Loans Card -->
-        <div class="col">
-          <a href="{% url 'loans:non_performing_loans' %}" class="text-decoration-none" aria-label="View Non-Performing Loans">
-            <div class="card h-100 shadow-sm border-0">
-              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
-                <i class="bi bi-exclamation-triangle fs-1 mb-3 text-danger"></i>
-                <h5 class="card-title mb-0 fw-medium">Non-Performing Loans</h5>
-              </div>
+      <!-- Aging Report -->
+      <div class="col">
+        <a href="{% url 'loans:loan_aging_report' %}" class="text-decoration-none">
+          <div class="card h-100 shadow-sm border-0 rounded-4 hover-lift hover-shadow">
+            <div class="card-body text-center py-3 d-flex flex-column justify-content-center">
+              <i class="bi bi-bar-chart-line-fill fs-xl text-success mb-3"></i>
+              <h6 class="card-title fw-semibold text-dark mb-1">Aging Report</h6>
+              <p class="text-muted small mb-0">Loan receivables by age bucket</p>
             </div>
-          </a>
-        </div>
+          </div>
+        </a>
+      </div>
 
-        <!-- Chart of Accounts Card -->
-        <div class="col">
-          <a href="{% url 'loans:chart_of_accounts_list' %}" class="text-decoration-none" aria-label="View Chart of Accounts">
-            <div class="card h-100 shadow-sm border-0">
-              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
-                <i class="bi bi-table fs-1 mb-3 text-primary"></i>
-                <h5 class="card-title mb-0 fw-medium">Chart of Accounts</h5>
-              </div>
+      <!-- Arrears Report -->
+      <div class="col">
+        <a href="{% url 'loans:loan-arrears-report' %}" class="text-decoration-none">
+          <div class="card h-100 shadow-sm border-0 rounded-4 hover-lift hover-shadow">
+            <div class="card-body text-center py-3 d-flex flex-column justify-content-center">
+              <i class="bi bi-exclamation-diamond-fill fs-xl text-danger mb-3"></i>
+              <h6 class="card-title fw-semibold text-dark mb-1">Arrears Report</h6>
+              <p class="text-muted small mb-0">Delinquent borrowers & amounts</p>
             </div>
-          </a>
-        </div>
+          </div>
+        </a>
+      </div>
 
-        <!-- Loan Statements Card -->
-        <div class="col">
-          <a href="{% url 'loans:loan_statement' %}" class="text-decoration-none" aria-label="View Loan Statements">
-            <div class="card h-100 shadow-sm border-0">
-              <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
-                <i class="bi bi-file-earmark-text fs-1 mb-3 text-secondary"></i>
-                <h5 class="card-title mb-0 fw-medium">Loan Statements</h5>
-              </div>
+      <!-- Portfolio at Risk -->
+      <div class="col">
+        <a href="{% url 'loans:portfolio_at_risk_report' %}" class="text-decoration-none">
+          <div class="card h-100 shadow-sm border-0 rounded-4 hover-lift hover-shadow">
+            <div class="card-body text-center py-3 d-flex flex-column justify-content-center">
+              <i class="bi bi-graph-up-arrow fs-xl text-warning mb-3"></i>
+              <h6 class="card-title fw-semibold text-dark mb-1">Portfolio at Risk</h6>
+              <p class="text-muted small mb-0">PAR ratios and trends</p>
             </div>
-          </a>
-        </div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Non-Performing Loans -->
+      <div class="col">
+        <a href="{% url 'loans:non_performing_loans' %}" class="text-decoration-none">
+          <div class="card h-100 shadow-sm border-0 rounded-4 hover-lift hover-shadow">
+            <div class="card-body text-center py-3 d-flex flex-column justify-content-center">
+              <i class="bi bi-x-octagon-fill fs-xl text-danger mb-3"></i>
+              <h6 class="card-title fw-semibold text-dark mb-1">Non-Performing Loans</h6>
+              <p class="text-muted small mb-0">NPL details and provisioning</p>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Chart of Accounts -->
+      <div class="col">
+        <a href="{% url 'loans:chart_of_accounts_list' %}" class="text-decoration-none">
+          <div class="card h-100 shadow-sm border-0 rounded-4 hover-lift hover-shadow">
+            <div class="card-body text-center py-3 d-flex flex-column justify-content-center">
+              <i class="bi bi-table fs-xl text-primary mb-3"></i>
+              <h6 class="card-title fw-semibold text-dark mb-1">Chart of Accounts</h6>
+              <p class="text-muted small mb-0">GL structure & mappings</p>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Loan Statements -->
+      <div class="col">
+        <a href="{% url 'loans:loan_statement' %}" class="text-decoration-none">
+          <div class="card h-100 shadow-sm border-0 rounded-4 hover-lift hover-shadow">
+            <div class="card-body text-center py-3 d-flex flex-column justify-content-center">
+              <i class="bi bi-file-earmark-text-fill fs-xl text-secondary mb-3"></i>
+              <h6 class="card-title fw-semibold text-dark mb-1">Loan Statements</h6>
+              <p class="text-muted small mb-0">Individual borrower statements</p>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Due & Overdue Report -->
+      <div class="col">
+        <a href="{% url 'loans:due_overdue_report' %}" class="text-decoration-none">
+          <div class="card h-100 shadow-sm border-0 rounded-4 hover-lift hover-shadow">
+            <div class="card-body text-center py-3 d-flex flex-column justify-content-center">
+              <i class="bi bi-clock-history fs-xl text-info mb-3"></i>
+              <h6 class="card-title fw-semibold text-dark mb-1">Due & Overdue Report</h6>
+              <p class="text-muted small mb-0">Upcoming and past-due installments</p>
+            </div>
+          </div>
+        </a>
       </div>
     </section>
   </div>
+
+  <!-- Custom CSS -->
+  <style>
+    .hover-lift {
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-4px);
+    }
+    .hover-shadow {
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08) !important;
+    }
+    .hover-shadow:hover {
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12) !important;
+    }
+    .fs-xl {
+      font-size: 2.2rem;
+    }
+    .tracking-wider {
+      letter-spacing: 0.05em;
+    }
+    .card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    }
+  </style>
 {% endblock %}
