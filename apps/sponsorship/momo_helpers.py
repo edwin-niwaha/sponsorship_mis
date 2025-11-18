@@ -41,7 +41,7 @@ def request_to_pay(access_token, subscription_key, phone, amount, transaction_id
         "currency": "EUR",
         "externalId": external_id,
         "payer": {"partyIdType": "MSISDN", "partyId": phone},
-        "payerMessage": "Umeskia Softwares MTN Payment",
+        "payerMessage": "Perpetual Softwares MTN Payment",
         "payeeNote": "Thank you for using our system",
     }
     res = requests.post(url, json=body, headers=headers, timeout=30)
