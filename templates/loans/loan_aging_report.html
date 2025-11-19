@@ -131,7 +131,7 @@
             <thead>
               <tr>
                 <th>ID</th>
-                <th class="borrower">Borrower</th>
+                <th class="borrower">Borrower Name</th>
                 <th class="text-end">Loan Amount</th>
                 <th>Rate (%)</th>
                 <th>Months</th>
@@ -139,9 +139,9 @@
                 {% comment %} <th>Next Installment Due</th> {% endcomment %}
                 <th>Final Due Date</th>
                 <th>Days Past Due</th>
-                <th class="text-end">Outstanding Principal</th>
-                <th class="text-end">Outstanding Interest</th>
-                <th class="text-end">Outstanding Penalty</th>
+                <th class="text-end">Principal Bal.</th>
+                <th class="text-end">Interest Bal.</th>
+                <th class="text-end">Penalty Bal.</th>
                 <th class="text-end">Total Outstanding</th>
                 <th class="text-end">Paid</th>
               </tr>
@@ -181,8 +181,8 @@
           <div class="p-2 rounded-3 bg-light border">
             <strong>Subtotal for {{ bucket.key }}:</strong>
             &nbsp; Principal: <span class="text-dark">{{ bucket.totals.total_principal }}</span>
-            &nbsp;|&nbsp; Outstanding Principal: <span class="text-danger">{{ bucket.totals.total_principal_due }}</span>
-            &nbsp;|&nbsp; Outstanding Interest: <span class="text-warning">{{ bucket.totals.total_interest_due }}</span>
+            &nbsp;|&nbsp; Principal  Bal.: <span class="text-danger">{{ bucket.totals.total_principal_due }}</span>
+            &nbsp;|&nbsp; Interest  Bal.: <span class="text-warning">{{ bucket.totals.total_interest_due }}</span>
             &nbsp;|&nbsp; Penalty: <span class="text-muted">{{ bucket.totals.total_penalty_due }}</span>
             &nbsp;|&nbsp; Total Outstanding: <span class="text-primary">{{ bucket.totals.total_outstanding_balance }}</span>
             &nbsp;|&nbsp; Paid: <span class="text-success">{{ bucket.totals.total_paid }}</span>
@@ -197,9 +197,9 @@
           <thead class="table-light">
             <tr>
               <th>Total Principal</th>
-              <th>Total Outstanding Principal</th>
-              <th>Total Outstanding Interest</th>
-              <th>Total Penalty</th>
+              <th>Total Principal  Bal.</th>
+              <th>Total Interest  Bal.</th>
+              <th>Total Penalty  Bal.</th>
               <th>Total Outstanding</th>
               <th>Total Paid</th>
             </tr>

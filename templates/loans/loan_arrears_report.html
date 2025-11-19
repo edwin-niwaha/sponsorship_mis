@@ -78,8 +78,8 @@
                   <th>Period(M)</th>
                   <th>Issue Date</th>
                   <th class="text-center text-danger fw-bold">Days Past Due</th>
-                  <th class="text-end">Outstanding Principal</th>
-                  <th class="text-end">Outstanding Interest</th>
+                  <th class="text-end">Total Principal Bal.</th>
+                  <th class="text-end">Total Interest Bal.</th>
                   <th class="text-end fw-bold text-danger">Total Arrears</th>
                 </tr>
               </thead>
@@ -87,11 +87,23 @@
                 {% for loan in bucket.loans %}
                   <tr class="{% if loan.days_overdue > 90 %}
                       
+                      
+                      
+                      
                       table-danger text-white
+
+
+
 
                     {% elif loan.days_overdue > 30 %}
                       
+                      
+                      
+                      
                       highlight-row
+
+
+
 
                     {% endif %}">
                     <td>{{ loan.loan_id }}</td>
@@ -139,8 +151,8 @@
                 <tr class="text-center">
                   <th style="width: 22%;">Total Loans in Arrears</th>
                   <th style="width: 22%;">Total Disbursed Principal</th>
-                  <th style="width: 22%;">Outstanding Principal</th>
-                  <th style="width: 17%;">Outstanding Interest</th>
+                  <th style="width: 22%;">Total Principal Bal.</th>
+                  <th style="width: 17%;">Total Interest Bal.</th>
                   <th style="width: 17%;" class="bg-danger text-white">TOTAL ARREARS AMOUNT</th>
                 </tr>
               </thead>
