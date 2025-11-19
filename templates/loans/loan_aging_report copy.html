@@ -119,6 +119,34 @@
         </div>
       </div>
 
+      <!-- Summary Cards -->
+      {% comment %} <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <div class="summary-card">
+            <h5>Total Principal</h5>
+            <p class="fs-4 fw-bold text-dark mb-0">{{ formatted_grand_totals.total_principal }}</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="summary-card">
+            <h5>Total Outstanding</h5>
+            <p class="fs-4 fw-bold text-primary mb-0">{{ formatted_grand_totals.total_outstanding_balance }}</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="summary-card">
+            <h5>Total Principal Due</h5>
+            <p class="fs-4 fw-bold text-danger mb-0">{{ formatted_grand_totals.total_principal_due }}</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="summary-card">
+            <h5>Total Paid</h5>
+            <p class="fs-4 fw-bold text-success mb-0">{{ formatted_grand_totals.total_paid }}</p>
+          </div>
+        </div>
+      </div> {% endcomment %}
+
       <!-- Aging Buckets -->
       {% for bucket in bucket_data %}
         <div class="bucket-header">
@@ -132,7 +160,7 @@
               <tr>
                 <th>ID</th>
                 <th class="borrower">Borrower</th>
-                <th class="text-end">Loan Amount</th>
+                <th class="text-end">Loan</th>
                 <th>Rate (%)</th>
                 <th>Months</th>
                 <th>Issue Date</th>
@@ -149,8 +177,7 @@
             <tbody>
               {% if bucket.loans %}
                 {% for loan in bucket.loans %}
-                  {% comment %} <tr class="{% if loan.days_overdue > 0 %}overdue-row{% endif %}"> {% endcomment %}
-                  <tr class="{% if loan.days_overdue > 0 %}table-warning{% else %}table-success text-white{% endif %}">
+                  <tr class="{% if loan.days_overdue > 0 %}overdue-row{% endif %}">
                     <td>{{ loan.loan_id }}</td>
                     <td class="borrower">{{ loan.borrower }}</td>
                     <td class="text-end">{{ loan.principal_amount|floatformat:'0'|intcomma }}</td>
@@ -181,10 +208,10 @@
           <div class="p-2 rounded-3 bg-light border">
             <strong>Subtotal for {{ bucket.key }}:</strong>
             &nbsp; Principal: <span class="text-dark">{{ bucket.totals.total_principal }}</span>
-            &nbsp;|&nbsp; Outstanding Principal: <span class="text-danger">{{ bucket.totals.total_principal_due }}</span>
-            &nbsp;|&nbsp; Outstanding Interest: <span class="text-warning">{{ bucket.totals.total_interest_due }}</span>
+            &nbsp;|&nbsp; Principal Due: <span class="text-danger">{{ bucket.totals.total_principal_due }}</span>
+            &nbsp;|&nbsp; Interest Due: <span class="text-warning">{{ bucket.totals.total_interest_due }}</span>
             &nbsp;|&nbsp; Penalty: <span class="text-muted">{{ bucket.totals.total_penalty_due }}</span>
-            &nbsp;|&nbsp; Total Outstanding: <span class="text-primary">{{ bucket.totals.total_outstanding_balance }}</span>
+            &nbsp;|&nbsp; Outstanding: <span class="text-primary">{{ bucket.totals.total_outstanding_balance }}</span>
             &nbsp;|&nbsp; Paid: <span class="text-success">{{ bucket.totals.total_paid }}</span>
           </div>
         </div>
@@ -197,8 +224,8 @@
           <thead class="table-light">
             <tr>
               <th>Total Principal</th>
-              <th>Total Outstanding Principal</th>
-              <th>Total Outstanding Interest</th>
+              <th>Total Principal Due</th>
+              <th>Total Interest Due</th>
               <th>Total Penalty</th>
               <th>Total Outstanding</th>
               <th>Total Paid</th>

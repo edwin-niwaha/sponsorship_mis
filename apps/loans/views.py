@@ -1837,12 +1837,13 @@ def ledger_report_view(request):
 
 
 # =================================== Loan Aging Report view ===================================
+
+
 # @login_required
 # @admin_or_manager_or_staff_required
 # def loan_aging_report(request):
 #     today = timezone.now().date()
 
-#     # Define aging buckets
 #     aging_buckets = {
 #         "Current (0 Days)": [],
 #         "0-30 Days (WATCH)": [],
@@ -1854,7 +1855,6 @@ def ledger_report_view(request):
 #         "Over 365 Days (LOSS)": [],
 #     }
 
-#     # Initialize totals
 #     grand_totals = {
 #         "total_principal": Decimal("0.00"),
 #         "total_principal_due": Decimal("0.00"),
@@ -1864,34 +1864,18 @@ def ledger_report_view(request):
 #         "total_paid": Decimal("0.00"),
 #     }
 
-#     # Fetch active/disbursed loans
 #     disbursed_loans = Loan.objects.filter(
 #         status__in=["overdue", "disbursed"],
 #         disbursement_date__isnull=False,
 #     ).select_related("borrower")
 
-#     # Per-bucket totals
 #     bucket_totals = {
-#         key: {
-#             "total_principal": Decimal("0.00"),
-#             "total_principal_due": Decimal("0.00"),
-#             "total_interest_due": Decimal("0.00"),
-#             "total_penalty_due": Decimal("0.00"),
-#             "total_outstanding_balance": Decimal("0.00"),
-#             "total_paid": Decimal("0.00"),
-#         }
+#         key: grand_totals.copy()
 #         for key in aging_buckets
 #     }
 
-#     # -------------------------------------------------
-#     # Helper function: compute days overdue & due dates
-#     # -------------------------------------------------
+#     # --- Helper: compute overdue days based on installments ---
 #     def compute_installment_based_days_overdue(loan, today):
-#         """
-#         Compute days overdue and next installment due date for a loan 
-#         based on monthly installment schedule.
-#         Returns (days_overdue, next_due_date, final_due_date).
-#         """
 #         disbursement_date = loan.disbursement_date
 #         term_months = loan.loan_period_months
 
@@ -1901,10 +1885,7 @@ def ledger_report_view(request):
 #                 return days_overdue, None, loan.due_date
 #             return 0, None, None
 
-#         # Final due date (maturity)
 #         final_due_date = disbursement_date + relativedelta(months=term_months)
-
-#         # How many installments should have been paid
 #         months_elapsed = (today.year - disbursement_date.year) * 12 + (today.month - disbursement_date.month)
 #         if months_elapsed <= 0:
 #             next_due = disbursement_date + relativedelta(months=1)
@@ -1912,30 +1893,24 @@ def ledger_report_view(request):
 
 #         installments_due_by_now = min(months_elapsed, term_months)
 
-#         # Amount paid so far
 #         total_principal_paid = loan.repayments.aggregate(
 #             total=Sum("principal_payment")
 #         )["total"] or Decimal("0.00")
 
-#         # Expected principal per month
 #         scheduled_principal = (
 #             loan.principal_amount / Decimal(term_months)
 #         ).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
 #         installments_paid = int(total_principal_paid / scheduled_principal)
 
-#         # Next unpaid installment
 #         next_unpaid_installment = installments_paid + 1
 #         if next_unpaid_installment > term_months:
-#             # Fully paid
 #             return 0, None, final_due_date
 
 #         next_due_date = disbursement_date + relativedelta(months=next_unpaid_installment)
 #         days_overdue = max((today - next_due_date).days, 0)
 #         return days_overdue, next_due_date, final_due_date
 
-#     # -------------------------------------------------
-#     # Main loop
-#     # -------------------------------------------------
+#     # --- Main Loop ---
 #     for loan in disbursed_loans:
 #         try:
 #             remaining_balances = loan.calculate_remaining_balances()
@@ -1943,34 +1918,25 @@ def ledger_report_view(request):
 #             remaining_interest = remaining_balances["interest_balance"]
 #             penalty_balance = remaining_balances["penalty_balance"]
 #             outstanding_balance = remaining_principal + remaining_interest + penalty_balance
-
 #             if outstanding_balance <= 0:
 #                 continue
 
 #             days_overdue, next_due_date, final_due_date = compute_installment_based_days_overdue(loan, today)
-
-#             total_paid = (
-#                 loan.repayments.aggregate(
-#                     principal=Sum("principal_payment"),
-#                     interest=Sum("interest_payment"),
-#                 )
-#                 or {"principal": Decimal("0.00"), "interest": Decimal("0.00")}
+#             total_paid = loan.repayments.aggregate(
+#                 principal=Sum("principal_payment"),
+#                 interest=Sum("interest_payment"),
 #             )
-
 #             total_paid_amount = (total_paid["principal"] or 0) + (total_paid["interest"] or 0)
 
-#             # --------------------------
-#             # Build loan info dictionary
-#             # --------------------------
 #             loan_info = {
 #                 "loan_id": loan.id,
 #                 "borrower": loan.borrower.full_name,
 #                 "principal_amount": loan.principal_amount,
 #                 "interest_rate": loan.interest_rate,
 #                 "loan_period_months": loan.loan_period_months,
-#                 "start_date": loan.disbursement_date,   # Issue Date
-#                 "next_due_date": next_due_date,         # Next installment
-#                 "due_date": final_due_date,             # Final maturity
+#                 "start_date": loan.disbursement_date,
+#                 "next_due_date": next_due_date,
+#                 "due_date": final_due_date,
 #                 "days_overdue": days_overdue,
 #                 "principal_due": remaining_principal,
 #                 "interest_due": remaining_interest,
@@ -1979,9 +1945,7 @@ def ledger_report_view(request):
 #                 "total_paid": total_paid_amount,
 #             }
 
-#             # --------------------------
-#             # Determine aging bucket
-#             # --------------------------
+#             # --- Determine aging bucket ---
 #             if days_overdue <= 0:
 #                 bucket_key = "Current (0 Days)"
 #             elif days_overdue <= 30:
@@ -2001,62 +1965,64 @@ def ledger_report_view(request):
 
 #             aging_buckets[bucket_key].append(loan_info)
 
-#             # --------------------------
-#             # Update totals
-#             # --------------------------
-#             bucket_totals[bucket_key]["total_principal"] += loan.principal_amount
-#             bucket_totals[bucket_key]["total_principal_due"] += remaining_principal
-#             bucket_totals[bucket_key]["total_interest_due"] += remaining_interest
-#             bucket_totals[bucket_key]["total_penalty_due"] += penalty_balance
-#             bucket_totals[bucket_key]["total_outstanding_balance"] += outstanding_balance
-#             bucket_totals[bucket_key]["total_paid"] += total_paid_amount
+#             # --- Update bucket totals ---
+#             bt = bucket_totals[bucket_key]
+#             bt["total_principal"] += loan.principal_amount
+#             bt["total_principal_due"] += remaining_principal
+#             bt["total_interest_due"] += remaining_interest
+#             bt["total_penalty_due"] += penalty_balance
+#             bt["total_outstanding_balance"] += outstanding_balance
+#             bt["total_paid"] += total_paid_amount
 
 #         except Exception as e:
 #             logger.error(f"Error processing loan {loan.id}: {e}")
 #             continue
 
-#     # -------------------------------------------------
-#     # Compute grand totals
-#     # -------------------------------------------------
+#     # --- Compute grand totals ---
 #     for bucket in bucket_totals.values():
 #         for key in grand_totals:
 #             grand_totals[key] += bucket[key]
 
-#     # Sort each bucket
-#     for bucket_key in aging_buckets:
-#         aging_buckets[bucket_key] = sorted(
-#             aging_buckets[bucket_key],
-#             key=lambda x: x["start_date"] or timezone.datetime.min,
-#         )
-
-#     # -------------------------------------------------
-#     # Format for display
-#     # -------------------------------------------------
 #     fmt = lambda val: f"{float(val):,.0f}"
 
+#     # Format bucket totals
 #     formatted_bucket_totals = {
-#         key: {k: fmt(v) for k, v in bucket_totals[key].items()}
-#         for key in aging_buckets
+#         key: {
+#             "total_principal": fmt(bucket_totals[key].get("total_principal", 0)),
+#             "total_principal_due": fmt(bucket_totals[key].get("total_principal_due", 0)),
+#             "total_interest_due": fmt(bucket_totals[key].get("total_interest_due", 0)),
+#             "total_penalty_due": fmt(bucket_totals[key].get("total_penalty_due", 0)),
+#             "total_outstanding_balance": fmt(bucket_totals[key].get("total_outstanding_balance", 0)),
+#             "total_paid": fmt(bucket_totals[key].get("total_paid", 0)),
+#         }
+#         for key in aging_buckets.keys()
 #     }
+
 #     formatted_grand_totals = {k: fmt(v) for k, v in grand_totals.items()}
 
-#     # -------------------------------------------------
-#     # Render HTML page
-#     # -------------------------------------------------
+#     # Combine buckets and totals for template
+#     bucket_data = [
+#         {
+#             'key': bucket_key,
+#             'loans': aging_buckets[bucket_key],
+#             'totals': formatted_bucket_totals[bucket_key],
+#         }
+#         for bucket_key in aging_buckets.keys()
+#     ]
+
 #     return render(
 #         request,
 #         "loans/loan_aging_report.html",
 #         {
-#             "buckets": aging_buckets,
-#             "formatted_bucket_totals": formatted_bucket_totals,
+#             "bucket_data": bucket_data,
 #             "formatted_grand_totals": formatted_grand_totals,
 #             "bucket_totals": bucket_totals,
 #             "grand_totals": grand_totals,
 #             "table_title": "Loan Aging Report",
 #             "total_loans": sum(len(loans) for loans in aging_buckets.values()),
+#             "now": timezone.now(),
 #         },
 #     )
-
 
 
 @login_required
@@ -2064,9 +2030,9 @@ def ledger_report_view(request):
 def loan_aging_report(request):
     today = timezone.now().date()
 
+    # Updated buckets - combined first two
     aging_buckets = {
-        "Current (0 Days)": [],
-        "0-30 Days (WATCH)": [],
+        "0-30 Days (Performing / Watch)": [],
         "31-60 Days (SUBSTANDARD)": [],
         "61-90 Days (SUBSTANDARD)": [],
         "91-120 Days (DOUBTFUL)": [],
@@ -2089,12 +2055,8 @@ def loan_aging_report(request):
         disbursement_date__isnull=False,
     ).select_related("borrower")
 
-    bucket_totals = {
-        key: grand_totals.copy()
-        for key in aging_buckets
-    }
+    bucket_totals = {key: grand_totals.copy() for key in aging_buckets}
 
-    # --- Helper: compute overdue days based on installments ---
     def compute_installment_based_days_overdue(loan, today):
         disbursement_date = loan.disbursement_date
         term_months = loan.loan_period_months
@@ -2112,17 +2074,11 @@ def loan_aging_report(request):
             return 0, next_due, final_due_date
 
         installments_due_by_now = min(months_elapsed, term_months)
-
-        total_principal_paid = loan.repayments.aggregate(
-            total=Sum("principal_payment")
-        )["total"] or Decimal("0.00")
-
-        scheduled_principal = (
-            loan.principal_amount / Decimal(term_months)
-        ).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+        total_principal_paid = loan.repayments.aggregate(total=Sum("principal_payment"))["total"] or Decimal("0.00")
+        scheduled_principal = (loan.principal_amount / Decimal(term_months)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
         installments_paid = int(total_principal_paid / scheduled_principal)
-
         next_unpaid_installment = installments_paid + 1
+
         if next_unpaid_installment > term_months:
             return 0, None, final_due_date
 
@@ -2130,7 +2086,6 @@ def loan_aging_report(request):
         days_overdue = max((today - next_due_date).days, 0)
         return days_overdue, next_due_date, final_due_date
 
-    # --- Main Loop ---
     for loan in disbursed_loans:
         try:
             remaining_balances = loan.calculate_remaining_balances()
@@ -2138,10 +2093,12 @@ def loan_aging_report(request):
             remaining_interest = remaining_balances["interest_balance"]
             penalty_balance = remaining_balances["penalty_balance"]
             outstanding_balance = remaining_principal + remaining_interest + penalty_balance
+
             if outstanding_balance <= 0:
                 continue
 
             days_overdue, next_due_date, final_due_date = compute_installment_based_days_overdue(loan, today)
+
             total_paid = loan.repayments.aggregate(
                 principal=Sum("principal_payment"),
                 interest=Sum("interest_payment"),
@@ -2165,11 +2122,9 @@ def loan_aging_report(request):
                 "total_paid": total_paid_amount,
             }
 
-            # --- Determine aging bucket ---
-            if days_overdue <= 0:
-                bucket_key = "Current (0 Days)"
-            elif days_overdue <= 30:
-                bucket_key = "0-30 Days (WATCH)"
+            # Bucket assignment - COMBINED 0-30 days
+            if days_overdue <= 30:
+                bucket_key = "0-30 Days (Performing / Watch)"
             elif days_overdue <= 60:
                 bucket_key = "31-60 Days (SUBSTANDARD)"
             elif days_overdue <= 90:
@@ -2185,7 +2140,7 @@ def loan_aging_report(request):
 
             aging_buckets[bucket_key].append(loan_info)
 
-            # --- Update bucket totals ---
+            # Update bucket totals
             bt = bucket_totals[bucket_key]
             bt["total_principal"] += loan.principal_amount
             bt["total_principal_due"] += remaining_principal
@@ -2198,36 +2153,38 @@ def loan_aging_report(request):
             logger.error(f"Error processing loan {loan.id}: {e}")
             continue
 
-    # --- Compute grand totals ---
+    # Sort loans in each bucket by days_overdue (ascending)
+    for bucket_key in aging_buckets:
+        aging_buckets[bucket_key].sort(key=lambda x: x["days_overdue"])
+
+    # Compute grand totals
     for bucket in bucket_totals.values():
         for key in grand_totals:
             grand_totals[key] += bucket[key]
 
     fmt = lambda val: f"{float(val):,.0f}"
 
-    # Format bucket totals
     formatted_bucket_totals = {
         key: {
-            "total_principal": fmt(bucket_totals[key].get("total_principal", 0)),
-            "total_principal_due": fmt(bucket_totals[key].get("total_principal_due", 0)),
-            "total_interest_due": fmt(bucket_totals[key].get("total_interest_due", 0)),
-            "total_penalty_due": fmt(bucket_totals[key].get("total_penalty_due", 0)),
-            "total_outstanding_balance": fmt(bucket_totals[key].get("total_outstanding_balance", 0)),
-            "total_paid": fmt(bucket_totals[key].get("total_paid", 0)),
+            "total_principal": fmt(bucket_totals[key]["total_principal"]),
+            "total_principal_due": fmt(bucket_totals[key]["total_principal_due"]),
+            "total_interest_due": fmt(bucket_totals[key]["total_interest_due"]),
+            "total_penalty_due": fmt(bucket_totals[key]["total_penalty_due"]),
+            "total_outstanding_balance": fmt(bucket_totals[key]["total_outstanding_balance"]),
+            "total_paid": fmt(bucket_totals[key]["total_paid"]),
         }
-        for key in aging_buckets.keys()
+        for key in aging_buckets
     }
 
     formatted_grand_totals = {k: fmt(v) for k, v in grand_totals.items()}
 
-    # Combine buckets and totals for template
     bucket_data = [
         {
             'key': bucket_key,
             'loans': aging_buckets[bucket_key],
             'totals': formatted_bucket_totals[bucket_key],
         }
-        for bucket_key in aging_buckets.keys()
+        for bucket_key in aging_buckets  # maintains order
     ]
 
     return render(
@@ -2244,16 +2201,212 @@ def loan_aging_report(request):
         },
     )
 
-
 # =================================== Loan Arrears Report view ===================================
+# @login_required
+# @admin_or_manager_or_staff_required
+# def loan_arrears_report(request):
+#     today = timezone.now().date()
+
+#     # Define arrears categories
+#     arrears_categories = {
+#         "0-30 Days (WATCH)": [],
+#         "31-60 Days (SUBSTANDARD)": [],
+#         "61-90 Days (SUBSTANDARD)": [],
+#         "91-120 Days (DOUBTFUL)": [],
+#         "121-180 Days (DOUBTFUL)": [],
+#         "181-365 Days (LOSS)": [],
+#         "Over 365 Days (LOSS)": [],
+#     }
+
+#     # Initialize category totals
+#     category_totals = {
+#         key: {
+#             "total_principal": Decimal("0.00"),
+#             "total_principal_due": Decimal("0.00"),
+#             "total_interest_due": Decimal("0.00"),
+#             "total_outstanding_balance": Decimal("0.00"),
+#         }
+#         for key in arrears_categories
+#     }
+
+#     # Initialize grand totals
+#     grand_totals = {
+#         "total_principal": Decimal("0.00"),
+#         "total_principal_due": Decimal("0.00"),
+#         "total_interest_due": Decimal("0.00"),
+#         "total_outstanding_balance": Decimal("0.00"),
+#     }
+
+#     # Fetch active loans (disbursed or overdue)
+#     overdue_loans = Loan.objects.filter(
+#         status__in=["overdue", "disbursed"],
+#         disbursement_date__isnull=False
+#     ).select_related("borrower")
+
+#     # -------------------------------------------------
+#     # Helper function: compute days overdue & due dates
+#     # -------------------------------------------------
+#     def compute_installment_based_days_overdue(loan, today):
+#         """
+#         Compute days overdue and next installment due date for a loan 
+#         based on monthly installment schedule.
+#         Returns (days_overdue, next_due_date, final_due_date).
+#         """
+#         disbursement_date = loan.disbursement_date
+#         term_months = loan.loan_period_months
+
+#         if not disbursement_date or not term_months:
+#             if loan.due_date:
+#                 days_overdue = max((today - loan.due_date).days, 0)
+#                 return days_overdue, None, loan.due_date
+#             return 0, None, None
+
+#         final_due_date = disbursement_date + relativedelta(months=term_months)
+
+#         # Determine elapsed months since disbursement
+#         months_elapsed = (today.year - disbursement_date.year) * 12 + (today.month - disbursement_date.month)
+#         if months_elapsed <= 0:
+#             next_due = disbursement_date + relativedelta(months=1)
+#             return 0, next_due, final_due_date
+
+#         installments_due_by_now = min(months_elapsed, term_months)
+
+#         # Amount paid so far
+#         total_principal_paid = loan.repayments.aggregate(
+#             total=Sum("principal_payment")
+#         )["total"] or Decimal("0.00")
+
+#         # Expected principal per month
+#         scheduled_principal = (
+#             loan.principal_amount / Decimal(term_months)
+#         ).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+#         installments_paid = int(total_principal_paid / scheduled_principal)
+
+#         # Determine next unpaid installment
+#         next_unpaid_installment = installments_paid + 1
+#         if next_unpaid_installment > term_months:
+#             # Fully paid
+#             return 0, None, final_due_date
+
+#         next_due_date = disbursement_date + relativedelta(months=next_unpaid_installment)
+#         days_overdue = max((today - next_due_date).days, 0)
+
+#         return days_overdue, next_due_date, final_due_date
+
+#     # -------------------------------------------------
+#     # Process each loan
+#     # -------------------------------------------------
+#     for loan in overdue_loans:
+#         try:
+#             remaining_balances = loan.calculate_remaining_balances()
+#             principal_due = remaining_balances["principal_balance"]
+#             interest_due = remaining_balances["interest_balance"]
+#             penalty_balance = remaining_balances.get("penalty_balance", Decimal("0.00"))
+#             outstanding_balance = principal_due + interest_due + penalty_balance
+
+#             if outstanding_balance <= 0:
+#                 continue
+
+#             days_overdue, next_due_date, final_due_date = compute_installment_based_days_overdue(loan, today)
+
+#             # Only consider loans with overdue days > 0 for arrears
+#             if days_overdue <= 0:
+#                 continue
+
+#             # Determine arrears category
+#             if days_overdue <= 30:
+#                 category = "0-30 Days (WATCH)"
+#                 status = "Watch"
+#             elif days_overdue <= 60:
+#                 category = "31-60 Days (SUBSTANDARD)"
+#                 status = "Substandard"
+#             elif days_overdue <= 90:
+#                 category = "61-90 Days (SUBSTANDARD)"
+#                 status = "Substandard"
+#             elif days_overdue <= 120:
+#                 category = "91-120 Days (DOUBTFUL)"
+#                 status = "Doubtful"
+#             elif days_overdue <= 180:
+#                 category = "121-180 Days (DOUBTFUL)"
+#                 status = "Doubtful"
+#             elif days_overdue <= 365:
+#                 category = "181-365 Days (LOSS)"
+#                 status = "Loss"
+#             else:
+#                 category = "Over 365 Days (LOSS)"
+#                 status = "Loss"
+
+#             # Build loan record
+#             loan_info = {
+#                 "loan_id": loan.id,
+#                 "borrower": loan.borrower.full_name,
+#                 "principal_amount": loan.principal_amount,
+#                 "interest_rate": loan.interest_rate,
+#                 "loan_period_months": loan.loan_period_months,
+#                 "start_date": loan.disbursement_date,
+#                 "due_date": final_due_date,
+#                 "next_due_date": next_due_date,
+#                 "days_overdue": days_overdue,
+#                 "principal_due": principal_due,
+#                 "interest_due": interest_due,
+#                 "outstanding_balance": outstanding_balance,
+#                 "status": status,
+#             }
+
+#             # Assign to arrears category
+#             arrears_categories[category].append(loan_info)
+
+#             # Update category totals
+#             category_totals[category]["total_principal"] += loan.principal_amount
+#             category_totals[category]["total_principal_due"] += principal_due
+#             category_totals[category]["total_interest_due"] += interest_due
+#             category_totals[category]["total_outstanding_balance"] += outstanding_balance
+
+#         except Exception as e:
+#             logger.error(f"Error processing loan {loan.id}: {e}")
+#             continue
+
+#     # -------------------------------------------------
+#     # Compute grand totals
+#     # -------------------------------------------------
+#     for category_data in category_totals.values():
+#         for key in grand_totals:
+#             grand_totals[key] += category_data[key]
+
+#     # Format totals for display
+#     fmt = lambda v: f"{float(v):,.0f}"
+
+#     formatted_category_totals = {
+#         cat: {k: fmt(v) for k, v in totals.items()}
+#         for cat, totals in category_totals.items()
+#     }
+#     formatted_grand_totals = {k: fmt(v) for k, v in grand_totals.items()}
+
+#     # -------------------------------------------------
+#     # Render template
+#     # -------------------------------------------------
+#     return render(
+#         request,
+#         "loans/loan_arrears_report.html",
+#         {
+#             "arrears_categories": arrears_categories,
+#             "category_totals": formatted_category_totals,
+#             "formatted_grand_totals": formatted_grand_totals,
+#             "table_title": "Loan Arrears Report",
+#             "now": today,
+#         },
+#     )
+
+
+#=================================== Loan Arrears Report view ===================================
 @login_required
 @admin_or_manager_or_staff_required
 def loan_arrears_report(request):
     today = timezone.now().date()
 
-    # Define arrears categories
-    arrears_categories = {
-        "0-30 Days (WATCH)": [],
+    # === ARREARS BUCKETS (Only past due loans) ===
+    arrears_buckets = {
+        "1-30 Days (WATCH)": [],
         "31-60 Days (SUBSTANDARD)": [],
         "61-90 Days (SUBSTANDARD)": [],
         "91-120 Days (DOUBTFUL)": [],
@@ -2262,184 +2415,161 @@ def loan_arrears_report(request):
         "Over 365 Days (LOSS)": [],
     }
 
-    # Initialize category totals
-    category_totals = {
+    # Totals per bucket
+    bucket_totals = {
         key: {
+            "loan_count": 0,
             "total_principal": Decimal("0.00"),
             "total_principal_due": Decimal("0.00"),
             "total_interest_due": Decimal("0.00"),
-            "total_outstanding_balance": Decimal("0.00"),
+            "total_outstanding": Decimal("0.00"),
         }
-        for key in arrears_categories
+        for key in arrears_buckets
     }
 
-    # Initialize grand totals
     grand_totals = {
+        "loan_count": 0,
         "total_principal": Decimal("0.00"),
         "total_principal_due": Decimal("0.00"),
         "total_interest_due": Decimal("0.00"),
-        "total_outstanding_balance": Decimal("0.00"),
+        "total_outstanding": Decimal("0.00"),
     }
 
-    # Fetch active loans (disbursed or overdue)
-    overdue_loans = Loan.objects.filter(
-        status__in=["overdue", "disbursed"],
+    # Fetch only active loans
+    loans = Loan.objects.filter(
+        status__in=["disbursed", "overdue"],
         disbursement_date__isnull=False
     ).select_related("borrower")
 
-    # -------------------------------------------------
-    # Helper function: compute days overdue & due dates
-    # -------------------------------------------------
-    def compute_installment_based_days_overdue(loan, today):
-        """
-        Compute days overdue and next installment due date for a loan 
-        based on monthly installment schedule.
-        Returns (days_overdue, next_due_date, final_due_date).
-        """
+    # === Helper: Compute days overdue based on installments ===
+    def compute_days_overdue(loan: Loan, today: date):
         disbursement_date = loan.disbursement_date
-        term_months = loan.loan_period_months
+        term_months = loan.loan_period_months or 0
 
-        if not disbursement_date or not term_months:
+        if not disbursement_date or term_months == 0:
             if loan.due_date:
-                days_overdue = max((today - loan.due_date).days, 0)
-                return days_overdue, None, loan.due_date
-            return 0, None, None
+                return max((today - loan.due_date).days, 0), loan.due_date
+            return 0, None
 
         final_due_date = disbursement_date + relativedelta(months=term_months)
 
-        # Determine elapsed months since disbursement
-        months_elapsed = (today.year - disbursement_date.year) * 12 + (today.month - disbursement_date.month)
-        if months_elapsed <= 0:
-            next_due = disbursement_date + relativedelta(months=1)
-            return 0, next_due, final_due_date
+        # Principal paid so far
+        paid = loan.repayments.aggregate(p=Sum("principal_payment"))["p"] or Decimal("0")
+        per_installment = (loan.principal_amount / Decimal(term_months)).quantize(Decimal("0.01"), rounding="ROUND_DOWN")
+        installments_paid = int(paid / per_installment) if per_installment > 0 else 0
+        next_installment_num = installments_paid + 1
 
-        installments_due_by_now = min(months_elapsed, term_months)
+        if next_installment_num > term_months:
+            return 0, final_due_date  # Fully paid
 
-        # Amount paid so far
-        total_principal_paid = loan.repayments.aggregate(
-            total=Sum("principal_payment")
-        )["total"] or Decimal("0.00")
-
-        # Expected principal per month
-        scheduled_principal = (
-            loan.principal_amount / Decimal(term_months)
-        ).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-        installments_paid = int(total_principal_paid / scheduled_principal)
-
-        # Determine next unpaid installment
-        next_unpaid_installment = installments_paid + 1
-        if next_unpaid_installment > term_months:
-            # Fully paid
-            return 0, None, final_due_date
-
-        next_due_date = disbursement_date + relativedelta(months=next_unpaid_installment)
+        next_due_date = disbursement_date + relativedelta(months=next_installment_num)
         days_overdue = max((today - next_due_date).days, 0)
+        return days_overdue, next_due_date
 
-        return days_overdue, next_due_date, final_due_date
-
-    # -------------------------------------------------
-    # Process each loan
-    # -------------------------------------------------
-    for loan in overdue_loans:
+    # === Process Each Loan ===
+    for loan in loans:
         try:
-            remaining_balances = loan.calculate_remaining_balances()
-            principal_due = remaining_balances["principal_balance"]
-            interest_due = remaining_balances["interest_balance"]
-            penalty_balance = remaining_balances.get("penalty_balance", Decimal("0.00"))
-            outstanding_balance = principal_due + interest_due + penalty_balance
+            balances = loan.calculate_remaining_balances()
+            principal_due = balances["principal_balance"]
+            interest_due = balances["interest_balance"]
+            penalty_due = balances.get("penalty_balance", Decimal("0"))
+            outstanding = principal_due + interest_due + penalty_due
 
-            if outstanding_balance <= 0:
+            if outstanding <= 0:
                 continue
 
-            days_overdue, next_due_date, final_due_date = compute_installment_based_days_overdue(loan, today)
+            days_overdue, next_due = compute_days_overdue(loan, today)
 
-            # Only consider loans with overdue days > 0 for arrears
-            if days_overdue <= 0:
+            # CRITICAL: Skip current loans
+            if days_overdue == 0:
                 continue
 
-            # Determine arrears category
+            # Determine bucket
             if days_overdue <= 30:
-                category = "0-30 Days (WATCH)"
-                status = "Watch"
+                bucket = "1-30 Days (WATCH)"
             elif days_overdue <= 60:
-                category = "31-60 Days (SUBSTANDARD)"
-                status = "Substandard"
+                bucket = "31-60 Days (SUBSTANDARD)"
             elif days_overdue <= 90:
-                category = "61-90 Days (SUBSTANDARD)"
-                status = "Substandard"
+                bucket = "61-90 Days (SUBSTANDARD)"
             elif days_overdue <= 120:
-                category = "91-120 Days (DOUBTFUL)"
-                status = "Doubtful"
+                bucket = "91-120 Days (DOUBTFUL)"
             elif days_overdue <= 180:
-                category = "121-180 Days (DOUBTFUL)"
-                status = "Doubtful"
+                bucket = "121-180 Days (DOUBTFUL)"
             elif days_overdue <= 365:
-                category = "181-365 Days (LOSS)"
-                status = "Loss"
+                bucket = "181-365 Days (LOSS)"
             else:
-                category = "Over 365 Days (LOSS)"
-                status = "Loss"
+                bucket = "Over 365 Days (LOSS)"
 
-            # Build loan record
             loan_info = {
                 "loan_id": loan.id,
                 "borrower": loan.borrower.full_name,
                 "principal_amount": loan.principal_amount,
                 "interest_rate": loan.interest_rate,
-                "loan_period_months": loan.loan_period_months,
-                "start_date": loan.disbursement_date,
-                "due_date": final_due_date,
-                "next_due_date": next_due_date,
+                "term_months": loan.loan_period_months,
+                "disbursement_date": loan.disbursement_date,
+                "final_due_date": loan.disbursement_date + relativedelta(months=loan.loan_period_months) if loan.loan_period_months else None,
+                "next_due_date": next_due,
                 "days_overdue": days_overdue,
                 "principal_due": principal_due,
                 "interest_due": interest_due,
-                "outstanding_balance": outstanding_balance,
-                "status": status,
+                "outstanding": outstanding,
             }
 
-            # Assign to arrears category
-            arrears_categories[category].append(loan_info)
-
-            # Update category totals
-            category_totals[category]["total_principal"] += loan.principal_amount
-            category_totals[category]["total_principal_due"] += principal_due
-            category_totals[category]["total_interest_due"] += interest_due
-            category_totals[category]["total_outstanding_balance"] += outstanding_balance
+            arrears_buckets[bucket].append(loan_info)
+            bt = bucket_totals[bucket]
+            bt["loan_count"] += 1
+            bt["total_principal"] += loan.principal_amount
+            bt["total_principal_due"] += principal_due
+            bt["total_interest_due"] += interest_due
+            bt["total_outstanding"] += outstanding
 
         except Exception as e:
             logger.error(f"Error processing loan {loan.id}: {e}")
             continue
 
-    # -------------------------------------------------
-    # Compute grand totals
-    # -------------------------------------------------
-    for category_data in category_totals.values():
+    # === Sort each bucket: Worst first ===
+    for bucket in arrears_buckets:
+        arrears_buckets[bucket].sort(
+            key=lambda x: (-x["days_overdue"], -float(x["outstanding"]))
+        )
+
+    # === Aggregate grand totals ===
+    for bt in bucket_totals.values():
         for key in grand_totals:
-            grand_totals[key] += category_data[key]
+            grand_totals[key] += bt[key]
 
-    # Format totals for display
-    fmt = lambda v: f"{float(v):,.0f}"
+    # === Formatting helper ===
+    fmt = lambda x: f"{float(x):,.0f}"
 
-    formatted_category_totals = {
-        cat: {k: fmt(v) for k, v in totals.items()}
-        for cat, totals in category_totals.items()
-    }
-    formatted_grand_totals = {k: fmt(v) for k, v in grand_totals.items()}
+    # Prepare data for template
+    bucket_data = []
+    for key in arrears_buckets:
+        bucket_data.append({
+            "name": key,
+            "loans": arrears_buckets[key],
+            "count": bucket_totals[key]["loan_count"],
+            "totals": {
+                "principal": fmt(bucket_totals[key]["total_principal"]),
+                "principal_due": fmt(bucket_totals[key]["total_principal_due"]),
+                "interest_due": fmt(bucket_totals[key]["total_interest_due"]),
+                "outstanding": fmt(bucket_totals[key]["total_outstanding"]),
+            }
+        })
 
-    # -------------------------------------------------
-    # Render template
-    # -------------------------------------------------
-    return render(
-        request,
-        "loans/loan_arrears_report.html",
-        {
-            "arrears_categories": arrears_categories,
-            "category_totals": formatted_category_totals,
-            "formatted_grand_totals": formatted_grand_totals,
-            "table_title": "Loan Arrears Report",
-            "now": today,
+    context = {
+        "bucket_data": bucket_data,
+        "grand_totals": {
+            "count": grand_totals["loan_count"],
+            "principal": fmt(grand_totals["total_principal"]),
+            "principal_due": fmt(grand_totals["total_principal_due"]),
+            "interest_due": fmt(grand_totals["total_interest_due"]),
+            "outstanding": fmt(grand_totals["total_outstanding"]),
         },
-    )
+        "report_date": today.strftime("%d %B %Y"),
+        "title": "Loan Arrears Report (Past Due Only)",
+    }
+
+    return render(request, "loans/loan_arrears_report.html", context)
 
 # =================================== loan_portfolio_report view ===================================
 @login_required
@@ -2546,95 +2676,185 @@ def loan_portfolio_report(request):
     })
 
 # =================================== portfolio_at_risk view ===================================
+# @login_required
+# def portfolio_at_risk(request):
+#     today = timezone.now().date()
+#     loans = Loan.objects.filter(status__in=["disbursed", "overdue", "approved"]).order_by("id")
+
+#     # Totals
+#     total_portfolio_balance = Decimal("0.00")
+#     total_outstanding_loans = Decimal("0.00")
+#     total_past_due_30 = Decimal("0.00")
+#     total_past_due_60 = Decimal("0.00")
+#     total_past_due_90 = Decimal("0.00")
+#     total_past_due_120 = Decimal("0.00")
+#     total_past_due_180 = Decimal("0.00")
+
+#     loan_data = []
+
+#     for loan in loans:
+#         balances = loan.calculate_remaining_balances()
+#         remaining_principal = balances.get("principal_balance", Decimal("0.00"))
+#         remaining_interest = balances.get("interest_balance", Decimal("0.00"))
+#         total_balance = remaining_principal + remaining_interest
+
+#         # Skip zero balance loans
+#         if total_balance <= 0:
+#             continue
+
+#         total_portfolio_balance += total_balance
+#         total_outstanding_loans += total_balance
+
+#         # Determine overdue days
+#         days_overdue = (
+#             (today - loan.due_date).days
+#             if loan.due_date and loan.due_date < today
+#             else 0
+#         )
+
+#         # Update PAR buckets
+#         if days_overdue >= 30:
+#             total_past_due_30 += total_balance
+#         if days_overdue >= 60:
+#             total_past_due_60 += total_balance
+#         if days_overdue >= 90:
+#             total_past_due_90 += total_balance
+#         if days_overdue >= 120:
+#             total_past_due_120 += total_balance
+#         if days_overdue >= 180:
+#             total_past_due_180 += total_balance
+
+#         loan_data.append(
+#             {
+#                 "loan_id": loan.id,
+#                 "borrower": loan.borrower.full_name,
+#                 "principal_amount": loan.principal_amount,
+#                 "remaining_principal": remaining_principal,
+#                 "remaining_interest": remaining_interest,
+#                 "total_remaining_balance": total_balance,
+#                 "due_date": loan.due_date,
+#                 "days_overdue": days_overdue,
+#                 "issue_date": loan.disbursement_date,
+#                 "final_due_date": loan.due_date,
+#             }
+#         )
+
+#     # Calculate PAR percentages
+#     def par_ratio(value):
+#         return (value / total_outstanding_loans * 100) if total_outstanding_loans > 0 else 0
+
+#     context = {
+#         "loan_data": loan_data,
+#         "par_30": par_ratio(total_past_due_30),
+#         "par_60": par_ratio(total_past_due_60),
+#         "par_90": par_ratio(total_past_due_90),
+#         "par_120": par_ratio(total_past_due_120),
+#         "par_180": par_ratio(total_past_due_180),
+#         "summary": {
+#             "total_loans": loans.count(),
+#             "total_outstanding_balance": total_portfolio_balance,
+#             "total_overdue_30": total_past_due_30,
+#             "total_overdue_60": total_past_due_60,
+#             "total_overdue_90": total_past_due_90,
+#             "total_overdue_120": total_past_due_120,
+#             "total_overdue_180": total_past_due_180,
+#         },
+#         "table_title": "Loan Portfolio at Risk Report",
+#         "now": timezone.now(),
+#     }
+
+#     return render(request, "loans/portfolio_at_risk_report.html", context)
+
 @login_required
 def portfolio_at_risk(request):
     today = timezone.now().date()
-    loans = Loan.objects.filter(status__in=["disbursed", "overdue", "approved"]).order_by("id")
 
-    # Totals
-    total_portfolio_balance = Decimal("0.00")
-    total_outstanding_loans = Decimal("0.00")
-    total_past_due_30 = Decimal("0.00")
-    total_past_due_60 = Decimal("0.00")
-    total_past_due_90 = Decimal("0.00")
-    total_past_due_120 = Decimal("0.00")
-    total_past_due_180 = Decimal("0.00")
+    # Active loans only
+    loans = Loan.objects.filter(
+        status__in=["disbursed", "overdue"],
+        disbursement_date__isnull=False
+    ).select_related("borrower")
 
-    loan_data = []
+    # PAR Buckets (outstanding balance in each category)
+    par = {
+        "par_1": Decimal("0.00"),    # 1+ days
+        "par_30": Decimal("0.00"),
+        "par_60": Decimal("0.00"),
+        "par_90": Decimal("0.00"),
+        "par_120": Decimal("0.00"),
+        "par_180": Decimal("0.00"),
+    }
+
+    total_portfolio = Decimal("0.00")
+    total_loans_count = 0
+
+    # Helper: Accurate days overdue (installment-based)
+    def get_days_overdue(loan):
+        if not loan.disbursement_date or not loan.loan_period_months:
+            return max((today - (loan.due_date or today)).days, 0) if loan.due_date else 0
+
+        paid_principal = loan.repayments.aggregate(p=Sum("principal_payment"))["p"] or Decimal("0")
+        per_month = (loan.principal_amount / Decimal(loan.loan_period_months)).quantize(Decimal("0.01"))
+        paid_installments = int(paid_principal / per_month) if per_month > 0 else 0
+        next_installment = paid_installments + 1
+
+        if next_installment > loan.loan_period_months:
+            return 0
+
+        next_due = loan.disbursement_date + relativedelta(months=next_installment)
+        return max((today - next_due).days, 0)
 
     for loan in loans:
         balances = loan.calculate_remaining_balances()
-        remaining_principal = balances.get("principal_balance", Decimal("0.00"))
-        remaining_interest = balances.get("interest_balance", Decimal("0.00"))
-        total_balance = remaining_principal + remaining_interest
+        outstanding = balances["principal_balance"] + balances["interest_balance"] + balances.get("penalty_balance", Decimal("0"))
 
-        # Skip zero balance loans
-        if total_balance <= 0:
+        if outstanding <= 0:
             continue
 
-        total_portfolio_balance += total_balance
-        total_outstanding_loans += total_balance
+        total_portfolio += outstanding
+        total_loans_count += 1
 
-        # Determine overdue days
-        days_overdue = (
-            (today - loan.due_date).days
-            if loan.due_date and loan.due_date < today
-            else 0
-        )
+        days = get_days_overdue(loan)
 
-        # Update PAR buckets
-        if days_overdue >= 30:
-            total_past_due_30 += total_balance
-        if days_overdue >= 60:
-            total_past_due_60 += total_balance
-        if days_overdue >= 90:
-            total_past_due_90 += total_balance
-        if days_overdue >= 120:
-            total_past_due_120 += total_balance
-        if days_overdue >= 180:
-            total_past_due_180 += total_balance
+        if days >= 1:
+            par["par_1"] += outstanding
+        if days >= 30:
+            par["par_30"] += outstanding
+        if days >= 60:
+            par["par_60"] += outstanding
+        if days >= 90:
+            par["par_90"] += outstanding
+        if days >= 120:
+            par["par_120"] += outstanding
+        if days >= 180:
+            par["par_180"] += outstanding
 
-        loan_data.append(
-            {
-                "loan_id": loan.id,
-                "borrower": loan.borrower.full_name,
-                "principal_amount": loan.principal_amount,
-                "remaining_principal": remaining_principal,
-                "remaining_interest": remaining_interest,
-                "total_remaining_balance": total_balance,
-                "due_date": loan.due_date,
-                "days_overdue": days_overdue,
-                "issue_date": loan.disbursement_date,
-                "final_due_date": loan.due_date,
-            }
-        )
-
-    # Calculate PAR percentages
-    def par_ratio(value):
-        return (value / total_outstanding_loans * 100) if total_outstanding_loans > 0 else 0
+    # Calculate percentages
+    def pct(val):
+        return (val / total_portfolio * 100) if total_portfolio > 0 else Decimal("0.00")
 
     context = {
-        "loan_data": loan_data,
-        "par_30": par_ratio(total_past_due_30),
-        "par_60": par_ratio(total_past_due_60),
-        "par_90": par_ratio(total_past_due_90),
-        "par_120": par_ratio(total_past_due_120),
-        "par_180": par_ratio(total_past_due_180),
-        "summary": {
-            "total_loans": loans.count(),
-            "total_outstanding_balance": total_portfolio_balance,
-            "total_overdue_30": total_past_due_30,
-            "total_overdue_60": total_past_due_60,
-            "total_overdue_90": total_past_due_90,
-            "total_overdue_120": total_past_due_120,
-            "total_overdue_180": total_past_due_180,
+        "total_portfolio": total_portfolio,
+        "total_loans": total_loans_count,
+        "par": {
+            "par_1_amount": par["par_1"],
+            "par_1_pct": pct(par["par_1"]),
+            "par_30_amount": par["par_30"],
+            "par_30_pct": pct(par["par_30"]),
+            "par_60_amount": par["par_60"],
+            "par_60_pct": pct(par["par_60"]),
+            "par_90_amount": par["par_90"],
+            "par_90_pct": pct(par["par_90"]),
+            "par_120_amount": par["par_120"],
+            "par_120_pct": pct(par["par_120"]),
+            "par_180_amount": par["par_180"],
+            "par_180_pct": pct(par["par_180"]),
         },
-        "table_title": "Loan Portfolio at Risk Report",
-        "now": timezone.now(),
+        "report_date": today.strftime("%d %B %Y"),
+        "title": "Portfolio at Risk (PAR) Summary Report",
     }
 
     return render(request, "loans/portfolio_at_risk_report.html", context)
-
 
 # =================================== non_performing_loans view ===================================
 @login_required
@@ -2899,368 +3119,6 @@ def client_loan_statement(request):
 
 
 # =================================== loan_due_overdue_report view===================================
-# @login_required
-# @admin_or_manager_or_staff_required
-# def loan_due_overdue_report(request):
-#     try:
-#         timezone.activate(pytz.timezone("Africa/Nairobi"))
-#     except pytz.exceptions.UnknownTimeZoneError:
-#         timezone.activate(pytz.UTC)
-
-#     # ─── Get selected date ─────────────────────────────────────────────
-#     selected_date_str = request.GET.get("selected_date")
-#     if selected_date_str:
-#         try:
-#             selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
-#         except ValueError:
-#             selected_date = timezone.now().date()
-#     else:
-#         selected_date = timezone.now().date()
-
-#     # ─── Get page numbers ─────────────────────────────────────────────
-#     due_page = int(request.GET.get("due_page", 1))
-#     overdue_page = int(request.GET.get("overdue_page", 1))
-
-#     # ─── Smart cache key (per date + page) ────────────────────────────
-#     cache_key = f"loan_due_overdue_report_{selected_date.strftime('%Y-%m-%d')}_due{due_page}_overdue{overdue_page}"
-#     cached_data = cache.get(cache_key)
-#     if cached_data:
-#         return render(request, "loans/loan_overdue_report.html", cached_data)
-
-#     # ─── Load and process loans ───────────────────────────────────────
-#     disbursed_loans = (
-#         Loan.objects.filter(status__in=["disbursed", "overdue"])
-#         .select_related("borrower")
-#         .prefetch_related("repayments", "penalties")
-#         .order_by("id")
-#     )
-
-#     due_loans, overdue_loans = [], []
-
-#     for loan in disbursed_loans:
-#         try:
-#             if not loan.disbursement_date or loan.loan_period_months <= 0:
-#                 continue
-
-#             balances = loan.calculate_remaining_balances()
-#             total_balance = (
-#                 balances["principal_balance"]
-#                 + balances["interest_balance"]
-#                 + balances["penalty_balance"]
-#             )
-#             if total_balance <= 0:
-#                 continue
-
-#             schedule = loan.generate_payment_schedule()
-#             if not schedule:
-#                 continue
-
-#             payments = [
-#                 {
-#                     **p,
-#                     "payment_due_date": (
-#                         p["payment_due_date"].date()
-#                         if isinstance(p["payment_due_date"], datetime)
-#                         else p["payment_due_date"]
-#                     ),
-#                 }
-#                 for p in schedule
-#                 if isinstance(p["payment_due_date"], (date, datetime))
-#                 and p["principal_payment"] + p["interest_payment"] > 0
-#             ]
-
-#             # ─── Overdue loans (past due date) ──────────────────────
-#             if loan.due_date and loan.due_date < selected_date:
-#                 days_overdue = (selected_date - loan.due_date).days
-#                 total_amount_due = Decimal(total_balance)
-#                 total_amount_due_balance = min(
-#                     loan.calculate_total_amount_due_balance(
-#                         due_date=selected_date, total_amount_due=total_amount_due
-#                     ),
-#                     total_balance,
-#                 )
-#                 if total_amount_due_balance > 0:
-#                     overdue_loans.append(
-#                         {
-#                             "loan": loan,
-#                             "principal_balance": balances["principal_balance"],
-#                             "interest_balance": balances["interest_balance"],
-#                             "penalty_balance": balances["penalty_balance"],
-#                             "total_balance": total_balance,
-#                             "disbursement_date": loan.disbursement_date,
-#                             "maturity_due_date": loan.due_date,
-#                             "total_amount_due": total_amount_due,
-#                             "total_amount_due_balance": total_amount_due_balance,
-#                             "days_overdue": days_overdue,
-#                         }
-#                     )
-#                 continue
-
-#             # ─── Overdue payments (missed instalments) ───────────────
-#             overdue_payments = [p for p in payments if p["payment_due_date"] < selected_date]
-#             if overdue_payments:
-#                 earliest_due_date = min(p["payment_due_date"] for p in overdue_payments)
-#                 days_overdue = (selected_date - earliest_due_date).days
-#                 total_amount_due = Decimal(
-#                     min(sum(p["principal_payment"] + p["interest_payment"] for p in overdue_payments), total_balance)
-#                 )
-#                 total_amount_due_balance = min(
-#                     loan.calculate_total_amount_due_balance(due_date=selected_date, total_amount_due=total_amount_due),
-#                     total_balance,
-#                 )
-#                 if total_amount_due_balance > 0:
-#                     overdue_loans.append(
-#                         {
-#                             "loan": loan,
-#                             "principal_balance": balances["principal_balance"],
-#                             "interest_balance": balances["interest_balance"],
-#                             "penalty_balance": balances["penalty_balance"],
-#                             "total_balance": total_balance,
-#                             "disbursement_date": loan.disbursement_date,
-#                             "maturity_due_date": loan.due_date,
-#                             "total_amount_due": total_amount_due,
-#                             "total_amount_due_balance": total_amount_due_balance,
-#                             "days_overdue": days_overdue,
-#                         }
-#                     )
-#                 continue
-
-#             # ─── Due loans (today’s due date) ─────────────────────────
-#             due_payments = [p for p in payments if p["payment_due_date"] == selected_date]
-#             is_due_on_date = loan.due_date == selected_date
-#             if due_payments or is_due_on_date:
-#                 total_amount_due = Decimal(
-#                     min(
-#                         sum(p["principal_payment"] + p["interest_payment"] for p in due_payments)
-#                         if due_payments else total_balance,
-#                         total_balance,
-#                     )
-#                 )
-#                 total_amount_due_balance = min(
-#                     loan.calculate_total_amount_due_balance(due_date=selected_date, total_amount_due=total_amount_due),
-#                     total_balance,
-#                 )
-#                 if total_amount_due_balance > 0:
-#                     due_loans.append(
-#                         {
-#                             "loan": loan,
-#                             "principal_balance": balances["principal_balance"],
-#                             "interest_balance": balances["interest_balance"],
-#                             "penalty_balance": balances["penalty_balance"],
-#                             "total_balance": total_balance,
-#                             "due_payment": due_payments[0] if due_payments else None,
-#                             "disbursement_date": loan.disbursement_date,
-#                             "maturity_due_date": loan.due_date,
-#                             "total_amount_due": total_amount_due,
-#                             "total_amount_due_balance": total_amount_due_balance,
-#                         }
-#                     )
-
-#         except Exception as e:
-#             logger.error(f"Error processing loan {loan.id}: {str(e)}")
-#             continue
-
-#     # ─── Pagination ─────────────────────────────────────────────────
-#     due_paginator = Paginator(due_loans, 50)
-#     overdue_paginator = Paginator(overdue_loans, 50)
-#     due_loans_paginated = due_paginator.get_page(due_page)
-#     overdue_loans_paginated = overdue_paginator.get_page(overdue_page)
-
-#     # ─── Totals ─────────────────────────────────────────────────────
-#     context = {
-#         "due_loans_unpaginated": due_loans,
-#         "overdue_loans_unpaginated": overdue_loans,
-#         "due_loans": due_loans_paginated,
-#         "overdue_loans": overdue_loans_paginated,
-#         "due_page": due_loans_paginated.number,
-#         "overdue_page": overdue_loans_paginated.number,
-#         "due_loans_count": len(due_loans),
-#         "overdue_loans_count": len(overdue_loans),
-#         "due_loans_total_balance": sum(l["total_balance"] for l in due_loans),
-#         "overdue_loans_total_balance": sum(l["total_balance"] for l in overdue_loans),
-#         "selected_date": selected_date,
-#     }
-
-#     # Cache 1h
-#     cache.set(cache_key, context, timeout=3600)
-
-#     return render(request, "loans/loan_overdue_report.html", context)
-
-
-# # =================================== loan_due_overdue_report view===================================
-# @login_required
-# @admin_or_manager_or_staff_required
-# def loan_due_overdue_report(request):
-#     try:
-#         timezone.activate(pytz.timezone("Africa/Nairobi"))
-#     except pytz.exceptions.UnknownTimeZoneError:
-#         timezone.activate(pytz.UTC)
-
-#     # ─── Selected Date ─────────────────────────────────────────────────
-#     selected_date_str = request.GET.get("selected_date")
-#     if selected_date_str:
-#         try:
-#             selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
-#         except ValueError:
-#             selected_date = timezone.now().date()
-#     else:
-#         selected_date = timezone.now().date()
-
-#     # ─── Search Term ───────────────────────────────────────────────────
-#     search_term = request.GET.get("search", "").strip().lower()
-
-#     # ─── Pagination ────────────────────────────────────────────────────
-#     page_due = request.GET.get('page_due', 1)
-#     page_overdue = request.GET.get('page_overdue', 1)
-
-#     # ─── Cache Key ─────────────────────────────────────────────────────
-#     cache_key = f"loan_due_overdue_{selected_date}_{search_term}_{page_due}_{page_overdue}"
-#     if not search_term:  # Only cache normal views
-#         cached = cache.get(cache_key)
-#         if cached:
-#             return render(request, "loans/loan_overdue_report.html", cached)
-
-#     # ─── Query loans ───────────────────────────────────────────────────
-#     loans_qs = Loan.objects.filter(status__in=["disbursed", "overdue"]) \
-#         .select_related("borrower") \
-#         .prefetch_related("repayments", "penalties") \
-#         .order_by("id")
-
-#     due_loans_list = []
-#     overdue_loans_list = []
-
-#     for loan in loans_qs:
-#         try:
-#             # ─── Early skip conditions ─────────────────────────────────
-#             if not loan.disbursement_date or loan.loan_period_months <= 0:
-#                 continue
-
-#             # ─── Safe search string (no crash if fields missing) ───────
-#             if search_term:
-#                 borrower = loan.borrower
-#                 phone = getattr(borrower, 'phone_number', '') or ''
-#                 searchable = f"{loan.id} {borrower.full_name or ''} {phone} {loan.principal_amount}".lower()
-#                 if search_term not in searchable:
-#                     continue
-
-#             # ─── Calculate balances ────────────────────────────────────
-#             balances = loan.calculate_remaining_balances()
-#             total_balance = (
-#                 balances["principal_balance"] +
-#                 balances["interest_balance"] +
-#                 balances["penalty_balance"]
-#             )
-#             if total_balance <= 0:
-#                 continue
-
-#             schedule = loan.generate_payment_schedule()
-#             if not schedule:
-#                 continue
-
-#             payments = [
-#                 {**p, "payment_due_date": p["payment_due_date"].date() if hasattr(p["payment_due_date"], "date") else p["payment_due_date"]}
-#                 for p in schedule
-#                 if p.get("principal_payment", 0) + p.get("interest_payment", 0) > 0
-#             ]
-
-#             # 1. Fully overdue
-#             if loan.due_date and loan.due_date < selected_date:
-#                 days_overdue = (selected_date - loan.due_date).days
-#                 due_balance = min(
-#                     loan.calculate_total_amount_due_balance(due_date=selected_date, total_amount_due=total_balance),
-#                     total_balance
-#                 )
-#                 if due_balance > 0:
-#                     overdue_loans_list.append({
-#                         "loan": loan,
-#                         "principal_balance": balances["principal_balance"],
-#                         "interest_balance": balances["interest_balance"],
-#                         "penalty_balance": balances["penalty_balance"],
-#                         "total_balance": total_balance,
-#                         "disbursement_date": loan.disbursement_date,
-#                         "maturity_due_date": loan.due_date,
-#                         "total_amount_due_balance": due_balance,
-#                         "days_overdue": days_overdue,
-#                     })
-#                 continue
-
-#             # 2. Missed instalments
-#             missed = [p for p in payments if p["payment_due_date"] < selected_date]
-#             if missed:
-#                 earliest = min(p["payment_due_date"] for p in missed)
-#                 days_overdue = (selected_date - earliest).days
-#                 expected = sum(p["principal_payment"] + p["interest_payment"] for p in missed)
-#                 due_balance = min(
-#                     loan.calculate_total_amount_due_balance(due_date=selected_date, total_amount_due=Decimal(expected)),
-#                     total_balance
-#                 )
-#                 if due_balance > 0:
-#                     overdue_loans_list.append({
-#                         "loan": loan,
-#                         "principal_balance": balances["principal_balance"],
-#                         "interest_balance": balances["interest_balance"],
-#                         "penalty_balance": balances["penalty_balance"],
-#                         "total_balance": total_balance,
-#                         "disbursement_date": loan.disbursement_date,
-#                         "maturity_due_date": loan.due_date,
-#                         "total_amount_due_balance": due_balance,
-#                         "days_overdue": days_overdue,
-#                     })
-#                 continue
-
-#             # 3. Due today
-#             due_today = [p for p in payments if p["payment_due_date"] == selected_date]
-#             if due_today or loan.due_date == selected_date:
-#                 expected = sum(p["principal_payment"] + p["interest_payment"] for p in due_today) if due_today else total_balance
-#                 due_balance = min(
-#                     loan.calculate_total_amount_due_balance(due_date=selected_date, total_amount_due=Decimal(expected)),
-#                     total_balance
-#                 )
-#                 if due_balance > 0:
-#                     due_loans_list.append({
-#                         "loan": loan,
-#                         "principal_balance": balances["principal_balance"],
-#                         "interest_balance": balances["interest_balance"],
-#                         "penalty_balance": balances["penalty_balance"],
-#                         "total_balance": total_balance,
-#                         "disbursement_date": loan.disbursement_date,
-#                         "maturity_due_date": loan.due_date,
-#                         "total_amount_due_balance": due_balance,
-#                     })
-
-#         except Exception as e:
-#             logger.error(f"Error processing loan {loan.id if loan else 'unknown'}: {e}")
-#             continue  # Never crash the whole report
-
-#     # ─── Pagination or show all when searching ───────────────────────
-#     if search_term:
-#         due_loans = due_loans_list
-#         overdue_loans = overdue_loans_list
-#     else:
-#         due_paginator = Paginator(due_loans_list, 50)
-#         overdue_paginator = Paginator(overdue_loans_list, 50)
-#         due_loans = due_paginator.get_page(page_due)
-#         overdue_loans = overdue_paginator.get_page(page_overdue)
-
-#     # ─── Totals ───────────────────────────────────────────────────────
-#     context = {
-#         "due_loans": due_loans,
-#         "overdue_loans": overdue_loans,
-#         "due_loans_total_balance": sum(i["total_balance"] for i in due_loans_list),
-#         "overdue_loans_total_balance": sum(i["total_balance"] for i in overdue_loans_list),
-#         "due_loans_count": len(due_loans_list),
-#         "overdue_loans_count": len(overdue_loans_list),
-#         "selected_date": selected_date,
-#         "now": timezone.now(),
-#         "table_title": "Due & Overdue Loans Report",
-#     }
-
-#     if not search_term:
-#         cache.set(cache_key, context, 3600)
-
-#     return render(request, "loans/loan_overdue_report.html", context)
-
-
 @login_required
 @admin_or_manager_or_staff_required
 def loan_due_overdue_report(request):
