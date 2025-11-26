@@ -17,7 +17,7 @@
   </style>
 </head>
 <body class="bg-light">
-  <div class="container py-3">
+  <div class="container py-1">
     <div class="row g-4 justify-content-center">
       <!-- Form Column -->
       <div class="col-12 col-md-6 order-md-2">
@@ -105,7 +105,7 @@
           <div class="card-footer bg-white text-center small text-muted py-3">
             <p class="mb-1">&copy; <span id="year"></span> Pendeza Uganda</p>
             <p class="small mt-2 mb-0">
-              Powered by <a href="https://perpetual-web-vert.vercel.app/" class="text-primary text-decoration-none">Perpetual Tech</a>
+              Powered by <a href="https://perpetual.tech" class="text-primary text-decoration-none">Perpetual Tech</a>
             </p>
           </div>
         </div>
@@ -145,6 +145,8 @@
 
     {% if transaction_id %}
       const ref = '{{ transaction_id }}';
+      const userId = '{{ user_id }}';
+      const apiKey = '{{ api_key }}';
       const finalAmount = '{{ amount }}';
       let attempts = 0;
 
@@ -153,7 +155,7 @@
           document.getElementById('statusBox').outerHTML = '<div class="alert alert-warning small">Timed out. Try again.</div>';
           return;
         }
-        fetch(`/sponsorship/transaction-status/${ref}/`)
+        fetch(`/sponsorship/transaction-status/${ref}/${userId}/${apiKey}/`)
           .then(r => r.json())
           .then(d => {
             if (d.status === 'SUCCESSFUL') {

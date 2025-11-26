@@ -66,11 +66,8 @@ urlpatterns = [
     # MoMo Payment operations
     path("initiate/", views.initiate_payment, name="initiate_payment"),
     path("callback/", views.momo_callback, name="momo_callback"),
-    path(
-        "transaction-status/<str:ref_id>/<str:user_id>/<str:api_key>/",
-        views.get_transaction_status,
-        name="get_transaction_status",
-    ),
+    path("transaction-status/<str:ref_id>/", views.get_transaction_status, name="transaction_status"),
+    
     path("thank-you/", views.thank_you, name="thank_you"),
     path("transactions/", views.momo_transaction_list, name="momo_transaction_list"),
     path(
