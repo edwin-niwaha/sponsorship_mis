@@ -42,7 +42,7 @@ def request_to_pay(access_token, subscription_key, phone, amount, transaction_id
         "currency": "UGX",
         "externalId": external_id,
         "payer": {"partyIdType": "MSISDN", "partyId": phone},
-        "payerMessage": "Perpetual Softwares MTN Payment",
+        "payerMessage": "Pendeza Uganda SDMS",
         "payeeNote": "Thank you for using our system",
     }
     res = requests.post(url, json=body, headers=headers, timeout=30)
