@@ -22,8 +22,9 @@
           <thead>
             <tr>
               <th>#</th>
-              <th>Reference ID</th>
+              {% comment %} <th>Reference ID</th> {% endcomment %}
               <th>Donor Name</th>
+              <th>Email</th>
               <th>Phone</th>
               <th>Amount(UGX)</th>
               <th>Status</th>
@@ -35,9 +36,16 @@
             {% for tx in records %}
               <tr>
                 <td>{{ forloop.counter }}.</td>
-                <td>{{ tx.reference_id }}</td>
+                {% comment %} <td>{{ tx.reference_id }}</td> {% endcomment %}
                 <td>{{ tx.donor_name|default:'Anonymous' }}</td>
-                <td>{{ tx.phone_number }}</td>
+                <td>
+                  {% if tx.donor_email %}
+                    <span class="badge bg-info text-dark" title="{{ tx.donor_email }}">{{ tx.donor_email|truncatechars:25 }}</span>
+                  {% else %}
+                    <span class="badge bg-secondary">No email</span>
+                  {% endif %}
+                </td>
+                <td class="text-right">{{ tx.phone_number }}</td>
                 <td class="text-right">{{ tx.amount }}</td>
                 <td>
                   {% if tx.status == 'SUCCESSFUL' %}
