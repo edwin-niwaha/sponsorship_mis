@@ -326,5 +326,5 @@ SUBSCRIPTION_KEY = os.getenv("SUBSCRIPTION_KEY")
 MOMO_API_USER = os.getenv("MOMO_API_USER")
 MOMO_API_KEY = os.getenv("MOMO_API_KEY")
 CALLBACK_URL = os.getenv(
-    "CALLBACK_URL", default="https://sponsorwithpendeza.org/sponsorship/callback/"
+    "CALLBACK_URL", default="https://sponsorwithpendeza.org/sponsorship/mtn-pay/callback/"
 )

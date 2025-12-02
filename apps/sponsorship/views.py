@@ -1,7 +1,6 @@
 import json
 import logging
 import re
-
 import requests
 from django.conf import settings
 from django.contrib import messages
@@ -33,7 +32,7 @@ from .forms import (
     StaffSponsorshipForm,
 )
 from .models import ChildSponsorship, MoMoTransaction, StaffSponsorship
-from .momo_dev_helpers import create_access_token, generate_uuid, request_to_pay
+from .momo_helpers import create_access_token, generate_uuid, request_to_pay
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -476,17 +475,12 @@ def initiate_payment(request):
 
         if status == 202:
             messages.success(request, "Payment request sent! Approve on your phone.", extra_tags="alert-success")
-            # return render(request, "sponsorship/initiate_payment.html", {
-            #     "transaction_id": ref, "amount": amount, "user_id": settings.MOMO_API_USER,
-            #     "api_key": settings.MOMO_API_KEY, "phone": phone, "donor_name": name, "donor_email": email
-            # })
             return render(request, "sponsorship/initiate_payment.html", {
                 "transaction_id": ref,
                 "amount": amount,
                 "phone": phone,
                 "donor_name": name,
                 "donor_email": email,
-                # No api_key, no user_id → nothing sensitive sent to browser
             })
         else:
             messages.error(request, "Payment failed. Try again.", extra_tags="alert-danger")
@@ -510,11 +504,13 @@ def get_transaction_status(request, ref_id):
         return JsonResponse({"status": "PENDING"})  # Don't leak errors
 
     # 2. Query the transaction status
-    url = f"https://sandbox.momodeveloper.mtn.com/collection/v1_0/requesttopay/{ref_id}"
+    # url = f"https://sandbox.momodeveloper.mtn.com/collection/v1_0/requesttopay/{ref_id}"
+    url = f"https://proxy.momoapi.mtn.com/collection/v1_0/requesttopay/{ref_id}"
     headers = {
         "Authorization": f"Bearer {token}",
         "Ocp-Apim-Subscription-Key": settings.SUBSCRIPTION_KEY,
-        "X-Target-Environment": "sandbox",
+        # "X-Target-Environment": "sandbox",
+        "X-Target-Environment": "mtnuganda", 
     }
 
     try:
@@ -532,9 +528,7 @@ def get_transaction_status(request, ref_id):
 # ---------------- MoMo Callback Handler ---------------- #
 @csrf_exempt
 def momo_callback(request):
-    """
-    Handle MTN MoMo callback and update MoMoTransaction status.
-    """
+    
     if request.method != "POST":
         return JsonResponse({"error": "Invalid method"}, status=405)
 
