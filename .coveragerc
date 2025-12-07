@@ -1,2 +1,19 @@
 [run]
-source = apps.child
+branch = True
+source = apps
+omit =
+    */migrations/*
+    */tests/*
+    manage.py
+    */settings/*
+    */wsgi.py
+    */asgi.py
+
+[report]
+show_missing = True
+skip_covered = True
+fail_under = 90
+
+[html]
+directory = htmlcov
+title = Sponsorship App Coverage Report

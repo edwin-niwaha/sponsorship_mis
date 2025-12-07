@@ -1,100 +1,83 @@
+# Sponsorship & Donor Management System (SDMS)
 
-# Sponsorship & Donor Management Software (SDMS)
+A secure, production-ready Django web application for managing child sponsorships and processing donations via **MTN Mobile Money (MoMo) in Uganda.
 
-SDMS is a simple yet powerfull tool, built with django which is a Python-based free and open-source web framework that follows the model–template–views architectural pattern.
+![Python](https://img.shields.io/badge/python-3.9%2B-blue)
+![Django](https://img.shields.io/badge/django-4.2%2B-success)
+![PostgreSQL](https://img.shields.io/badge/db-postgresql-blue)
+![Coverage](coverage.svg)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-## Requirements
-Make sure you have python and Node js installed on your system:
-- [Python version 3.9.13](https://www.python.org/downloads/release/python-3913/) 
-- [Node version 16.7.1](https://nodejs.org/en/download/)
+## Features
 
-## Note Create a new application inside apps folder
-cd backend
-- django-admin startapp my_new_app
+- Full MTN MoMo Collections API integration (Uganda)
+- Real-time payment status polling (no keys exposed to browser)
+- Secure webhook/callback handling with idempotency
+- Donor capture (name, email, phone)
+- Admin dashboard with search & pagination
+- 90%+ test coverage with detailed reports
+- Clean, responsive UI with Bootstrap
 
-## Project Setup
+## Live Demo (when deployed)
+→ https://your-live-url.com (add later)
 
-- Clone the repository in a local folder
+## Quick Start
+
+### 1. Clone the repository
 ```bash
-    git clone https://github.com/edwin-niwaha
-    ```
-- Open terminal and verify python version
-  ```bash
-    python --version
-    ```
-- Verify if node and npm are installed
-  ```bash
-    node --version
-    npm -version
-    ```
-## Setup Backend
-- Nvaigate to cloned project directory
-  ```bash
-    cd spsonsorship-mis/backend
-    ```
-- Create a python virtual environment for backend
-  ```bash
-    $ python -m venv venv
-    ```
-- Activate the virtual environment
-  ```bash
-  # For winodws
-    source venv/Scripts/activate
-  # Powershell
-    deactivate
-    venv\Scripts\Activate
-
-    
-  # For linux
-    source venv/bin/activate
-    ```
-- Install python libraries
-  ```bash
-   cd backend
-   pip install -r requirements.txt
-   pip freeze > requirements.txt
-    ```
-- Start Django server
-  ```bash
-   python manage.py runserver
-    ```
-- Django backend server will start on http://localhost:8000/
+git clone https://github.com/edwin-niwaha/sponsorship-mis.git
+cd sponsorship-mis/backend
 ```
+### 2. Set up virtual environment
+```bash
+python -m venv venv
 
-## TSTING THE WEB APP
-- pip install coverage
+# Windows
+venv\Scripts\activate
 
+# macOS / Linux
+source venv/bin/activate
+```bash
+### 3. Install dependencies
+```bash
+pip install -r requirements.txt
+```bash
+### 4. Set up environment variables
+```bash
+cp .env.example .env
+```
+### 5. Apply migrations & create admin user
+```bash
+python manage.py migrate
+python manage.py createsuperuser
+```
+### 6. Run the server
+```bash
+python manage.py runserver
+```
+Open → http://localhost:8000
 
-##  Running Tests
-a) Running All Tests
-You can run all tests in your project with the following command:
-- python manage.py test
-* This command discovers and runs tests from all apps listed in INSTALLED_APPS, including those in tests directories.
+### Testing & Coverage 
+```bash
+# Install coverage (one time)
+pip install coverage coverage-badge
 
-b) Running Tests from a Specific App
-- python manage.py test app_name
-For example:
-- python manage.py test child
-This command runs tests specifically in the apps/child/tests/ directory.
+# Run tests with coverage
+coverage run manage.py test
 
-c) Running Tests from a Specific File
-- python manage.py test app_name.tests.test_file
-For example:
-- python manage.py test child.tests.test_models
+# View report in terminal
+coverage report -m
 
-# Run Coverage on a Specific Module
-coverage run --source='apps.child.models' manage.py test
-coverage run --source='apps' manage.py test
+# Generate HTML report (recommended)
+coverage html
+# Open htmlcov/index.html in your browser
 
-# Generate Coverage Report
-coverage report
-
-# Generate HML Report
-- coverage html
-
-# Generate XML Report
-- coverage xml
-
-# Installing flake8
-- pip install flake8
-- flake8
+# Generate coverage badge
+coverage-badge -o coverage.svg
+```
+### Code Quality
+```bash
+# Lint with flake8
+pip install flake8
+flake8
+```
