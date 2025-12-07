@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+
 import requests
 from django.conf import settings
 from django.contrib import messages
@@ -15,6 +16,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import urlencode
 from django.views.decorators.csrf import csrf_exempt
 
 from apps.child.models import Child
@@ -32,7 +34,7 @@ from .forms import (
     StaffSponsorshipForm,
 )
 from .models import ChildSponsorship, MoMoTransaction, StaffSponsorship
-from .momo_helpers import create_access_token, generate_uuid, request_to_pay
+from .momo_prod import create_access_token, generate_uuid, request_to_pay
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -453,39 +455,85 @@ def initiate_payment(request):
         name = request.POST.get("name", "").strip() or None
         email = request.POST.get("email", "").strip() or None
 
-        if not re.match(r"^256\d{9}$", phone):
+        if not re.match(r"^07\d{8}$", phone):
             messages.error(request, "Invalid phone number.", extra_tags="alert-danger")
             return render(request, "sponsorship/initiate_payment.html")
 
+        # Convert phone to MTN API format 2567XXXXXXX
+        api_phone = "256" + phone[1:]
+
+        # Validate amount
         try:
             amount = int(float(amount))
             if amount < 5000:
                 raise ValueError
         except ValueError:
-            messages.error(request, "Amount must be 5,000 UGX or more.", extra_tags="alert-danger")
+            messages.error(
+                request, "Amount must be 5,000 UGX or more.", extra_tags="alert-danger"
+            )
             return render(request, "sponsorship/initiate_payment.html")
 
-        token = create_access_token(settings.MOMO_API_USER, settings.MOMO_API_KEY, settings.SUBSCRIPTION_KEY)
+        token = create_access_token(
+            settings.MOMO_API_USER, settings.MOMO_API_KEY, settings.SUBSCRIPTION_KEY
+        )
         if not token:
-            messages.error(request, "Service temporarily unavailable.", extra_tags="alert-danger")
+            messages.error(
+                request, "Service temporarily unavailable.", extra_tags="alert-danger"
+            )
             return render(request, "sponsorship/initiate_payment.html")
 
         ref = generate_uuid()
-        status, _ = request_to_pay(token, settings.SUBSCRIPTION_KEY, phone, amount, ref)
+        status, res_text = request_to_pay(
+            token, settings.SUBSCRIPTION_KEY, api_phone, amount, ref
+        )
+        print("RequestToPay Status:", status)
+        print("RequestToPay Response:", res_text)
 
         if status == 202:
-            messages.success(request, "Payment request sent! Approve on your phone.", extra_tags="alert-success")
-            return render(request, "sponsorship/initiate_payment.html", {
-                "transaction_id": ref,
-                "amount": amount,
-                "phone": phone,
-                "donor_name": name,
-                "donor_email": email,
-            })
+            # redirect to waiting page with query parameters
+            query = urlencode(
+                {
+                    "ref": ref,
+                    "amount": amount,
+                    "phone": phone,
+                    "name": name or "",
+                    "email": email or "",
+                }
+            )
+            return HttpResponseRedirect(reverse("waiting") + f"?{query}")
+
         else:
-            messages.error(request, "Payment failed. Try again.", extra_tags="alert-danger")
-    
+            messages.error(
+                request, "Payment failed. Try again.", extra_tags="alert-danger"
+            )
+
     return render(request, "sponsorship/initiate_payment.html")
+
+
+# ---------------- Waiting Page ---------------- #
+def waiting(request):
+    """
+    Display waiting page after initiating MoMo payment.
+    Expects query params: ref, amount, phone, name, email
+    """
+    ref = request.GET.get("ref")
+    amount = request.GET.get("amount")
+    phone = request.GET.get("phone")
+    donor_name = request.GET.get("name", "")
+    donor_email = request.GET.get("email", "")
+
+    if not ref or not amount or not phone:
+        # fallback: redirect to form if missing data
+        return redirect("initiate_payment")
+
+    context = {
+        "transaction_id": ref,
+        "amount": amount,
+        "phone": phone,
+        "donor_name": donor_name,
+        "donor_email": donor_email,
+    }
+    return render(request, "sponsorship/waiting.html", context)
 
 
 # ---------------- Auto Status Check ---------------- #
@@ -496,39 +544,40 @@ def get_transaction_status(request, ref_id):
     """
     # 1. Generate token using YOUR secrets (never exposed)
     token = create_access_token(
-        settings.MOMO_API_USER,
-        settings.MOMO_API_KEY,
-        settings.SUBSCRIPTION_KEY
+        settings.MOMO_API_USER, settings.MOMO_API_KEY, settings.SUBSCRIPTION_KEY
     )
     if not token:
         return JsonResponse({"status": "PENDING"})  # Don't leak errors
 
     # 2. Query the transaction status
-    # url = f"https://sandbox.momodeveloper.mtn.com/collection/v1_0/requesttopay/{ref_id}"
     url = f"https://proxy.momoapi.mtn.com/collection/v1_0/requesttopay/{ref_id}"
     headers = {
         "Authorization": f"Bearer {token}",
         "Ocp-Apim-Subscription-Key": settings.SUBSCRIPTION_KEY,
-        # "X-Target-Environment": "sandbox",
-        "X-Target-Environment": "mtnuganda", 
+        "X-Target-Environment": "mtnuganda",
     }
 
     try:
-        res = requests.get(url, headers=headers, timeout=10)
+        res = requests.get(url, headers=headers, timeout=30)
         if res.status_code == 200:
             data = res.json()
             # MTN returns "status": "SUCCESSFUL" | "FAILED" | "PENDING"
-            return JsonResponse({"status": data.get("status", "PENDING")})
+            return JsonResponse(
+                {
+                    "status": data.get("status", "PENDING"),
+                    "reason": data.get("reason", ""),
+                }
+            )
         else:
             return JsonResponse({"status": "PENDING"})
     except requests.exceptions.RequestException:
         return JsonResponse({"status": "PENDING"})
-    
+
 
 # ---------------- MoMo Callback Handler ---------------- #
 @csrf_exempt
 def momo_callback(request):
-    
+
     if request.method != "POST":
         return JsonResponse({"error": "Invalid method"}, status=405)
 
@@ -570,10 +619,11 @@ def momo_callback(request):
         txn.save()
         logger.info(f"Transaction {external_id} updated to {status}")
     else:
-        logger.info(f"Transaction {external_id} callback received but status already {status}")
+        logger.info(
+            f"Transaction {external_id} callback received but status already {status}"
+        )
 
     return JsonResponse({"status": "ok"})
-
 
 
 # ---------------- Thank You Page ---------------- #
@@ -605,6 +655,7 @@ def thank_you(request):
         "donor_email": donor_email,
     }
     return render(request, "sponsorship/thank_you.html", context)
+
 
 # ---------------- MoMo Transaction List View ---------------- #
 @login_required

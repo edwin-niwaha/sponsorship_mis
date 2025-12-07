@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-
 import dj_database_url
 from dotenv import load_dotenv
 
@@ -267,7 +266,7 @@ ED_EMAIL = str(os.getenv("ED_EMAIL"))
 ACCOUNTANT_EMAIL = str(os.getenv("ACCOUNTANT_EMAIL"))
 PROGS_ADMIN_EMAIL = str(os.getenv("PROGS_ADMIN_EMAIL"))
 
-SESSION_COOKIE_AGE = 3600  # 60 * 60 Session duration in seconds
+SESSION_COOKIE_AGE = 7200      # 2 hours (2 * 60 * 60)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Expire session when browser closes
 
 # Specifying default primary key field type for models that don't define a primary key field explicitly.
@@ -325,6 +324,7 @@ FLUTTERWAVE_ENCRYPTION_KEY = os.getenv("FLUTTERWAVE_ENCRYPTION_KEY")
 SUBSCRIPTION_KEY = os.getenv("SUBSCRIPTION_KEY")
 MOMO_API_USER = os.getenv("MOMO_API_USER")
 MOMO_API_KEY = os.getenv("MOMO_API_KEY")
-CALLBACK_URL = os.getenv(
-    "CALLBACK_URL", default="https://sponsorwithpendeza.org/sponsorship/mtn-pay/callback/"
+MOMO_CALLBACK_URL = os.getenv(
+    "MOMO_CALLBACK_URL",
+    default="https://sponsorwithpendeza.org/sponsorship/mtn-pay/callback/",
 )
