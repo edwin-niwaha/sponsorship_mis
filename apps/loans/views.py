@@ -1,7 +1,7 @@
 import logging
 from datetime import date, datetime
 from decimal import ROUND_DOWN, Decimal
-
+from datetime import timedelta
 import pytz
 from dateutil.relativedelta import relativedelta
 from django.contrib import messages
@@ -3076,82 +3076,307 @@ def loan_due_overdue_report(request):
 
 
 # =================================== loan_penalty_management view ===================================
+# @login_required
+# @admin_or_manager_or_staff_required
+# def loan_penalty_management(request):
+
+#     # Only clients who have loans (any status except maybe rejected/pending if you want)
+#     clients_with_loans = (
+#         Client.objects.filter(loans__isnull=False)  # Has at least one loan
+#         .distinct()
+#         .order_by("full_name")
+#     )
+
+#     selected_client = None
+#     penalties = []
+#     total_amount = Decimal("0.00")
+
+#     if request.method == "POST":
+#         client_id = request.POST.get("client_id")
+
+#         if not client_id:
+#             messages.error(request, "Please select a client.", extra_tags="bg-danger")
+#         else:
+#             selected_client = get_object_or_404(Client, id=client_id)
+
+#             # Get only unpaid penalties for this client's loans
+#             penalties = (
+#                 LoanPenalty.objects.filter(
+#                     loan__borrower=selected_client,
+#                     is_paid=False,
+#                     remaining_amount__gt=0,
+#                 )
+#                 .select_related("loan", "loan__borrower")
+#                 .order_by("-penalty_date")
+#             )
+
+#             total_amount = penalties.aggregate(total=Sum("remaining_amount"))[
+#                 "total"
+#             ] or Decimal("0.00")
+
+#             # Handle deletion of selected penalties
+#             if "delete_selected" in request.POST:
+#                 penalty_ids = request.POST.getlist("penalty_ids")
+
+#                 if not penalty_ids:
+#                     messages.warning(
+#                         request, "No penalties were selected for deletion."
+#                     )
+#                 else:
+#                     # Security: ensure penalties belong to this client and are unpaid
+#                     deleted_penalties = LoanPenalty.objects.filter(
+#                         id__in=penalty_ids,
+#                         loan__borrower=selected_client,
+#                         is_paid=False,
+#                     )
+#                     count = deleted_penalties.count()
+#                     deleted_penalties.delete()
+
+#                     messages.success(
+#                         request,
+#                         f"Successfully deleted {count} loan penalt{'y' if count == 1 else 'ies'}.",
+#                         extra_tags="bg-success",
+#                     )
+
+#                     # Refresh list after deletion
+#                     penalties = penalties.exclude(id__in=penalty_ids)
+#                     total_amount = penalties.aggregate(total=Sum("remaining_amount"))[
+#                         "total"
+#                     ] or Decimal("0.00")
+
+#     context = {
+#         "table_title": "Delete Loan Penalties",
+#         "Selected Client": selected_client,
+#         "clients": clients_with_loans,
+#         "selected_client": selected_client,
+#         "penalties": penalties,
+#         "total_amount": total_amount,
+#         "total_count": penalties.count() if penalties else 0,
+#     }
+
+#     return render(request, "loans/loan_penalty_management.html", context)
+
+
+# @login_required
+# @admin_or_manager_or_staff_required
+# def loan_penalty_management(request):
+#     clients_with_loans = Client.objects.filter(loans__isnull=False).distinct().order_by("full_name")
+
+#     selected_client = None
+#     unpaid_penalties = []
+#     paid_penalties = []  # Will contain (penalty, paid_date) tuples
+
+#     unpaid_total = paid_total = total_ever = Decimal("0.00")
+#     unpaid_count = paid_count = 0
+
+#     if request.method == "POST":
+#         client_id = request.POST.get("client_id")
+#         if client_id:
+#             selected_client = get_object_or_404(Client, id=client_id)
+
+#             # ========== UNPAID PENALTIES ==========
+#             unpaid_penalties = LoanPenalty.objects.filter(
+#                 loan__borrower=selected_client,
+#                 is_paid=False,
+#                 remaining_amount__gt=0
+#             ).select_related("loan").order_by("-penalty_date")
+
+#             unpaid_total = unpaid_penalties.aggregate(t=Sum("remaining_amount"))["t"] or Decimal("0")
+#             unpaid_count = unpaid_penalties.count()
+
+#             # ========== PAID PENALTIES (with actual payment date) ==========
+#             # Get all repayments that paid penalties for this client's loans
+#             penalty_repayments = LoanRepayment.objects.filter(
+#                 loan__borrower=selected_client,
+#                 penalty_payment__gt=0
+#             ).select_related("loan").order_by("-repayment_date")
+
+#             # Build a list of paid penalties with the date they were paid
+#             paid_penalty_ids = set()
+#             paid_penalties = []
+
+#             for repayment in penalty_repayments:
+#                 # Get penalties that were marked paid around this repayment
+#                 # We'll use updated_at close to repayment_date as proxy
+#                 recent_paid = LoanPenalty.objects.filter(
+#                     loan=repayment.loan,
+#                     is_paid=True,
+#                     updated_at__gte=repayment.repayment_date - timedelta(minutes=5),
+#                     updated_at__lte=repayment.repayment_date + timedelta(minutes=5),
+#                 )
+#                 for penalty in recent_paid:
+#                     if penalty.id not in paid_penalty_ids:
+#                         paid_penalty_ids.add(penalty.id)
+#                         paid_penalties.append({
+#                             "penalty": penalty,
+#                             "paid_on": repayment.repayment_date,
+#                             "paid_via_repayment": repayment.id
+#                         })
+
+#             # Fallback: any remaining is_paid=True without match → use updated_at
+#             remaining_paid = LoanPenalty.objects.filter(
+#                 loan__borrower=selected_client,
+#                 is_paid=True
+#             ).exclude(id__in=paid_penalty_ids)
+
+#             for penalty in remaining_paid:
+#                 paid_penalties.append({
+#                     "penalty": penalty,
+#                     "paid_on": penalty.updated_at.date(),
+#                     "paid_via_repayment": None
+#                 })
+
+#             paid_total = sum(p["penalty"].penalty_amount for p in paid_penalties)
+#             paid_count = len(paid_penalties)
+
+#             total_ever = unpaid_total + paid_total
+
+#             # Handle deletion (only unpaid)
+#             if "delete_selected" in request.POST:
+#                 penalty_ids = request.POST.getlist("penalty_ids")
+#                 if penalty_ids:
+#                     deleted = LoanPenalty.objects.filter(
+#                         id__in=penalty_ids,
+#                         loan__borrower=selected_client,
+#                         is_paid=False
+#                     )
+#                     count = deleted.count()
+#                     deleted.delete()
+#                     messages.success(request, f"Deleted {count} unpaid penalt{'y' if count == 1 else 'ies'}.")
+#                     unpaid_penalties = unpaid_penalties.exclude(id__in=penalty_ids)
+
+#     context = {
+#         "table_title": "Loan Penalties Management",
+#         "clients": clients_with_loans,
+#         "selected_client": selected_client,
+#         "unpaid_penalties": unpaid_penalties,
+#         "paid_penalties": paid_penalties,        # ← Now a list of dicts
+#         "unpaid_total": unpaid_total,
+#         "paid_total": paid_total,
+#         "total_ever": total_ever,
+#         "unpaid_count": unpaid_count,
+#         "paid_count": paid_count,
+#     }
+#     return render(request, "loans/loan_penalty_management.html", context)
+
+
 @login_required
 @admin_or_manager_or_staff_required
 def loan_penalty_management(request):
-
-    # Only clients who have loans (any status except maybe rejected/pending if you want)
-    clients_with_loans = (
-        Client.objects.filter(loans__isnull=False)  # Has at least one loan
-        .distinct()
-        .order_by("full_name")
-    )
-
+    clients_with_loans = Client.objects.filter(loans__isnull=False).distinct().order_by("full_name")
+    
     selected_client = None
-    penalties = []
-    total_amount = Decimal("0.00")
+    unpaid_penalties = []
+    paid_penalties = []
+    unpaid_total = paid_total = total_ever = Decimal("0.00")
+    unpaid_count = paid_count = 0
 
     if request.method == "POST":
         client_id = request.POST.get("client_id")
-
-        if not client_id:
-            messages.error(request, "Please select a client.", extra_tags="bg-danger")
-        else:
+        if client_id:
             selected_client = get_object_or_404(Client, id=client_id)
 
-            # Get only unpaid penalties for this client's loans
-            penalties = (
-                LoanPenalty.objects.filter(
-                    loan__borrower=selected_client,
-                    is_paid=False,
-                    remaining_amount__gt=0,
+            # ---------------- UNPAID PENALTIES ----------------
+            unpaid_penalties = LoanPenalty.objects.filter(
+                loan__borrower=selected_client,
+                is_paid=False,
+                remaining_amount__gt=0,
+                is_deleted=False
+            ).select_related("loan").order_by("-penalty_date")
+
+            unpaid_total = unpaid_penalties.aggregate(t=Sum("remaining_amount"))["t"] or Decimal("0")
+            unpaid_count = unpaid_penalties.count()
+
+            # ---------------- PAID PENALTIES ----------------
+            penalty_repayments = LoanRepayment.objects.filter(
+                loan__borrower=selected_client,
+                penalty_payment__gt=0
+            ).select_related("loan").order_by("-repayment_date")
+
+            paid_penalty_ids = set()
+            paid_penalties = []
+
+            # Map repayments to penalties paid
+            for repayment in penalty_repayments:
+                recent_paid = LoanPenalty.objects.filter(
+                    loan=repayment.loan,
+                    is_paid=True,
+                    updated_at__gte=repayment.repayment_date - timedelta(minutes=5),
+                    updated_at__lte=repayment.repayment_date + timedelta(minutes=5),
+                    is_deleted=False
                 )
-                .select_related("loan", "loan__borrower")
-                .order_by("-penalty_date")
-            )
+                for penalty in recent_paid:
+                    if penalty.id not in paid_penalty_ids:
+                        paid_penalty_ids.add(penalty.id)
+                        paid_penalties.append({
+                            "penalty": penalty,
+                            "paid_on": repayment.repayment_date,
+                            "paid_via_repayment": repayment.id
+                        })
 
-            total_amount = penalties.aggregate(total=Sum("remaining_amount"))[
-                "total"
-            ] or Decimal("0.00")
+            # Include any remaining paid penalties
+            remaining_paid = LoanPenalty.objects.filter(
+                loan__borrower=selected_client,
+                is_paid=True,
+                is_deleted=False
+            ).exclude(id__in=paid_penalty_ids)
 
-            # Handle deletion of selected penalties
+            for penalty in remaining_paid:
+                paid_penalties.append({
+                    "penalty": penalty,
+                    "paid_on": penalty.updated_at.date(),
+                    "paid_via_repayment": None
+                })
+
+            paid_total = sum(p["penalty"].penalty_amount for p in paid_penalties)
+            paid_count = len(paid_penalties)
+            total_ever = unpaid_total + paid_total
+
+            # ---------------- DELETE SELECTED PENALTIES ----------------
             if "delete_selected" in request.POST:
                 penalty_ids = request.POST.getlist("penalty_ids")
-
-                if not penalty_ids:
-                    messages.warning(
-                        request, "No penalties were selected for deletion."
-                    )
-                else:
-                    # Security: ensure penalties belong to this client and are unpaid
-                    deleted_penalties = LoanPenalty.objects.filter(
+                if penalty_ids:
+                    penalties_to_delete = LoanPenalty.objects.filter(
                         id__in=penalty_ids,
                         loan__borrower=selected_client,
-                        is_paid=False,
-                    )
-                    count = deleted_penalties.count()
-                    deleted_penalties.delete()
+                        is_deleted=False
+                    ).select_related("loan")
+
+                    count = penalties_to_delete.count()
+                    
+                    # Soft-delete penalties and delete related transactions
+                    for penalty in penalties_to_delete:
+                        penalty.is_deleted = True
+                        penalty.deleted_at = timezone.now()
+                        penalty.deleted_by = request.user
+                        penalty.save()
+
+                        # Delete related transaction history
+                        TransactionHistory.objects.filter(
+                            loan=penalty.loan,
+                            description__icontains="Penalty",
+                            amount=penalty.penalty_amount
+                        ).delete()
 
                     messages.success(
                         request,
-                        f"Successfully deleted {count} loan penalt{'y' if count == 1 else 'ies'}.",
-                        extra_tags="bg-success",
+                        f"Deleted {count} penalty{'y' if count == 1 else 'ies'} (paid or unpaid)."
                     )
 
-                    # Refresh list after deletion
-                    penalties = penalties.exclude(id__in=penalty_ids)
-                    total_amount = penalties.aggregate(total=Sum("remaining_amount"))[
-                        "total"
-                    ] or Decimal("0.00")
+                    # Refresh lists
+                    unpaid_penalties = unpaid_penalties.exclude(id__in=penalty_ids)
+                    paid_penalties = [p for p in paid_penalties if str(p['penalty'].id) not in penalty_ids]
 
     context = {
-        "table_title": "Delete Loan Penalties",
-        "Selected Client": selected_client,
+        "table_title": "Loan Penalties Management",
         "clients": clients_with_loans,
         "selected_client": selected_client,
-        "penalties": penalties,
-        "total_amount": total_amount,
-        "total_count": penalties.count() if penalties else 0,
+        "unpaid_penalties": unpaid_penalties,
+        "paid_penalties": paid_penalties,
+        "unpaid_total": unpaid_total,
+        "paid_total": paid_total,
+        "total_ever": total_ever,
+        "unpaid_count": unpaid_count,
+        "paid_count": paid_count,
     }
-
     return render(request, "loans/loan_penalty_management.html", context)

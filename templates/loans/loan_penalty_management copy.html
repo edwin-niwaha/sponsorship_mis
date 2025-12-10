@@ -15,6 +15,7 @@
       </a>
     </div>
   </div>
+
   <hr class="border-3 border-primary">
 
   <!-- Client Selection -->
@@ -48,7 +49,7 @@
         <p class="text-muted">Reg No: {{ selected_client.reg_number }}</p>
       </div>
 
-      <!-- UNPAID PENALTIES -->
+      <!-- ========== UNPAID PENALTIES ========== -->
       <div class="card mb-4 border-danger">
         <div class="card-header bg-danger text-white">
           <h5 class="mb-0">
@@ -59,13 +60,20 @@
             </span>
           </h5>
         </div>
+
         {% if unpaid_penalties %}
-          <form method="POST" onsubmit="return confirm('Are you sure you want to DELETE the selected penalties?\nThis action cannot be undone.');">
+          <form method="POST" onsubmit="return confirm('Are you sure you want to DELETE the selected unpaid penalties?\nThis action cannot be undone.');">
             {% csrf_token %}
             <input type="hidden" name="client_id" value="{{ selected_client.id }}">
             <div class="card-body">
+              <div class="d-flex justify-content-end mb-3">
+                <button type="submit" name="delete_selected" class="btn btn-outline-danger btn-sm">
+                  <i class="mdi mdi-delete-forever"></i> Delete Selected
+                </button>
+              </div>
+
               <div class="table-responsive">
-                <table class="table table-bordered table-hover mb-0">
+                <table class="table table-bordered table-hover">
                   <thead class="table-light">
                     <tr>
                       <th><input type="checkbox" id="selectUnpaid"></th>
@@ -80,7 +88,7 @@
                   <tbody>
                     {% for p in unpaid_penalties %}
                     <tr class="table-warning">
-                      <td><input type="checkbox" name="penalty_ids" value="{{ p.id }}" class="form-check-input unpaidCheckbox"></td>
+                      <td><input type="checkbox" name="penalty_ids" value="{{ p.id }}" class="form-check-input"></td>
                       <td>{{ forloop.counter }}</td>
                       <td><a href="{% url 'loans:loan_detail' p.loan.id %}">#{{ p.loan.id }}</a></td>
                       <td>{{ p.penalty_date|date:"d M Y" }}</td>
@@ -90,12 +98,14 @@
                     </tr>
                     {% endfor %}
                   </tbody>
+                  <tfoot class="table-danger text-white">
+                    <tr>
+                      <th colspan="5">TOTAL UNPAID</th>
+                      <th class="text-end">{{ unpaid_total|floatformat:2|intcomma }} UGX</th>
+                      <th></th>
+                    </tr>
+                  </tfoot>
                 </table>
-              </div>
-              <div class="d-flex justify-content-end mt-3">
-                <button type="submit" name="delete_selected" class="btn btn-outline-danger btn-sm">
-                  <i class="mdi mdi-delete-forever"></i> Delete Selected
-                </button>
               </div>
             </div>
           </form>
@@ -106,7 +116,8 @@
         {% endif %}
       </div>
 
-      <!-- PAID PENALTIES -->
+      <!-- ========== PAID PENALTIES ========== -->
+      <!-- ========== PAID PENALTIES ========== -->
       <div class="card border-success mb-4">
         <div class="card-header bg-success text-white">
           <h5 class="mb-0">
@@ -117,20 +128,18 @@
             </span>
           </h5>
         </div>
+
         {% if paid_penalties %}
-          <form method="POST" onsubmit="return confirm('Are you sure you want to DELETE the selected penalties?\nThis action cannot be undone.');">
-            {% csrf_token %}
-            <input type="hidden" name="client_id" value="{{ selected_client.id }}">
+          <div class="card-body p-0">
             <div class="table-responsive">
               <table class="table table-bordered table-hover mb-0">
                 <thead class="table-light">
                   <tr>
-                    <th><input type="checkbox" id="selectPaid"></th>
                     <th>#</th>
                     <th>Loan</th>
                     <th>Penalty Date</th>
                     <th>Amount</th>
-                    <th>Paid On</th>
+                    <th><strong>Paid On</strong></th>
                     <th>Reason</th>
                   </tr>
                 </thead>
@@ -138,33 +147,35 @@
                   {% for item in paid_penalties %}
                     {% with p=item.penalty %}
                     <tr class="table-success">
-                      <td><input type="checkbox" name="penalty_ids" value="{{ p.id }}" class="form-check-input paidCheckbox"></td>
                       <td>{{ forloop.counter }}</td>
                       <td><a href="{% url 'loans:loan_detail' p.loan.id %}">#{{ p.loan.id }}</a></td>
                       <td>{{ p.penalty_date|date:"d M Y" }}</td>
                       <td class="text-end fw-bold">{{ p.penalty_amount|floatformat:2|intcomma }}</td>
-                      <td class="text-end text-success"><strong>{{ item.paid_on|date:"d M Y" }}</strong></td>
+                      <td class="text-end text-success">
+                        <strong>{{ item.paid_on|date:"d M Y" }}</strong>
+                      </td>
                       <td>{{ p.reason }}</td>
                     </tr>
                     {% endwith %}
                   {% endfor %}
                 </tbody>
+                <tfoot class="table-success text-white">
+                  <tr>
+                    <th colspan="3">TOTAL PAID</th>
+                    <th class="text-end">{{ paid_total|floatformat:2|intcomma }} UGX</th>
+                    <th colspan="2"></th>
+                  </tr>
+                </tfoot>
               </table>
-              <div class="d-flex justify-content-end mt-3">
-                <button type="submit" name="delete_selected" class="btn btn-outline-danger btn-sm">
-                  <i class="mdi mdi-delete-forever"></i> Delete Selected
-                </button>
-              </div>
             </div>
-          </form>
+          </div>
         {% else %}
           <div class="card-body text-center text-muted py-4">
             <h5>No paid penalties recorded</h5>
           </div>
         {% endif %}
       </div>
-
-      <!-- Summary -->
+      <!-- Summary Footer -->
       <div class="text-center mt-4 p-4 bg-light rounded">
         <h5>Penalty Summary for {{ selected_client.full_name }}</h5>
         <p class="mb-0">
@@ -182,11 +193,9 @@
 </div>
 
 <script>
-  document.getElementById('selectUnpaid')?.addEventListener('change', function() {
-    document.querySelectorAll('.unpaidCheckbox').forEach(cb => cb.checked = this.checked);
-  });
-  document.getElementById('selectPaid')?.addEventListener('change', function() {
-    document.querySelectorAll('.paidCheckbox').forEach(cb => cb.checked = this.checked);
-  });
+// Select all for unpaid only
+document.getElementById('selectUnpaid')?.addEventListener('change', function() {
+  document.querySelectorAll('input[name="penalty_ids"]').forEach(cb => cb.checked = this.checked);
+});
 </script>
 {% endblock %}

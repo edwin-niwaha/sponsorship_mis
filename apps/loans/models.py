@@ -831,7 +831,11 @@ class LoanPenalty(models.Model):
         related_name="penalties_created",
         verbose_name="Created By",
     )
-
+    # Add to LoanPenalty model (run migration)
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    deleted_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    
     class Meta:
         db_table = "loan_penalties"
         verbose_name = "Loan Penalty"
