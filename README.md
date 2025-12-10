@@ -1,4 +1,4 @@
-# Sponsorship & Donor Management System (SDMS)
+# Sponsorship Management System (SMS)
 
 A secure, production-ready Django web application for managing child sponsorships and processing donations via **MTN Mobile Money (MoMo) in Uganda.
 

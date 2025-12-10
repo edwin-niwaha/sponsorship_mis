@@ -459,11 +459,11 @@ class LoanRepaymentForm(forms.ModelForm):
                 f"Interest payment of {interest_payment:,.2f} cannot exceed the remaining interest balance of {remaining_interest:,.2f}.",
             )
 
-        # ✅ Updated: allow partial penalty payments
-        if penalty_payment > remaining_penalty:
+        # Validate penalty payment: must exactly equal remaining penalty if there is one
+        if remaining_penalty > 0 and penalty_payment != remaining_penalty:
             self.add_error(
                 "penalty_payment",
-                f"Penalty payment of {penalty_payment:,.2f} cannot exceed the remaining penalty balance of {remaining_penalty:,.2f}.",
+                f"Penalty payment must equal the remaining penalty of {remaining_penalty:,.2f}.",
             )
 
         return cleaned_data

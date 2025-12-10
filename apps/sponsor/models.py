@@ -60,10 +60,16 @@ class Sponsor(models.Model):
     expected_amt = models.DecimalField(
         _("Amount Expected(UgX)"), max_digits=10, decimal_places=2, default=0
     )
-    job_title = models.CharField(max_length=100, null=True, blank=True, verbose_name="Job Title")
-    region = models.CharField(max_length=100, null=True, blank=True, verbose_name="Region")
+    job_title = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name="Job Title"
+    )
+    region = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name="Region"
+    )
     town = models.CharField(max_length=100, null=True, blank=True, verbose_name="Town")
-    origin = models.CharField(max_length=100, null=True, blank=True, verbose_name="Origin")
+    origin = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name="Origin"
+    )
     business_telephone = PhoneNumberField(
         null=True,
         blank=True,
@@ -96,7 +102,9 @@ class Sponsor(models.Model):
         default=False,
         verbose_name="Departed?",
     )
-    comment = models.CharField(max_length=100, null=True, blank=True, verbose_name="Comment")
+    comment = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name="Comment"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
     updated_at = models.DateTimeField(auto_now=True)
 

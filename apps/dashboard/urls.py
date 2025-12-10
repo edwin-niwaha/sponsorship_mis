@@ -5,7 +5,7 @@ from . import views
 urlpatterns = [
     path("", views.home, name="users-home"),
     # sponsorship urls
-    path("sdms/", views.dashboard, name="main-dashboard"),
+    path("sms/", views.dashboard, name="main-dashboard"),
     path(
         "get_sponsors_data/",
         views.get_sponsors_data,

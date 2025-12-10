@@ -266,7 +266,7 @@ ED_EMAIL = str(os.getenv("ED_EMAIL"))
 ACCOUNTANT_EMAIL = str(os.getenv("ACCOUNTANT_EMAIL"))
 PROGS_ADMIN_EMAIL = str(os.getenv("PROGS_ADMIN_EMAIL"))
 
-SESSION_COOKIE_AGE = 7200      # 2 hours (2 * 60 * 60)
+SESSION_COOKIE_AGE = 7200  # 2 hours (2 * 60 * 60)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Expire session when browser closes
 
 # Specifying default primary key field type for models that don't define a primary key field explicitly.

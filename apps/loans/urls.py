@@ -79,4 +79,9 @@ urlpatterns = [
         views.loan_due_overdue_report,
         name="due_overdue_report",
     ),
+    path(
+        "penalties/manage/",
+        views.loan_penalty_management,
+        name="loan_penalty_management",
+    ),
 ]

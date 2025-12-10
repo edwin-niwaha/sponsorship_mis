@@ -1,0 +1,131 @@
+{% extends 'loans/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="page-header flex-wrap d-flex justify-content-between align-items-center">
+    <h3 class="mb-0">{{ table_title|upper }}</h3>
+    <div>
+      <button onclick="printDiv('printSection')" class="btn btn-success btn-sm">
+        <i class="mdi mdi-printer"></i> Print
+      </button>
+      <a href="{% url 'loans:loan_reports_dashboard' %}" class="btn btn-info btn-sm">
+        <i class="mdi mdi-arrow-left"></i> Back
+      </a>
+    </div>
+  </div>
+
+  <hr class="border-3 border-primary">
+
+  <!-- Client Selection -->
+  <form method="POST" class="card p-3 mb-4 bg-light">
+    {% csrf_token %}
+    <div class="row g-3 align-items-end">
+      <div class="col-md-6">
+        <label class="form-label fw-bold">Select Client with Loan</label>
+        <select name="client_id" class="form-select chzn-select" required>
+          <option value="" selected disabled>-- Choose Client --</option>
+          {% for client in clients %}
+            <option value="{{ client.id }}" {% if selected_client.id == client.id %}selected{% endif %}>
+              {{ client.full_name }} → {{ client.reg_number }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="mdi mdi-magnify"></i> Load Penalties
+        </button>
+      </div>
+    </div>
+  </form>
+
+  {% if selected_client %}
+    <div id="printSection">
+      <div class="text-center my-4">
+        <h4 class="text-primary fw-bold">
+          UNPAID LOAN PENALTIES – {{ selected_client.full_name }}
+        </h4>
+        <p class="text-muted">Reg No: {{ selected_client.reg_number }}</p>
+      </div>
+
+      {% if penalties %}
+        <form method="POST" onsubmit="return confirm('WARNING: You are about to PERMANENTLY DELETE the selected penalties.\n\nThis cannot be undone. Continue?');">
+          {% csrf_token %}
+          <input type="hidden" name="client_id" value="{{ selected_client.id }}">
+
+          <div class="d-flex justify-content-between mb-3">
+            <p class="fs-5">
+              <strong>{{ total_count }}</strong> unpaid penalt{{ total_count|pluralize:"y,ies" }} found
+              → Total: <span class="text-danger fw-bold">{{ total_amount|floatformat:2|intcomma }} UGX</span>
+            </p>
+            <button type="submit" name="delete_selected" class="btn btn-danger">
+              <i class="mdi mdi-delete-forever"></i> Delete Selected
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+              <thead class="table-dark">
+                <tr>
+                  <th><input type="checkbox" id="selectAll"></th>
+                  <th>#</th>
+                  <th>Loan ID</th>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Remaining</th>
+                  <th>Reason</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in penalties %}
+                <tr>
+                  <td>
+                    <input type="checkbox" name="penalty_ids" value="{{ p.id }}" class="form-check-input">
+                  </td>
+                  <td>{{ forloop.counter }}</td>
+                  <td>
+                    <a href="{% url 'loans:loan_detail' p.loan.id %}">#{{ p.loan.id }}</a>
+                  </td>
+                  <td>{{ p.penalty_date|date:"d M Y" }}</td>
+                  <td class="text-end">{{ p.penalty_amount|floatformat:2|intcomma }}</td>
+                  <td class="text-end text-danger fw-bold">{{ p.remaining_amount|floatformat:2|intcomma }}</td>
+                  <td>{{ p.reason }}</td>
+                  <td>{{ p.created_at|date:"d M Y" }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot class="table-info">
+                <tr>
+                  <th colspan="4">TOTAL UNPAID</th>
+                  <th class="text-end">{{ total_amount|floatformat:2|intcomma }}</th>
+                  <th colspan="3">{{ total_count }} item{{ total_count|pluralize }}</th>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </form>
+      {% else %}
+        <div class="alert alert-success text-center">
+          No unpaid penalties found for <strong>{{ selected_client.full_name }}</strong>.
+        </div>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="alert class="alert alert-info text-center">
+      Please select a client to view and delete their loan penalties.
+    </div>
+  {% endif %}
+</div>
+
+<script>
+// Select/Deselect All
+document.getElementById('selectAll')?.addEventListener('change', function() {
+  document.querySelectorAll('input[name="penalty_ids"]').forEach(cb => {
+    cb.checked = this.checked;
+  });
+});
+</script>
+{% endblock %}

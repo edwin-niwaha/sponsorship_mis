@@ -95,7 +95,7 @@
 
                   <td>{{ repayment.account }}</td>
                   <td class="text-center">
-                    <form method="POST" action="{% url 'loans:delete_repayment' repayment.id %}" class="d-inline">
+                    <form method="POST" action="{% url 'loans:delete_repayment' repayment.id %}" class="d-inline" onsubmit="return confirm('Are you sure you want to DELETE this repayment of {{ repayment.total_payment|floatformat:2|intcomma }} UGX?\n\nThis action CANNOT be undone.');">
                       {% csrf_token %}
                       <button type="submit" class="btn btn-danger btn-sm shadow-sm" title="Delete"><i class="mdi mdi-trash-can"></i></button>
                     </form>

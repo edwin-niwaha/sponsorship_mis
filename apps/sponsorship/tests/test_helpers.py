@@ -6,7 +6,11 @@ from django.contrib.auth.models import User
 from django.contrib.messages import get_messages
 import responses
 from apps.sponsorship.models import MoMoTransaction
-from apps.sponsorship.momo_prod import create_access_token, request_to_pay, generate_uuid  # Adjust for your helpers
+from apps.sponsorship.momo_prod import (
+    create_access_token,
+    request_to_pay,
+    generate_uuid,
+)  # Adjust for your helpers
 from django.conf import settings
 
 
@@ -16,21 +20,21 @@ class HelperFunctionTests(TestCase):
     def test_create_access_token_success(self):
         responses.add(
             responses.POST,
-            'https://proxy.momoapi.mtn.com/collection/token/',
-            json={'access_token': 'fake_token'},
-            status=200
+            "https://proxy.momoapi.mtn.com/collection/token/",
+            json={"access_token": "fake_token"},
+            status=200,
         )
-        token = create_access_token('fake_user', 'fake_key', 'fake_sub_key')
-        self.assertEqual(token, 'fake_token')
+        token = create_access_token("fake_user", "fake_key", "fake_sub_key")
+        self.assertEqual(token, "fake_token")
 
     @responses.activate
     def test_create_access_token_failure(self):
         responses.add(
             responses.POST,
-            'https://proxy.momoapi.mtn.com/collection/token/',
-            status=401
+            "https://proxy.momoapi.mtn.com/collection/token/",
+            status=401,
         )
-        token = create_access_token('fake_user', 'fake_key', 'fake_sub_key')
+        token = create_access_token("fake_user", "fake_key", "fake_sub_key")
         self.assertIsNone(token)
 
     def test_generate_uuid(self):
@@ -41,25 +45,25 @@ class HelperFunctionTests(TestCase):
     def test_request_to_pay_success(self):
         responses.add(
             responses.POST,
-            'https://proxy.momoapi.mtn.com/collection/v1_0/requesttopay',
+            "https://proxy.momoapi.mtn.com/collection/v1_0/requesttopay",
             status=202,
-            body='Success'
+            body="Success",
         )
         status, res_text = request_to_pay(
-            'fake_token', 'fake_sub_key', '256700000000', 10000, 'fake_ref'
+            "fake_token", "fake_sub_key", "256700000000", 10000, "fake_ref"
         )
         self.assertEqual(status, 202)
-        self.assertEqual(res_text, 'Success')
+        self.assertEqual(res_text, "Success")
 
     @responses.activate
     def test_request_to_pay_failure(self):
         responses.add(
             responses.POST,
-            'https://proxy.momoapi.mtn.com/collection/v1_0/requesttopay',
+            "https://proxy.momoapi.mtn.com/collection/v1_0/requesttopay",
             status=400,
-            body='Error'
+            body="Error",
         )
         status, res_text = request_to_pay(
-            'fake_token', 'fake_sub_key', '256700000000', 10000, 'fake_ref'
+            "fake_token", "fake_sub_key", "256700000000", 10000, "fake_ref"
         )
         self.assertEqual(status, 400)

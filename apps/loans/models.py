@@ -69,6 +69,7 @@ class ChartOfAccounts(models.Model):
         self.clean()
         super().save(*args, **kwargs)
 
+
 #  State Machine Overview
 # pending
 #    ↓
@@ -364,9 +365,10 @@ class Loan(models.Model):
             self.total_interest - total_interest_paid, Decimal("0.00")
         )
         # Include any unpaid penalties
-        total_penalties = self.penalties.filter(is_paid=False).aggregate(total=Sum("penalty_amount"))["total"] or Decimal("0.00")
+        total_penalties = self.penalties.filter(is_paid=False).aggregate(
+            total=Sum("penalty_amount")
+        )["total"] or Decimal("0.00")
         penalty_balance = max(total_penalties - total_penalty_paid, Decimal("0.00"))
-
 
         return {
             "principal_balance": principal_balance,

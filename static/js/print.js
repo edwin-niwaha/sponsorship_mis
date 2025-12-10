@@ -16,7 +16,7 @@ function ExportToExcel(type, fn, dl) {
   var wb = XLSX.utils.table_to_book(elt, { sheet: "sheet1" });
   return dl
     ? XLSX.write(wb, { bookType: type, bookSST: true, type: "base64" })
-    : XLSX.writeFile(wb, fn || "sdms_rpt." + (type || "xlsx"));
+    : XLSX.writeFile(wb, fn || "sms_rpt." + (type || "xlsx"));
 }
 
 // Convert to word document
@@ -30,7 +30,7 @@ function Export2Doc(element, filename = '') {
   var url = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(html);
 
   //file name
-  filename = filename ? filename + '.doc' : 'sdms_rpt.doc';
+  filename = filename ? filename + '.doc' : 'sms_rpt.doc';
 
   // Creates the  download link element dynamically
   var downloadLink = document.createElement("a");

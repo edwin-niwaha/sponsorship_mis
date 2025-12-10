@@ -38,6 +38,7 @@ from .forms import (
 from .models import (
     ChartOfAccounts,
     Loan,
+    LoanPenalty,
     LoanRepayment,
     TransactionHistory,
 )
@@ -1340,6 +1341,7 @@ def delete_loan(request, loan_id):
 #         },
 #     )
 
+
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
@@ -1347,9 +1349,9 @@ def loan_repayment_create_view(request):
     form_title = "Repay Loans"
 
     # Fetch loans with valid statuses
-    loans_qs = Loan.objects.filter(
-        status__in=["disbursed", "overdue"]
-    ).select_related("borrower")
+    loans_qs = Loan.objects.filter(status__in=["disbursed", "overdue"]).select_related(
+        "borrower"
+    )
 
     # Apply balance filtering (same as penalty view)
     loans = []
@@ -1381,10 +1383,7 @@ def loan_repayment_create_view(request):
             repayment.loan = form.cleaned_data["loan"]
 
             if not getattr(repayment.loan, "borrower", None):
-                messages.error(
-                    request,
-                    "This loan has no valid borrower attached."
-                )
+                messages.error(request, "This loan has no valid borrower attached.")
                 return redirect("loans:loan_repayment_create")
 
             repayment.save()
@@ -1401,7 +1400,9 @@ def loan_repayment_create_view(request):
             return redirect("loans:loan_repayment_create")
 
         else:
-            messages.error(request, "Please correct the errors below.")
+            messages.error(
+                request, "Please correct the errors below.", extra_tags="bg-danger"
+            )
 
     else:
         form = LoanRepaymentForm()
@@ -3072,3 +3073,85 @@ def loan_due_overdue_report(request):
         cache.set(cache_key, context, 3600)
 
     return render(request, "loans/loan_overdue_report.html", context)
+
+
+# =================================== loan_penalty_management view ===================================
+@login_required
+@admin_or_manager_or_staff_required
+def loan_penalty_management(request):
+
+    # Only clients who have loans (any status except maybe rejected/pending if you want)
+    clients_with_loans = (
+        Client.objects.filter(loans__isnull=False)  # Has at least one loan
+        .distinct()
+        .order_by("full_name")
+    )
+
+    selected_client = None
+    penalties = []
+    total_amount = Decimal("0.00")
+
+    if request.method == "POST":
+        client_id = request.POST.get("client_id")
+
+        if not client_id:
+            messages.error(request, "Please select a client.", extra_tags="bg-danger")
+        else:
+            selected_client = get_object_or_404(Client, id=client_id)
+
+            # Get only unpaid penalties for this client's loans
+            penalties = (
+                LoanPenalty.objects.filter(
+                    loan__borrower=selected_client,
+                    is_paid=False,
+                    remaining_amount__gt=0,
+                )
+                .select_related("loan", "loan__borrower")
+                .order_by("-penalty_date")
+            )
+
+            total_amount = penalties.aggregate(total=Sum("remaining_amount"))[
+                "total"
+            ] or Decimal("0.00")
+
+            # Handle deletion of selected penalties
+            if "delete_selected" in request.POST:
+                penalty_ids = request.POST.getlist("penalty_ids")
+
+                if not penalty_ids:
+                    messages.warning(
+                        request, "No penalties were selected for deletion."
+                    )
+                else:
+                    # Security: ensure penalties belong to this client and are unpaid
+                    deleted_penalties = LoanPenalty.objects.filter(
+                        id__in=penalty_ids,
+                        loan__borrower=selected_client,
+                        is_paid=False,
+                    )
+                    count = deleted_penalties.count()
+                    deleted_penalties.delete()
+
+                    messages.success(
+                        request,
+                        f"Successfully deleted {count} loan penalt{'y' if count == 1 else 'ies'}.",
+                        extra_tags="bg-success",
+                    )
+
+                    # Refresh list after deletion
+                    penalties = penalties.exclude(id__in=penalty_ids)
+                    total_amount = penalties.aggregate(total=Sum("remaining_amount"))[
+                        "total"
+                    ] or Decimal("0.00")
+
+    context = {
+        "table_title": "Delete Loan Penalties",
+        "Selected Client": selected_client,
+        "clients": clients_with_loans,
+        "selected_client": selected_client,
+        "penalties": penalties,
+        "total_amount": total_amount,
+        "total_count": penalties.count() if penalties else 0,
+    }
+
+    return render(request, "loans/loan_penalty_management.html", context)
