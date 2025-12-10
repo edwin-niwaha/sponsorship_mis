@@ -3263,8 +3263,10 @@ def loan_due_overdue_report(request):
 @login_required
 @admin_or_manager_or_staff_required
 def loan_penalty_management(request):
-    clients_with_loans = Client.objects.filter(loans__isnull=False).distinct().order_by("full_name")
-    
+    clients_with_loans = (
+        Client.objects.filter(loans__isnull=False).distinct().order_by("full_name")
+    )
+
     selected_client = None
     unpaid_penalties = []
     paid_penalties = []
@@ -3277,21 +3279,30 @@ def loan_penalty_management(request):
             selected_client = get_object_or_404(Client, id=client_id)
 
             # ---------------- UNPAID PENALTIES ----------------
-            unpaid_penalties = LoanPenalty.objects.filter(
-                loan__borrower=selected_client,
-                is_paid=False,
-                remaining_amount__gt=0,
-                is_deleted=False
-            ).select_related("loan").order_by("-penalty_date")
+            unpaid_penalties = (
+                LoanPenalty.objects.filter(
+                    loan__borrower=selected_client,
+                    is_paid=False,
+                    remaining_amount__gt=0,
+                    is_deleted=False,
+                )
+                .select_related("loan")
+                .order_by("-penalty_date")
+            )
 
-            unpaid_total = unpaid_penalties.aggregate(t=Sum("remaining_amount"))["t"] or Decimal("0")
+            unpaid_total = unpaid_penalties.aggregate(t=Sum("remaining_amount"))[
+                "t"
+            ] or Decimal("0")
             unpaid_count = unpaid_penalties.count()
 
             # ---------------- PAID PENALTIES ----------------
-            penalty_repayments = LoanRepayment.objects.filter(
-                loan__borrower=selected_client,
-                penalty_payment__gt=0
-            ).select_related("loan").order_by("-repayment_date")
+            penalty_repayments = (
+                LoanRepayment.objects.filter(
+                    loan__borrower=selected_client, penalty_payment__gt=0
+                )
+                .select_related("loan")
+                .order_by("-repayment_date")
+            )
 
             paid_penalty_ids = set()
             paid_penalties = []
@@ -3303,30 +3314,32 @@ def loan_penalty_management(request):
                     is_paid=True,
                     updated_at__gte=repayment.repayment_date - timedelta(minutes=5),
                     updated_at__lte=repayment.repayment_date + timedelta(minutes=5),
-                    is_deleted=False
+                    is_deleted=False,
                 )
                 for penalty in recent_paid:
                     if penalty.id not in paid_penalty_ids:
                         paid_penalty_ids.add(penalty.id)
-                        paid_penalties.append({
-                            "penalty": penalty,
-                            "paid_on": repayment.repayment_date,
-                            "paid_via_repayment": repayment.id
-                        })
+                        paid_penalties.append(
+                            {
+                                "penalty": penalty,
+                                "paid_on": repayment.repayment_date,
+                                "paid_via_repayment": repayment.id,
+                            }
+                        )
 
             # Include any remaining paid penalties
             remaining_paid = LoanPenalty.objects.filter(
-                loan__borrower=selected_client,
-                is_paid=True,
-                is_deleted=False
+                loan__borrower=selected_client, is_paid=True, is_deleted=False
             ).exclude(id__in=paid_penalty_ids)
 
             for penalty in remaining_paid:
-                paid_penalties.append({
-                    "penalty": penalty,
-                    "paid_on": penalty.updated_at.date(),
-                    "paid_via_repayment": None
-                })
+                paid_penalties.append(
+                    {
+                        "penalty": penalty,
+                        "paid_on": penalty.updated_at.date(),
+                        "paid_via_repayment": None,
+                    }
+                )
 
             paid_total = sum(p["penalty"].penalty_amount for p in paid_penalties)
             paid_count = len(paid_penalties)
@@ -3339,11 +3352,11 @@ def loan_penalty_management(request):
                     penalties_to_delete = LoanPenalty.objects.filter(
                         id__in=penalty_ids,
                         loan__borrower=selected_client,
-                        is_deleted=False
+                        is_deleted=False,
                     ).select_related("loan")
 
                     count = penalties_to_delete.count()
-                    
+
                     # Soft-delete penalties and delete related transactions
                     for penalty in penalties_to_delete:
                         penalty.is_deleted = True
@@ -3355,17 +3368,21 @@ def loan_penalty_management(request):
                         TransactionHistory.objects.filter(
                             loan=penalty.loan,
                             description__icontains="Penalty",
-                            amount=penalty.penalty_amount
+                            amount=penalty.penalty_amount,
                         ).delete()
 
                     messages.success(
                         request,
-                        f"Deleted {count} penalty{'y' if count == 1 else 'ies'} (paid or unpaid)."
+                        f"Deleted {count} penalty{'y' if count == 1 else 'ies'} (paid or unpaid).",
                     )
 
                     # Refresh lists
                     unpaid_penalties = unpaid_penalties.exclude(id__in=penalty_ids)
-                    paid_penalties = [p for p in paid_penalties if str(p['penalty'].id) not in penalty_ids]
+                    paid_penalties = [
+                        p
+                        for p in paid_penalties
+                        if str(p["penalty"].id) not in penalty_ids
+                    ]
 
     context = {
         "table_title": "Loan Penalties Management",
