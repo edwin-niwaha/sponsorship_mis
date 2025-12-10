@@ -69,6 +69,22 @@ class ChartOfAccounts(models.Model):
         self.clean()
         super().save(*args, **kwargs)
 
+#  State Machine Overview
+# pending
+#    ↓
+# boo_approved
+#    ↓
+# hof_approved
+#    ↓
+# ed_approved
+#    ↓
+# approved
+#    ↓
+# disbursed
+#    ↓
+#  ┌──────────────┬─────────────┬────────────┐
+# active     →    overdue     →  repaid     →  closed
+
 
 # =================================== Loan Model ===================================
 class Loan(models.Model):
@@ -83,7 +99,7 @@ class Loan(models.Model):
         ("rejected", "Rejected"),
         ("ed_rejected", "ED Rejected"),
         ("hof_rejected", "HOF Rejected"),
-        ("boo_approved", "BOO Approved"),  # New status
+        ("boo_approved", "BOO Approved"),  # cannot move forward
         ("hof_approved", "HOF Approved"),  # New status
         ("ed_approved", "ED Approved"),  # New status
     ]
@@ -347,13 +363,10 @@ class Loan(models.Model):
         interest_balance = max(
             self.total_interest - total_interest_paid, Decimal("0.00")
         )
-        penalty_balance = max(
-            self.penalties.filter(is_paid=False).aggregate(total=Sum("penalty_amount"))[
-                "total"
-            ]
-            or Decimal("0.00"),
-            Decimal("0.00"),
-        )
+        # Include any unpaid penalties
+        total_penalties = self.penalties.filter(is_paid=False).aggregate(total=Sum("penalty_amount"))["total"] or Decimal("0.00")
+        penalty_balance = max(total_penalties - total_penalty_paid, Decimal("0.00"))
+
 
         return {
             "principal_balance": principal_balance,

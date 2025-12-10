@@ -155,12 +155,10 @@
         $('#penalty-balance').text(penalty.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
         $('#total-balance').text(total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
         
-        // Auto-fill penalty_payment and make it read-only
-        $penaltyField.val(penalty.toFixed(2));
+        // Auto-fill penalty_payment (editable always)
         if (penalty > 0) {
-          $penaltyField.prop('readonly', true);
+          $penaltyField.val(penalty.toFixed(2));
         } else {
-          $penaltyField.prop('readonly', false);
           $penaltyField.val('0.00');
         }
 

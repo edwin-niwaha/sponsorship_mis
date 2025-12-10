@@ -31,17 +31,17 @@ class SponsorForm(forms.ModelForm):
         first_name = self.cleaned_data.get("first_name")
         last_name = self.cleaned_data.get("last_name")
 
-        if len(first_name) < 3:
+        if len(first_name) < 2:
             self.add_error(
-                "first_name", "Can not save first name less than 3 characters long"
+                "first_name", "Can not save first name less than 2 characters long"
             )
             self.fields["first_name"].widget.attrs.update(
                 {"class": "form-control  is-invalid"}
             )
 
-        if len(last_name) < 3:
+        if len(last_name) < 2:
             self.add_error(
-                "last_name", "Can not save last name less than 3 characters long"
+                "last_name", "Can not save last name less than 2 characters long"
             )
             self.fields["last_name"].widget.attrs.update(
                 {"class": "form-control  is-invalid"}

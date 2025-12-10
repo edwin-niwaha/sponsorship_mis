@@ -34,7 +34,7 @@ def sponsor_list(request):
             first_name__icontains=search_query
         ) | queryset.filter(last_name__icontains=search_query)
 
-    paginator = Paginator(queryset, 10)
+    paginator = Paginator(queryset, 50)
     page = request.GET.get("page")
 
     try:

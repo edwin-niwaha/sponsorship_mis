@@ -20,7 +20,7 @@
       <select name="id" id="sp_dropdown" class="chzn-select" required>
         <option value="" selected disabled>Search sponsor...</option>
         {% for sponsor in sponsors %}
-          <option value="{{ sponsor.id }}">{{ sponsor.last_name }} {{ sponsor.first_name }} &rarr;
+          <option value="{{ sponsor.id }}">{{ sponsor.first_name }} {{ sponsor.last_name }} &rarr;
             {{ sponsor.prefixed_id }}</option>
         {% endfor %}
       </select>&rarr;
@@ -30,7 +30,7 @@
     <div id="printMe" class="tab-pane show active">
       {% if sponsor_payments %}
         <header class="text-center my-5">
-          <h3 class="fw-bold text-primary text-uppercase">{{ last_name }} {{ first_name }} – <span class="text-success">Payments Report</span></h3>
+          <h3 class="fw-bold text-primary text-uppercase">{{ sponsor.first_name }} {{ sponsor.last_name }} – <span class="text-success">Payments Report</span></h3>
 
           <h4 class="fw-semibold text-secondary mt-3">
             <span class="text-primary">Sponsorship Type:</span>

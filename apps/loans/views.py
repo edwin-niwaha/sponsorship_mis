@@ -1285,21 +1285,81 @@ def delete_loan(request, loan_id):
 
 
 # ===================================  loan_repayment_create_view  ===================================
+# @login_required
+# @admin_or_manager_or_staff_required
+# @transaction.atomic
+# def loan_repayment_create_view(request):
+#     form_title = "Repay Loans"
+#     # Fetch loans with non-zero balances and valid status
+#     loans_qs = Loan.objects.filter(status__in=["disbursed", "overdue"]).select_related(
+#         "borrower"
+#     )
+#     # Calculate balances using model method and filter out fully paid loans
+#     loans = []
+#     for loan in loans_qs:
+#         if not getattr(loan, "borrower", None):
+#             continue  # Skip loans with missing borrowers
+#         balances = loan.calculate_remaining_balances()
+#         if (
+#             balances["principal_balance"] > 0
+#             or balances["interest_balance"] > 0
+#             or balances["penalty_balance"] > 0
+#         ):
+#             loan.remaining_principal = balances["principal_balance"]
+#             loan.remaining_interest = balances["interest_balance"]
+#             loan.remaining_penalty = balances["penalty_balance"]
+#             loans.append(loan)
+
+#     if request.method == "POST":
+#         form = LoanRepaymentForm(request.POST)
+#         if form.is_valid():
+#             repayment = form.save(commit=False)
+#             repayment.loan = form.cleaned_data["loan"]
+#             if not getattr(repayment.loan, "borrower", None):
+#                 messages.error(request, "This loan has no valid borrower attached.")
+#                 return redirect("loans:loan_repayment_create")
+#             repayment.save()
+#             repayment.loan.update_status()
+#             messages.success(
+#                 request,
+#                 "Loan repayment submitted successfully.",
+#                 extra_tags="bg-success",
+#             )
+#             return redirect("loans:loan_repayment_create")
+#         else:
+#             messages.error(request, "Please correct the errors below.")
+#     else:
+#         form = LoanRepaymentForm()
+#     return render(
+#         request,
+#         "loans/loan_repayment_form.html",
+#         {
+#             "form": form,
+#             "form_title": form_title,
+#             "loans": loans,
+#         },
+#     )
+
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
 def loan_repayment_create_view(request):
     form_title = "Repay Loans"
-    # Fetch loans with non-zero balances and valid status
-    loans_qs = Loan.objects.filter(status__in=["disbursed", "overdue"]).select_related(
-        "borrower"
-    )
-    # Calculate balances using model method and filter out fully paid loans
+
+    # Fetch loans with valid statuses
+    loans_qs = Loan.objects.filter(
+        status__in=["disbursed", "overdue"]
+    ).select_related("borrower")
+
+    # Apply balance filtering (same as penalty view)
     loans = []
     for loan in loans_qs:
         if not getattr(loan, "borrower", None):
             continue  # Skip loans with missing borrowers
+
         balances = loan.calculate_remaining_balances()
+
+        # Only add loans that actually have balances left
         if (
             balances["principal_balance"] > 0
             or balances["interest_balance"] > 0
@@ -1310,26 +1370,42 @@ def loan_repayment_create_view(request):
             loan.remaining_penalty = balances["penalty_balance"]
             loans.append(loan)
 
+    # -----------------------
+    # PROCESS FORM
+    # -----------------------
     if request.method == "POST":
         form = LoanRepaymentForm(request.POST)
+
         if form.is_valid():
             repayment = form.save(commit=False)
             repayment.loan = form.cleaned_data["loan"]
+
             if not getattr(repayment.loan, "borrower", None):
-                messages.error(request, "This loan has no valid borrower attached.")
+                messages.error(
+                    request,
+                    "This loan has no valid borrower attached."
+                )
                 return redirect("loans:loan_repayment_create")
+
             repayment.save()
+
+            # Update loan status
             repayment.loan.update_status()
+
             messages.success(
                 request,
                 "Loan repayment submitted successfully.",
                 extra_tags="bg-success",
             )
+
             return redirect("loans:loan_repayment_create")
+
         else:
             messages.error(request, "Please correct the errors below.")
+
     else:
         form = LoanRepaymentForm()
+
     return render(
         request,
         "loans/loan_repayment_form.html",

@@ -32,7 +32,9 @@
         <select name="id" id="sp_dropdown" class="chzn-select" required>
             <option value="" selected disabled>Search sponsor...</option>
             {% for sponsor in sponsors %}
-            <option value="{{ sponsor.id }}">{{ sponsor.last_name }} {{ sponsor.first_name }} &rarr;
+            <option value="{{ sponsor.id }}">
+                {{ sponsor.first_name }}
+                {{ sponsor.last_name }} &rarr;
                 {{ sponsor.prefixed_id }}</option>
             {% endfor %}
         </select>

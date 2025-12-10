@@ -60,10 +60,10 @@ class Sponsor(models.Model):
     expected_amt = models.DecimalField(
         _("Amount Expected(UgX)"), max_digits=10, decimal_places=2, default=0
     )
-    job_title = models.CharField(max_length=100, null=True, verbose_name="Job Title")
-    region = models.CharField(max_length=100, null=True, verbose_name="Region")
-    town = models.CharField(max_length=100, null=True, verbose_name="Town")
-    origin = models.CharField(max_length=100, null=True, verbose_name="Origin")
+    job_title = models.CharField(max_length=100, null=True, blank=True, verbose_name="Job Title")
+    region = models.CharField(max_length=100, null=True, blank=True, verbose_name="Region")
+    town = models.CharField(max_length=100, null=True, blank=True, verbose_name="Town")
+    origin = models.CharField(max_length=100, null=True, blank=True, verbose_name="Origin")
     business_telephone = PhoneNumberField(
         null=True,
         blank=True,
@@ -73,7 +73,7 @@ class Sponsor(models.Model):
     mobile_telephone = PhoneNumberField(
         null=True, blank=True, default="+256999999999", verbose_name="Mobile Telephone"
     )
-    city = models.CharField(max_length=30, null=True, verbose_name="City")
+    city = models.CharField(max_length=30, null=True, blank=True, verbose_name="City")
     start_date = models.DateField(
         null=True,
         blank=True,
@@ -84,19 +84,19 @@ class Sponsor(models.Model):
         ],
     )
     first_street_address = models.CharField(
-        max_length=100, null=True, verbose_name="First Street Address"
+        max_length=100, null=True, blank=True, verbose_name="First Street Address"
     )
     second_street_address = models.CharField(
-        max_length=100, null=True, verbose_name="Second Street Address"
+        max_length=100, null=True, blank=True, verbose_name="Second Street Address"
     )
     zip_code = models.CharField(
-        max_length=50, null=True, verbose_name="ZIP Code or Box Number"
+        max_length=50, null=True, blank=True, verbose_name="ZIP Code or Box Number"
     )
     is_departed = models.BooleanField(
         default=False,
         verbose_name="Departed?",
     )
-    comment = models.CharField(max_length=100, null=True, verbose_name="Comment")
+    comment = models.CharField(max_length=100, null=True, blank=True, verbose_name="Comment")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
     updated_at = models.DateTimeField(auto_now=True)
 

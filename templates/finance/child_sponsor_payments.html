@@ -36,8 +36,8 @@
                   <select name="sponsor_id" id="sponsor_dropdown" class="chzn-select" required style="width: 40%;">
                     <option value="" selected disabled>Search sponsor...</option>
                     {% for sponsor in sponsors %}
-                      <option value="{{ sponsor.id }}">{{ sponsor.last_name }}
-                        {{ sponsor.first_name }} &rarr;
+                      <option value="{{ sponsor.id }}">{{ sponsor.first_name }}
+                        {{ sponsor.last_name }} &rarr;
                         {{ sponsor.prefixed_id }}</option>
                     {% endfor %}
                   </select>

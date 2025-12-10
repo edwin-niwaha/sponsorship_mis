@@ -81,8 +81,8 @@
                     <tr {% if not sponsorship.is_active %}style="background-color: #f2dede; color: red" {% endif %}>
                         <th scope="row">{{forloop.counter}}.</th>
                         <td>{{sponsorship.sponsor.prefixed_id}}</td>
-                        <td>{{sponsorship.sponsor.last_name}}</td>
                         <td>{{sponsorship.sponsor.first_name}}</td>
+                        <td>{{sponsorship.sponsor.last_name}}</td>
                         <td>{{sponsorship.sponsorship_type}}</td>
                         <td>{{sponsorship.start_date}}</td>
                         <td>{{sponsorship.end_date}}</td>

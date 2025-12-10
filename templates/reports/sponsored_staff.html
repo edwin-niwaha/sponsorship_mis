@@ -59,7 +59,7 @@
                         <td>{{staff.first_name}}</td>
                         <td>{{staff.last_name}}</td>
                         <td>{{staff.gender}}</td>
-                        <td colspan="2">{{ sponsorships.0.sponsor.last_name }} {{ sponsorships.0.sponsor.first_name }}
+                        <td colspan="2">{{ sponsorships.0.sponsor.first_name }} {{ sponsorships.0.sponsor.last_name }}
                         </td>
                         <td>{{ sponsorships.0.sponsor.start_date }}</td>
                         <td>{{ sponsorships.0.sponsor.sponsorship_type }}</td>
@@ -67,7 +67,7 @@
                     {% for sponsorship in sponsorships|slice:"1:" %}
                     <tr>
                         <td colspan="6"></td>
-                        <td>{{ sponsorship.sponsor.last_name }} {{ sponsorship.sponsor.first_name }}</td>
+                        <td>{{ sponsorship.sponsor.first_name }} {{ sponsorship.sponsor.last_name }}</td>
                         <td>{{ sponsorship.sponsor.start_date }}</td>
                         <td>{{ sponsorship.sponsor.sponsorship_type }}</td>
                     </tr>

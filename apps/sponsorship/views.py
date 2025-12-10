@@ -672,7 +672,7 @@ def momo_transaction_list(request):
             | transactions.filter(reference_id__icontains=search_query)
         )
 
-    paginator = Paginator(transactions, 25)
+    paginator = Paginator(transactions, 50)
     page_number = request.GET.get("page")
     records = paginator.get_page(page_number)
 

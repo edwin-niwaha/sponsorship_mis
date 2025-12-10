@@ -59,7 +59,7 @@
                         <th scope="row">{{ forloop.counter }}.</th>
                         <td>{{ child.prefixed_id }}</td>
                         <td>{{ child.full_name }}</td>
-                        <td colspan="2">{{ sponsorships.0.sponsor.last_name }} {{ sponsorships.0.sponsor.first_name }}
+                        <td colspan="2">{{ sponsorships.0.sponsor.first_name }} {{ sponsorships.0.sponsor.last_name }}
                         </td>
                         <td>{{ sponsorships.0.sponsor.gender }}</td>
                         <td>{{ sponsorships.0.sponsor.email }}</td>
@@ -71,7 +71,7 @@
                     {% for sponsorship in sponsorships|slice:"1:" %}
                     <tr>
                         <td colspan="4"></td>
-                        <td>{{ sponsorship.sponsor.last_name }} {{ sponsorship.sponsor.first_name }}</td>
+                        <td>{{ sponsorship.sponsor.first_name }} {{ sponsorship.sponsor.last_name }}</td>
                         <td>{{ sponsorship.sponsor.gender }}</td>
                         <td>{{ sponsorship.sponsor.email }}</td>
                         <td>{{ sponsorship.sponsor.sponsorship_type }}</td>
