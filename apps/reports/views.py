@@ -17,7 +17,7 @@ from apps.users.decorators import (
 # =================================== Helper Functions ===================================
 
 
-def paginate_queryset(queryset, page_number, per_page=50):
+def paginate_queryset(queryset, page_number, per_page=70):
     """
     Paginate the given queryset and return the records for the specified page number.
     """

@@ -592,43 +592,6 @@ def delete_incident(request, pk):
 
 
 # =================================== Add Child Depature ===================================
-# @login_required
-# @admin_or_manager_required
-# @transaction.atomic
-# def child_departure(request):
-#     if request.method == "POST":
-#         form = ChildDepartForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             child_id = request.POST.get("id")
-#             child_instance = get_object_or_404(Child, pk=child_id)
-
-#             # Create a ChildDepart instance
-#             child_depart = ChildDepart.objects.create(child=child_instance)
-#             child_depart.depart_date = form.cleaned_data["depart_date"]
-#             child_depart.depart_reason = form.cleaned_data["depart_reason"]
-#             child_depart.save()
-
-#             # Update Child status to "departed"
-#             child_instance.is_departed = True
-#             child_instance.is_sponsored = False
-#             child_instance.save()
-
-#             messages.success(
-#                 request, "Child departed successfully!", extra_tags="bg-success"
-#             )
-#             return redirect("child_departure")
-#         else:
-#             messages.error(request, "Form is invalid.", extra_tags="bg-danger")
-#     else:
-#         form = ChildDepartForm()
-
-#     children = Child.objects.filter(is_departed=False).order_by("id")
-#     return render(
-#         request,
-#         "child/child_depature.html",
-#         {"form": form, "form_name": "Child Depature Form", "children": children},
-#     )
-
 
 @login_required
 @admin_or_manager_required
