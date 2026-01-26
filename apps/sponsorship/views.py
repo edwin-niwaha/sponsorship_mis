@@ -8,11 +8,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
-from django.http import (
-    HttpResponseBadRequest,
-    HttpResponseRedirect,
-    JsonResponse,
-)
+from django.http import (HttpResponseBadRequest, HttpResponseRedirect,
+                         JsonResponse)
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -22,17 +19,11 @@ from django.views.decorators.csrf import csrf_exempt
 from apps.child.models import Child
 from apps.sponsor.models import Sponsor
 from apps.staff.models import Staff
-from apps.users.decorators import (
-    admin_or_manager_or_staff_required,
-    admin_or_manager_required,
-)
+from apps.users.decorators import (admin_or_manager_or_staff_required,
+                                   admin_or_manager_required)
 
-from .forms import (
-    ChildSponsorshipEditForm,
-    ChildSponsorshipForm,
-    StaffSponsorshipEditForm,
-    StaffSponsorshipForm,
-)
+from .forms import (ChildSponsorshipEditForm, ChildSponsorshipForm,
+                    StaffSponsorshipEditForm, StaffSponsorshipForm)
 from .models import ChildSponsorship, MoMoTransaction, StaffSponsorship
 from .momo_prod import create_access_token, generate_uuid, request_to_pay
 

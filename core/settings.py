@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 import dj_database_url
 from dotenv import load_dotenv
 
@@ -115,7 +116,8 @@ TEMPLATES = [
                 "apps.users.context_processors.guest_profiles_context",
                 "apps.users.context_processors.guest_user_feedback_context",
                 "apps.users.context_processors.low_stock_alerts_context",
-                "apps.loans.context_processors.loans_due_today_context",
+                # "apps.loans.context_processors.loans_due_today_context",
+                "apps.loans.context_processors.loan_dashboard_context",
             ],
         },
     },

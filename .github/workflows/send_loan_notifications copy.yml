@@ -2,8 +2,8 @@ name: Send Loan Notifications
 
 on:
   schedule:
-    - cron: "0 5 * * 1-5"   # Mon–Fri at 5 AM UTC (8 AM EAT)
-  workflow_dispatch:       # Allows manual triggering
+    - cron: "0 5 * * *"  # Runs every day at 5 AM UTC (8 AM EAT, assuming EAT is UTC+3)
+  workflow_dispatch:     # Allows manual triggering of the workflow
 
 jobs:
   send_loan_notifications:
@@ -11,17 +11,17 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4  # Use the latest version of checkout action
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5  # Use the latest version of setup-python action
         with:
-          python-version: "3.12"
+          python-version: "3.12"  # Specify your Python version (match your project)
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements.txt  # Ensure requirements.txt includes Django and other dependencies
 
       - name: Run Loan Notifications Command
         env:

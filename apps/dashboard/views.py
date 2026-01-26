@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.db.models import Count, F, FloatField, Sum
 from django.db.models.functions import Coalesce, ExtractYear
 from django.http import JsonResponse
@@ -22,20 +23,145 @@ from apps.users.decorators import admin_or_manager_or_staff_required
 logger = logging.getLogger(__name__)
 
 
-from .utils import (
-    get_top_selling_products,
-)
+from .utils import get_top_selling_products
 
 
 def home(request):
     return render(request, "accounts/home.html")
 
 
+
+CACHE_KEY = "loan_dashboard_summary"
+CACHE_TTL = 300  # seconds (5 minutes)
+
+
+def get_loan_dashboard_summary(force_refresh=False):
+    """
+    Centralized, cached loan dashboard logic.
+    Used by views and context processors.
+    """
+
+    if not force_refresh:
+        cached = cache.get(CACHE_KEY)
+        if cached:
+            return cached
+
+    today = timezone.now().date()
+
+    loans = (
+        Loan.objects
+        .filter(status__in=["disbursed", "overdue"])
+        .prefetch_related("repayments", "penalties")
+    )
+
+    due_loans = []
+    overdue_loans = []
+
+    for loan in loans:
+        balances = loan.calculate_remaining_balances()
+        total_balance = (
+            balances["principal_balance"]
+            + balances["interest_balance"]
+            + balances["penalty_balance"]
+        )
+
+        if total_balance <= 0:
+            continue
+
+        # ---------- OVERDUE (loan maturity passed) ----------
+        if loan.due_date and loan.due_date < today:
+            overdue_loans.append({
+                "loan": loan,
+                "total_balance": total_balance,
+                "days_overdue": (today - loan.due_date).days,
+            })
+            continue
+
+        # ---------- DUE TODAY ----------
+        schedule = loan.generate_payment_schedule()
+        due_today = [
+            p for p in schedule
+            if p["payment_due_date"] == today
+            and (p["principal_payment"] + p["interest_payment"]) > 0
+        ]
+
+        if due_today:
+            amount_due = min(
+                due_today[0]["principal_payment"]
+                + due_today[0]["interest_payment"],
+                total_balance,
+            )
+            due_loans.append({
+                "loan": loan,
+                "amount_due": amount_due,
+                "total_balance": total_balance,
+            })
+
+    summary = {
+        "due_loans": due_loans,
+        "overdue_loans": overdue_loans,
+        "due_loans_count": len(due_loans),
+        "overdue_loans_count": len(overdue_loans),
+        "due_loans_total": sum(
+            (l["amount_due"] for l in due_loans),
+            Decimal("0.00"),
+        ),
+        "overdue_loans_total": sum(
+            (l["total_balance"] for l in overdue_loans),
+            Decimal("0.00"),
+        ),
+    }
+
+    cache.set(CACHE_KEY, summary, CACHE_TTL)
+    return summary
+
+
 # =================================== The dashboard ===================================
+# @login_required
+# @admin_or_manager_or_staff_required
+# def dashboard(request):
+#     # Retrieve counts using annotations
+#     sponsors_count = Sponsor.objects.filter(is_departed=False).count()
+#     children_count = Child.objects.count()
+#     sponsored_count = Child.objects.filter(is_departed=False, is_sponsored=True).count()
+#     non_sponsored_count = Child.objects.filter(
+#         is_departed=False, is_sponsored=False
+#     ).count()
+#     children_departed_count = Child.objects.filter(is_departed=True).count()
+
+#     # Get top sponsors and children
+#     top_sponsors_data = get_top_sponsors()
+#     top_children_data = get_top_children_sponsored()
+#     top_staff_data = get_top_staff_sponsored()
+
+#     # Combine sponsors and counts into a list of tuples
+#     top_sponsors_with_counts = list(
+#         zip(top_sponsors_data["sponsors"], top_sponsors_data["counts"])
+#     )
+#     top_children_with_counts = list(
+#         zip(top_children_data["children"], top_children_data["counts"])
+#     )
+#     top_staff_with_counts = list(
+#         zip(top_staff_data["staff_active"], top_staff_data["counts"])
+#     )
+#     context = {
+#         "sponsors_count": sponsors_count,
+#         "children_count": children_count,
+#         "children_departed_count": children_departed_count,
+#         "sponsored_count": sponsored_count,
+#         "non_sponsored_count": non_sponsored_count,
+#         "top_sponsors_with_counts": top_sponsors_with_counts,
+#         "top_children_with_counts": top_children_with_counts,
+#         "top_staff_with_counts": top_staff_with_counts,
+#     }
+
+#     return render(request, "main/main_dashboard.html", context)
+
+
 @login_required
 @admin_or_manager_or_staff_required
 def dashboard(request):
-    # Retrieve counts using annotations
+    # -------- Sponsorship stats --------
     sponsors_count = Sponsor.objects.filter(is_departed=False).count()
     children_count = Child.objects.count()
     sponsored_count = Child.objects.filter(is_departed=False, is_sponsored=True).count()
@@ -44,34 +170,43 @@ def dashboard(request):
     ).count()
     children_departed_count = Child.objects.filter(is_departed=True).count()
 
-    # Get top sponsors and children
-    top_sponsors_data = get_top_sponsors()
-    top_children_data = get_top_children_sponsored()
-    top_staff_data = get_top_staff_sponsored()
+    # -------- Top performance --------
+    top_sponsors = get_top_sponsors()
+    top_children = get_top_children_sponsored()
+    top_staff = get_top_staff_sponsored()
 
-    # Combine sponsors and counts into a list of tuples
-    top_sponsors_with_counts = list(
-        zip(top_sponsors_data["sponsors"], top_sponsors_data["counts"])
-    )
-    top_children_with_counts = list(
-        zip(top_children_data["children"], top_children_data["counts"])
-    )
-    top_staff_with_counts = list(
-        zip(top_staff_data["staff_active"], top_staff_data["counts"])
-    )
+    # -------- Loan dashboard (cached) --------
+    loan_summary = get_loan_dashboard_summary()
+
     context = {
+        # Sponsorship
         "sponsors_count": sponsors_count,
         "children_count": children_count,
         "children_departed_count": children_departed_count,
         "sponsored_count": sponsored_count,
         "non_sponsored_count": non_sponsored_count,
-        "top_sponsors_with_counts": top_sponsors_with_counts,
-        "top_children_with_counts": top_children_with_counts,
-        "top_staff_with_counts": top_staff_with_counts,
+
+        # Top stats
+        "top_sponsors_with_counts": list(
+            zip(top_sponsors["sponsors"], top_sponsors["counts"])
+        ),
+        "top_children_with_counts": list(
+            zip(top_children["children"], top_children["counts"])
+        ),
+        "top_staff_with_counts": list(
+            zip(top_staff["staff_active"], top_staff["counts"])
+        ),
+
+        # Loans
+        "due_loans": loan_summary["due_loans"],
+        "overdue_loans": loan_summary["overdue_loans"],
+        "due_loans_count": loan_summary["due_loans_count"],
+        "overdue_loans_count": loan_summary["overdue_loans_count"],
+        "due_loans_total": loan_summary["due_loans_total"],
+        "overdue_loans_total": loan_summary["overdue_loans_total"],
     }
 
     return render(request, "main/main_dashboard.html", context)
-
 
 # =================================== Child Sponsorship Count ===================================
 def get_top_sponsors():

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subscription Expired - Pendeza Sponsorship</title>
+
+    <!-- Bootstrap 5 + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <style>
+      :root {
+        --primary: #127d61;
+        --primary-dark: #0d614e;
+        --accent: #09c998;
+        --danger-start: #e74c3c;
+        --danger-end: #c0392b;
+      }
+      
+      body {
+        background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        font-family: system-ui, -apple-system, BlinkMacOSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      
+      .lock-wrapper {
+        position: relative;
+        width: 140px;
+        height: 140px;
+        margin: 0 auto 1.8rem;
+      }
+      
+      .lock-circle {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, var(--danger-start), var(--danger-end));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 15px 35px rgba(231, 76, 60, 0.35);
+        animation: beat 2.2s infinite ease-in-out;
+      }
+      
+      @keyframes beat {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.08);
+        }
+      }
+      
+      .card-expired {
+        border: none;
+        border-radius: 1.5rem;
+        overflow: hidden;
+        box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.18), 0 10px 25px -10px rgba(0, 0, 0, 0.12);
+        max-width: 580px;
+        margin: 1.5rem auto;
+        background: white;
+      }
+      
+      .header-section {
+        background: linear-gradient(135deg, var(--danger-start) 0%, var(--danger-end) 100%);
+        padding: 4.5rem 2rem 3.5rem;
+        position: relative;
+      }
+      
+      .btn-renew {
+        padding: 0.95rem 2.4rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        border-radius: 3rem;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        border: none;
+        transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+        box-shadow: 0 6px 20px rgba(18, 125, 97, 0.28);
+      }
+      
+      .btn-renew:hover,
+      .btn-renew:focus {
+        transform: translateY(-4px) scale(1.03);
+        box-shadow: 0 14px 32px rgba(18, 125, 97, 0.38);
+      }
+      
+      .support-link {
+        color: var(--primary);
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.25s ease;
+      }
+      
+      .support-link:hover {
+        color: var(--accent);
+        text-decoration: underline;
+        transform: translateX(6px);
+        display: inline-block;
+      }
+      
+      @media (max-width: 576px) {
+        .header-section {
+          padding: 3.5rem 1.5rem 2.8rem;
+        }
+        .lock-wrapper {
+          width: 110px;
+          height: 110px;
+        }
+        .btn-renew {
+          padding: 0.85rem 2rem;
+          font-size: 1.15rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="card card-expired shadow-lg">
+        <div class="header-section text-white text-center">
+          <div class="lock-wrapper">
+            <div class="lock-circle">
+              <i class="bi bi-shield-lock-fill" style="font-size: 5.2rem; opacity: 0.94;"></i>
+            </div>
+          </div>
+
+          <h1 class="display-5 fw-bold mb-3">Access Restricted</h1>
+          <p class="lead fs-4 opacity-90 mb-0">Your subscription has expired</p>
+        </div>
+
+        <div class="card-body px-5 py-1 text-center">
+          <div class="border-top pt-5 mt-3">
+            <p class="text-muted mb-4 fs-5">Need help with renewal or have questions?</p>
+
+            <p class="mb-4">
+              <a href="https://perpetual-web-vert.vercel.app/contact" target="_blank" class="support-link fs-5">
+                <i class="bi bi-chat-dots-fill me-2"></i>
+                Contact Support Team
+              </a>
+            </p>
+
+            <small class="text-muted d-block mt-5">Sponsorship Management System • Pendeza Uganda</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  </body>
+</html>

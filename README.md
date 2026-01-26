@@ -30,10 +30,13 @@ cd sponsorship-mis/backend
 ```
 ### 2. Set up virtual environment
 ```bash
-python -m venv venv
+python -m venv .smsvenv
 
-# Windows
-venv\Scripts\activate
+# Windows Terminal
+.venv\Scripts\activate
+
+```bash
+source .smsvenv/Scripts/activate
 
 # macOS / Linux
 source venv/bin/activate
@@ -41,6 +44,9 @@ source venv/bin/activate
 ### 3. Install dependencies
 ```bash
 pip install -r requirements.txt
+python -m pip install --upgrade pip setuptools wheel
+
+pip freeze > requirements.txt
 ```bash
 ### 4. Set up environment variables
 ```bash
