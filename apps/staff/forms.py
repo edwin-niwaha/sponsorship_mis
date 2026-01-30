@@ -83,8 +83,8 @@ class StaffUpdateForm(forms.ModelForm):
             return picture  # Cloudinary handles storage
 
         # Check file size (for non-Cloudinary uploads)
-        if getattr(picture, "size", 0) > 1500 * 1024:  # 1.5 MB
-            raise forms.ValidationError("Image size should not exceed 1.5 MB.")
+        if getattr(picture, "size", 0) > 10 * 1024 * 1024:  # 10 MB
+            raise forms.ValidationError("Image size should not exceed 10 MB.")
 
         return picture
 

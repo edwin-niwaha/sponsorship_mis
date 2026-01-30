@@ -192,6 +192,7 @@ wagtail-seo==2.5.0
 wcwidth==0.2.14
 webencodings==0.5.1
 wfastcgi==3.0.0
+wheel==0.46.3
 whitenoise==6.7.0
 Willow==1.9.0
 win32_setctime==1.2.0

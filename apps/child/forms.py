@@ -84,8 +84,8 @@ class ChildProfilePictureForm(forms.ModelForm):
 
     def clean_picture(self):
         picture = self.cleaned_data.get("picture")
-        if picture and picture.size > 1500 * 1024:  # 1.5 MB
-            raise forms.ValidationError("Image size should not exceed 1.5 MB.")
+        if picture and picture.size > 10 * 1024 * 1024:  # 10 MB
+            raise forms.ValidationError("Image size should not exceed 10 MB.")
         return picture
 
 
