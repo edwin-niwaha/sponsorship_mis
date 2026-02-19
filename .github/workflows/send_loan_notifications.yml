@@ -2,8 +2,8 @@ name: Send Loan Notifications
 
 on:
   schedule:
-    - cron: "0 5 * * 1-5"   # Mon–Fri at 5 AM UTC (8 AM EAT)
-  workflow_dispatch:       # Allows manual triggering
+    - cron: "0 5 * * 1,4" # Monday & Thursday at 5 UTC = 8 AM EAT
+  workflow_dispatch:
 
 jobs:
   send_loan_notifications:
