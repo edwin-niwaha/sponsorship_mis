@@ -1,0 +1,45 @@
+{% extends "emails/base.html" %}
+{% load humanize %}
+
+{% block content %}
+
+<p>Dear <strong>{{ borrower.full_name }}</strong>,</p>
+
+<p style="font-size:1.15em; color:#c82333;">
+<strong>Overdue Notice:</strong> Loan #{{ loan.id }}
+</p>
+
+<table>
+<tr>
+<th>Amount Overdue</th>
+<td class="text-right amount text-danger">
+UGX {{ amount_overdue|floatformat:"0"|intcomma }}
+</td>
+</tr>
+<tr>
+<th>Days Overdue</th>
+<td class="text-right">
+{{ days_overdue|default:"—" }}
+</td>
+</tr>
+<tr>
+<th>Total Outstanding</th>
+<td class="text-right amount">
+UGX {{ total_outstanding|floatformat:"0"|intcomma }}
+</td>
+</tr>
+</table>
+
+<p>
+Please settle the overdue amount immediately to prevent additional penalties
+or account restrictions.
+</p>
+
+
+<p>
+If you are experiencing financial difficulty, contact us immediately.
+</p>
+
+<p><strong>Pendeza Uganda</strong></p>
+
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "emails/base.html" %}
+{% load humanize %}
+
+{% block content %}
+
+<p>Dear <strong>{{ borrower.full_name }}</strong>,</p>
+
+<p style="font-size:1.15em;">
+Your loan installment for <strong>Loan #{{ loan.id }}</strong> is due today
+(<strong>{{ today_str }}</strong>).
+</p>
+
+<table>
+<tr>
+<th>Amount Due Today</th>
+<td class="text-right amount">UGX {{ amount_due_today|floatformat:"0"|intcomma }}</td>
+</tr>
+<tr>
+<th>Total Outstanding</th>
+<td class="text-right amount">UGX {{ total_outstanding|floatformat:"0"|intcomma }}</td>
+</tr>
+<tr>
+<th>Penalty Balance</th>
+<td class="text-right amount text-danger">UGX {{ penalty_balance|floatformat:"0"|intcomma }}</td>
+</tr>
+</table>
+
+<p>
+Kindly complete your payment today to avoid late penalties.
+</p>
+
+
+<p>Thank you for your continued partnership.</p>
+
+<p><strong>Pendeza Uganda</strong></p>
+
+{% endblock %}

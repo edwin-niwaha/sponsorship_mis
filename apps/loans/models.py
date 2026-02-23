@@ -240,6 +240,12 @@ class Loan(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
 
+    last_reminder_sent = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Last Reminder Sent",
+    )
+
     class Meta:
         db_table = "loans"
         verbose_name = "Loan"
@@ -689,6 +695,10 @@ class LoanRepayment(models.Model):
         verbose_name_plural = "Loan Repayments"
         ordering = ["-repayment_date"]
 
+        indexes = [
+        models.Index(fields=['repayment_date']),
+    ]
+        
     def clean(self):
         if not self.loan:
             raise ValidationError("Please select a loan.")
@@ -843,6 +853,10 @@ class LoanPenalty(models.Model):
         verbose_name = "Loan Penalty"
         verbose_name_plural = "Loan Penalties"
         ordering = ["-penalty_date"]
+
+        indexes = [
+                models.Index(fields=['penalty_date', 'is_paid']),
+            ]
 
     def clean(self):
         if self.penalty_amount <= 0:

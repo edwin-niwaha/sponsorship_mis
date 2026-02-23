@@ -1,0 +1,114 @@
+{% extends "emails/base.html" %}
+{% load humanize %}
+
+{% block content %}
+
+<p>Dear Team,</p>
+
+<h4>Loan Reminders Summary — {{ today_str }}</h4>
+
+{% if pre_due %}
+<h5 style="color: #0d6efd; margin-top: 24px;">Upcoming Payments ({{ pre_due|length }})</h5>
+<table>
+    <thead>
+        <tr>
+            <th>Loan ID</th>
+            <th>Borrower</th>
+            <th class="text-right">Principal</th>
+            <th class="text-right">Outstanding</th>
+            <th class="text-right">Due In</th>
+            <th class="text-right">Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in pre_due %}
+        <tr>
+            <td><a href="{{ report_url }}">{{ item.loan.id }}</a></td>
+            <td>{{ item.borrower_name }}</td>
+            <td class="text-right amount">{{ item.loan.principal_amount|floatformat:"0"|intcomma }}</td>
+            <td class="text-right amount">{{ item.total_outstanding|floatformat:"0"|intcomma }}</td>
+            <td class="text-right">{{ item.days_until|intcomma }} day{{ item.days_until|pluralize:"s" }}</td>
+            <td class="text-right amount">{{ item.amount_upcoming|floatformat:"0"|intcomma }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p style="color: #6c757d;">No upcoming payments in the next {{ pre_due_days|default:7 }} days.</p>
+{% endif %}
+
+{% if due_today %}
+<h5 style="color: #006400; margin-top: 32px;">Loans Due Today ({{ due_today|length }})</h5>
+<table>
+    <thead>
+        <tr>
+            <th>Loan ID</th>
+            <th>Borrower</th>
+            <th class="text-right">Principal</th>
+            <th class="text-right">Outstanding</th>
+            <th class="text-right">Due Today</th>
+            <th class="text-right">Penalty</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in due_today %}
+        <tr>
+            <td><a href="{{ report_url }}">{{ item.loan.id }}</a></td>
+            <td>{{ item.borrower_name }}</td>
+            <td class="text-right amount">{{ item.loan.principal_amount|floatformat:"0"|intcomma }}</td>
+            <td class="text-right amount">{{ item.total_outstanding|floatformat:"0"|intcomma }}</td>
+            <td class="text-right amount">{{ item.amount_due_today|floatformat:"0"|intcomma }}</td>
+            <td class="text-right amount">{{ item.penalty_balance|floatformat:"0"|intcomma }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p style="color: #6c757d;">No loans due today.</p>
+{% endif %}
+
+{% if overdue %}
+<h5 style="color: #dc3545; margin-top: 32px;">Overdue Loans ({{ overdue|length }})</h5>
+<table>
+    <thead>
+        <tr>
+            <th>Loan ID</th>
+            <th>Borrower</th>
+            <th class="text-right">Principal</th>
+            <th class="text-right">Outstanding</th>
+            <th class="text-right">Overdue Amount</th>
+            <th class="text-right">Days</th>
+            <th class="text-right">Penalty</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in overdue %}
+        <tr>
+            <td><a href="{{ report_url }}">{{ item.loan.id }}</a></td>
+            <td>{{ item.borrower_name }}</td>
+            <td class="text-right amount">{{ item.loan.principal_amount|floatformat:"0"|intcomma }}</td>
+            <td class="text-right amount">{{ item.total_outstanding|floatformat:"0"|intcomma }}</td>
+            <td class="text-right amount text-danger">{{ item.amount_overdue|floatformat:"0"|intcomma }}</td>
+            <td class="text-right">{{ item.days_overdue|default:"—"|intcomma }}</td>
+            <td class="text-right amount text-danger">{{ item.penalty_balance|floatformat:"0"|intcomma }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p style="color: #6c757d;">No overdue loans at this time.</p>
+{% endif %}
+
+<div style="text-align: center; margin: 40px 0 20px;">
+    <a href="{{ report_url }}" class="btn">View Full Due & Overdue Report →</a>
+</div>
+
+<p style="font-size: 0.95em; color: #6c757d;">
+    This is an automated daily summary generated on {{ today_str }}.<br>
+    Please take necessary follow-up actions as appropriate.
+</p>
+
+<p>Best regards,<br>
+<strong>Pendeza Uganda – Loan Management System</strong></p>
+
+{% endblock %}

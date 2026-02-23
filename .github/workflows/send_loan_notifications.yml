@@ -2,7 +2,7 @@ name: Send Loan Notifications
 
 on:
   schedule:
-    - cron: "0 5 * * 1,4" # Monday & Thursday at 5 UTC = 8 AM EAT
+    - cron: "0 5 * * *" # Runs every day at 5 AM UTC (8 AM EAT, assuming EAT is UTC+3)
   workflow_dispatch:
 
 jobs:
