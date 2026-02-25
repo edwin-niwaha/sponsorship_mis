@@ -195,12 +195,75 @@ class Command(BaseCommand):
     # SEND BOO SUMMARY
     # --------------------------------------------------------
 
+    # def send_summary(self, today, summary):
+    #     boo_email = getattr(settings, "BOO_EMAIL", None)
+
+    #     if not boo_email:
+    #         logger.warning("BOO_EMAIL not configured. Summary skipped.")
+    #         return
+
+    #     context = {
+    #         "today_str": today.strftime("%d %b %Y"),
+    #         "pre_due": [
+    #             {"loan": l, "borrower_name": l.borrower.full_name, **i}
+    #             for l, i in summary["pre_due"]
+    #         ],
+    #         "due_today": [
+    #             {"loan": l, "borrower_name": l.borrower.full_name, **i}
+    #             for l, i in summary["due_today"]
+    #         ],
+    #         "overdue": [
+    #             {"loan": l, "borrower_name": l.borrower.full_name, **i}
+    #             for l, i in summary["overdue"]
+    #         ],
+    #         "report_url": "https://sponsorwithpendeza.org/loans/due-overdue-report/",
+    #     }
+
+    #     subject = f"Loan Reminders Summary – {today.strftime('%d %b %Y')}"
+
+    #     html = render_to_string("emails/loan_summary.html", context)
+    #     text = strip_tags(html)
+
+    #     if self.dry_run:
+    #         logger.info(f"[DRY RUN] Would send summary to {boo_email}")
+    #         return
+
+    #     email = EmailMultiAlternatives(
+    #         subject,
+    #         text,
+    #         settings.DEFAULT_FROM_EMAIL,
+    #         [boo_email],
+    #     )
+
+    #     email.attach_alternative(html, "text/html")
+
+    #     try:
+    #         email.send(fail_silently=False)
+    #         logger.info("Summary email sent successfully.")
+
+    #     except Exception:
+    #         logger.exception("Summary email failed.")
+
+# Send email to both boo and finance team
+    # --------------------------------------------------------
+    # SEND BOO + HOF SUMMARY
+    # --------------------------------------------------------
+
     def send_summary(self, today, summary):
 
         boo_email = getattr(settings, "BOO_EMAIL", None)
+        hof_email = getattr(settings, "HOF_EMAIL", None)
 
-        if not boo_email:
-            logger.warning("BOO_EMAIL not configured. Summary skipped.")
+        recipients = []
+
+        if boo_email:
+            recipients.append(boo_email)
+
+        if hof_email:
+            recipients.append(hof_email)
+
+        if not recipients:
+            logger.warning("No summary recipients configured. Summary skipped.")
             return
 
         context = {
@@ -226,21 +289,21 @@ class Command(BaseCommand):
         text = strip_tags(html)
 
         if self.dry_run:
-            logger.info(f"[DRY RUN] Would send summary to {boo_email}")
+            logger.info(f"[DRY RUN] Would send summary to {recipients}")
             return
 
         email = EmailMultiAlternatives(
             subject,
             text,
             settings.DEFAULT_FROM_EMAIL,
-            [boo_email],
+            recipients,  # ✅ Now sends to both
         )
 
         email.attach_alternative(html, "text/html")
 
         try:
             email.send(fail_silently=False)
-            logger.info("Summary email sent successfully.")
+            logger.info(f"Summary email sent successfully to {recipients}.")
 
         except Exception:
             logger.exception("Summary email failed.")
