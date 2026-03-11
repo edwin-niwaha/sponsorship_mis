@@ -94,17 +94,59 @@ class ChildProgressForm(forms.ModelForm):
     class Meta:
         model = ChildProgress
         exclude = ("child",)
+
         widgets = {
+            "name_of_school": forms.TextInput(
+                attrs={"class": "form-control"}
+            ),
+
             "previous_schools": forms.Textarea(
                 attrs={"class": "form-control", "rows": 2}
             ),
-            "future_plans": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+
+            "year": forms.NumberInput(
+                attrs={"class": "form-control", "placeholder": "e.g. 2025"}
+            ),
+
+            "term": forms.Select(
+                attrs={"class": "form-select"}
+            ),
+
+            "education_level": forms.Select(
+                attrs={"class": "form-select"}
+            ),
+
+            "child_class": forms.Select(
+                attrs={"class": "form-select"}
+            ),
+
+            "best_subject": forms.TextInput(
+                attrs={"class": "form-control"}
+            ),
+
+            "score": forms.NumberInput(
+                attrs={"class": "form-control"}
+            ),
+
+            "co_curricular_activity": forms.TextInput(
+                attrs={"class": "form-control"}
+            ),
+
+            "responsibility_at_school": forms.TextInput(
+                attrs={"class": "form-control"}
+            ),
+
+            "future_plans": forms.Textarea(
+                attrs={"class": "form-control", "rows": 2}
+            ),
+
             "responsibility_at_home": forms.Textarea(
                 attrs={"class": "form-control", "rows": 2}
             ),
-            "notes": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
-            "education_level": forms.Select(attrs={"class": "form-select"}),
-            "child_class": forms.Select(attrs={"class": "form-select"}),
+
+            "notes": forms.Textarea(
+                attrs={"class": "form-control", "rows": 2}
+            ),
         }
 
 

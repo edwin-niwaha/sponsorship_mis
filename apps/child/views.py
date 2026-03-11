@@ -328,6 +328,8 @@ def child_progress(request):
             # Populate progress data
             child_progress.name_of_school = form.cleaned_data["name_of_school"]
             child_progress.previous_schools = form.cleaned_data["previous_schools"]
+            child_progress.year = form.cleaned_data.get("year")
+            child_progress.term = form.cleaned_data.get("term")
             child_progress.education_level = form.cleaned_data["education_level"]
             child_progress.child_class = form.cleaned_data["child_class"]
             child_progress.best_subject = form.cleaned_data["best_subject"]
@@ -365,37 +367,82 @@ def child_progress(request):
 
 
 # =================================== View Child Progress Report ===================================
+# @login_required
+# @admin_or_manager_or_staff_required
+# def child_progress_report(request):
+#     if request.method == "POST":
+#         child_id = request.POST.get("id")
+#         if child_id:
+#             selected_child = get_object_or_404(Child, id=child_id)
+#             child_progress = ChildProgress.objects.filter(child_id=child_id)
+#             children = Child.objects.all().filter(is_departed=False).order_by("id")
+#             return render(
+#                 request,
+#                 "child/progress_rpt.html",
+#                 {
+#                     "table_title": "Progress Report",
+#                     "children": children,
+#                     "child_name": selected_child.full_name,
+#                     "prefix_id": selected_child.prefixed_id,
+#                     "child_progress": child_progress,
+#                 },
+#             )
+#         else:
+#             messages.error(request, "No child selected.", extra_tags="bg-danger")
+#     else:
+#         # Handle the GET request, show the form without results
+#         children = Child.objects.all().filter(is_departed=False).order_by("id")
+#     return render(
+#         request,
+#         "child/progress_rpt.html",
+#         {"table_title": "Progress Report", "children": children},
+#     )
+
 @login_required
 @admin_or_manager_or_staff_required
 def child_progress_report(request):
-    if request.method == "POST":
-        child_id = request.POST.get("id")
-        if child_id:
-            selected_child = get_object_or_404(Child, id=child_id)
-            child_progress = ChildProgress.objects.filter(child_id=child_id)
-            children = Child.objects.all().filter(is_departed=False).order_by("id")
-            return render(
+    children = Child.objects.filter(is_departed=False).order_by("id")
+
+    selected_child_id = request.POST.get("id") or request.GET.get("id")
+    selected_child = None
+    child_progress = None
+    page_obj = None
+
+    if selected_child_id:
+        selected_child = get_object_or_404(Child, id=selected_child_id)
+
+        progress_qs = ChildProgress.objects.filter(
+            child_id=selected_child_id
+        ).order_by("-year", "-term", "-updated_at", "-id")
+
+        paginator = Paginator(progress_qs, 10)  # 10 records per page
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+        child_progress = page_obj.object_list
+
+        if not progress_qs.exists():
+            messages.warning(
                 request,
-                "child/progress_rpt.html",
-                {
-                    "table_title": "Progress Report",
-                    "children": children,
-                    "child_name": selected_child.full_name,
-                    "prefix_id": selected_child.prefixed_id,
-                    "child_progress": child_progress,
-                },
+                "No progress records found for the selected child.",
+                extra_tags="bg-warning",
             )
-        else:
-            messages.error(request, "No child selected.", extra_tags="bg-danger")
-    else:
-        # Handle the GET request, show the form without results
-        children = Child.objects.all().filter(is_departed=False).order_by("id")
+    elif request.method == "POST":
+        messages.error(request, "No child selected.", extra_tags="bg-danger")
+
     return render(
         request,
         "child/progress_rpt.html",
-        {"table_title": "Progress Report", "children": children},
+        {
+            "table_title": "Progress Report",
+            "children": children,
+            "selected_child_id": int(selected_child_id) if selected_child_id else None,
+            "selected_child": selected_child,
+            "child_name": selected_child.full_name if selected_child else None,
+            "prefix_id": selected_child.prefixed_id if selected_child else None,
+            "child_progress": child_progress,
+            "page_obj": page_obj,
+        },
     )
-
 
 # =================================== Delete Progress Data ===================================
 

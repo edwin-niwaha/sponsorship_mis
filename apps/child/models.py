@@ -316,7 +316,28 @@ class ChildProgress(models.Model):
     )
     name_of_school = models.CharField(max_length=50, verbose_name="Name of the School")
     previous_schools = models.TextField(
-        max_length=200, verbose_name="Previous Schools Attended"
+        max_length=200, verbose_name="Previous Schools Attended",
+        null=True,
+        blank=True,
+    )
+    year = models.PositiveIntegerField(
+        verbose_name="Academic Year",
+        null=True,
+        blank=True,
+    )
+
+    TERM_CHOICES = [
+        ("Term 1", "Term 1"),
+        ("Term 2", "Term 2"),
+        ("Term 3", "Term 3"),
+    ]
+
+    term = models.CharField(
+        max_length=20,
+        choices=TERM_CHOICES,
+        verbose_name="School Term",
+        null=True,
+        blank=True,
     )
     EDUC_LEVEL_CHOICES = [
         ("Pre-School", "Pre-School"),
