@@ -156,7 +156,7 @@
                     <td class="text-end">{{ loan.principal_amount|floatformat:'0'|intcomma }}</td>
                     <td class="text-end">{{ loan.interest_rate }}</td>
                     <td class="text-center">{{ loan.loan_period_months }}</td>
-                    <td>{{ loan.start_date|date:'d/m/Y' }}</td>
+                    <td>{{ loan.disbursement_date|date:'d/m/Y' }}</td>
                     {% comment %} <td>{{ loan.next_due_date|date:'d/m/Y'|default:'-' }}</td> {% endcomment %}
                     <td>{{ loan.due_date|date:'d/m/Y' }}</td>
                     <td class="text-center">{{ loan.days_overdue }}</td>

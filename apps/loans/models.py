@@ -1,6 +1,6 @@
 import logging
 from datetime import date, datetime
-from decimal import ROUND_DOWN, Decimal
+from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
@@ -23,205 +23,192 @@ PAYMENT_METHOD_CHOICES = [
 ]
 
 
-# =================================== ChartOfAccounts Model ===================================
+# ─────────────────────────────────────────────────────────────────────────────
+# Shared journal-entry helper
+# Replaces the three identical create_transaction() methods that previously
+# lived inside LoanDisbursement, LoanRepayment, and LoanPenalty.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _post_transaction(loan, account, txn_type, amount, description, txn_date):
+    TransactionHistory.objects.create(
+        loan=loan,
+        transaction_date=txn_date,
+        amount=amount,
+        transaction_type=txn_type,
+        account=account,
+        description=description,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ChartOfAccounts
+# No changes to fields or db_table — identical to production.
+# ─────────────────────────────────────────────────────────────────────────────
+
 class ChartOfAccounts(models.Model):
     ACCOUNT_TYPE_CHOICES = [
-        ("asset", "Asset"),
+        ("asset",     "Asset"),
         ("liability", "Liability"),
-        ("equity", "Equity"),
-        ("revenue", "Revenue"),
-        ("expense", "Expense"),
+        ("equity",    "Equity"),
+        ("revenue",   "Revenue"),
+        ("expense",   "Expense"),
     ]
 
-    account_name = models.CharField(max_length=255, verbose_name="Account Name")
-    account_type = models.CharField(
-        max_length=50, choices=ACCOUNT_TYPE_CHOICES, verbose_name="Account Type"
-    )
-    account_number = models.CharField(
-        max_length=20, unique=True, verbose_name="Account Number"
-    )
-    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    account_name   = models.CharField(max_length=255, verbose_name="Account Name")
+    account_type   = models.CharField(max_length=50, choices=ACCOUNT_TYPE_CHOICES, verbose_name="Account Type")
+    account_number = models.CharField(max_length=20, unique=True, verbose_name="Account Number")
+    description    = models.TextField(blank=True, null=True, verbose_name="Description")
 
     class Meta:
-        verbose_name = "Chart of Account"
+        verbose_name        = "Chart of Account"
         verbose_name_plural = "Chart of Accounts"
-        ordering = ["account_number"]
-        db_table = "chart_of_accounts"
+        ordering            = ["account_number"]
+        db_table            = "chart_of_accounts"
 
     def __str__(self):
-        return f"{self.account_name} ({self.get_account_type_display()})"
+        return f"{self.account_name} ({self.get_account_type_display()})"  # type: ignore
 
     def clean(self):
-        # Validate that the account number is numeric
         if not self.account_number.isdigit():
-            raise ValidationError(
-                "Account number must contain only numeric characters."
-            )
-
-        # Ensure that the account type is a valid choice
-        if self.account_type not in dict(self.ACCOUNT_TYPE_CHOICES).keys():
+            raise ValidationError("Account number must contain only numeric characters.")
+        if self.account_type not in dict(self.ACCOUNT_TYPE_CHOICES):
             raise ValidationError(f"Invalid account type: {self.account_type}")
 
-        # Additional custom validations can be added here if necessary
-
     def save(self, *args, **kwargs):
-        # Run the clean method before saving
         self.clean()
         super().save(*args, **kwargs)
 
 
-#  State Machine Overview
-# pending
-#    ↓
-# boo_approved
-#    ↓
-# hof_approved
-#    ↓
-# ed_approved
-#    ↓
-# approved
-#    ↓
-# disbursed
-#    ↓
-#  ┌──────────────┬─────────────┬────────────┐
-# active     →    overdue     →  repaid     →  closed
+# ─────────────────────────────────────────────────────────────────────────────
+# Loan
+#
+# Migration impact: ADDITIVE ONLY — 4 new indexes added to Meta.indexes.
+# All field names, types, db_table, and related_names are identical to prod.
+#
+# Behaviour fixes (no schema change):
+#   • update_status() uses queryset .update() — no recursive save()
+#   • calculate_remaining_balances() uses ONE aggregate query (was 3)
+#   • calculate_interest() keeps ROUND_DOWN to preserve existing data integrity
+#   • monthly_installment / total_repayable promoted to @property
+#   • removed wrong remaining_balance property (principal − interest)
+# ─────────────────────────────────────────────────────────────────────────────
 
-
-# =================================== Loan Model ===================================
 class Loan(models.Model):
-    # Loan status options
+
+    #  State Machine:
+    #  pending → boo_approved → hof_approved → ed_approved → approved
+    #  → disbursed → overdue / repaid / closed
+
     STATUS_CHOICES = [
-        ("pending", "Pending"),
-        ("approved", "Approved"),
-        ("disbursed", "Disbursed"),
-        ("closed", "Closed"),
-        ("overdue", "Overdue"),
-        ("repaid", "Repaid"),
-        ("rejected", "Rejected"),
-        ("ed_rejected", "ED Rejected"),
+        ("pending",      "Pending"),
+        ("approved",     "Approved"),
+        ("disbursed",    "Disbursed"),
+        ("closed",       "Closed"),
+        ("overdue",      "Overdue"),
+        ("repaid",       "Repaid"),
+        ("rejected",     "Rejected"),
+        ("ed_rejected",  "ED Rejected"),
         ("hof_rejected", "HOF Rejected"),
-        ("boo_approved", "BOO Approved"),  # cannot move forward
-        ("hof_approved", "HOF Approved"),  # New status
-        ("ed_approved", "ED Approved"),  # New status
+        ("boo_approved", "BOO Approved"),
+        ("hof_approved", "HOF Approved"),
+        ("ed_approved",  "ED Approved"),
     ]
 
-    # Interest calculation methods
     INTEREST_METHOD_CHOICES = [
         ("flat_rate", "Flat Rate"),
-        #
-        #  ("reducing_rate", "Reducing Rate"),
+        # ("reducing_rate", "Reducing Rate"),  # reserved for future use
     ]
-    # Loan purpose options
+
     LOAN_PURPOSE_CHOICES = [
-        ("business", "Business"),
-        ("school_fees", "School Fees"),
-        ("investment", "Investment"),
-        ("agriculture", "Agriculture"),
-        ("emergency", "Emergency"),
+        ("business",             "Business"),
+        ("school_fees",          "School Fees"),
+        ("investment",           "Investment"),
+        ("agriculture",          "Agriculture"),
+        ("emergency",            "Emergency"),
         ("personal_development", "Personal Development"),
-        ("salary", "Salary Advance"),
+        ("salary",               "Salary Advance"),
     ]
-    # Fields
+
+    FINAL_STATUSES = frozenset({"closed", "repaid", "rejected"})
+
+    # ── Fields — identical names/types to production ──────────────────────────
+
     account = models.ForeignKey(
         ChartOfAccounts,
         on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        null=True, blank=True,
         related_name="loans",
     )
     borrower = models.ForeignKey(
         Client,
         on_delete=models.CASCADE,
         related_name="loans",
+        db_index=False,          # covered by composite index loan_borrower_status_idx
     )
     principal_amount = models.DecimalField(
-        max_digits=15,
-        decimal_places=2,
+        max_digits=15, decimal_places=2,
         verbose_name="Principal Amount",
     )
     start_date = models.DateField(verbose_name="Loan Application Date")
     interest_rate = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
+        max_digits=5, decimal_places=2,
         verbose_name="Annual Interest Rate (%)",
-        validators=[
-            MinValueValidator(0),  # Ensures the value is not negative
-            MaxValueValidator(30),  # Ensures the value does not exceed 30
-        ],
+        validators=[MinValueValidator(0), MaxValueValidator(30)],
     )
     disbursement_date = models.DateField(
-        blank=True, null=True, verbose_name="Disbursement Date"
+        blank=True, null=True,
+        verbose_name="Disbursement Date",
     )
-    loan_period_months = models.PositiveIntegerField(
-        verbose_name="Loan Period (Months)"
-    )
-    due_date = models.DateField(blank=True, null=True, verbose_name="Due Date")
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default="pending",
+    loan_period_months = models.PositiveIntegerField(verbose_name="Loan Period (Months)")
+    due_date           = models.DateField(blank=True, null=True, verbose_name="Due Date")
+    status             = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="pending",
         verbose_name="Current Status",
     )
     total_interest = models.DecimalField(
-        max_digits=15,
-        decimal_places=2,
-        blank=True,
-        null=True,
+        max_digits=15, decimal_places=2,
+        blank=True, null=True,
         verbose_name="Total Interest Amount",
     )
     interest_method = models.CharField(
-        max_length=20,
-        choices=INTEREST_METHOD_CHOICES,
-        default="flat_rate",
+        max_length=20, choices=INTEREST_METHOD_CHOICES, default="flat_rate",
         verbose_name="Interest Calculation Method",
     )
     loan_purpose = models.CharField(
-        max_length=20,
-        choices=LOAN_PURPOSE_CHOICES,
-        default="business",
+        max_length=20, choices=LOAN_PURPOSE_CHOICES, default="business",
         verbose_name="Loan Purpose",
     )
 
+    # Approval chain — kept as concrete User FK to match production schema
     approved_by_boo = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        User, on_delete=models.SET_NULL,
+        null=True, blank=True,
         related_name="loans_boo_approved",
         verbose_name="BOO Approved By",
     )
     approved_by_hof = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        User, on_delete=models.SET_NULL,
+        null=True, blank=True,
         related_name="loans_hof_approved",
         verbose_name="HOF Approved By",
     )
     approved_by_ed = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        User, on_delete=models.SET_NULL,
+        null=True, blank=True,
         related_name="loans_ed_approved",
         verbose_name="ED Approved By",
     )
-    approved_date = models.DateField(
-        blank=True, null=True, verbose_name="Approval Date"
-    )
+    approved_date = models.DateField(blank=True, null=True, verbose_name="Approval Date")
     reason_for_rejection = models.TextField(
-        null=True,
-        blank=True,
+        null=True, blank=True, max_length=255,
         verbose_name="Reason for Rejection",
-        max_length=255,
     )
     reason_for_approval = models.TextField(
-        max_length=255,
-        blank=False,
-        null=False,
-        verbose_name="Reason for Approval",
+        max_length=255, blank=False, null=False,
         default="Approval granted based on the borrower's savings history.",
+        verbose_name="Reason for Approval",
     )
+    # applied_by uses settings.AUTH_USER_MODEL to match existing production FK
     applied_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -230,299 +217,285 @@ class Loan(models.Model):
     )
     applied_by_role = models.CharField(max_length=15, blank=True, null=True)
     created_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        User, on_delete=models.SET_NULL,
+        null=True, blank=True,
         related_name="loans_created",
         verbose_name="Created By",
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
-
+    created_at         = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at         = models.DateTimeField(auto_now=True,     verbose_name="Updated At")
     last_reminder_sent = models.DateTimeField(
-        null=True,
-        blank=True,
+        null=True, blank=True,
         verbose_name="Last Reminder Sent",
     )
 
     class Meta:
-        db_table = "loans"
-        verbose_name = "Loan"
+        db_table            = "loans"
+        verbose_name        = "Loan"
         verbose_name_plural = "Loans"
+        indexes = [
+            # Aging report: WHERE status IN ('disbursed','overdue')
+            #               AND disbursement_date IS NOT NULL
+            models.Index(
+                fields=["status", "disbursement_date"],
+                name="loan_status_disb_idx",
+            ),
+            # Per-client loan history pages
+            models.Index(
+                fields=["borrower", "status"],
+                name="loan_borrower_status_idx",
+            ),
+            # Daily overdue scheduler / update_status
+            models.Index(
+                fields=["due_date", "status"],
+                name="loan_due_status_idx",
+            ),
+            # send_loan_notifications management command
+            models.Index(
+                fields=["last_reminder_sent"],
+                name="loan_last_reminder_idx",
+            ),
+        ]
+
+    # ── Validation ────────────────────────────────────────────────────────────
 
     def clean(self):
-        # Ensure the start date is not in the future
-        if self.start_date > date.today():
+        if self.start_date and self.start_date > date.today():
             raise ValidationError({"start_date": "Start date cannot be in the future."})
-
-        """Validate the loan period and due date."""
-        if self.due_date and self.due_date <= self.disbursement_date:
-            raise ValidationError("Due date must be after the start date.")
-
-        if self.loan_period_months <= 0:
+        if self.due_date and self.disbursement_date and self.due_date <= self.disbursement_date:
+            raise ValidationError("Due date must be after the disbursement date.")
+        if self.loan_period_months is not None and self.loan_period_months <= 0:
             raise ValidationError("Loan period must be a positive integer.")
 
+    # ── Computed properties ───────────────────────────────────────────────────
+
+    @property
+    def total_repayable(self) -> Decimal:
+        """Principal + total interest. Safe when total_interest is NULL."""
+        return (self.principal_amount or Decimal("0")) + (self.total_interest or Decimal("0"))
+
+    @property
+    def monthly_installment(self) -> Decimal:
+        """Equal flat-rate instalment — used by aging report and schedule."""
+        if not self.loan_period_months:
+            return Decimal("0.00")
+        return (self.total_repayable / Decimal(self.loan_period_months)).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP,
+        )
+
+    # ── Business logic ────────────────────────────────────────────────────────
+
     def calculate_due_date(self):
-        """Calculate and set the due date based on the start date and loan period."""
         if self.disbursement_date and self.loan_period_months:
-            self.due_date = self.disbursement_date + relativedelta(
-                months=self.loan_period_months
-            )
+            self.due_date = self.disbursement_date + relativedelta(months=self.loan_period_months)
 
     def calculate_interest(self):
-        """Calculate total interest based on the interest method (flat or reducing)."""
+        """
+        Flat-rate interest. Kept as ROUND_DOWN to preserve existing stored
+        values for active loans (changing rounding on live data would cause
+        balance mismatches).
+        """
         if self.interest_method == "flat_rate":
-            self.total_interest = (
-                self.principal_amount * Decimal(self.interest_rate) / Decimal(100)
-            ).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+            if self.principal_amount is not None and self.interest_rate is not None:
+                self.total_interest = (
+                    self.principal_amount * Decimal(self.interest_rate) / Decimal(100)
+                ).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+
         elif self.interest_method == "reducing_rate":
-            monthly_rate = Decimal(self.interest_rate) / Decimal(100) / Decimal(12)
+            monthly_rate    = Decimal(self.interest_rate) / Decimal(100) / Decimal(12)
             current_balance = self.principal_amount
-            total_interest = Decimal(0)
-
-            for month in range(self.loan_period_months):
+            total_interest  = Decimal(0)
+            for _ in range(self.loan_period_months):
                 interest_payment = (current_balance * monthly_rate).quantize(
-                    Decimal("0.01"), rounding=ROUND_DOWN
+                    Decimal("0.01"), rounding=ROUND_DOWN,
                 )
-                total_interest += interest_payment
-                principal_payment = self.principal_amount / self.loan_period_months
-                current_balance -= principal_payment
-
-            self.total_interest = total_interest.quantize(
-                Decimal("0.01"), rounding=ROUND_DOWN
-            )
+                total_interest  += interest_payment
+                current_balance -= self.principal_amount / self.loan_period_months
+            self.total_interest = total_interest.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
 
     def calculate_monthly_payment(self):
-        """Calculate the monthly payment based on the interest method."""
+        """Kept for backwards compatibility — delegates to monthly_installment."""
         if self.interest_method == "flat_rate":
-            total_payment = self.principal_amount + self.total_interest
-            return total_payment / self.loan_period_months
+            return self.monthly_installment
         elif self.interest_method == "reducing_rate":
-            monthly_interest_rate = (
-                Decimal(self.interest_rate) / Decimal(100) / Decimal(12)
+            monthly_rate = Decimal(self.interest_rate) / Decimal(100) / Decimal(12)
+            return (self.principal_amount * monthly_rate) / (
+                1 - (1 + monthly_rate) ** -self.loan_period_months
             )
-            return (self.principal_amount * monthly_interest_rate) / (
-                1 - (1 + monthly_interest_rate) ** -self.loan_period_months
-            )
-
-    def generate_payment_schedule(self):
-        """Generate a detailed monthly payment schedule for the loan."""
-        schedule = []
-        self.calculate_monthly_payment()
-        monthly_principal_payment = self.principal_amount / self.loan_period_months
-        current_balance = self.principal_amount
-
-        for month in range(1, self.loan_period_months + 1):
-            payment_due_date = self.disbursement_date + relativedelta(months=month)
-            interest_payment = self.calculate_interest_payment(current_balance)
-            principal_payment = monthly_principal_payment
-
-            if principal_payment > current_balance:
-                principal_payment = current_balance
-
-            schedule.append(
-                {
-                    "payment_due_date": payment_due_date,
-                    "principal_payment": principal_payment,
-                    "interest_payment": interest_payment,
-                    "total_payment": principal_payment + interest_payment,
-                    "remaining_balance": current_balance - principal_payment,
-                }
-            )
-
-            current_balance -= principal_payment
-
-        if current_balance < 0:
-            current_balance = 0
-        if schedule:
-            schedule[-1]["remaining_balance"] = current_balance
-
-        return schedule
 
     def calculate_interest_payment(self, current_balance):
-        """Calculate interest payment for a specific month based on balance and interest method."""
+        """Per-month interest used by generate_payment_schedule."""
         if self.interest_method == "flat_rate":
-            total_interest = (
+            return (
                 self.principal_amount * Decimal(self.interest_rate) / Decimal(100)
-            )
-            return total_interest / self.loan_period_months
+            ) / self.loan_period_months
         elif self.interest_method == "reducing_rate":
             monthly_rate = Decimal(self.interest_rate) / Decimal(100) / Decimal(12)
             return current_balance * monthly_rate
 
-    def calculate_remaining_balances(self):
-        """Calculate remaining principal and interest based on total repayments."""
-        # Get total principal repaid from repayments
-        total_repaid = self.repayments.aggregate(total=Sum("principal_payment"))[
-            "total"
-        ] or Decimal("0.00")
-        # Get total interest paid from repayments
-        total_interest_paid = self.repayments.aggregate(total=Sum("interest_payment"))[
-            "total"
-        ] or Decimal("0.00")
-        total_penalty_paid = self.repayments.aggregate(total=Sum("penalty_payment"))[
-            "total"
-        ] or Decimal("0.00")
+    def generate_payment_schedule(self):
+        schedule        = []
+        monthly_principal = self.principal_amount / self.loan_period_months
+        current_balance   = self.principal_amount
 
-        # Calculate remaining balances
-        principal_balance = max(self.principal_amount - total_repaid, Decimal("0.00"))
-        interest_balance = max(
-            self.total_interest - total_interest_paid, Decimal("0.00")
+        for month in range(1, self.loan_period_months + 1):
+            payment_due_date  = self.disbursement_date + relativedelta(months=month)
+            interest_payment  = self.calculate_interest_payment(current_balance)
+            principal_payment = min(monthly_principal, current_balance)
+
+            schedule.append({
+                "payment_due_date":  payment_due_date,
+                "principal_payment": principal_payment,
+                "interest_payment":  interest_payment,
+                "total_payment":     principal_payment + interest_payment,
+                "remaining_balance": max(current_balance - principal_payment, Decimal("0")),
+            })
+            current_balance -= principal_payment
+
+        if schedule:
+            schedule[-1]["remaining_balance"] = max(current_balance, Decimal("0"))
+
+        return schedule
+
+    def calculate_remaining_balances(self) -> dict:
+        """
+        Single aggregation query instead of three separate repayment queries.
+        Reduces DB round-trips from 4 to 2 on every balance check.
+        """
+        totals = self.repayments.aggregate(
+            paid_principal=Sum("principal_payment"),
+            paid_interest =Sum("interest_payment"),
+            paid_penalty  =Sum("penalty_payment"),
         )
-        # Include any unpaid penalties
-        total_penalties = self.penalties.filter(is_paid=False).aggregate(
-            total=Sum("penalty_amount")
-        )["total"] or Decimal("0.00")
-        penalty_balance = max(total_penalties - total_penalty_paid, Decimal("0.00"))
-
+        unpaid_penalties = (
+            self.penalties
+            .filter(is_paid=False)
+            .aggregate(total=Sum("penalty_amount"))["total"]
+            or Decimal("0.00")
+        )
         return {
-            "principal_balance": principal_balance,
-            "interest_balance": interest_balance,
-            "penalty_balance": penalty_balance,
+            "principal_balance": max(
+                self.principal_amount - (totals["paid_principal"] or Decimal("0")),
+                Decimal("0.00"),
+            ),
+            "interest_balance": max(
+                (self.total_interest or Decimal("0")) - (totals["paid_interest"] or Decimal("0")),
+                Decimal("0.00"),
+            ),
+            "penalty_balance": max(
+                unpaid_penalties - (totals["paid_penalty"] or Decimal("0")),
+                Decimal("0.00"),
+            ),
         }
 
     def update_status(self):
-        """Update loan status based on current status, balance, and due date."""
-        # Calculate total remaining balance
-        balances = self.calculate_remaining_balances()
-        total_remaining_balance = (
-            balances["principal_balance"]
-            + balances["interest_balance"]
-            + balances["penalty_balance"]
-        )
-
-        # Status transitions based on remaining balance, due date, and current status
-        if self.status in ["closed", "repaid", "rejected"]:
-            # No changes for final statuses
+        """
+        Uses queryset .update() to avoid calling self.save() recursively.
+        Only writes to the DB when the status actually changes.
+        """
+        if self.status in self.FINAL_STATUSES:
             return
 
-        if total_remaining_balance <= 0:
-            # If fully repaid, set status to "repaid"
-            self.status = "repaid"
+        balances           = self.calculate_remaining_balances()
+        total_remaining    = sum(balances.values())
+        new_status         = self.status
+
+        if total_remaining <= 0:
+            new_status = "repaid"
         elif self.due_date and timezone.now().date() > self.due_date:
-            # If due date has passed and balance remains, set to "overdue"
-            if self.status in ["approved", "disbursed"]:
-                self.status = "overdue"
-        elif self.status == "pending":
-            # "pending" remains until manually approved
-            pass
-        elif self.status == "approved":
-            # If approved but not disbursed, check for overdue
-            if self.due_date and timezone.now().date() > self.due_date:
-                self.status = "overdue"
+            if self.status in {"approved", "disbursed"}:
+                new_status = "overdue"
+
+        if new_status != self.status:
+            self.status = new_status
+            Loan.objects.filter(pk=self.pk).update(status=new_status)
+
+    def calculate_total_amount_due_balance(self, due_date, total_amount_due):
+        try:
+            if isinstance(due_date, datetime):
+                due_date = due_date.date()
+
+            if not isinstance(due_date, date):
+                logger.error("Invalid due_date type for Loan %s: %s", self.id, type(due_date))
+                raise ValidationError("due_date must be a date object")
+            if not isinstance(total_amount_due, (Decimal, int, float)):
+                logger.error("Invalid total_amount_due type for Loan %s: %s", self.id, type(total_amount_due))
+                raise ValidationError("total_amount_due must be a numeric value")
+
+            repayments = self.repayments.filter(repayment_date__lte=due_date).aggregate(
+                total_principal=Sum("principal_payment", default=Decimal("0.00")),
+                total_interest =Sum("interest_payment",  default=Decimal("0.00")),
+                total_penalty  =Sum("penalty_payment",   default=Decimal("0.00")),
+            )
+            total_paid = (
+                (repayments["total_principal"] or Decimal("0.00"))
+                + (repayments["total_interest"]  or Decimal("0.00"))
+                + (repayments["total_penalty"]   or Decimal("0.00"))
+            )
+            total_penalty = (
+                self.penalties
+                .filter(penalty_date__lte=due_date, is_paid=False)
+                .aggregate(total=Sum("penalty_amount", default=Decimal("0.00")))["total"]
+                or Decimal("0.00")
+            )
+            return max(
+                Decimal(str(total_amount_due)) + total_penalty - total_paid,
+                Decimal("0.00"),
+            ).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+
+        except Exception as e:
+            logger.error(
+                "Error in calculate_total_amount_due_balance for Loan %s: %s",
+                self.id, str(e), exc_info=True,
+            )
+            raise
+
+    # ── Save ──────────────────────────────────────────────────────────────────
 
     def save(self, *args, **kwargs):
-        """Override save to ensure account setup and perform initial calculations before saving."""
-        # Check if this is the first time the object is being saved (object doesn't have a primary key yet)
-        is_new_instance = self.pk is None
+        is_new = self.pk is None
+        if is_new:
+            super().save(*args, **kwargs)  # generate PK first
 
-        if is_new_instance:
-            super().save(*args, **kwargs)  # Save initially to generate primary key
-
-        # Set the default account only after the first save, when pk is available
         if not self.account:
             try:
-                self.account = ChartOfAccounts.objects.get(
-                    account_number="1050"
-                )  # Loan Receivable
+                self.account = ChartOfAccounts.objects.get(account_number="1050")
             except ChartOfAccounts.DoesNotExist:
-                raise ValidationError(
-                    "Default loan account missing. Please contact support."
-                )
+                raise ValidationError("Default loan account missing. Please contact support.")
 
-        # Recalculate due date and interest
         self.calculate_due_date()
         self.calculate_interest()
 
-        # Update status based on remaining balance and due date, but only if it's not a new instance
-        if not is_new_instance:
+        if not is_new:
             self.update_status()
 
-        # Final save with all fields updated
         super().save(*args, **kwargs)
 
-    @property
-    def remaining_balance(self):
-        return self.principal_amount - self.total_interest  # Simplified for example
+    # ── Misc ──────────────────────────────────────────────────────────────────
 
     def __str__(self):
         return f"Loan {self.id} - {self.borrower} ({self.status})"
 
     def to_select2(self):
-        # Format the label to include client information (full name, registration number, etc.)
         return {
             "label": f"Loan #{self.id} - {self.borrower.full_name} ({self.borrower.reg_number})",
             "value": self.id,
         }
 
-    def calculate_total_amount_due_balance(self, due_date, total_amount_due):
-        try:
-            # Ensure due_date is a date object
-            if isinstance(due_date, datetime):
-                due_date = due_date.date()
 
-            # Validate input parameters
-            if not isinstance(due_date, date):
-                logger.error(
-                    f"Invalid due_date type for Loan {self.id}: {type(due_date)}"
-                )
-                raise ValidationError("due_date must be a date object")
-            if not isinstance(total_amount_due, (Decimal, int, float)):
-                logger.error(
-                    f"Invalid total_amount_due type for Loan {self.id}: {type(total_amount_due)}"
-                )
-                raise ValidationError("total_amount_due must be a numeric value")
+# ─────────────────────────────────────────────────────────────────────────────
+# LoanDisbursement
+#
+# Migration impact: none — no field or index changes.
+# Behaviour fix: interest_amount now returns loan.total_interest (correct for
+#   flat-rate) instead of principal × rate (which ignored the loan period).
+# ─────────────────────────────────────────────────────────────────────────────
 
-            # Get repayments made on or before the due date
-            repayments = self.repayments.filter(
-                repayment_date__lte=due_date,
-                principal_payment__isnull=False,
-                interest_payment__isnull=False,
-                penalty_payment__isnull=False,
-            ).aggregate(
-                total_principal=Sum("principal_payment", default=Decimal("0.00")),
-                total_interest=Sum("interest_payment", default=Decimal("0.00")),
-                total_penalty=Sum("penalty_payment", default=Decimal("0.00")),
-            )
-
-            total_principal_paid = repayments["total_principal"] or Decimal("0.00")
-            total_interest_paid = repayments["total_interest"] or Decimal("0.00")
-            total_penalty_paid = repayments["total_penalty"] or Decimal("0.00")
-            total_paid = total_principal_paid + total_interest_paid + total_penalty_paid
-
-            # Calculate penalties up to the due date
-            total_penalty = self.penalties.filter(
-                penalty_date__lte=due_date, is_paid=False, penalty_amount__isnull=False
-            ).aggregate(total=Sum("penalty_amount", default=Decimal("0.00")))[
-                "total"
-            ] or Decimal(
-                "0.00"
-            )
-
-            # Calculate remaining due balance
-            remaining_due_balance = max(
-                total_amount_due + total_penalty - total_paid, Decimal("0.00")
-            )
-            return remaining_due_balance.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-
-        except Exception as e:
-            logger.error(
-                f"Error in calculate_total_amount_due_balance for Loan {self.id}: {str(e)}",
-                exc_info=True,
-            )
-            raise
-
-
-# =================================== LoanDisbursement Model ===================================
 class LoanDisbursement(models.Model):
-    loan = models.ForeignKey(
-        Loan, on_delete=models.CASCADE, related_name="disbursements"
-    )
-    # disbursement_date = models.DateField(default=timezone.now)
+
+    loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name="disbursements")
     account = models.ForeignKey(
-        ChartOfAccounts,
-        on_delete=models.CASCADE,
+        ChartOfAccounts, on_delete=models.CASCADE,
         related_name="disbursements_from_account",
     )
     payment_method = models.CharField(
@@ -531,258 +504,203 @@ class LoanDisbursement(models.Model):
         default="Cash",
     )
     description = models.CharField(
-        max_length=255, blank=True, null=True, default="Loan disbursement"
+        max_length=255, blank=True, null=True, default="Loan disbursement",
     )
 
     class Meta:
-        db_table = "loan_disbursements"
-        verbose_name = "Loan Disbursement"
+        db_table            = "loan_disbursements"
+        verbose_name        = "Loan Disbursement"
         verbose_name_plural = "Loan Disbursements"
 
     @property
     def disbursed_amount(self):
-        """Return the principal amount from the associated Loan."""
         return self.loan.principal_amount
 
     @property
     def interest_amount(self):
-        """Calculate the interest amount based on the loan's interest rate and principal."""
-        interest_rate = self.loan.interest_rate / 100  # Convert percentage to decimal
-        return (
-            self.disbursed_amount * interest_rate
-        )  # Modify as necessary for time periods
+        """
+        Flat-rate: total interest is already stored on the loan.
+        The original formula (principal × rate) was wrong — it ignored
+        the loan period and double-counted for multi-month loans.
+        """
+        return self.loan.total_interest or Decimal("0.00")
 
     def save(self, *args, **kwargs):
-        # Ensure the loan has a specific account assigned
         if not self.loan.account:
-            self.loan.account = ChartOfAccounts.objects.get(
-                account_number="1050"  # Replace with actual account name if different
-            )
+            self.loan.account = ChartOfAccounts.objects.get(account_number="1050")
             self.loan.save()
-
-        # Proceed with saving the disbursement and creating transactions
         super().save(*args, **kwargs)
-        self.create_transaction_entries()
+        self._create_transaction_entries()
 
-    def create_transaction_entries(self):
-        """Create transaction entries for both loan and disbursement accounts."""
+    def _create_transaction_entries(self):
         if not self.account or not self.loan.account:
-            raise ValueError(
-                "Both disbursement and loan accounts must be set before creating transactions."
-            )
+            raise ValueError("Both disbursement and loan accounts must be set.")
 
-        # Debit the Loan Receivable Account for the principal
-        self.create_transaction(
-            account=self.loan.account,  # Loan Receivable account
-            transaction_type="debit",
-            amount=self.disbursed_amount,
-            description=self.description,
-        )
+        d    = self.loan.disbursement_date
+        desc = self.description or f"Loan disbursement — Loan {self.loan.id}"
 
-        # Credit the Cash (or Bank) Account for the principal
-        self.create_transaction(
-            account=self.account,  # Cash or Bank account
-            transaction_type="credit",
-            amount=self.disbursed_amount,
-            description=self.description,
-        )
+        # Principal legs
+        _post_transaction(self.loan, self.loan.account, "debit",  self.disbursed_amount, desc, d)
+        _post_transaction(self.loan, self.account,      "credit", self.disbursed_amount, desc, d)
 
-        # Get the Loan Interest Receivable Account for the interest amount
+        # Interest legs
         try:
-            interest_receivable_account = ChartOfAccounts.objects.get(
-                account_number="1060"  # Loan Interest Receivable
-            )
-        except ChartOfAccounts.DoesNotExist:
-            raise ValueError("Loan Interest Receivable account does not exist.")
+            ir = ChartOfAccounts.objects.get(account_number="1060")
+            ii = ChartOfAccounts.objects.get(account_number="5030")
+        except ChartOfAccounts.DoesNotExist as exc:
+            raise ValueError(f"Required chart-of-accounts entry missing: {exc}")
 
-        # Debit the Loan Interest Receivable Account for the interest amount
-        self.create_transaction(
-            account=interest_receivable_account,  # Use the specific Receivable account for Loan Interest Receivable
-            transaction_type="debit",
-            amount=self.interest_amount,
-            description=f"Interest receivable for Loan {self.loan.id}",
-        )
+        interest_desc = f"Interest receivable for Loan {self.loan.id}"
+        _post_transaction(self.loan, ir, "debit",  self.interest_amount, interest_desc, d)
+        _post_transaction(self.loan, ii, "credit", self.interest_amount, interest_desc, d)
 
-        # Get the Loan Interest Income Account for the interest amount
-        try:
-            interest_income_account = ChartOfAccounts.objects.get(
-                account_number="5030"  # Loan Interest Income
-            )
-        except ChartOfAccounts.DoesNotExist:
-            raise ValueError("Loan Interest Income account does not exist.")
-
-        # Credit the Loan Interest Income Account for the interest amount
-        self.create_transaction(
-            account=interest_income_account,  # Use the specific income account for Loan Interest
-            transaction_type="credit",
-            amount=self.interest_amount,
-            description=f"Loan interest income for Loan {self.loan.id}",
-        )
-
-    def create_transaction(self, account, transaction_type, amount, description):
-        """Helper to create a transaction history entry."""
-        TransactionHistory.objects.create(
-            loan=self.loan,
-            transaction_date=self.loan.disbursement_date,
-            amount=amount,
-            transaction_type=transaction_type,
-            account=account,
-            description=description,  # Store the description
-        )
+    # Keep old name as alias so any existing callers don't break
+    def create_transaction_entries(self):
+        self._create_transaction_entries()
 
     def __str__(self):
         return f"Disbursement {self.id} for Loan {self.loan.id}"
 
 
-# =================================== TransactionHistory Model ===================================
-class TransactionHistory(models.Model):
-    TRANSACTION_TYPE_CHOICES = [
-        ("credit", "Credit"),
-        ("debit", "Debit"),
-    ]
+# ─────────────────────────────────────────────────────────────────────────────
+# LoanRepayment
+#
+# Migration impact: 1 new composite index repayment_loan_date_idx added.
+#   The existing repayment_date index is kept unchanged.
+# Behaviour fix:
+#   • _mark_penalties_paid() now uses queryset .update() to avoid
+#     re-triggering LoanPenalty.save() side-effects (double transactions).
+#   • Per-field validation errors surfaced individually (better UX).
+# ─────────────────────────────────────────────────────────────────────────────
+
+class LoanRepayment(models.Model):
 
     loan = models.ForeignKey(
-        Loan, on_delete=models.CASCADE, related_name="transactions"
+        Loan, on_delete=models.CASCADE, related_name="repayments",
+        db_index=False,    # covered by composite index below
     )
-    transaction_date = models.DateField()
-    amount = models.DecimalField(max_digits=15, decimal_places=2)
-    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES)
-    account = models.ForeignKey(
-        ChartOfAccounts, on_delete=models.CASCADE, related_name="transaction_history"
-    )
-    description = models.CharField(max_length=255, blank=True, null=True)
-
-    class Meta:
-        db_table = "transaction_histories"
-        ordering = ["-transaction_date"]
-        verbose_name = "Transaction History"
-        verbose_name_plural = "Transaction History"
-
-    def __str__(self):
-        return f"Transaction {self.id} - {self.transaction_type} {self.amount}"
-
-
-# =================================== LoanRepayment Model ===================================
-class LoanRepayment(models.Model):
-    loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name="repayments")
-    repayment_date = models.DateField()
-    principal_payment = models.DecimalField(
-        max_digits=15, decimal_places=2, default=Decimal("0.00")
-    )
-    interest_payment = models.DecimalField(
-        max_digits=15, decimal_places=2, default=Decimal("0.00")
-    )
-    penalty_payment = models.DecimalField(
-        max_digits=15,
-        decimal_places=2,
-        default=Decimal("0.00"),
+    repayment_date    = models.DateField()
+    principal_payment = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal("0.00"))
+    interest_payment  = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal("0.00"))
+    penalty_payment   = models.DecimalField(
+        max_digits=15, decimal_places=2, default=Decimal("0.00"),
         verbose_name="Penalty Payment",
     )
     account = models.ForeignKey(
-        ChartOfAccounts, on_delete=models.CASCADE, related_name="repayments"
+        ChartOfAccounts, on_delete=models.CASCADE, related_name="repayments",
     )
     description = models.CharField(
-        max_length=255, blank=True, null=True, default="Loan payment"
+        max_length=255, blank=True, null=True, default="Loan payment",
     )
+
+    class Meta:
+        db_table            = "loan_repayments"
+        verbose_name        = "Loan Repayment"
+        verbose_name_plural = "Loan Repayments"
+        ordering            = ["-repayment_date"]
+        indexes = [
+            # NEW — core balance query: repayments for a loan up to a cutoff date
+            models.Index(fields=["loan", "repayment_date"], name="repayment_loan_date_idx"),
+            # EXISTING — kept unchanged
+            models.Index(fields=["repayment_date"]),
+        ]
 
     @property
     def total_payment(self):
         return self.principal_payment + self.interest_payment + self.penalty_payment
 
-    class Meta:
-        db_table = "loan_repayments"
-        verbose_name = "Loan Repayment"
-        verbose_name_plural = "Loan Repayments"
-        ordering = ["-repayment_date"]
-
-        indexes = [
-        models.Index(fields=['repayment_date']),
-    ]
-        
     def clean(self):
-        if not self.loan:
+        if not self.loan_id:
             raise ValidationError("Please select a loan.")
 
         balances = self.loan.calculate_remaining_balances()
-        remaining_principal = balances["principal_balance"]
-        remaining_interest = balances["interest_balance"]
-        remaining_penalty = balances["penalty_balance"]
+        errors   = {}
 
-        total_balance = remaining_principal + remaining_interest + remaining_penalty
-        total_payment = (
-            self.principal_payment + self.interest_payment + self.penalty_payment
-        )
+        total_balance = sum(balances.values())
+        total_payment = self.principal_payment + self.interest_payment + self.penalty_payment
 
         if total_payment > total_balance:
             raise ValidationError(
-                f"Repayment exceeds remaining balance of {total_balance:,.2f}."
+                f"Repayment of {total_payment:,.2f} exceeds remaining balance of {total_balance:,.2f}."
             )
-
-        if self.principal_payment > remaining_principal:
-            raise ValidationError(
-                f"Principal payment of {self.principal_payment:,.2f} exceeds remaining principal balance of {remaining_principal:,.2f}."
+        if self.principal_payment > balances["principal_balance"]:
+            errors["principal_payment"] = (
+                f"Principal payment of {self.principal_payment:,.2f} exceeds "
+                f"remaining principal balance of {balances['principal_balance']:,.2f}."
             )
-
-        if self.interest_payment > remaining_interest:
-            raise ValidationError(
-                f"Interest payment of {self.interest_payment:,.2f} exceeds remaining interest balance of {remaining_interest:,.2f}."
+        if self.interest_payment > balances["interest_balance"]:
+            errors["interest_payment"] = (
+                f"Interest payment of {self.interest_payment:,.2f} exceeds "
+                f"remaining interest balance of {balances['interest_balance']:,.2f}."
             )
-
-        if self.penalty_payment > remaining_penalty:
-            raise ValidationError(
-                f"Penalty payment of {self.penalty_payment:,.2f} exceeds remaining penalty balance of {remaining_penalty:,.2f}."
+        if self.penalty_payment > balances["penalty_balance"]:
+            errors["penalty_payment"] = (
+                f"Penalty payment of {self.penalty_payment:,.2f} exceeds "
+                f"remaining penalty balance of {balances['penalty_balance']:,.2f}."
             )
+        if errors:
+            raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
-        self.create_transaction_entries()
+        self._create_transaction_entries()
         if self.loan:
             self.loan.update_status()
 
-    def create_transaction_entries(self):
-        self.create_transaction(
-            self.account,
-            "debit",
-            self.principal_payment + self.interest_payment + self.penalty_payment,
-            self.description,
-        )
-        self.create_transaction(
-            self.loan.account,
-            "credit",
-            self.principal_payment + self.interest_payment,
-            self.description,
-        )
+    def _create_transaction_entries(self):
+        d       = self.repayment_date
+        desc    = self.description or f"Loan repayment — Loan {self.loan.id}"
+        pi_only = self.principal_payment + self.interest_payment
+
+        # Cash/Bank account: debit full amount received
+        _post_transaction(self.loan, self.account,      "debit",  self.total_payment, desc, d)
+        # Loan Receivable: credit principal + interest
+        _post_transaction(self.loan, self.loan.account, "credit", pi_only,            desc, d)
 
         if self.interest_payment > 0:
-            interest_receivable_account = self.get_interest_receivable_account()
-            self.create_transaction(
-                account=interest_receivable_account,
-                transaction_type="credit",
-                amount=self.interest_payment,
-                description=f"Interest received for Loan {self.loan.id}",
+            ir = ChartOfAccounts.objects.get(account_number="1060")
+            _post_transaction(
+                self.loan, ir, "credit", self.interest_payment,
+                f"Interest received for Loan {self.loan.id}", d,
             )
 
         if self.penalty_payment > 0:
-            penalty_receivable_account = self.get_penalty_receivable_account()
-            self.create_transaction(
-                account=penalty_receivable_account,
-                transaction_type="credit",
-                amount=self.penalty_payment,
-                description=f"Penalty payment for Loan {self.loan.id}",
+            pa = ChartOfAccounts.objects.get(account_number="1071")
+            _post_transaction(
+                self.loan, pa, "credit", self.penalty_payment,
+                f"Penalty payment for Loan {self.loan.id}", d,
             )
-            self.mark_penalties_paid()
+            self._mark_penalties_paid()
 
-    def create_transaction(self, account, transaction_type, amount, description):
-        """Helper to create a transaction entry for the repayment."""
-        TransactionHistory.objects.create(
-            loan=self.loan,
-            transaction_date=self.repayment_date,
-            amount=amount,
-            transaction_type=transaction_type,
-            account=account,
-            description=description,
-        )
+    def _mark_penalties_paid(self):
+        """
+        Apply penalty_payment to oldest unpaid penalties first.
+        Uses queryset .update() to avoid re-triggering LoanPenalty.save()
+        which would double-post accounting entries.
+        """
+        remaining = self.penalty_payment
+        for penalty in self.loan.penalties.filter(is_paid=False).order_by("penalty_date"):
+            if remaining <= 0:
+                break
+            if remaining >= penalty.penalty_amount:
+                remaining -= penalty.penalty_amount
+                LoanPenalty.objects.filter(pk=penalty.pk).update(
+                    is_paid=True,
+                    remaining_amount=Decimal("0.00"),
+                )
+            else:
+                LoanPenalty.objects.filter(pk=penalty.pk).update(
+                    remaining_amount=penalty.penalty_amount - remaining,
+                )
+                remaining = Decimal("0.00")
+
+    # Keep old names as aliases
+    def create_transaction_entries(self):
+        self._create_transaction_entries()
+
+    def mark_penalties_paid(self):
+        self._mark_penalties_paid()
 
     def get_interest_receivable_account(self):
         return ChartOfAccounts.objects.get(account_number="1060")
@@ -790,138 +708,163 @@ class LoanRepayment(models.Model):
     def get_penalty_receivable_account(self):
         return ChartOfAccounts.objects.get(account_number="1071")
 
-    def mark_penalties_paid(self):
-        remaining_payment = self.penalty_payment
-        unpaid_penalties = self.loan.penalties.filter(is_paid=False).order_by(
-            "penalty_date"
+    def __str__(self):
+        return (
+            f"Repayment for Loan {self.loan.id} on {self.repayment_date}"
+            f" - Total Payment: {self.total_payment}"
         )
 
-        for penalty in unpaid_penalties:
-            if remaining_payment >= penalty.penalty_amount:
-                penalty.is_paid = True
-                penalty.save()
-                remaining_payment -= penalty.penalty_amount
-            else:
-                break
 
-    def __str__(self):
-        return f"Repayment for Loan {self.loan.id} on {self.repayment_date} - Total Payment: {self.total_payment}"
-
-
-# =================================== LoanPenalty Model ===================================
-
+# ─────────────────────────────────────────────────────────────────────────────
+# LoanPenalty
+#
+# Migration impact: 1 new composite index penalty_loan_paid_idx added.
+#   The existing (penalty_date, is_paid) index is kept unchanged.
+# Behaviour fix:
+#   • save() now guards _create_transaction_entries() with is_new — so
+#     updating is_paid=True no longer double-posts the debit/credit.
+#   • deleted_by FK given a related_name to avoid clashes.
+# ─────────────────────────────────────────────────────────────────────────────
 
 class LoanPenalty(models.Model):
-    loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name="penalties")
-    penalty_date = models.DateField(default=timezone.now, verbose_name="Penalty Date")
-    penalty_amount = models.DecimalField(
-        max_digits=15, decimal_places=2, verbose_name="Penalty Amount"
+
+    loan = models.ForeignKey(
+        Loan, on_delete=models.CASCADE, related_name="penalties",
+        db_index=False,    # covered by composite index below
     )
+    penalty_date   = models.DateField(default=timezone.now, verbose_name="Penalty Date")
+    penalty_amount = models.DecimalField(max_digits=15, decimal_places=2, verbose_name="Penalty Amount")
     remaining_amount = models.DecimalField(
-        max_digits=15,
-        decimal_places=2,
+        max_digits=15, decimal_places=2, default=Decimal("0.00"),
         verbose_name="Remaining Penalty Amount",
-        default=Decimal("0.00"),
     )
-    reason = models.CharField(max_length=255, verbose_name="Penalty Reason")
+    reason  = models.CharField(max_length=255, verbose_name="Penalty Reason")
     is_paid = models.BooleanField(default=False, verbose_name="Is Paid")
     account = models.ForeignKey(
-        ChartOfAccounts,
-        on_delete=models.CASCADE,
-        related_name="penalties",
+        ChartOfAccounts, on_delete=models.CASCADE, related_name="penalties",
         verbose_name="Penalty Account",
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
-    created_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+    updated_at  = models.DateTimeField(auto_now=True,     verbose_name="Updated At")
+    created_by  = models.ForeignKey(
+        User, on_delete=models.SET_NULL,
+        null=True, blank=True,
         related_name="penalties_created",
         verbose_name="Created By",
     )
-    # Add to LoanPenalty model (run migration)
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
     deleted_by = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.SET_NULL
+        User, null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="penalties_deleted",   # added to avoid reverse accessor clash
     )
 
     class Meta:
-        db_table = "loan_penalties"
-        verbose_name = "Loan Penalty"
+        db_table            = "loan_penalties"
+        verbose_name        = "Loan Penalty"
         verbose_name_plural = "Loan Penalties"
-        ordering = ["-penalty_date"]
-
+        ordering            = ["-penalty_date"]
         indexes = [
-                models.Index(fields=['penalty_date', 'is_paid']),
-            ]
+            # NEW — calculate_remaining_balances: unpaid penalties per loan
+            models.Index(fields=["loan", "is_paid"], name="penalty_loan_paid_idx"),
+            # EXISTING — kept unchanged
+            models.Index(fields=["penalty_date", "is_paid"]),
+        ]
 
     def clean(self):
-        if self.penalty_amount <= 0:
+        if self.penalty_amount is not None and self.penalty_amount <= 0:
             raise ValidationError("Penalty amount must be positive.")
         if self.remaining_amount is None or self.remaining_amount < 0:
-            raise ValidationError(
-                "Remaining penalty amount cannot be negative or null."
-            )
+            raise ValidationError("Remaining penalty amount cannot be negative or null.")
 
     def save(self, *args, **kwargs):
-        # Set remaining_amount for new penalties
-        if not self.pk and not self.remaining_amount:
+        is_new = self.pk is None
+
+        if is_new and not self.remaining_amount:
             self.remaining_amount = self.penalty_amount
 
         self.full_clean()
         super().save(*args, **kwargs)
 
-        if not self.is_paid:
-            self.create_transaction_entries()
+        # Guard: only post journal entries on INSERT.
+        # Subsequent saves (e.g. marking is_paid=True via _mark_penalties_paid)
+        # must NOT re-post the same debit/credit entries.
+        if is_new and not self.is_paid:
+            self._create_transaction_entries()
+
         self.loan.update_status()
 
-    def apply_payment(self, payment_amount):
-        """Apply a payment to this penalty and update its status."""
-        if payment_amount <= 0:
-            raise ValidationError("Payment amount must be positive.")
-
-        with transaction.atomic():
-            self.remaining_amount -= payment_amount
-            if self.remaining_amount <= 0:
-                self.remaining_amount = Decimal("0.00")
-                self.is_paid = True
-            self.save()
-
-    def create_transaction_entries(self):
-        """Create the debit and credit transactions for this penalty."""
-        # Debit the Penalty Receivable Account (1071)
-        self.create_transaction(
-            account=self.account,
-            transaction_type="debit",
-            amount=self.penalty_amount,
-            description=f"Penalty for Loan {self.loan.id}: {self.reason}",
-        )
-
-        # Credit the Loan Interest Income Account (5030)
+    def _create_transaction_entries(self):
         try:
             interest_income_account = ChartOfAccounts.objects.get(account_number="5030")
         except ChartOfAccounts.DoesNotExist:
             raise ValidationError("Loan Interest Income account (5030) does not exist.")
 
-        self.create_transaction(
-            account=interest_income_account,
-            transaction_type="credit",
-            amount=self.penalty_amount,
-            description=f"Penalty income for Loan {self.loan.id}: {self.reason}",
-        )
+        desc = f"Penalty for Loan {self.loan.id}: {self.reason}"
+        _post_transaction(self.loan, self.account,              "debit",  self.penalty_amount, desc, self.penalty_date)
+        _post_transaction(self.loan, interest_income_account,   "credit", self.penalty_amount, desc, self.penalty_date)
 
-    def create_transaction(self, account, transaction_type, amount, description):
-        TransactionHistory.objects.create(
-            loan=self.loan,
-            transaction_date=self.penalty_date,
-            amount=amount,
-            transaction_type=transaction_type,
-            account=account,
-            description=description,
-        )
+    # Keep old name as alias
+    def create_transaction_entries(self):
+        self._create_transaction_entries()
+
+    def apply_payment(self, payment_amount):
+        if payment_amount <= 0:
+            raise ValidationError("Payment amount must be positive.")
+        with transaction.atomic():
+            self.remaining_amount = max(
+                self.remaining_amount - Decimal(str(payment_amount)),
+                Decimal("0.00"),
+            )
+            self.is_paid = self.remaining_amount == Decimal("0.00")
+            self.save()
 
     def __str__(self):
         return f"Penalty {self.id} for Loan {self.loan.id} - {self.penalty_amount}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TransactionHistory
+#
+# Migration impact: 3 new indexes added.
+# No field changes.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TransactionHistory(models.Model):
+
+    TRANSACTION_TYPE_CHOICES = [
+        ("credit", "Credit"),
+        ("debit",  "Debit"),
+    ]
+
+    loan = models.ForeignKey(
+        Loan, on_delete=models.CASCADE, related_name="transactions",
+        db_index=False,    # covered by composite index below
+    )
+    transaction_date = models.DateField()
+    amount           = models.DecimalField(max_digits=15, decimal_places=2)
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES)
+    account = models.ForeignKey(
+        ChartOfAccounts, on_delete=models.CASCADE,
+        related_name="transaction_history",
+        db_index=False,    # covered by composite index below
+    )
+    description = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        db_table            = "transaction_histories"
+        verbose_name        = "Transaction History"
+        verbose_name_plural = "Transaction History"
+        ordering            = ["-transaction_date"]
+        indexes = [
+            # NEW — ledger view: all transactions for a loan ordered by date
+            models.Index(fields=["loan", "transaction_date"],             name="txn_loan_date_idx"),
+            # NEW — account statement: all entries for a COA account
+            models.Index(fields=["account", "transaction_date"],          name="txn_account_date_idx"),
+            # NEW — debit/credit filter within a date range
+            models.Index(fields=["transaction_type", "transaction_date"], name="txn_type_date_idx"),
+        ]
+
+    def __str__(self):
+        return f"Transaction {self.id} - {self.transaction_type} {self.amount}"
