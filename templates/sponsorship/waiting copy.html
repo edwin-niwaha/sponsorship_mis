@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+{% load static humanize %}
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Processing • Pendeza Uganda</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link href="{% static 'css/waiting.css' %}" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="processing-wrapper">
+      <div class="card p-2 text-center">
+        <!-- Logo -->
+        <img src="{% static 'images/file.png' %}" alt="Pendeza Uganda" class="mx-auto mb-2 logo-img" height="85" onerror="this.style.display='none'" />
+
+        <h4 class="text-success fw-bold mb-2">Processing Your Donation</h4>
+
+        <!-- Vibrating Phone + Spinner -->
+        <div class="spinner-wrapper">
+          <i class="bi bi-phone-vibrate-fill"></i>
+          <div class="spinner-border text-warning" role="status">
+            <span class="visually-hidden">Processing...</span>
+          </div>
+        </div>
+
+        <p class="status-text mt-3 mb-2" id="statusMessage">Please approve the payment on your phone...</p>
+
+        <!-- Donation Details -->
+        <div class="info-box text-start mb-2">
+          <div class="d-flex justify-content-between">
+            <strong>Amount:</strong>
+            <span class="text-success fw-bold">UGX {{ amount|floatformat:0|intcomma }}</span>
+          </div>
+          <div class="d-flex justify-content-between mt-2">
+            <strong>Sent to:</strong>
+            <span>{{ phone }}</span>
+          </div>
+        </div>
+
+        <!-- Warning -->
+        <div class="alert alert-warning d-flex align-items-center justify-content-center py-3" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+          <strong>Do not close or refresh this page</strong>
+        </div>
+
+        <!-- Security Badge -->
+        <div class="mt-2 text-success fw-semibold fs-5">
+          <i class="bi bi-shield-lock-fill me-2"></i>
+          Secured by MTN MoMo
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-5 pt-4 border-top text-muted small">
+          Built with love by
+          <a href="https://perpetual-web-vert.vercel.app/" target="_blank" class="text-success text-decoration-none fw-semibold">Perpetual Labs</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Polling Script (unchanged) -->
+    <script>
+      const ref = '{{ transaction_id }}'
+      const params = new URLSearchParams({
+        ref,
+        amount: '{{ amount }}',
+        phone: '{{ phone }}',
+        name: "{{ donor_name|default:'' }}",
+        email: "{{ donor_email|default:'' }}"
+      })
+      
+      let attempts = 0
+      const check = () => {
+        if (attempts++ > 60) {
+          document.getElementById('statusMessage').innerHTML = '<span class="text-danger fw-bold">Request timed out</span><br><small>Please check your phone and try again</small>'
+          return
+        }
+        fetch(`/sponsorship/transaction-status/${ref}/`)
+          .then((r) => r.json())
+          .then((d) => {
+            if (d.status === 'SUCCESSFUL') {
+              location.href = `/sponsorship/thank-you/?${params}`
+            } else if (d.status === 'FAILED') {
+              let reasonText = d.reason.replace(/_/g, ' ').toLowerCase()
+              document.getElementById('statusMessage').innerHTML = '<span class="text-danger fw-bold">Payment failed</span><br>' + '<small>' + reasonText + '</small><br>' + '<a href="/sponsorship/initiate/" class="btn btn-outline-danger btn-sm mt-3 fw-semibold">' + '<i class="bi bi-arrow-repeat me-1"></i> Try Again</a>'
+            } else {
+              setTimeout(check, 5000)
+            }
+          })
+          .catch(() => setTimeout(check, 5000))
+      }
+      setTimeout(check, 5000)
+    </script>
+  </body>
+</html>

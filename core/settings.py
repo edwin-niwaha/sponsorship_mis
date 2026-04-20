@@ -229,10 +229,6 @@ MEDIA_URL = f"https://res.cloudinary.com/{CLOUDINARY_CLOUD_NAME}/"
 LOGIN_REDIRECT_URL = "/"
 LOGIN_URL = "login"
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = (
-    "https://sponsorwithpendeza.org/oauth/complete/google-oauth2/"
-)
-
 
 # =================================== SOCIIAL AUTH CONFIGURATIONS ===================================
 # social auth configs for github
@@ -242,6 +238,10 @@ SOCIAL_AUTH_GITHUB_SECRET = str(os.getenv("GITHUB_SECRET"))
 # social auth configs for google
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = str(os.getenv("GOOGLE_KEY"))
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = str(os.getenv("GOOGLE_SECRET"))
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = (
+    "https://sponsorwithpendeza.org/oauth/complete/google-oauth2/"
+)
 
 
 # Celery Configuration

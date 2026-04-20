@@ -2,121 +2,474 @@
 {% load static %}
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Donate to Pendeza Uganda</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="{% static 'css/donation.css' %}" rel="stylesheet">
+
   <style>
+    :root {
+      --primary: #127D61;
+      --primary-dark: #0d654e;
+      --accent: #F79420;
+      --accent-dark: #de8216;
+      --text-dark: #17332c;
+      --text-muted: #6e7d78;
+      --bg-soft: #f4faf7;
+      --border: #dce9e4;
+      --white: #ffffff;
+      --shadow: 0 14px 35px rgba(0, 0, 0, 0.14);
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      background: url("{% static 'images/kids.jpg' %}") no-repeat center center/cover;
+      margin: 0;
+      font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+      background:
+        linear-gradient(rgba(18, 125, 97, 0.82), rgba(18, 125, 97, 0.82)),
+        url("{% static 'images/kids.jpg' %}") no-repeat center center / cover;
       min-height: 100vh;
+      padding: 1rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
-      backdrop-filter: brightness(0.6);
+    }
+
+    .donation-card {
+      width: 100%;
+      max-width: 460px;
+      background: rgba(255, 255, 255, 0.97);
+      backdrop-filter: blur(10px);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .top-section {
+      background: linear-gradient(180deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 1.4rem 1.25rem 1.2rem;
+      text-align: center;
+    }
+
+    .logo-text {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+
+    .tagline {
+      margin-top: 0.35rem;
+      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.92);
+    }
+
+    .hero-title {
+      font-size: 1.45rem;
+      font-weight: 800;
+      line-height: 1.2;
+      margin: 0.95rem 0 0.45rem;
+    }
+
+    .hero-subtext {
+      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.9);
+      margin: 0;
+      line-height: 1.55;
+    }
+
+    .merchant-box {
+      margin-top: 1rem;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 16px;
+      padding: 0.9rem;
+    }
+
+    .merchant-label {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: rgba(255, 255, 255, 0.82);
+      margin-bottom: 0.25rem;
+    }
+
+    .merchant-code {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #fff;
+      word-break: break-word;
+    }
+
+    .merchant-note {
+      font-size: 0.84rem;
+      color: rgba(255, 255, 255, 0.88);
+      margin-top: 0.35rem;
+    }
+
+    .form-section {
+      padding: 1.25rem;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text-dark);
+      margin-bottom: 0.3rem;
+    }
+
+    .section-subtitle {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    .quick-amounts {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.7rem;
+      margin-bottom: 1rem;
+    }
+
+    .amount-btn {
+      border: 1px solid #d6e5df;
+      background: #fff;
+      border-radius: 16px;
+      padding: 0.9rem 0.75rem;
+      text-align: center;
+      font-weight: 800;
+      color: var(--primary);
+      transition: all 0.2s ease;
+      line-height: 1.2;
+    }
+
+    .amount-btn small {
+      display: block;
+      margin-top: 0.22rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.78rem;
+    }
+
+    .amount-btn:hover,
+    .amount-btn.active {
+      border-color: var(--primary);
+      background: rgba(18, 125, 97, 0.07);
+    }
+
+    .form-label {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 0.38rem;
+    }
+
+    .form-control {
+      min-height: 48px;
+      border-radius: 14px;
+      border: 1px solid #d8e6e0;
+      padding: 0.85rem 0.95rem;
+      font-size: 0.95rem;
+      box-shadow: none !important;
+    }
+
+    .form-control:focus {
+      border-color: rgba(18, 125, 97, 0.45);
+      box-shadow: 0 0 0 0.2rem rgba(18, 125, 97, 0.12) !important;
+    }
+
+    .donate-btn {
+      width: 100%;
+      min-height: 52px;
+      border: none;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      color: #fff;
+      font-weight: 800;
+      font-size: 1rem;
+      box-shadow: 0 12px 24px rgba(247, 148, 32, 0.24);
+      transition: all 0.25s ease;
+    }
+
+    .donate-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 28px rgba(247, 148, 32, 0.3);
+    }
+
+    .donate-btn:disabled {
+      opacity: 0.75;
+      cursor: not-allowed;
+    }
+
+    .trust-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .trust-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg-soft);
+      border: 1px solid #e4efea;
+      border-radius: 999px;
+      padding: 0.5rem 0.75rem;
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+      line-height: 1.5;
+    }
+
+    .footer-note a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .invalid-feedback {
+      font-size: 0.82rem;
+    }
+
+    #top-alert-container .alert {
+      border-radius: 14px;
+      font-size: 0.92rem;
+    }
+
+    @media (min-width: 768px) {
+      .donation-card {
+        max-width: 520px;
+      }
+
+      .top-section {
+        padding: 1.8rem 1.6rem 1.35rem;
+      }
+
+      .form-section {
+        padding: 1.5rem;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .quick-amounts {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .hero-title {
+        font-size: 1.28rem;
+      }
+
+      .merchant-code {
+        font-size: 0.98rem;
+      }
+    }
+
+    .dial-btn {
+      display: inline-block;
+      margin-top: 0.6rem;
+      padding: 0.6rem 1rem;
+      border-radius: 999px;
+
+      background: linear-gradient(135deg, #F79420, #de8216) !important;
+      color: #fff !important;
+      font-weight: 800;
+      font-size: 0.9rem;
+      text-decoration: none !important;
+
+      box-shadow: 0 8px 18px rgba(247, 148, 32, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .dial-btn:hover,
+    .dial-btn:focus,
+    .dial-btn:active,
+    .dial-btn:visited {
+      color: #fff !important;
+      text-decoration: none !important;
+      background: linear-gradient(135deg, #F79420, #de8216) !important;
     }
   </style>
 </head>
 <body>
 
   <div class="donation-card">
-
-    <!-- Header -->
-    <div class="text-center mb-3">
+    <div class="top-section">
       <div class="logo-text">Pendeza Uganda</div>
-      <small class="text-muted">Transform Lives Today</small>
+      <div class="tagline">Support a child. Give hope today.</div>
+
+      <h1 class="hero-title">Make a donation that matters</h1>
+      <p class="hero-subtext">
+        Your gift helps support children and families in need.
+      </p>
+
+      <div class="merchant-box">
+        <div class="merchant-label">Instant Mobile Money Giving</div>
+        <div class="merchant-code">
+          <a href="tel:*165*3*308124%23" class="dial-btn">
+            <i class="bi bi-telephone-fill me-1"></i>
+            Dial *165*3*308124#
+          </a>
+        </div>
+        <div class="merchant-note">(MTN Merchant Code)</div>
+      </div>
     </div>
-    <hr class="opacity-25">
 
-    {% if messages %}
-      <div id="top-alert-container">
-        {% for message in messages %}
-          <div class="alert alert-{{ message.tags }} d-flex align-items-center shadow-lg border-0 py-2 px-3" style="border-radius: 12px;">
-            <div class="spinner-border spinner-border-sm me-3" id="alert-spinner"></div>
-            <span class="fw-semibold">{{ message }}</span>
-          </div>
-        {% endfor %}
+    <div class="form-section">
+      {% if messages %}
+        <div id="top-alert-container" class="mb-3">
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} d-flex align-items-center shadow-sm border-0 px-3 py-3">
+              <div class="spinner-border spinner-border-sm me-3" id="alert-spinner"></div>
+              <span class="fw-semibold">{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="section-title">Choose an amount</div>
+      <div class="section-subtitle">Tap a suggestion or enter your own.</div>
+
+      <div class="quick-amounts">
+        <button type="button" class="amount-btn" onclick="setAmount(70000, this)">
+          70K
+          <small>1 month</small>
+        </button>
+        <button type="button" class="amount-btn" onclick="setAmount(280000, this)">
+          280K
+          <small>1 term</small>
+        </button>
+        <button type="button" class="amount-btn" onclick="setAmount(420000, this)">
+          420K
+          <small>2 terms</small>
+        </button>
+        <button type="button" class="amount-btn" onclick="setAmount(840000, this)">
+          840K
+          <small>1 year</small>
+        </button>
       </div>
-    {% endif %}
 
-    <form method="POST" id="donationForm" novalidate>
-      {% csrf_token %}
+      <form method="POST" id="donationForm" novalidate>
+        {% csrf_token %}
 
-      <div class="mb-3">
-        <label class="form-label small text-primary fw-semibold">Full Name (Optional)</label>
-        <input type="text" name="name" class="form-control form-control-sm rounded-3">
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label small text-primary fw-semibold">Email (Optional)</label>
-        <input type="email" name="email" class="form-control form-control-sm rounded-3">
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label small text-primary fw-semibold">Phone Number <span class="text-danger">*</span>
-          <img src="{% static 'images/mtn-logo.png' %}" alt="MTN" height="22" />
-        </label>
-        <input type="tel" name="phone" class="form-control form-control-sm rounded-3" placeholder="07XXXXXXXX" pattern="07[0-9]{8}" required>
-        <div class="invalid-feedback">Start with 07, total 10 digits.</div>
-      </div>
-
-      <div class="mb-2">
-        <label class="form-label small text-primary fw-semibold">Amount (UGX) *</label>
-        <input type="number" name="amount" id="amount" class="form-control form-control-sm rounded-3 mb-2" min="5000" required placeholder="Min 5,000 UGX">
-
-        <div class="row g-1">
-          <div class="col-6"><button type="button" class="btn btn-outline-secondary w-100" onclick="setAmount(70000)">70K (1 mo)</button></div>
-          <div class="col-6"><button type="button" class="btn btn-outline-secondary w-100" onclick="setAmount(280000)">280K (1 term)</button></div>
-          <div class="col-6"><button type="button" class="btn btn-outline-secondary w-100" onclick="setAmount(420000)">420K (2 terms)</button></div>
-          <div class="col-6"><button type="button" class="btn btn-outline-secondary w-100" onclick="setAmount(840000)">840K (1 yr)</button></div>
+        <div class="mb-3">
+          <label class="form-label">Amount (UGX) <span class="text-danger">*</span></label>
+          <input
+            type="number"
+            name="amount"
+            id="amount"
+            class="form-control"
+            min="5000"
+            required
+            placeholder="Minimum 5,000 UGX"
+          >
+          <div class="invalid-feedback">Minimum is 5,000 UGX.</div>
         </div>
 
-        <div class="invalid-feedback">Minimum is 5,000 UGX.</div>
+        <div class="mb-3">
+          <label class="form-label">
+            Phone Number <span class="text-danger">*</span>
+            <img src="{% static 'images/mtn-logo.png' %}" alt="MTN" height="20" class="ms-1" />
+          </label>
+          <input
+            type="tel"
+            name="phone"
+            class="form-control"
+            placeholder="07XXXXXXXX"
+            pattern="07[0-9]{8}"
+            required
+          >
+          <div class="invalid-feedback">Use a valid MTN number starting with 07.</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Full Name <span class="text-muted fw-normal">(Optional)</span></label>
+          <input type="text" name="name" class="form-control" placeholder="Your name">
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Email <span class="text-muted fw-normal">(Optional)</span></label>
+          <input type="email" name="email" class="form-control" placeholder="Your email">
+        </div>
+
+        <button type="submit" id="donateBtn" class="btn donate-btn mt-3" disabled>
+          Donate Now
+        </button>
+      </form>
+
+      <div class="trust-row">
+        <div class="trust-pill"><i class="bi bi-shield-check"></i> Secure</div>
+        <div class="trust-pill"><i class="bi bi-phone"></i> Mobile Friendly</div>
+        <div class="trust-pill"><i class="bi bi-heart"></i> Impactful</div>
       </div>
 
-      <button type="submit" id="donateBtn" class="btn btn-primary w-100 text-white mt-3 py-2 rounded-3" disabled>
-        Donate Now
-      </button>
-    </form>
-
-    <div class="text-center small text-muted mt-3">
-      &copy; <span id="year"></span> Pendeza Uganda<br>
-          Built with love by <a href="https://perpetual-web-vert.vercel.app/" target="_blank" class="text-success text-decoration-none fw-semibold">Perpetual Tech</a>
+      <div class="footer-note">
+        &copy; <span id="year"></span> Pendeza Uganda<br>
+        Built with love by
+        <a href="https://perpetual-web-vert.vercel.app/" target="_blank">Perpetual Labs</a>
+      </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    document.getElementById("year").textContent = new Date().getFullYear();
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
 
-    const form = document.getElementById("donationForm");
-    const phone = document.querySelector('[name="phone"]');
-    const amount = document.getElementById("amount");
-    const btn = document.getElementById("donateBtn");
+  const form = document.getElementById("donationForm");
+  const phone = document.querySelector('[name="phone"]');
+  const amount = document.getElementById("amount");
+  const btn = document.getElementById("donateBtn");
+  const amountButtons = document.querySelectorAll(".amount-btn");
 
-    function validate() {
-      const validPhone = /^07\d{8}$/.test(phone.value);
-      const validAmount = parseInt(amount.value) >= 5000;
-      btn.disabled = !(validPhone && validAmount);
-      phone.classList.toggle('is-invalid', phone.value && !validPhone);
-      amount.classList.toggle('is-invalid', amount.value && !validAmount);
-    }
+  function validate() {
+    const validPhone = /^07\d{8}$/.test(phone.value.trim());
+    const validAmount = parseInt(amount.value, 10) >= 5000;
 
-    function setAmount(val) {
-      amount.value = val;
+    btn.disabled = !(validPhone && validAmount);
+
+    phone.classList.toggle("is-invalid", phone.value && !validPhone);
+    amount.classList.toggle("is-invalid", amount.value && !validAmount);
+  }
+
+  function setAmount(val, el) {
+    amount.value = val;
+    amountButtons.forEach(button => button.classList.remove("active"));
+    if (el) el.classList.add("active");
+    validate();
+  }
+
+  [phone, amount].forEach(el => {
+    el.addEventListener("input", function () {
+      if (el === amount) {
+        amountButtons.forEach(button => button.classList.remove("active"));
+      }
       validate();
-    }
-
-    [phone, amount].forEach(el => el.addEventListener("input", validate));
-
-    form.addEventListener("submit", () => {
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
     });
-  </script>
+  });
+
+  form.addEventListener("submit", function () {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
+  });
+
+  btn.disabled = true;
+</script>
 </body>
 </html>

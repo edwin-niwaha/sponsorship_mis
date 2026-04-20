@@ -9,59 +9,366 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet" />
-    <link href="{% static 'css/waiting.css' %}" rel="stylesheet" />
+
+    <style>
+      :root {
+        --primary: #127D61;
+        --primary-dark: #0d654e;
+        --accent: #F79420;
+        --accent-dark: #de8216;
+        --text-dark: #17332c;
+        --text-muted: #6f7f79;
+        --surface: rgba(255, 255, 255, 0.96);
+        --border: #deebe5;
+        --soft-bg: #f4faf7;
+        --warning-bg: #fff7eb;
+        --warning-border: #ffd9a6;
+        --shadow: 0 20px 45px rgba(0, 0, 0, 0.14);
+        --radius-xl: 28px;
+        --radius-lg: 20px;
+        --radius-md: 16px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: 'Poppins', sans-serif;
+        background:
+          linear-gradient(rgba(18, 125, 97, 0.84), rgba(18, 125, 97, 0.86)),
+          url("{% static 'images/kids.jpg' %}") center/cover no-repeat;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+      }
+
+      .processing-wrapper {
+        width: 100%;
+        max-width: 460px;
+      }
+
+      .processing-card {
+        background: var(--surface);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .top-strip {
+        background: linear-gradient(180deg, var(--primary), var(--primary-dark));
+        color: #fff;
+        text-align: center;
+        padding: 1.4rem 1.2rem 1.2rem;
+      }
+
+      .logo-img {
+        height: 78px;
+        width: auto;
+        object-fit: contain;
+        margin-bottom: 0.75rem;
+      }
+
+      .brand-name {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+      }
+
+      .top-subtitle {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+      }
+
+      .content {
+        padding: 1.4rem 1.2rem 1.35rem;
+        text-align: center;
+      }
+
+      .status-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 0.35rem;
+      }
+
+      .status-subtitle {
+        font-size: 0.93rem;
+        color: var(--text-muted);
+        line-height: 1.6;
+        margin-bottom: 1.2rem;
+      }
+
+      .spinner-wrapper {
+        position: relative;
+        width: 104px;
+        height: 104px;
+        margin: 0 auto 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .phone-icon {
+        position: absolute;
+        font-size: 2rem;
+        color: var(--primary);
+        z-index: 2;
+        animation: vibrate 1.2s infinite ease-in-out;
+      }
+
+      .spinner-border {
+        width: 104px;
+        height: 104px;
+        border-width: 0.28rem;
+        color: var(--accent) !important;
+      }
+
+      @keyframes vibrate {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-2px) rotate(-4deg); }
+        40% { transform: translateX(2px) rotate(4deg); }
+        60% { transform: translateX(-2px) rotate(-3deg); }
+        80% { transform: translateX(2px) rotate(3deg); }
+      }
+
+      .status-message {
+        background: var(--soft-bg);
+        border: 1px solid #e5f0eb;
+        border-radius: var(--radius-md);
+        padding: 0.95rem 1rem;
+        font-size: 0.95rem;
+        color: var(--text-dark);
+        line-height: 1.6;
+        margin-bottom: 1rem;
+      }
+
+      .status-message strong {
+        color: var(--primary);
+      }
+
+      .info-box {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1rem;
+        text-align: left;
+        margin-bottom: 1rem;
+      }
+
+      .info-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        font-size: 0.94rem;
+      }
+
+      .info-row + .info-row {
+        margin-top: 0.85rem;
+        padding-top: 0.85rem;
+        border-top: 1px dashed #e5ece9;
+      }
+
+      .info-label {
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+
+      .info-value {
+        color: var(--text-dark);
+        font-weight: 700;
+        text-align: right;
+      }
+
+      .amount-value {
+        color: var(--primary);
+        font-size: 1rem;
+      }
+
+      .warning-box {
+        background: var(--warning-bg);
+        border: 1px solid var(--warning-border);
+        border-radius: var(--radius-md);
+        padding: 0.95rem 1rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        text-align: left;
+        margin-bottom: 1rem;
+      }
+
+      .warning-box i {
+        color: var(--accent-dark);
+        font-size: 1.1rem;
+        margin-top: 0.1rem;
+        flex-shrink: 0;
+      }
+
+      .warning-box strong {
+        display: block;
+        color: #7b4a08;
+        margin-bottom: 0.15rem;
+        font-size: 0.93rem;
+      }
+
+      .warning-box span {
+        color: #8a6527;
+        font-size: 0.86rem;
+        line-height: 1.5;
+      }
+
+      .secure-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        background: rgba(18, 125, 97, 0.08);
+        color: var(--primary);
+        border: 1px solid rgba(18, 125, 97, 0.14);
+        border-radius: 999px;
+        padding: 0.7rem 1rem;
+        font-weight: 700;
+        font-size: 0.9rem;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 0.65rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 0.9rem;
+      }
+
+      .btn-custom {
+        border-radius: 12px;
+        font-weight: 600;
+        padding: 0.65rem 1rem;
+      }
+
+      .footer-note {
+        margin-top: 1.25rem;
+        padding-top: 1rem;
+        border-top: 1px solid #edf2ef;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+      }
+
+      .footer-note a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      @media (min-width: 768px) {
+        .processing-wrapper {
+          max-width: 500px;
+        }
+
+        .top-strip {
+          padding: 1.6rem 1.5rem 1.3rem;
+        }
+
+        .content {
+          padding: 1.6rem 1.5rem 1.45rem;
+        }
+      }
+
+      @media (max-width: 420px) {
+        .status-title {
+          font-size: 1.2rem;
+        }
+
+        .spinner-wrapper {
+          width: 92px;
+          height: 92px;
+        }
+
+        .spinner-border {
+          width: 92px;
+          height: 92px;
+        }
+
+        .phone-icon {
+          font-size: 1.8rem;
+        }
+
+        .info-row {
+          font-size: 0.9rem;
+        }
+      }
+    </style>
   </head>
   <body>
     <div class="processing-wrapper">
-      <div class="card p-2 text-center">
-        <!-- Logo -->
-        <img src="{% static 'images/file.png' %}" alt="Pendeza Uganda" class="mx-auto mb-2 logo-img" height="85" onerror="this.style.display='none'" />
+      <div class="processing-card">
+        <div class="top-strip">
+          <img
+            src="{% static 'images/file.png' %}"
+            alt="Pendeza Uganda"
+            class="logo-img"
+            onerror="this.style.display='none'"
+          />
+          <div class="brand-name">Pendeza Uganda</div>
+          <p class="top-subtitle">Secure donation processing</p>
+        </div>
 
-        <h4 class="text-success fw-bold mb-2">Processing Your Donation</h4>
+        <div class="content">
+          <h1 class="status-title">Processing Your Donation</h1>
+          <p class="status-subtitle">
+            Please approve the payment prompt on your phone to complete your donation.
+          </p>
 
-        <!-- Vibrating Phone + Spinner -->
-        <div class="spinner-wrapper">
-          <i class="bi bi-phone-vibrate-fill"></i>
-          <div class="spinner-border text-warning" role="status">
-            <span class="visually-hidden">Processing...</span>
+          <div class="spinner-wrapper" id="spinnerWrapper">
+            <i class="bi bi-phone-vibrate-fill phone-icon"></i>
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Processing...</span>
+            </div>
           </div>
-        </div>
 
-        <p class="status-text mt-3 mb-2" id="statusMessage">Please approve the payment on your phone...</p>
-
-        <!-- Donation Details -->
-        <div class="info-box text-start mb-2">
-          <div class="d-flex justify-content-between">
-            <strong>Amount:</strong>
-            <span class="text-success fw-bold">UGX {{ amount|floatformat:0|intcomma }}</span>
+          <div class="status-message" id="statusMessage">
+            <strong>Waiting for confirmation...</strong><br>
+            Approve the payment on your phone to continue.
           </div>
-          <div class="d-flex justify-content-between mt-2">
-            <strong>Sent to:</strong>
-            <span>{{ phone }}</span>
+
+          <div class="info-box">
+            <div class="info-row">
+              <span class="info-label">Amount</span>
+              <span class="info-value amount-value">UGX {{ amount|floatformat:0|intcomma }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Phone</span>
+              <span class="info-value">{{ phone }}</span>
+            </div>
           </div>
-        </div>
 
-        <!-- Warning -->
-        <div class="alert alert-warning d-flex align-items-center justify-content-center py-3" role="alert">
-          <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-          <strong>Do not close or refresh this page</strong>
-        </div>
+          <div class="warning-box">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div>
+              <strong>Do not close or refresh this page</strong>
+              <span>Closing this page may interrupt the payment confirmation process.</span>
+            </div>
+          </div>
 
-        <!-- Security Badge -->
-        <div class="mt-2 text-success fw-semibold fs-5">
-          <i class="bi bi-shield-lock-fill me-2"></i>
-          Secured by MTN MoMo
-        </div>
+          <div class="secure-badge">
+            <i class="bi bi-shield-lock-fill"></i>
+            Secured by MTN MoMo
+          </div>
 
-        <!-- Footer -->
-        <div class="mt-5 pt-4 border-top text-muted small">
-          Built with love by
-          <a href="https://perpetual-web-vert.vercel.app/" target="_blank" class="text-success text-decoration-none fw-semibold">Perpetual Tech</a>
+          <div class="footer-note">
+            Built with love by
+            <a href="https://perpetual-web-vert.vercel.app/" target="_blank">Perpetual Labs</a>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Polling Script (unchanged) -->
     <script>
       const ref = '{{ transaction_id }}'
       const params = new URLSearchParams({
@@ -71,27 +378,66 @@
         name: "{{ donor_name|default:'' }}",
         email: "{{ donor_email|default:'' }}"
       })
-      
+
+      const statusMessage = document.getElementById('statusMessage')
+      const spinnerWrapper = document.getElementById('spinnerWrapper')
+
+      function goBack() {
+        if (document.referrer) {
+          window.history.back()
+        } else {
+          window.location.href = '/sponsorship/initiate/'
+        }
+      }
+
       let attempts = 0
+
       const check = () => {
         if (attempts++ > 60) {
-          document.getElementById('statusMessage').innerHTML = '<span class="text-danger fw-bold">Request timed out</span><br><small>Please check your phone and try again</small>'
+          spinnerWrapper.style.display = 'none'
+          statusMessage.innerHTML =
+            '<div class="text-danger fw-bold mb-2">Request timed out</div>' +
+            '<div class="small text-muted mb-3">Please check your phone and try again.</div>' +
+            '<div class="action-buttons">' +
+              '<a href="/sponsorship/initiate/" class="btn btn-outline-danger btn-sm btn-custom">' +
+                '<i class="bi bi-arrow-repeat me-1"></i> Try Again' +
+              '</a>' +
+              '<button type="button" onclick="goBack()" class="btn btn-outline-secondary btn-sm btn-custom">' +
+                '<i class="bi bi-arrow-left me-1"></i> Go Back' +
+              '</button>' +
+            '</div>'
           return
         }
+
         fetch(`/sponsorship/transaction-status/${ref}/`)
           .then((r) => r.json())
           .then((d) => {
             if (d.status === 'SUCCESSFUL') {
               location.href = `/sponsorship/thank-you/?${params}`
             } else if (d.status === 'FAILED') {
-              let reasonText = d.reason.replace(/_/g, ' ').toLowerCase()
-              document.getElementById('statusMessage').innerHTML = '<span class="text-danger fw-bold">Payment failed</span><br>' + '<small>' + reasonText + '</small><br>' + '<a href="/sponsorship/initiate/" class="btn btn-outline-danger btn-sm mt-3 fw-semibold">' + '<i class="bi bi-arrow-repeat me-1"></i> Try Again</a>'
+              spinnerWrapper.style.display = 'none'
+              let reasonText = (d.reason || 'Transaction failed')
+                .replace(/_/g, ' ')
+                .toLowerCase()
+
+              statusMessage.innerHTML =
+                '<div class="text-danger fw-bold mb-2">Payment failed</div>' +
+                '<div class="small text-muted mb-3">' + reasonText + '</div>' +
+                '<div class="action-buttons">' +
+                  '<a href="/sponsorship/initiate/" class="btn btn-outline-danger btn-sm btn-custom">' +
+                    '<i class="bi bi-arrow-repeat me-1"></i> Try Again' +
+                  '</a>' +
+                  '<button type="button" onclick="goBack()" class="btn btn-outline-secondary btn-sm btn-custom">' +
+                    '<i class="bi bi-arrow-left me-1"></i> Go Back' +
+                  '</button>' +
+                '</div>'
             } else {
               setTimeout(check, 5000)
             }
           })
           .catch(() => setTimeout(check, 5000))
       }
+
       setTimeout(check, 5000)
     </script>
   </body>
