@@ -1,8 +1,7 @@
 from django.contrib.auth.models import User
-from django.core import mail
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.sessions.backends.db import SessionStore
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.test.client import RequestFactory
 from django.urls import reverse
 
@@ -10,7 +9,6 @@ from apps.client.models import Client
 from apps.sponsor.models import Sponsor
 
 from .forms import LoginForm
-from .login_verification import LOGIN_VERIFICATION_SESSION_KEY
 from .models import Profile
 from .pipeline import require_google_login_token
 from .views import CustomLoginView
@@ -72,8 +70,7 @@ class PublicLandingTests(TestCase):
         self.assertContains(response, "Continue with Google")
         self.assertContains(response, "Email or username")
 
-    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-    def test_google_login_requires_email_token_before_session_login(self):
+    def test_google_login_continues_without_email_token(self):
         user = User.objects.create_user(
             username="google-member",
             email="google@example.com",
@@ -94,16 +91,12 @@ class PublicLandingTests(TestCase):
 
         response = require_google_login_token(Strategy(request), Backend(), user=user)
 
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response["Location"], reverse("login_verify"))
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn("verification code", mail.outbox[0].body.lower())
-        self.assertIn(LOGIN_VERIFICATION_SESSION_KEY, request.session)
+        self.assertIsNone(response)
+        self.assertTrue(Profile.objects.filter(user=user).exists())
         self.assertNotIn("_auth_user_id", request.session)
 
-    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-    def test_email_login_sends_verification_code(self):
-        User.objects.create_user(
+    def test_email_login_signs_in_directly(self):
+        user = User.objects.create_user(
             username="member",
             email="member@example.com",
             password="pass12345",
@@ -114,16 +107,10 @@ class PublicLandingTests(TestCase):
             {"username": "member@example.com", "password": "pass12345"},
         )
 
-        self.assertRedirects(response, reverse("login_verify"))
-        verify_response = self.client.get(reverse("login_verify"))
-        self.assertContains(verify_response, "Verification code sent")
-        self.assertContains(verify_response, "member@example.com")
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn("verification code", mail.outbox[0].body.lower())
-        self.assertNotIn("_auth_user_id", self.client.session)
+        self.assertRedirects(response, "/dashboard/")
+        self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
 
-    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-    def test_linked_client_completes_login_after_email_token(self):
+    def test_linked_client_login_redirects_to_client_dashboard(self):
         client_record = Client.objects.create(
             full_name="Client Member",
             email="member@example.com",
@@ -143,11 +130,6 @@ class PublicLandingTests(TestCase):
             reverse("login"),
             {"username": "member@example.com", "password": "pass12345"},
         )
-
-        self.assertRedirects(response, reverse("login_verify"))
-        token = mail.outbox[0].body.split("verification code is ")[1][:6]
-
-        response = self.client.post(reverse("login_verify"), {"token": token})
 
         self.assertRedirects(response, reverse("client_savings_dashboard"))
         self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)

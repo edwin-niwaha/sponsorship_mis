@@ -1,5 +1,3 @@
-import logging
-
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
@@ -50,12 +48,9 @@ from .models import (
 from .login_verification import (
     LOGIN_VERIFICATION_SESSION_KEY,
     LOGIN_VERIFICATION_TIMEOUT_SECONDS,
-    start_login_verification_session,
     token_matches,
 )
 from .roles import get_login_redirect_url
-
-logger = logging.getLogger(__name__)
 
 
 # =================================== Home User  ===================================
@@ -119,34 +114,15 @@ class CustomLoginView(LoginView):
 
         # Check if the user has a profile, create one if it doesn't exist
         Profile.objects.get_or_create(user=user)
-        if not user.email:
-            form.add_error(None, "Your account does not have an email address.")
-            return self.form_invalid(form)
-
         remember_me = form.cleaned_data.get("remember_me")
-        try:
-            start_login_verification_session(
-                self.request,
-                user,
-                remember_me=remember_me,
-                redirect_to=self.get_redirect_url(),
-            )
-        except Exception:
-            logger.exception(
-                "Failed to send login verification email for user_id=%s email=%s",
-                user.pk,
-                user.email,
-            )
-            form.add_error(
-                None,
-                "We could not send the verification email. Please try again.",
-            )
-            return self.form_invalid(form)
-        messages.info(
+        auth_login(
             self.request,
-            "We sent a verification code to your email. Enter it to finish signing in.",
+            user,
+            backend="django.contrib.auth.backends.ModelBackend",
         )
-        return redirect("login_verify")
+        if not remember_me:
+            self.request.session.set_expiry(0)
+        return redirect(self.get_success_url_for_user(user, self.get_redirect_url()))
 
 
 class LoginVerificationView(View):
