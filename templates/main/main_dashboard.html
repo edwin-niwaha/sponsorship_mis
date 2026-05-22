@@ -36,7 +36,7 @@
   .metric-grid {
     display: grid;
     gap: 14px;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     margin-bottom: 18px;
   }
   .metric-card {
@@ -65,6 +65,9 @@
     color: #13745d;
     float: right;
     font-size: 1.35rem;
+  }
+  .metric-card.departed i {
+    color: #9f3412;
   }
   .dash-grid {
     display: grid;
@@ -140,10 +143,13 @@
     padding: 12px 0;
   }
   @media (max-width: 1100px) {
-    .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .span-4,
     .span-6,
     .span-8 { grid-column: span 12; }
+  }
+  @media (max-width: 840px) {
+    .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (max-width: 640px) {
     .dash-header { align-items: flex-start; flex-direction: column; }
@@ -182,6 +188,11 @@
       <i class="mdi mdi-account-circle"></i>
       <span>Non-Sponsored</span>
       <strong>{{ non_sponsored_count }}</strong>
+    </div>
+    <div class="metric-card departed">
+      <i class="mdi mdi-account-off"></i>
+      <span>Departed Children</span>
+      <strong>{{ children_departed_count }}</strong>
     </div>
   </section>
 
