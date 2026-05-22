@@ -6,6 +6,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import DecimalField, F, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
@@ -569,6 +570,8 @@ class LoanDisbursementForm(forms.ModelForm):
                     f"Disbursement date cannot be before the loan application date "
                     f"({loan.start_date})."
                 )
+            if disbursement_date > timezone.localdate():
+                raise forms.ValidationError("Disbursement date cannot be in the future.")
         return cleaned_data
 
 
@@ -613,16 +616,17 @@ class LoanAllDisbursementForm(forms.ModelForm):
         disbursed_count = 0
         today = timezone.now().date()
 
-        for loan in approved_loans:
-            loan.disburse(today)
+        with transaction.atomic():
+            for loan in approved_loans:
+                loan.disburse(today)
 
-            LoanDisbursement.objects.create(
-                loan=loan,
-                account=self.cleaned_data["account"],
-                payment_method=self.cleaned_data["payment_method"],
-            )   # model save() triggers _post_entries()
+                LoanDisbursement.objects.create(
+                    loan=loan,
+                    account=self.cleaned_data["account"],
+                    payment_method=self.cleaned_data["payment_method"],
+                )   # model save() triggers _post_entries()
 
-            disbursed_count += 1
+                disbursed_count += 1
 
         return disbursed_count
 
@@ -757,6 +761,12 @@ class LoanRepaymentForm(forms.ModelForm):
         if not loan:
             raise forms.ValidationError("Please select a loan.")
 
+        repayment_date = cleaned_data.get("repayment_date")
+        if repayment_date and repayment_date > timezone.localdate():
+            self.add_error("repayment_date", "Repayment date cannot be in the future.")
+        if repayment_date and loan.disbursement_date and repayment_date < loan.disbursement_date:
+            self.add_error("repayment_date", "Repayment date cannot be before the loan disbursement date.")
+
         # Guard: at least one field must be non-zero
         if principal_payment + interest_payment + penalty_payment <= 0:
             raise forms.ValidationError(
@@ -865,4 +875,7 @@ class LoanPenaltyForm(forms.ModelForm):
         penalty_date = self.cleaned_data.get("penalty_date")
         if penalty_date and penalty_date > timezone.now().date():
             raise forms.ValidationError("Penalty date cannot be in the future.")
+        loan = self.cleaned_data.get("loan")
+        if penalty_date and loan and loan.disbursement_date and penalty_date < loan.disbursement_date:
+            raise forms.ValidationError("Penalty date cannot be before the loan disbursement date.")
         return penalty_date

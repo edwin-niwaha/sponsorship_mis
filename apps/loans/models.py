@@ -603,19 +603,35 @@ class LoanDisbursement(models.Model):
         """
         return self.loan.total_interest or Decimal("0.00")
 
+    def clean(self):
+        super().clean()
+        errors = {}
+
+        if not self.loan_id:
+            errors["loan"] = "Please select a loan to disburse."
+        elif self.loan.status != "disbursed":
+            errors["loan"] = "Create a disbursement only after the loan has been marked disbursed."
+        elif not self.loan.disbursement_date:
+            errors["loan"] = "Disbursed loans must have a disbursement date."
+        elif LoanDisbursement.objects.filter(loan=self.loan).exclude(pk=self.pk).exists():
+            errors["loan"] = "This loan already has a recorded disbursement."
+
+        if self.account_id and self.account.account_type != "asset":
+            errors["account"] = "Disbursement must be paid from an asset cash or bank account."
+
+        if errors:
+            raise ValidationError(errors)
+
     def save(self, *args, **kwargs):
         is_new = self.pk is None
-        if self.loan.status != "disbursed":
-            raise ValidationError("Create a disbursement only after the loan has been approved and marked disbursed.")
-        if not self.loan.disbursement_date:
-            raise ValidationError("Disbursed loans must have a disbursement date.")
         if not self.loan.account:
             self.loan.account = ChartOfAccounts.objects.get(account_number="1050")
             self.loan.save()
-        self.full_clean()
-        super().save(*args, **kwargs)
-        if is_new:
-            self._create_transaction_entries()
+        with transaction.atomic():
+            self.full_clean()
+            super().save(*args, **kwargs)
+            if is_new:
+                self._create_transaction_entries()
 
     def _create_transaction_entries(self):
         if not self.account or not self.loan.account:
@@ -695,6 +711,7 @@ class LoanRepayment(models.Model):
         return self.principal_payment + self.interest_payment + self.penalty_payment
 
     def clean(self):
+        super().clean()
         if not self.loan_id:
             raise ValidationError("Please select a loan.")
         if self.loan.status not in Loan.ACTIVE_STATUSES:
@@ -712,6 +729,16 @@ class LoanRepayment(models.Model):
             raise ValidationError(
                 f"Repayment of {total_payment:,.2f} exceeds remaining balance of {total_balance:,.2f}."
             )
+        if self.repayment_date and self.repayment_date > timezone.localdate():
+            errors["repayment_date"] = "Repayment date cannot be in the future."
+        if (
+            self.repayment_date
+            and self.loan.disbursement_date
+            and self.repayment_date < self.loan.disbursement_date
+        ):
+            errors["repayment_date"] = "Repayment date cannot be before the loan disbursement date."
+        if self.account_id and self.account.account_type != "asset":
+            errors["account"] = "Repayment must be received into an asset cash or bank account."
         if self.principal_payment > balances["principal_balance"]:
             errors["principal_payment"] = (
                 f"Principal payment of {self.principal_payment:,.2f} exceeds "
@@ -732,12 +759,13 @@ class LoanRepayment(models.Model):
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
-        self.full_clean()
-        super().save(*args, **kwargs)
-        if is_new:
-            self._create_transaction_entries()
-        if self.loan:
-            self.loan.update_status()
+        with transaction.atomic():
+            self.full_clean()
+            super().save(*args, **kwargs)
+            if is_new:
+                self._create_transaction_entries()
+            if self.loan:
+                self.loan.update_status()
 
     def _create_transaction_entries(self):
         d       = self.repayment_date
@@ -865,10 +893,31 @@ class LoanPenalty(models.Model):
         ]
 
     def clean(self):
+        super().clean()
+        errors = {}
         if self.penalty_amount is not None and self.penalty_amount <= 0:
-            raise ValidationError("Penalty amount must be positive.")
+            errors["penalty_amount"] = "Penalty amount must be positive."
         if self.remaining_amount is None or self.remaining_amount < 0:
-            raise ValidationError("Remaining penalty amount cannot be negative or null.")
+            errors["remaining_amount"] = "Remaining penalty amount cannot be negative or null."
+        if (
+            self.remaining_amount is not None
+            and self.penalty_amount is not None
+            and self.remaining_amount > self.penalty_amount
+        ):
+            errors["remaining_amount"] = "Remaining penalty amount cannot exceed the original penalty."
+        if self.penalty_date and self.penalty_date > timezone.localdate():
+            errors["penalty_date"] = "Penalty date cannot be in the future."
+        if (
+            self.loan_id
+            and self.loan.disbursement_date
+            and self.penalty_date
+            and self.penalty_date < self.loan.disbursement_date
+        ):
+            errors["penalty_date"] = "Penalty date cannot be before the loan disbursement date."
+        if self.account_id and self.account.account_type != "asset":
+            errors["account"] = "Penalty receivable account must be an asset account."
+        if errors:
+            raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
@@ -876,16 +925,17 @@ class LoanPenalty(models.Model):
         if is_new and not self.remaining_amount:
             self.remaining_amount = self.penalty_amount
 
-        self.full_clean()
-        super().save(*args, **kwargs)
+        with transaction.atomic():
+            self.full_clean()
+            super().save(*args, **kwargs)
 
-        # Guard: only post journal entries on INSERT.
-        # Subsequent saves (e.g. marking is_paid=True via _mark_penalties_paid)
-        # must NOT re-post the same debit/credit entries.
-        if is_new and not self.is_paid:
-            self._create_transaction_entries()
+            # Guard: only post journal entries on INSERT.
+            # Subsequent saves (e.g. marking is_paid=True via _mark_penalties_paid)
+            # must NOT re-post the same debit/credit entries.
+            if is_new and not self.is_paid:
+                self._create_transaction_entries()
 
-        self.loan.update_status()
+            self.loan.update_status()
 
     def _create_transaction_entries(self):
         try:

@@ -21,6 +21,23 @@
             <h3>{{ form_title|upper }}</h3>
           </div>
           <div class="card-body">
+            <div class="alert alert-info">
+              Bulk disbursement is posted as one batch. If one eligible loan cannot be posted, the batch is rolled back and no partial disbursements are saved.
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <div class="border rounded p-3 bg-light">
+                  <small class="text-muted d-block">Eligible approved loans</small>
+                  <strong>{{ eligible_loans|length }}</strong>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="border rounded p-3 bg-light">
+                  <small class="text-muted d-block">Skipped due to running balances</small>
+                  <strong>{{ ineligible_loans|length }}</strong>
+                </div>
+              </div>
+            </div>
             <form method="post">
               {% csrf_token %}
               {{ form|crispy }}

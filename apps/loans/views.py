@@ -119,6 +119,43 @@ def _json_or_message(request, success, message, status=200, redirect_url=None):
     return None   # caller should redirect
 
 
+def _reverse_penalty_balance(penalty, user):
+    """Reverse the unpaid part of a penalty and keep the original audit trail."""
+    amount = penalty.remaining_amount or Decimal("0.00")
+    if amount <= 0:
+        return Decimal("0.00")
+
+    try:
+        income_account = ChartOfAccounts.objects.get(account_number="5030")
+    except ChartOfAccounts.DoesNotExist as exc:
+        raise ValidationError("Loan Interest Income account (5030) does not exist.") from exc
+
+    reversal_date = timezone.localdate()
+    description = f"Penalty reversal for Loan {penalty.loan.id}: penalty #{penalty.id}"
+    TransactionHistory.objects.create(
+        loan=penalty.loan,
+        transaction_date=reversal_date,
+        amount=amount,
+        transaction_type="credit",
+        account=penalty.account,
+        description=description,
+    )
+    TransactionHistory.objects.create(
+        loan=penalty.loan,
+        transaction_date=reversal_date,
+        amount=amount,
+        transaction_type="debit",
+        account=income_account,
+        description=description,
+    )
+    penalty.remaining_amount = Decimal("0.00")
+    penalty.is_deleted = True
+    penalty.deleted_at = timezone.now()
+    penalty.deleted_by = user if getattr(user, "is_authenticated", False) else None
+    penalty.save(update_fields=["remaining_amount", "is_deleted", "deleted_at", "deleted_by", "updated_at"])
+    return amount
+
+
 def _get_self_service_client(user):
     profile = getattr(user, "profile", None)
     if profile and profile.client_id:
@@ -533,7 +570,8 @@ def loan_apply(request):
         resp = _json_or_message(request, False, "Please correct the errors below.", status=400)
         if resp:
             return resp
-        messages.error(request, "Please correct the errors below.", extra_tags="bg-danger")
+        if not form.is_valid():
+            messages.error(request, "Please correct the errors below.", extra_tags="bg-danger")
 
     open_applications = Loan.objects.filter(status__in=["pending", "boo_approved", "hof_approved"]).count()
     active_loans = Loan.objects.filter(status__in=Loan.ACTIVE_STATUSES).count()
@@ -830,10 +868,19 @@ def disburse_loan(request):
         disbursement.loan         = loan
         disbursement_date         = form.cleaned_data.get("disbursement_date")
         try:
-            loan.disburse(disbursement_date)
-            disbursement.save()         # triggers journal entries on insert
+            with transaction.atomic():
+                loan.disburse(disbursement_date)
+                disbursement.save()         # triggers journal entries on insert
         except ValidationError as exc:
             messages.error(request, str(exc), extra_tags="bg-danger")
+            return redirect("loans:disburse_loan")
+        except Exception:
+            logger.exception("Loan %s disbursement failed.", loan.id)
+            messages.error(
+                request,
+                "The disbursement could not be posted. No loan or journal changes were saved.",
+                extra_tags="bg-danger",
+            )
             return redirect("loans:disburse_loan")
 
         messages.success(request, f"Loan ID {loan.id} disbursed successfully.", extra_tags="bg-success")
@@ -878,6 +925,14 @@ def disburse_all_loans(request):
         except ValidationError as exc:
             messages.error(request, str(exc), extra_tags="bg-danger")
             return redirect("loans:disburse_all_loans")
+        except Exception:
+            logger.exception("Bulk loan disbursement failed.")
+            messages.error(
+                request,
+                "Bulk disbursement failed. No partial disbursements were saved.",
+                extra_tags="bg-danger",
+            )
+            return redirect("loans:disburse_all_loans")
         messages.success(request, f"{count} loans disbursed successfully.", extra_tags="bg-success")
         if ineligible:
             messages.warning(
@@ -893,6 +948,8 @@ def disburse_all_loans(request):
     return render(request, "loans/disburse_all_loans.html", {
         "form_title": "Disburse All Approved Loans",
         "form": form,
+        "eligible_loans": eligible,
+        "ineligible_loans": ineligible,
     })
 
 
@@ -1081,9 +1138,21 @@ def loan_repayment_create_view(request):
             if not getattr(repayment.loan, "borrower", None):
                 messages.error(request, "This loan has no valid borrower attached.")
                 return redirect("loans:loan_repayment_create")
-            repayment.save()       # clean() + _post_entries() + update_status() in model
-            messages.success(request, "Loan repayment submitted successfully.", extra_tags="bg-success")
-            return redirect("loans:loan_repayment_create")
+            try:
+                repayment.save()       # clean() + _post_entries() + update_status() in model
+            except ValidationError as exc:
+                form.add_error(None, exc)
+                messages.error(request, "Please correct the errors below.", extra_tags="bg-danger")
+            except Exception:
+                logger.exception("Repayment posting failed for loan %s.", repayment.loan_id)
+                messages.error(
+                    request,
+                    "The repayment could not be posted. No repayment or journal changes were saved.",
+                    extra_tags="bg-danger",
+                )
+            else:
+                messages.success(request, "Loan repayment submitted successfully.", extra_tags="bg-success")
+                return redirect("loans:loan_repayment_create")
         messages.error(request, "Please correct the errors below.", extra_tags="bg-danger")
     else:
         form = LoanRepaymentForm()
@@ -1106,14 +1175,27 @@ def loan_penalty_create_view(request):
         if form.is_valid():
             penalty            = form.save(commit=False)
             penalty.created_by = request.user
-            penalty.save()     # _post_entries() + update_status() in model
-            messages.success(
-                request,
-                f"Penalty of {penalty.penalty_amount:,.2f} added to Loan {penalty.loan.id}.",
-                extra_tags="bg-success",
-            )
-            return redirect("loans:loan_penalty_create")
-        messages.error(request, "Please correct the errors below.")
+            try:
+                penalty.save()     # _post_entries() + update_status() in model
+            except ValidationError as exc:
+                form.add_error(None, exc)
+                messages.error(request, "Please correct the errors below.", extra_tags="bg-danger")
+            except Exception:
+                logger.exception("Penalty posting failed for loan %s.", penalty.loan_id)
+                messages.error(
+                    request,
+                    "The penalty could not be posted. No penalty or journal changes were saved.",
+                    extra_tags="bg-danger",
+                )
+            else:
+                messages.success(
+                    request,
+                    f"Penalty of {penalty.penalty_amount:,.2f} added to Loan {penalty.loan.id}.",
+                    extra_tags="bg-success",
+                )
+                return redirect("loans:loan_penalty_create")
+        if not form.is_valid():
+            messages.error(request, "Please correct the errors below.", extra_tags="bg-danger")
     else:
         form = LoanPenaltyForm(user=request.user)
 
@@ -1162,8 +1244,25 @@ def loan_detail_view(request, loan_id):
 def delete_repayment(request, repayment_id):
     repayment = get_object_or_404(LoanRepayment, id=repayment_id)
     if request.method == "POST":
-        repayment.delete()
-        messages.success(request, "Repayment deleted successfully.", extra_tags="bg-success")
+        linked_transactions = TransactionHistory.objects.filter(
+            loan=repayment.loan,
+            transaction_date=repayment.repayment_date,
+        ).filter(
+            Q(description__icontains=f"Loan {repayment.loan_id}")
+            | Q(description__icontains="Loan repayment")
+            | Q(description__icontains="Interest received")
+            | Q(description__icontains="Penalty payment")
+        )
+        if linked_transactions.exists():
+            messages.error(
+                request,
+                "This repayment has posted journal entries and cannot be deleted. Post a correcting entry instead.",
+                extra_tags="bg-danger",
+            )
+        else:
+            repayment.delete()
+            repayment.loan.update_status()
+            messages.success(request, "Repayment deleted successfully.", extra_tags="bg-success")
     return redirect(request.META.get("HTTP_REFERER", "loans:loan_list"))
 
 
@@ -2003,6 +2102,43 @@ def loan_penalty_management(request):
         if client_id:
             selected_client = get_object_or_404(Client, id=client_id)
 
+            if "delete_selected" in request.POST:
+                ids = request.POST.getlist("penalty_ids")
+                if ids:
+                    with transaction.atomic():
+                        penalties = list(
+                            LoanPenalty.objects.select_related("loan", "account")
+                            .filter(
+                                id__in=ids,
+                                loan__borrower=selected_client,
+                                is_deleted=False,
+                            )
+                        )
+                        paid_count_blocked = sum(1 for p in penalties if p.is_paid or p.remaining_amount <= 0)
+                        reversible = [p for p in penalties if not p.is_paid and p.remaining_amount > 0]
+                        reversed_total = Decimal("0.00")
+                        for penalty in reversible:
+                            reversed_total += _reverse_penalty_balance(penalty, request.user)
+
+                    if reversible:
+                        messages.success(
+                            request,
+                            (
+                                f"Reversed {len(reversible)} unpaid penalt"
+                                f"{'y' if len(reversible) == 1 else 'ies'} totaling "
+                                f"{reversed_total:,.2f} UGX."
+                            ),
+                            extra_tags="bg-success",
+                        )
+                    if paid_count_blocked:
+                        messages.warning(
+                            request,
+                            f"{paid_count_blocked} paid or cleared penalt{'y was' if paid_count_blocked == 1 else 'ies were'} left unchanged.",
+                            extra_tags="bg-warning",
+                        )
+                else:
+                    messages.warning(request, "Select at least one unpaid penalty to reverse.", extra_tags="bg-warning")
+
             unpaid_penalties = (
                 LoanPenalty.objects.filter(
                     loan__borrower=selected_client,
@@ -2054,29 +2190,6 @@ def loan_penalty_management(request):
             paid_total  = sum(p["penalty"].penalty_amount for p in paid_penalties)
             paid_count  = len(paid_penalties)
             total_ever  = unpaid_total + paid_total
-
-            # Hard-delete selected penalties
-            if "delete_selected" in request.POST:
-                ids = request.POST.getlist("penalty_ids")
-                if ids:
-                    to_delete = LoanPenalty.objects.filter(
-                        id__in=ids, loan__borrower=selected_client
-                    )
-                    count = to_delete.count()
-                    # Remove linked transaction entries first
-                    for penalty in to_delete:
-                        TransactionHistory.objects.filter(
-                            loan=penalty.loan,
-                            description__icontains="Penalty",
-                            amount=penalty.penalty_amount,
-                        ).delete()
-                    to_delete.delete()
-                    messages.success(
-                        request,
-                        f"Deleted {count} penalt{'y' if count == 1 else 'ies'} permanently.",
-                    )
-                    unpaid_penalties = unpaid_penalties.exclude(id__in=ids)
-                    paid_penalties   = [p for p in paid_penalties if str(p["penalty"].id) not in ids]
 
     return render(request, "loans/loan_penalty_management.html", {
         "table_title":      "Loan Penalties Management",

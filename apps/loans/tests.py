@@ -22,6 +22,7 @@ from .models import (
     LoanDisbursement,
     LoanPenalty,
     LoanRepayment,
+    TransactionHistory,
 )
 from .services.reporting import (
     group_rows_by_bucket,
@@ -108,6 +109,17 @@ class LoanWorkflowTests(TestCase):
         disbursement.save()
         self.assertEqual(loan.transactions.count(), 4)
 
+    def test_duplicate_disbursement_is_rejected(self):
+        loan = self._approved_loan()
+        loan.disburse(date(2026, 1, 2))
+        LoanDisbursement.objects.create(loan=loan, account=self.cash)
+
+        with self.assertRaises(ValidationError):
+            LoanDisbursement.objects.create(loan=loan, account=self.cash)
+
+        self.assertEqual(loan.disbursements.count(), 1)
+        self.assertEqual(loan.transactions.count(), 4)
+
     def test_repayment_cannot_exceed_outstanding_or_hit_closed_loan(self):
         loan = self._approved_loan()
         loan.disburse(date(2026, 1, 2))
@@ -131,6 +143,21 @@ class LoanWorkflowTests(TestCase):
                 account=self.cash,
             )
 
+    def test_repayment_cannot_be_before_disbursement(self):
+        loan = self._approved_loan()
+        loan.disburse(date(2026, 2, 2))
+        LoanDisbursement.objects.create(loan=loan, account=self.cash)
+
+        with self.assertRaises(ValidationError):
+            LoanRepayment.objects.create(
+                loan=loan,
+                repayment_date=date(2026, 2, 1),
+                principal_payment=Decimal("10.00"),
+                account=self.cash,
+            )
+
+        self.assertEqual(loan.repayments.count(), 0)
+
     def test_penalty_balance_uses_remaining_unpaid_penalties(self):
         loan = self._approved_loan()
         loan.disburse(date(2026, 1, 2))
@@ -151,6 +178,56 @@ class LoanWorkflowTests(TestCase):
         )
 
         self.assertEqual(loan.calculate_remaining_balances()["penalty_balance"], Decimal("60.00"))
+
+    def test_penalty_remaining_amount_cannot_exceed_original_penalty(self):
+        loan = self._approved_loan()
+        loan.disburse(date(2026, 1, 2))
+        LoanDisbursement.objects.create(loan=loan, account=self.cash)
+
+        with self.assertRaises(ValidationError):
+            LoanPenalty.objects.create(
+                loan=loan,
+                penalty_date=date(2026, 2, 2),
+                penalty_amount=Decimal("100.00"),
+                remaining_amount=Decimal("120.00"),
+                reason="Late installment",
+                account=ChartOfAccounts.objects.get(account_number="1071"),
+            )
+
+    def test_penalty_management_reverses_unpaid_penalty_instead_of_hard_delete(self):
+        loan = self._approved_loan()
+        loan.disburse(date(2026, 1, 2))
+        LoanDisbursement.objects.create(loan=loan, account=self.cash)
+        penalty = LoanPenalty.objects.create(
+            loan=loan,
+            penalty_date=date(2026, 2, 2),
+            penalty_amount=Decimal("100.00"),
+            reason="Late installment",
+            account=ChartOfAccounts.objects.get(account_number="1071"),
+        )
+        web = DjangoTestClient()
+        web.login(username="ed-user", password="pass")
+
+        response = web.post(
+            reverse("loans:loan_penalty_management"),
+            {
+                "client_id": self.client.id,
+                "penalty_ids": [str(penalty.id)],
+                "delete_selected": "1",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        penalty.refresh_from_db()
+        self.assertTrue(penalty.is_deleted)
+        self.assertEqual(penalty.remaining_amount, Decimal("0.00"))
+        self.assertEqual(
+            TransactionHistory.objects.filter(
+                loan=loan,
+                description__icontains=f"penalty #{penalty.id}",
+            ).count(),
+            2,
+        )
 
     def test_standard_aging_bucket_inputs(self):
         loan = self._approved_loan()

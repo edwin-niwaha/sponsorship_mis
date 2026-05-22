@@ -20,6 +20,9 @@
           <h3>{{ form_title|upper }}</h3>
         </div>
         <div class="card-body">
+          <div class="alert alert-info">
+            Repayments are posted together with their journal entries. Payment dates cannot be before disbursement, and amounts cannot exceed the live balances shown below.
+          </div>
           <form method="post">
             {% csrf_token %}
             <!-- Loan Field -->
@@ -39,20 +42,20 @@
               {% endif %}
               <!-- Display Principal, Interest, Penalty, and Total Balances -->
               <div id="loan-balances"
-                class="mt-2 d-flex justify-content-start align-items-center bg-light p-2 rounded border">
-                <div class="me-4">
+                class="mt-2 d-flex flex-wrap justify-content-start align-items-center bg-light p-2 rounded border">
+                <div class="me-4 mb-2">
                   <strong>Principal:</strong> <span id="principal-balance" class="badge bg-primary text-white">Select a
                     loan</span>
                 </div>
-                <div class="me-4">
+                <div class="me-4 mb-2">
                   <strong>Interest:</strong> <span id="interest-balance" class="badge bg-info text-white">Select a
                     loan</span>
                 </div>
-                <div class="me-4">
+                <div class="me-4 mb-2">
                   <strong>Penalty:</strong> <span id="penalty-balance" class="badge bg-warning text-dark">Select a
                     loan</span>
                 </div>
-                <div>
+                <div class="mb-2">
                   <strong>Total:</strong>
                   <span id="total-balance" class="badge bg-primary text-white">
                     Select a loan

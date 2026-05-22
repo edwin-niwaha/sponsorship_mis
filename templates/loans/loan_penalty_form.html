@@ -20,6 +20,9 @@
             <h3>{{ form_title|upper }}</h3>
           </div>
           <div class="card-body">
+            <div class="alert alert-info">
+              Penalties are posted to penalty receivable and income together. Penalty dates cannot be before loan disbursement or in the future.
+            </div>
             <form method="post">
               {% csrf_token %}
               <!-- Loan Field -->
@@ -37,17 +40,17 @@
                   </div>
                 {% endif %}
                 <!-- Display Principal, Interest, Penalty, and Total Balances -->
-                <div id="loan-balances" class="mt-2 d-flex justify-content-start align-items-center bg-light p-2 rounded border">
-                  <div class="me-4">
+                <div id="loan-balances" class="mt-2 d-flex flex-wrap justify-content-start align-items-center bg-light p-2 rounded border">
+                  <div class="me-4 mb-2">
                     <strong>Principal:</strong> <span id="principal-balance" class="badge bg-primary text-white">Select a loan</span>
                   </div>
-                  <div class="me-4">
+                  <div class="me-4 mb-2">
                     <strong>Interest:</strong> <span id="interest-balance" class="badge bg-info text-white">Select a loan</span>
                   </div>
-                  <div class="me-4">
+                  <div class="me-4 mb-2">
                     <strong>Penalty:</strong> <span id="penalty-balance" class="badge bg-warning text-dark">Select a loan</span>
                   </div>
-                  <div>
+                  <div class="mb-2">
                     <strong>Total:</strong> <span id="total-balance" class="badge bg-primary text-white">Select a loan</span>
                   </div>
                 </div>
@@ -123,9 +126,6 @@
         {% endfor %}
       };
 
-      // Debug: Log loanBalances to console
-      console.log('Loan Balances:', loanBalances);
-
       // Update balances and button state when a loan is selected
       $('#{{ form.loan.id_for_label }}').on('change', function() {
         const loanId = $(this).val();
@@ -143,9 +143,6 @@
           $('#penalty-balance').text(penalty.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
           $('#total-balance').text(total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
           
-          // Debug: Log selected loan balances
-          console.log(`Selected Loan ${loanId}: Principal=${principal}, Interest=${interest}, Penalty=${penalty}, Total=${total}`);
-          
           // Enable button and set URL
           $viewButton
             .attr('href', `/loans/${loanId}/`)
@@ -158,9 +155,6 @@
           $('#interest-balance').text('Select a loan');
           $('#penalty-balance').text('Select a loan');
           $('#total-balance').text('Select a loan');
-          
-          // Debug: Log reset state
-          console.log('No loan selected, resetting balances');
           
           // Disable button
           $viewButton
