@@ -7,6 +7,9 @@ from django.contrib.messages import get_messages
 import responses
 
 from apps.sponsorship.models import MoMoTransaction
+from apps.sponsorship.models import ChildSponsorship
+from apps.child.models import Child
+from apps.sponsor.models import Sponsor
 from apps.users.models import Profile
 
 
@@ -194,3 +197,74 @@ class ViewTests(TestCase):
 
         response = self.client.get(reverse("momo_transaction_list"))
         self.assertEqual(response.status_code, 302)  # redirect to login
+
+    def test_terminate_child_sponsorship_keeps_child_sponsored_with_other_active_sponsor(self):
+        child = Child.objects.create(
+            full_name="Sponsored Child",
+            gender="Female",
+            is_father_alive="Yes",
+            is_mother_alive="Yes",
+            is_sponsored=True,
+        )
+        sponsor_one = Sponsor.objects.create(
+            first_name="First",
+            last_name="Sponsor",
+            gender="Male",
+            email="first@example.com",
+        )
+        sponsor_two = Sponsor.objects.create(
+            first_name="Second",
+            last_name="Sponsor",
+            gender="Female",
+            email="second@example.com",
+        )
+        ending_sponsorship = ChildSponsorship.objects.create(
+            child=child,
+            sponsor=sponsor_one,
+            is_active=True,
+        )
+        ChildSponsorship.objects.create(
+            child=child,
+            sponsor=sponsor_two,
+            is_active=True,
+        )
+
+        response = self.client.post(
+            reverse("terminate_child_sponsorship", args=[ending_sponsorship.id])
+        )
+
+        self.assertRedirects(response, reverse("child_sponsorship_report"))
+        child.refresh_from_db()
+        ending_sponsorship.refresh_from_db()
+        self.assertFalse(ending_sponsorship.is_active)
+        self.assertTrue(child.is_sponsored)
+
+    def test_terminate_child_sponsorship_marks_child_not_sponsored_without_active_sponsors(self):
+        child = Child.objects.create(
+            full_name="Only Sponsored",
+            gender="Male",
+            is_father_alive="Yes",
+            is_mother_alive="Yes",
+            is_sponsored=True,
+        )
+        sponsor = Sponsor.objects.create(
+            first_name="Only",
+            last_name="Sponsor",
+            gender="Male",
+            email="only@example.com",
+        )
+        sponsorship = ChildSponsorship.objects.create(
+            child=child,
+            sponsor=sponsor,
+            is_active=True,
+        )
+
+        response = self.client.post(
+            reverse("terminate_child_sponsorship", args=[sponsorship.id])
+        )
+
+        self.assertRedirects(response, reverse("child_sponsorship_report"))
+        child.refresh_from_db()
+        sponsorship.refresh_from_db()
+        self.assertFalse(sponsorship.is_active)
+        self.assertFalse(child.is_sponsored)

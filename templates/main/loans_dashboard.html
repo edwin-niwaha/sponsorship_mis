@@ -400,9 +400,11 @@
 
 {{ loan_dashboard_charts|json_script:"loan-dashboard-chart-data" }}
 <script>
+  const LoanDashboardChart = window.Chart;
+
   document.addEventListener('DOMContentLoaded', function () {
     const chartDataElement = document.getElementById('loan-dashboard-chart-data');
-    if (!chartDataElement || !window.Chart) {
+    if (!chartDataElement || !LoanDashboardChart) {
       return;
     }
 
@@ -420,8 +422,8 @@
       grid: 'rgba(148, 163, 184, 0.22)'
     };
 
-    Chart.defaults.font.family = "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-    Chart.defaults.color = '#516173';
+    LoanDashboardChart.defaults.font.family = "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    LoanDashboardChart.defaults.color = '#516173';
 
     const scale = {
       grid: { color: palette.grid, drawBorder: false },
@@ -432,7 +434,7 @@
     function makeChart(id, config) {
       const el = document.getElementById(id);
       if (el) {
-        new Chart(el, config);
+        new LoanDashboardChart(el, config);
       }
     }
 

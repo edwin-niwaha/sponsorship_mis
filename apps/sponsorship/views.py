@@ -222,8 +222,11 @@ def terminate_child_sponsorship(request, sponsorship_id):
             # Assuming a direct ForeignKey relationship to Child
             sponsored_child = sponsorship.child
             if sponsored_child:
-                sponsored_child.is_sponsored = False
-                sponsored_child.save()
+                sponsored_child.is_sponsored = ChildSponsorship.objects.filter(
+                    child=sponsored_child,
+                    is_active=True,
+                ).exists()
+                sponsored_child.save(update_fields=["is_sponsored", "updated_at"])
 
             messages.success(
                 request, "Sponsorship terminated successfully!", extra_tags="bg-success"
