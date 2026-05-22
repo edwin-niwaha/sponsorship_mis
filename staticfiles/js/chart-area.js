@@ -18,7 +18,10 @@ async function fetchData() {
 }
 
 function renderLineChart(labels, data) {
-  var ctx = document.getElementById("myLineChart").getContext("2d");
+  const chartEl = document.getElementById("myLineChart");
+  if (!chartEl) return;
+
+  var ctx = chartEl.getContext("2d");
 
   new Chart(ctx, {
     type: "line",
@@ -28,17 +31,19 @@ function renderLineChart(labels, data) {
         {
           label: "Monthly Earnings",
           data: data,
-          backgroundColor: "rgba(78, 115, 223, 0.2)",
-          borderColor: "rgba(78, 115, 223, 1)",
-          borderWidth: 2,
-          pointRadius: 5,
-          pointBackgroundColor: "rgba(78, 115, 223, 1)",
-          pointBorderColor: "rgba(78, 115, 223, 1)",
-          pointHoverRadius: 7,
-          pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
-          pointHoverBorderColor: "rgba(78, 115, 223, 1)",
-          pointHitRadius: 10,
+          backgroundColor: "rgba(19, 116, 93, 0.14)",
+          borderColor: "#13745d",
+          borderWidth: 3,
+          fill: true,
+          pointRadius: 3,
+          pointBackgroundColor: "#ffffff",
+          pointBorderColor: "#13745d",
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: "#13745d",
+          pointHoverBorderColor: "#ffffff",
+          pointHitRadius: 8,
           pointBorderWidth: 2,
+          tension: 0.35,
         },
       ],
     },
@@ -46,9 +51,9 @@ function renderLineChart(labels, data) {
       maintainAspectRatio: false,
       layout: {
         padding: {
-          left: 10,
-          right: 25,
-          top: 25,
+          left: 4,
+          right: 10,
+          top: 8,
           bottom: 0,
         },
       },
@@ -62,26 +67,24 @@ function renderLineChart(labels, data) {
         y: {
           beginAtZero: true,
           grid: {
-            borderDash: [2],
-            color: "rgb(234, 236, 244)",
-            zeroLineColor: "rgb(234, 236, 244)",
+            color: "rgba(148, 163, 184, 0.22)",
+            drawBorder: false,
           },
           ticks: {
             callback: function (value) {
-              return numberFormat(value) + " $";
+              return "UGX " + numberFormat(value, 0);
             },
           },
         },
       },
       plugins: {
         legend: {
-          display: true,
-          position: "top",
+          display: false,
         },
         tooltip: {
           callbacks: {
             label: function (tooltipItem) {
-              return `${tooltipItem.label}: ${numberFormat(tooltipItem.raw)} $`;
+              return `${tooltipItem.label}: UGX ${numberFormat(tooltipItem.raw, 0)}`;
             },
           },
         },
