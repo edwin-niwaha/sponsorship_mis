@@ -23,6 +23,15 @@ STANDARD_AGING_BUCKETS = (
     "Over 180 days overdue",
 )
 
+PAR_THRESHOLDS = (
+    ("PAR 1+", 1),
+    ("PAR 30+", 30),
+    ("PAR 60+", 60),
+    ("PAR 90+", 90),
+    ("PAR 120+", 120),
+    ("PAR 180+", 180),
+)
+
 
 @dataclass(frozen=True)
 class ReportColumn:
@@ -260,6 +269,64 @@ def summarize_amounts(rows: Iterable[dict], keys: Iterable[str]) -> dict:
     return totals
 
 
+def group_rows_by_bucket(rows: Iterable[dict], bucket_key: str, total_keys: Iterable[str]) -> list[dict]:
+    groups = {}
+    for row in rows:
+        bucket = row.get(bucket_key) or "Unclassified"
+        groups.setdefault(bucket, []).append(row)
+
+    return [
+        {
+            "key": bucket,
+            "rows": groups[bucket],
+            "totals": summarize_amounts(groups[bucket], total_keys),
+        }
+        for bucket in sorted(groups, key=_bucket_order)
+    ]
+
+
+def portfolio_at_risk_summary(rows: Iterable[dict]) -> dict:
+    portfolio_rows = [
+        row
+        for row in rows
+        if (row.get("outstanding_amount") or Decimal("0.00")) > 0
+    ]
+    total_portfolio = sum(
+        (row["outstanding_amount"] for row in portfolio_rows),
+        Decimal("0.00"),
+    )
+    bands = []
+    for label, minimum_days in PAR_THRESHOLDS:
+        affected = [
+            row
+            for row in portfolio_rows
+            if int(row.get("days_in_arrears") or 0) >= minimum_days
+        ]
+        outstanding = sum(
+            (row["outstanding_amount"] for row in affected),
+            Decimal("0.00"),
+        )
+        percent = (
+            outstanding / total_portfolio * Decimal("100")
+            if total_portfolio
+            else Decimal("0.00")
+        )
+        bands.append(
+            {
+                "bucket": label,
+                "minimum_days": minimum_days,
+                "loan_count": len(affected),
+                "outstanding_amount": outstanding,
+                "portfolio_percent": percent,
+            }
+        )
+    return {
+        "total_portfolio": total_portfolio,
+        "loan_count": len(portfolio_rows),
+        "bands": bands,
+    }
+
+
 def aging_bucket(days: int) -> str:
     if days <= 0:
         return "Current"
@@ -272,6 +339,22 @@ def aging_bucket(days: int) -> str:
     if days <= 180:
         return "91-180 days overdue"
     return "Over 180 days overdue"
+
+
+def _bucket_order(bucket: str):
+    standard_order = {label: index for index, label in enumerate(STANDARD_AGING_BUCKETS)}
+    category_order = {
+        "Due today": 0,
+        "In arrears": 1,
+        "Past maturity": 2,
+        "Current": 3,
+        "Unclassified": 99,
+    }
+    if bucket in standard_order:
+        return (0, standard_order[bucket], bucket)
+    if bucket in category_order:
+        return (1, category_order[bucket], bucket)
+    return (2, 0, bucket)
 
 
 def export_rows_csv(filename: str, columns: list[ReportColumn], rows: list[dict]) -> HttpResponse:

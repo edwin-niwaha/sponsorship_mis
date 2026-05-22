@@ -24,6 +24,7 @@ from apps.sponsorship.models import (
     StaffSponsorship,
 )
 from apps.users.decorators import admin_or_manager_or_staff_required
+from apps.loans.services.reporting import loan_financial_row, portfolio_at_risk_summary
 
 logger = logging.getLogger(__name__)
 
@@ -767,9 +768,24 @@ def loans_dashboard(request):
         ),
     }
 
-    active_loans_count = due_loans_count + overdue_loans_count
+    portfolio_rows = [
+        loan_financial_row(loan, today=today)
+        for loan in (
+            Loan.objects.filter(status__in=["disbursed", "overdue"])
+            .select_related("borrower", "account", "applied_by")
+            .prefetch_related("repayments", "penalties")
+        )
+    ]
+    par_summary = portfolio_at_risk_summary(portfolio_rows)
+    par_30_band = next(
+        (band for band in par_summary["bands"] if band["bucket"] == "PAR 30+"),
+        None,
+    )
     portfolio_at_risk_rate = (
-        (overdue_loans_count / active_loans_count) * 100 if active_loans_count else 0
+        par_30_band["portfolio_percent"] if par_30_band else Decimal("0.00")
+    )
+    portfolio_at_risk_amount = (
+        par_30_band["outstanding_amount"] if par_30_band else Decimal("0.00")
     )
 
     months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -917,6 +933,7 @@ def loans_dashboard(request):
         "closed_loans": closed_loans,
         "repaid_loans": repaid_loans,
         "portfolio_at_risk_rate": portfolio_at_risk_rate,
+        "portfolio_at_risk_amount": portfolio_at_risk_amount,
         "due_loans_count": due_loans_count,
         "due_loans_total_due_balance": due_loans_total_due_balance,
         "due_loans_total_penalty_balance": due_loans_total_penalty_balance,

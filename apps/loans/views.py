@@ -53,9 +53,11 @@ from .services.reporting import (
     ReportColumn,
     export_rows_csv,
     filtered_loans,
+    group_rows_by_bucket,
     loan_financial_row,
     paginate_rows,
     parse_report_filters,
+    portfolio_at_risk_summary,
     repayment_rows,
     summarize_amounts,
 )
@@ -2192,11 +2194,11 @@ LOAN_TOTAL_KEYS = [
 COLLECTION_TOTAL_KEYS = ["principal", "interest", "fees", "penalties", "paid_amount"]
 
 
-def _loan_report_rows(filters, *, date_field="disbursement_date", statuses=None):
+def _loan_report_rows(filters, *, date_field="disbursement_date", statuses=None, as_of=None):
     qs = filtered_loans(filters, date_field=date_field)
     if statuses:
         qs = qs.filter(status__in=statuses)
-    return [loan_financial_row(loan) for loan in qs]
+    return [loan_financial_row(loan, today=as_of) for loan in qs]
 
 
 @login_required
@@ -2217,6 +2219,7 @@ def loan_aging_report(request):
         rows,
         LOAN_TOTAL_KEYS,
         filters,
+        group_by="aging_bucket",
     )
 
 
@@ -2238,6 +2241,7 @@ def loan_arrears_report(request):
         rows,
         LOAN_TOTAL_KEYS,
         filters,
+        group_by="aging_bucket",
     )
 
 
@@ -2270,33 +2274,21 @@ def portfolio_at_risk(request):
         for row in _loan_report_rows(filters, statuses=["disbursed", "overdue"])
         if row["outstanding_amount"] > 0
     ]
-    total_portfolio = sum((row["outstanding_amount"] for row in portfolio_rows), Decimal("0.00"))
-    bands = [
-        ("PAR > 1 day", 1),
-        ("PAR > 30 days", 30),
-        ("PAR > 60 days", 60),
-        ("PAR > 90 days", 90),
-        ("PAR > 120 days", 120),
-        ("PAR > 180 days", 180),
+    par = portfolio_at_risk_summary(portfolio_rows)
+    rows = [
+        {
+            **band,
+            "portfolio_percent": f"{band['portfolio_percent']:.2f}%",
+        }
+        for band in par["bands"]
     ]
-    rows = []
-    for label, threshold in bands:
-        affected = [row for row in portfolio_rows if row["days_in_arrears"] >= threshold]
-        outstanding = sum((row["outstanding_amount"] for row in affected), Decimal("0.00"))
-        percent = (outstanding / total_portfolio * Decimal("100")) if total_portfolio else Decimal("0.00")
-        rows.append({
-            "bucket": label,
-            "loan_count": len(affected),
-            "outstanding_amount": outstanding,
-            "portfolio_percent": f"{percent:.2f}%",
-        })
     return _standard_report_response(
         request,
         "Portfolio at Risk Report",
         "portfolio_at_risk_report.csv",
         PAR_COLUMNS,
         rows,
-        ["outstanding_amount"],
+        [],
         filters,
     )
 
@@ -2319,6 +2311,7 @@ def non_performing_loans(request):
         rows,
         LOAN_TOTAL_KEYS,
         filters,
+        group_by="aging_bucket",
     )
 
 
@@ -2328,16 +2321,17 @@ def loan_due_overdue_report(request):
     filters = parse_report_filters(request)
     selected_date = parse_date(request.GET.get("date") or "") or timezone.localdate()
     rows = []
-    for row in _loan_report_rows(filters, statuses=["disbursed", "overdue"]):
+    for row in _loan_report_rows(filters, statuses=["disbursed", "overdue"], as_of=selected_date):
         if row["outstanding_amount"] <= 0:
             continue
-        category = "Current"
+        if row["overdue_amount"] <= 0:
+            continue
         if row["days_in_arrears"] > 0:
             category = "In arrears"
-        if row["maturity_date"] and row["maturity_date"] < selected_date and row["outstanding_amount"] > 0:
+        else:
+            category = "Due today"
+        if row["maturity_date"] and row["maturity_date"] < selected_date:
             category = "Past maturity"
-        if row["expected_due"] > 0 and row["days_in_arrears"] == 0:
-            category = "Due"
         rows.append({**row, "category": category})
     rows.sort(key=lambda item: (item["category"], -item["days_in_arrears"], item["client"]))
     return _standard_report_response(
@@ -2348,6 +2342,7 @@ def loan_due_overdue_report(request):
         rows,
         ["expected_due", "overdue_amount", "outstanding_amount"],
         filters,
+        group_by="category",
     )
 
 
@@ -2423,6 +2418,7 @@ def defaulted_loans_report(request):
         rows,
         LOAN_TOTAL_KEYS,
         filters,
+        group_by="aging_bucket",
     )
 
 
@@ -2516,11 +2512,22 @@ def loan_product_performance_report(request):
     )
 
 
-def _standard_report_response(request, title, csv_filename, columns, rows, total_keys, filters):
+def _standard_report_response(
+    request,
+    title,
+    csv_filename,
+    columns,
+    rows,
+    total_keys,
+    filters,
+    *,
+    group_by=None,
+):
     if filters.get("export") == "csv":
         return export_rows_csv(csv_filename, columns, rows)
 
     page_obj = paginate_rows(rows, request.GET.get("page"), filters.get("per_page", 50))
+    grouped_rows = group_rows_by_bucket(rows, group_by, total_keys) if group_by else []
     filter_form = LoanReportFilterForm(request.GET or None)
     filter_form.is_valid()
 
@@ -2530,6 +2537,8 @@ def _standard_report_response(request, title, csv_filename, columns, rows, total
         "columns": columns,
         "rows": list(page_obj.object_list),
         "all_rows": rows,
+        "grouped_rows": grouped_rows,
+        "group_by": group_by,
         "page_obj": page_obj,
         "totals": summarize_amounts(rows, total_keys),
         "total_keys": set(total_keys),

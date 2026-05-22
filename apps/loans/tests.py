@@ -23,6 +23,11 @@ from .models import (
     LoanPenalty,
     LoanRepayment,
 )
+from .services.reporting import (
+    group_rows_by_bucket,
+    loan_financial_row,
+    portfolio_at_risk_summary,
+)
 from .views import compute_installment_based_days_overdue
 
 
@@ -156,6 +161,46 @@ class LoanWorkflowTests(TestCase):
 
         self.assertGreater(aging["days_overdue"], 0)
         self.assertGreater(aging["shortfall"], Decimal("0.00"))
+
+    def test_portfolio_at_risk_uses_outstanding_value_not_loan_count(self):
+        at_risk = self._approved_loan()
+        at_risk.disburse(date(2026, 1, 1))
+
+        current = self._loan(
+            borrower=Client.objects.create(full_name="Current Client", reg_number="C004"),
+            principal_amount=Decimal("2000.00"),
+        )
+        current.approve(self.boo)
+        current.approve(self.hof)
+        current.approve(self.ed)
+        current.disburse(date(2026, 3, 1))
+
+        rows = [
+            loan_financial_row(at_risk, today=date(2026, 3, 15)),
+            loan_financial_row(current, today=date(2026, 3, 15)),
+        ]
+
+        par = portfolio_at_risk_summary(rows)
+        par_30 = next(band for band in par["bands"] if band["bucket"] == "PAR 30+")
+
+        self.assertEqual(par["total_portfolio"], Decimal("3300.00"))
+        self.assertEqual(par_30["outstanding_amount"], Decimal("1100.00"))
+        self.assertEqual(par_30["loan_count"], 1)
+        self.assertEqual(par_30["portfolio_percent"].quantize(Decimal("0.01")), Decimal("33.33"))
+
+    def test_bucket_grouping_uses_standard_aging_order(self):
+        rows = [
+            {"aging_bucket": "61-90 days overdue", "outstanding_amount": Decimal("90.00")},
+            {"aging_bucket": "Current", "outstanding_amount": Decimal("10.00")},
+            {"aging_bucket": "1-30 days overdue", "outstanding_amount": Decimal("30.00")},
+        ]
+
+        grouped = group_rows_by_bucket(rows, "aging_bucket", ["outstanding_amount"])
+
+        self.assertEqual(
+            [bucket["key"] for bucket in grouped],
+            ["Current", "1-30 days overdue", "61-90 days overdue"],
+        )
 
 
 class ClientSelfServiceLoanApplicationTests(TestCase):

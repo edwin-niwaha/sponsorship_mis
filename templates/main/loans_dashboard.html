@@ -267,7 +267,8 @@
     <div class="risk-card primary">
       <span class="eyebrow">Portfolio At Risk</span>
       <strong>{{ portfolio_at_risk_rate|floatformat:1 }}%</strong>
-      <small>Overdue share of due/overdue loans</small>
+      <small>PAR 30+ share of outstanding portfolio</small>
+      <small>At risk: UGX {{ portfolio_at_risk_amount|floatformat:0|intcomma }}</small>
       <small>Total outstanding: UGX {{ total_loans.total_outstanding|floatformat:0|intcomma }}</small>
     </div>
   </section>

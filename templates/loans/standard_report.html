@@ -35,6 +35,8 @@
       .table thead th { background: var(--report-head); color: #fff; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
       .table tbody tr:hover { background: #f1f5f9; }
       .table tfoot td { background: #edf1f5; font-weight: 800; }
+      .bucket-row td { background: #e8eef6; color: var(--report-head); font-weight: 800; }
+      .bucket-total td { background: #f4f7fb; font-weight: 800; }
       .right, .amount { text-align: right; }
       .badge-soft { border: 1px solid #cbd5e1; border-radius: 999px; color: #334155; font-size: .72rem; padding: 3px 8px; }
       .pagination .page-link { color: var(--report-head); }
@@ -136,7 +138,71 @@
         {% endfor %}
       </section>
 
-      {% if rows %}
+      {% if grouped_rows %}
+        <section class="report-table-card">
+          <div class="table-toolbar no-print d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <span class="badge-soft">{{ totals.count|intcomma }} records grouped by bucket</span>
+            <input id="smartTableSearch" type="search" class="form-control form-control-sm smart-search" placeholder="Filter visible rows" />
+          </div>
+          <div class="table-responsive">
+            <table id="smartReportTable" class="table table-sm table-bordered table-hover align-middle">
+              <thead>
+                <tr>
+                  {% for column in columns %}
+                    <th class="{% if column.align == 'right' %}right{% endif %}" scope="col">{{ column.label }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for bucket in grouped_rows %}
+                  <tr class="bucket-row">
+                    <td colspan="{{ columns|length }}">{{ bucket.key }} · {{ bucket.totals.count|intcomma }} record{% if bucket.totals.count != 1 %}s{% endif %}</td>
+                  </tr>
+                  {% for row in bucket.rows %}
+                    <tr>
+                      {% for column in columns %}
+                        <td class="{% if column.align == 'right' %}right{% endif %}">
+                          {% with value=row|get_item:column.key %}
+                            {% if column.is_amount %}
+                              {{ value|default:0|floatformat:0|intcomma }}
+                            {% else %}
+                              {{ value|default:'-' }}
+                            {% endif %}
+                          {% endwith %}
+                        </td>
+                      {% endfor %}
+                    </tr>
+                  {% endfor %}
+                  <tr class="bucket-total">
+                    {% for column in columns %}
+                      <td class="{% if column.align == 'right' %}right{% endif %}">
+                        {% if column.key in total_keys %}
+                          {{ bucket.totals|get_item:column.key|floatformat:0|intcomma }}
+                        {% elif forloop.first %}
+                          {{ bucket.key }} subtotal
+                        {% endif %}
+                      </td>
+                    {% endfor %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot>
+                <tr>
+                  {% for column in columns %}
+                    <td class="{% if column.align == 'right' %}right{% endif %}">
+                      {% if column.key in total_keys %}
+                        {{ totals|get_item:column.key|floatformat:0|intcomma }}
+                      {% elif forloop.first %}
+                        Grand totals
+                      {% endif %}
+                    </td>
+                  {% endfor %}
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
+      {% elif rows %}
         <section class="report-table-card">
           <div class="table-toolbar no-print d-flex flex-wrap align-items-center justify-content-between gap-2">
             <div class="d-flex align-items-center gap-2">
