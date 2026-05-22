@@ -1,148 +1,409 @@
-{% extends 'sms/base_rpts.html' %}
+{% extends 'base.html' %}
 
-{% block title %}
-  Sponsors List
-{% endblock %}
+{% block title %}Detailed Child Master List{% endblock %}
 
 {% block content %}
-  <div class="form-content my-5 p-4">
-    <div class="container-fluid">
-      <div class="page-header flex-wrap p-2">
-        <h3 class="mb-0">{{ table_title|upper }}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-        <form method="GET" action="{% url 'child_list_detailed' %}">
-          <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..." style="border-radius: 5px; height: 35px;" />
-          <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
-        </form>
-        <div class="d-flex">
-          <!--   <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
-                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>   -->
+{% include '_partials/reports_layout_styles.html' %}
 
-          <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success" onclick="ExportToExcel('xlsx')"><i class="mdi mdi-file-excel btn-icon-prepend"></i></button>
-
-          <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success" onclick="Export2Doc('printMe');"><i class="mdi mdi-file-word btn-icon-prepend"></i></button>
-
-          <button title="Register Child" id="registerChildBtn" type="button" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-account-plus btn-icon-prepend"></i></button>
-
-          <button title="View List..." id="viewListBtn" type="button" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-chart-line btn-icon-prepend"></i></button>
-          <script>
-            document.getElementById('registerChildBtn').addEventListener('click', function () {
-              window.location.href = "{% url 'register_child' %}"
-            })
-            
-            document.getElementById('viewListBtn').addEventListener('click', function () {
-              window.location.href = "{% url 'child_list_detailed' %}"
-            })
-          </script>
-        </div>
-      </div>
-      <div id="printMe" class="tab-pane show active">
-        <hr class="bg-info" style="height: 3px;" />
-        <!-- Start table -->
-        <div class="table-container">
-          <table class="my-table" id="dataTable">
-            <thead>
-              <tr>
-                <th scope="col">#</th>
-                <th scope="col">Reg.No</th>
-                <th scope="col">Full_Name</th>
-                <th scope="col">Preferred</th>
-                <th scope="col">Residence</th>
-                <th scope="col">District</th>
-                <th scope="col">Tribe</th>
-                <th scope="col">Gender</th>
-                <th scope="col">D.O.B</th>
-                <th scope="col">Registration Date</th>
-                <th scope="col">Weight</th>
-                <th scope="col">Height</th>
-                <th scope="col">Aspiration</th>
-                <th scope="col">Interest</th>
-                <th scope="col">In_School?</th>
-                <th scope="col">Sponsored?</th>
-                <th scope="col">Father_Alive?</th>
-                <th scope="col">Father's_Name</th>
-                <th scope="col">Mother_Alive?</th>
-                <th scope="col">Mother's_Name</th>
-                <th scope="col">Guardian</th>
-                <th scope="col">Guardian_Contact</th>
-                <th scope="col">Relationship</th>
-                <th scope="col">Siblings</th>
-                <th scope="col">Health_Status</th>
-                <th scope="col">Religion</th>
-              </tr>
-            </thead>
-            <tbody class="table-group-divider">
-              {% for child in records %}
-                <tr>
-                  <th scope="row">{{ forloop.counter }}.</th>
-                  <td>{{ child.prefixed_id }}</td>
-                  <td>{{ child.full_name }}</td>
-                  <td>{{ child.preferred_name }}</td>
-                  <td>{{ child.residence }}</td>
-                  <td>{{ child.district }}</td>
-                  <td>{{ child.tribe }}</td>
-                  <td>{{ child.gender }}</td>
-                  <td>{{ child.date_of_birth }}</td>
-                  <td>{{ child.registration_date }}</td>
-                  <td>{{ child.weight }}</td>
-                  <td>{{ child.height }}</td>
-                  <td>{{ child.aspiration }}</td>
-                  <td>{{ child.c_interest }}</td>
-                  <td>{{ child.is_child_in_school }}</td>
-                  <td>{{ child.is_sponsored }}</td>
-                  <td>{{ child.is_father_alive }}</td>
-                  <td>{{ child.father_name }}</td>
-                  <td>{{ child.is_mother_alive }}</td>
-                  <td>{{ child.mother_name }}</td>
-                  <td>{{ child.guardian }}</td>
-                  <td>{{ child.guardian_contact }}</td>
-                  <td>{{ child.relationship_with_guardian }}</td>
-                  <td>{{ child.siblings }}</td>
-                  <td>{{ child.health_status }}</td>
-                  <td>{{ child.religion }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        <!-- End Table -->
-
-        <!-- Pagination links &raquo; -->
-        <div class="pagination">
-          <span class="step-links">
-            {% if records.has_previous %}
-              <a href="?page=1">
-                <!-- first -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
-                  <path fill="#2375e1" d="M14 3.002a1 1 0 0 0-1.578-.816l-7 4.963a1 1 0 0 0-.007 1.628l7 5.037A1 1 0 0 0 14 13.003zM2 2.5a.5.5 0 0 1 1 0v11a.5.5 0 0 1-1 0z" />
-                </svg>
-              </a>
-              <a href="?page={{ records.previous_page_number }}">
-                <!-- previous -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-                  <path fill="#2375e1" d="m4 10l9 9l1.4-1.5L7 10l7.4-7.5L13 1z" />
-                </svg>
-              </a>
-            {% endif %}
-
-            <span class="current">Page {{ records.number }} of {{ records.paginator.num_pages }}.</span>
-
-            {% if records.has_next %}
-              <a href="?page={{ records.next_page_number }}">
-                <!-- Next -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-                  <path fill="#2375e1" d="M7 1L5.6 2.5L13 10l-7.4 7.5L7 19l9-9z" />
-                </svg>
-              </a>
-              <a href="?page={{ records.paginator.num_pages }}">
-                <!-- last -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 28 28">
-                  <path fill="#2375e1" d="M23.5 3.75a.75.75 0 0 1 1.5 0v20.5a.75.75 0 0 1-1.5 0zM3 5.254C3 3.438 5.041 2.37 6.533 3.406l12.504 8.68a2.25 2.25 0 0 1 .013 3.688l-12.504 8.81C5.056 25.634 3 24.57 3 22.745z" />
-                </svg>
-              </a>
-            {% endif %}
-          </span>
-        </div>
-      </div>
+<div class="container-fluid reports-standard-page child-master-report">
+  <div class="child-master-hero">
+    <div>
+      <div class="child-master-kicker">Children Reports</div>
+      <h3>{{ table_title|upper }}</h3>
+      <p>Detailed child bio data, family background, education, sponsorship, and guardian contacts in one standard report.</p>
+    </div>
+    <div class="child-master-actions">
+      <button title="Print" type="button" class="btn btn-outline-success" onclick="printDiv('printMe')">
+        <i class="mdi mdi-printer"></i>
+      </button>
+      <button title="Export To Excel" type="button" class="btn btn-outline-success" onclick="ExportToExcel('xlsx')">
+        <i class="mdi mdi-file-excel"></i>
+      </button>
+      <button title="Export To Word" type="button" class="btn btn-outline-success" onclick="Export2Doc('printMe');">
+        <i class="mdi mdi-file-word"></i>
+      </button>
+      <a title="Register Child" class="btn btn-success" href="{% url 'register_child' %}">
+        <i class="mdi mdi-account-plus mr-1"></i>Add Child
+      </a>
+      <a title="Simple Child List" class="btn btn-outline-secondary" href="{% url 'child_list' %}">
+        <i class="mdi mdi-format-list-bulleted"></i>
+      </a>
     </div>
   </div>
+
+  <div class="child-master-stats">
+    <div class="child-master-stat">
+      <i class="mdi mdi-account-child"></i>
+      <span>Active Children</span>
+      <strong>{{ active_children_count }}</strong>
+    </div>
+    <div class="child-master-stat">
+      <i class="mdi mdi-heart"></i>
+      <span>Sponsored</span>
+      <strong>{{ sponsored_children_count }}</strong>
+    </div>
+    <div class="child-master-stat">
+      <i class="mdi mdi-account-alert"></i>
+      <span>Non-Sponsored</span>
+      <strong>{{ non_sponsored_children_count }}</strong>
+    </div>
+    <div class="child-master-stat">
+      <i class="mdi mdi-school"></i>
+      <span>In School</span>
+      <strong>{{ in_school_children_count }}</strong>
+    </div>
+  </div>
+
+  <div class="page-header flex-wrap p-2">
+    <h3 class="mb-0">MASTER LIST</h3>
+    <form method="GET" action="{% url 'child_list_detailed' %}" class="child-master-search">
+      <div class="child-search-input">
+        <i class="mdi mdi-magnify"></i>
+        <input type="text" name="search" id="searchInput" value="{{ search_query }}" placeholder="Search name, residence, district, guardian..." />
+      </div>
+      <button type="submit" class="btn btn-sm btn-success">Search</button>
+      {% if search_query %}
+        <a href="{% url 'child_list_detailed' %}" class="btn btn-sm btn-outline-secondary">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div id="printMe" class="child-master-table-panel">
+    <div class="table-container">
+      <table class="my-table child-master-table" id="dataTable">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Child</th>
+            <th scope="col">Location</th>
+            <th scope="col">Bio Data</th>
+            <th scope="col">Education</th>
+            <th scope="col">Sponsorship</th>
+            <th scope="col">Guardian</th>
+            <th scope="col">Parents</th>
+            <th scope="col">Health & Faith</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="table-group-divider">
+          {% for child in records %}
+            <tr>
+              <th scope="row">{{ forloop.counter }}.</th>
+              <td>
+                <div class="child-identity">
+                  <span class="child-avatar">{{ child.full_name|first }}</span>
+                  <div>
+                    <strong>{{ child.full_name }}</strong>
+                    <small>{{ child.prefixed_id }}{% if child.preferred_name %} | Prefers {{ child.preferred_name }}{% endif %}</small>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <strong>{{ child.residence|default:"-" }}</strong>
+                <small>{{ child.district|default:"District not recorded" }}</small>
+              </td>
+              <td>
+                <span>{{ child.gender|default:"-" }}</span>
+                <small>DOB: {{ child.date_of_birth|default:"-" }}</small>
+                <small>Registered: {{ child.registration_date|default:"-" }}</small>
+              </td>
+              <td>
+                {% if child.is_child_in_school %}
+                  <span class="status-pill positive">In School</span>
+                {% else %}
+                  <span class="status-pill neutral">Not in School</span>
+                {% endif %}
+                <small>{{ child.aspiration|default:"No aspiration recorded" }}</small>
+                <small>{{ child.c_interest|default:"No interest recorded" }}</small>
+              </td>
+              <td>
+                {% if child.is_sponsored %}
+                  <span class="status-pill positive">Sponsored</span>
+                {% else %}
+                  <span class="status-pill warning">Non-Sponsored</span>
+                {% endif %}
+              </td>
+              <td>
+                <strong>{{ child.guardian|default:"-" }}</strong>
+                <small>{{ child.guardian_contact|default:"No contact" }}</small>
+                <small>{{ child.relationship_with_guardian|default:"Relationship not recorded" }}</small>
+              </td>
+              <td>
+                <small>Father: {{ child.father_name|default:"-" }}{% if child.is_father_alive %} ({{ child.is_father_alive }}){% endif %}</small>
+                <small>Mother: {{ child.mother_name|default:"-" }}{% if child.is_mother_alive %} ({{ child.is_mother_alive }}){% endif %}</small>
+                <small>Siblings: {{ child.siblings|default:"-" }}</small>
+              </td>
+              <td>
+                <small>Health: {{ child.health_status|default:"-" }}</small>
+                <small>Religion: {{ child.religion|default:"-" }}</small>
+                <small>{{ child.tribe|default:"Tribe not recorded" }}</small>
+              </td>
+              <td>
+                <div class="child-row-actions">
+                  <a class="btn btn-info btn-sm" title="View Profile" href="{% url 'child_details' child.id %}">
+                    <i class="mdi mdi-eye"></i>
+                  </a>
+                  {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
+                    <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_child' child.id %}">
+                      <i class="mdi mdi-pencil"></i>
+                    </a>
+                  {% else %}
+                    <button class="btn btn-primary btn-sm" onclick="showNoPermissionMessage('edit')">
+                      <i class="mdi mdi-pencil"></i>
+                    </button>
+                  {% endif %}
+                  {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+                    <a class="btn btn-danger btn-sm" title="Delete" href="{% url 'delete_child' child.id %}" onclick="return confirm('Are you sure about this? This record will be deleted permanently');">
+                      <i class="mdi mdi-delete"></i>
+                    </a>
+                  {% else %}
+                    <button class="btn btn-danger btn-sm" onclick="showNoPermissionMessage('delete')">
+                      <i class="mdi mdi-delete"></i>
+                    </button>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="10" class="text-center py-4 text-muted">No child records found.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="pagination">
+    <span class="step-links">
+      {% if records.has_previous %}
+        <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}" title="First page"><i class="mdi mdi-page-first"></i></a>
+        <a href="?page={{ records.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" title="Previous page"><i class="mdi mdi-chevron-left"></i></a>
+      {% endif %}
+
+      <span class="current">Page {{ records.number }} of {{ records.paginator.num_pages }}.</span>
+
+      {% if records.has_next %}
+        <a href="?page={{ records.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" title="Next page"><i class="mdi mdi-chevron-right"></i></a>
+        <a href="?page={{ records.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}" title="Last page"><i class="mdi mdi-page-last"></i></a>
+      {% endif %}
+    </span>
+  </div>
+</div>
+
+<style>
+  .child-master-report {
+    padding-top: 6px;
+  }
+
+  .child-master-hero,
+  .child-master-stat,
+  .child-master-table-panel {
+    background: #fff;
+    border: 1px solid #d9dee5;
+    border-radius: 8px;
+    box-shadow: 0 12px 30px rgba(31, 41, 51, .08);
+  }
+
+  .child-master-hero {
+    align-items: center;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding: 18px 20px;
+  }
+
+  .child-master-kicker {
+    color: #13745d;
+    font-size: .76rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+
+  .child-master-hero h3 {
+    color: #1f344d;
+    font-size: 1.45rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    margin: 4px 0;
+  }
+
+  .child-master-hero p {
+    color: #667085;
+    margin: 0;
+    max-width: 760px;
+  }
+
+  .child-master-actions,
+  .child-master-search,
+  .child-row-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .child-master-stats {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-bottom: 14px;
+  }
+
+  .child-master-stat {
+    display: grid;
+    gap: 6px;
+    min-height: 118px;
+    padding: 15px;
+  }
+
+  .child-master-stat i {
+    align-items: center;
+    background: #edf7f4;
+    border: 1px solid #cfe8e0;
+    border-radius: 8px;
+    color: #13745d;
+    display: inline-flex;
+    font-size: 1.35rem;
+    height: 42px;
+    justify-content: center;
+    width: 42px;
+  }
+
+  .child-master-stat span {
+    color: #667085;
+    font-size: .78rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .child-master-stat strong {
+    color: #1f344d;
+    font-size: 1.35rem;
+    font-weight: 900;
+  }
+
+  .child-search-input {
+    align-items: center;
+    background: #fff;
+    border: 1px solid #d9dee5;
+    border-radius: 8px;
+    display: flex;
+    min-width: 360px;
+    padding: 0 10px;
+  }
+
+  .child-search-input i {
+    color: #667085;
+  }
+
+  .child-search-input input {
+    border: 0;
+    color: #26384d;
+    height: 36px;
+    outline: 0;
+    padding: 0 8px;
+    width: 100%;
+  }
+
+  .child-master-table-panel {
+    overflow: hidden;
+  }
+
+  .child-master-table th,
+  .child-master-table td {
+    vertical-align: top;
+  }
+
+  .child-master-table td strong,
+  .child-master-table td span,
+  .child-master-table td small {
+    display: block;
+  }
+
+  .child-master-table td small {
+    color: #667085;
+    font-size: .78rem;
+    line-height: 1.45;
+    margin-top: 3px;
+    max-width: 260px;
+    white-space: normal;
+  }
+
+  .child-identity {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    min-width: 210px;
+  }
+
+  .child-avatar {
+    align-items: center;
+    background: #edf7f4;
+    border: 1px solid #cfe8e0;
+    border-radius: 50%;
+    color: #13745d;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-weight: 900;
+    height: 42px;
+    justify-content: center;
+    text-transform: uppercase;
+    width: 42px;
+  }
+
+  .status-pill {
+    border-radius: 999px;
+    display: inline-flex !important;
+    font-size: .75rem;
+    font-weight: 900;
+    padding: 5px 9px;
+  }
+
+  .status-pill.positive {
+    background: #edf7f4;
+    color: #13745d;
+  }
+
+  .status-pill.warning {
+    background: #fff7ed;
+    color: #b45309;
+  }
+
+  .status-pill.neutral {
+    background: #eef2f6;
+    color: #4b5563;
+  }
+
+  @media (max-width: 1199.98px) {
+    .child-master-stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .child-master-hero {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .child-search-input,
+    .child-master-search,
+    .child-master-actions {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .child-master-search .btn,
+    .child-master-actions .btn {
+      flex: 1 1 auto;
+    }
+
+    .child-master-stats {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
 {% endblock %}

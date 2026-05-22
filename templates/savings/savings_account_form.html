@@ -1,0 +1,20 @@
+{% extends 'savings/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+  <div class="container">
+    <div class="page-header flex-wrap">
+      <h3 class="mb-0">{{ form_name|upper }}</h3>
+      <a href="{% url 'savings_account_list' %}" class="btn btn-sm btn-success">Savings Accounts</a>
+    </div>
+    <div class="card shadow-lg border-0 mt-3 mb-5">
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          {{ form|crispy }}
+          <button type="submit" class="btn btn-dark btn-block mt-3">Save Account</button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}

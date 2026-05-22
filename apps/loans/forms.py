@@ -1,13 +1,26 @@
 import logging
+import os
 from decimal import Decimal
 
 from django import forms
+from django.conf import settings
+from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db.models import DecimalField, F, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
-from .models import ChartOfAccounts, Loan, LoanDisbursement, LoanPenalty, LoanRepayment
+from apps.client.models import Client
+
+from .models import (
+    ChartOfAccounts,
+    Loan,
+    LoanApplicationDocument,
+    LOAN_DOCUMENT_ALLOWED_EXTENSIONS,
+    LoanDisbursement,
+    LoanPenalty,
+    LoanRepayment,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +43,69 @@ class ImportCOAForm(forms.Form):
     excel_file = forms.FileField(
         widget=forms.FileInput(attrs={"class": "form-control-file"})
     )
+
+
+class LoanReportFilterForm(forms.Form):
+    start_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={"class": "form-control form-control-sm", "type": "date"}),
+    )
+    end_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={"class": "form-control form-control-sm", "type": "date"}),
+    )
+    status = forms.ChoiceField(
+        required=False,
+        choices=[("", "All statuses")] + Loan.STATUS_CHOICES,
+        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+    )
+    loan_product = forms.ChoiceField(
+        required=False,
+        choices=[("", "All products")] + Loan.LOAN_PURPOSE_CHOICES,
+        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+    )
+    client = forms.ModelChoiceField(
+        required=False,
+        queryset=Client.objects.none(),
+        empty_label="All clients",
+        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+    )
+    loan_officer = forms.ModelChoiceField(
+        required=False,
+        queryset=User.objects.none(),
+        empty_label="All officers",
+        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+    )
+    q = forms.CharField(
+        required=False,
+        label="Search",
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control form-control-sm",
+                "placeholder": "Client, loan no., officer",
+            }
+        ),
+    )
+    per_page = forms.ChoiceField(
+        required=False,
+        choices=[("25", "25"), ("50", "50"), ("100", "100"), ("200", "200")],
+        widget=forms.Select(attrs={"class": "form-select form-select-sm"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["client"].queryset = Client.objects.filter(loans__isnull=False).distinct().order_by("full_name")
+        self.fields["loan_officer"].queryset = (
+            User.objects.filter(applied_loans__isnull=False).distinct().order_by("username")
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get("start_date")
+        end_date = cleaned_data.get("end_date")
+        if start_date and end_date and end_date < start_date:
+            raise forms.ValidationError("End date cannot be before start date.")
+        return cleaned_data
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -75,6 +151,25 @@ class LoanApplicationForm(forms.ModelForm):
     Used for new loan applications.  Fields managed by the system
     (borrower, account, dates, status, totals, approval chain) are excluded.
     """
+    client = forms.ModelChoiceField(
+        queryset=Client.objects.none(),
+        label="Client / Member",
+        empty_label="Select client",
+        widget=forms.HiddenInput(),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        self.fields["client"].queryset = Client.objects.order_by("full_name", "reg_number")
+        if self.instance and self.instance.pk and self.instance.borrower_id:
+            self.fields["client"].initial = self.instance.borrower_id
+        self.fields["start_date"].initial = self.fields["start_date"].initial or timezone.localdate()
+        for field_name, field in self.fields.items():
+            field.widget.attrs.setdefault("class", "form-control")
+            field.widget.attrs.setdefault("autocomplete", "off")
+        self.fields["client"].widget.attrs["id"] = "id_client"
+
     class Meta:
         model  = Loan
         # Exclude all system-managed and approval-chain fields.
@@ -103,8 +198,9 @@ class LoanApplicationForm(forms.ModelForm):
             "principal_amount": forms.NumberInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "Enter the principal amount",
-                    "min": 0,
+                    "placeholder": "0.00",
+                    "min": "1",
+                    "step": "0.01",
                 }
             ),
             "start_date": forms.DateInput(
@@ -113,34 +209,252 @@ class LoanApplicationForm(forms.ModelForm):
             "interest_rate": forms.NumberInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "Enter interest rate (%)",
-                    "min": 0,
-                    "step": 0.01,
+                    "placeholder": "0.00",
+                    "min": "0",
+                    "max": "30",
+                    "step": "0.01",
                 }
             ),
             "loan_period_months": forms.NumberInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "Enter loan period in months",
-                    "min": 1,
+                    "placeholder": "Months",
+                    "min": "1",
                 }
             ),
+            "loan_purpose": forms.Select(attrs={"class": "form-select"}),
             "reason_for_approval": forms.Textarea(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "Enter reason for approval",
-                    "rows": 2,
+                    "placeholder": "Assessment notes for the approval workflow",
+                    "rows": 3,
                 }
             ),
         }
 
+    def clean_principal_amount(self):
+        principal = self.cleaned_data.get("principal_amount")
+        if principal is not None and principal <= 0:
+            raise forms.ValidationError("Principal amount must be greater than zero.")
+        return principal
+
+    def clean_loan_period_months(self):
+        months = self.cleaned_data.get("loan_period_months")
+        if months is not None and months < 1:
+            raise forms.ValidationError("Loan period must be at least one month.")
+        return months
+
+    def clean_start_date(self):
+        start_date = self.cleaned_data.get("start_date")
+        if start_date and start_date > timezone.localdate():
+            raise forms.ValidationError("Application date cannot be in the future.")
+        return start_date
+
+    def clean(self):
+        cleaned_data = super().clean()
+        client = cleaned_data.get("client")
+        if client:
+            active_loans = Loan.objects.filter(
+                borrower=client,
+                status__in=Loan.ACTIVE_STATUSES,
+            ).prefetch_related("repayments", "penalties")
+            if self.instance and self.instance.pk:
+                active_loans = active_loans.exclude(pk=self.instance.pk)
+            has_balance = any(loan.outstanding_balance() > 0 for loan in active_loans)
+            if has_balance:
+                raise forms.ValidationError(
+                    f"{client.full_name} already has an active loan with an outstanding balance."
+                )
+        return cleaned_data
+
     def save(self, commit=True, user=None):
         loan = super().save(commit=False)
+        loan.borrower = self.cleaned_data["client"]
         if user:
             loan.created_by = user
         if commit:
             loan.save()
         return loan
+
+
+class ClientSelfServiceLoanApplicationForm(forms.ModelForm):
+    """Borrower-facing loan application form."""
+
+    application_notes = forms.CharField(
+        label="Loan purpose / notes",
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Briefly describe why you need this loan",
+                "rows": 3,
+            }
+        ),
+    )
+
+    class Meta:
+        model = Loan
+        fields = [
+            "principal_amount",
+            "loan_purpose",
+            "loan_period_months",
+            "start_date",
+            "application_notes",
+        ]
+        widgets = {
+            "principal_amount": forms.NumberInput(
+                attrs={"class": "form-control", "placeholder": "0.00", "min": "1", "step": "0.01"}
+            ),
+            "loan_purpose": forms.Select(attrs={"class": "form-select"}),
+            "loan_period_months": forms.NumberInput(
+                attrs={"class": "form-control", "placeholder": "Months", "min": "1"}
+            ),
+            "start_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["start_date"].initial = self.fields["start_date"].initial or timezone.localdate()
+        for field in self.fields.values():
+            field.widget.attrs.setdefault("autocomplete", "off")
+
+    def clean_principal_amount(self):
+        principal = self.cleaned_data.get("principal_amount")
+        if principal is not None and principal <= 0:
+            raise forms.ValidationError("Principal amount must be greater than zero.")
+        return principal
+
+    def clean_loan_period_months(self):
+        months = self.cleaned_data.get("loan_period_months")
+        if months is not None and months < 1:
+            raise forms.ValidationError("Loan period must be at least one month.")
+        return months
+
+    def clean_start_date(self):
+        start_date = self.cleaned_data.get("start_date")
+        if start_date and start_date > timezone.localdate():
+            raise forms.ValidationError("Application date cannot be in the future.")
+        return start_date
+
+    def save(self, commit=True, borrower=None, user=None):
+        loan = super().save(commit=False)
+        if borrower is not None:
+            loan.borrower = borrower
+        loan.status = "pending"
+        loan.interest_rate = getattr(settings, "SELF_SERVICE_LOAN_INTEREST_RATE", Decimal("0.00"))
+        loan.reason_for_approval = self.cleaned_data.get("application_notes") or (
+            "Self-service application submitted by the client."
+        )
+        if user is not None:
+            loan.applied_by = user
+            loan.applied_by_role = getattr(getattr(user, "profile", None), "role", "guest")
+            loan.created_by = user
+        if commit:
+            loan.save()
+        return loan
+
+
+class LoanApplicationDocumentForm(forms.Form):
+    national_id = forms.FileField(
+        label="National ID",
+        required=True,
+        widget=forms.ClearableFileInput(attrs={"class": "form-control", "accept": ".pdf,.jpg,.jpeg,.png,.doc,.docx"}),
+    )
+    collateral_security = forms.FileField(
+        label="Collateral / security document",
+        required=True,
+        widget=forms.ClearableFileInput(attrs={"class": "form-control", "accept": ".pdf,.jpg,.jpeg,.png,.doc,.docx"}),
+    )
+    proof_of_income = forms.FileField(
+        label="Proof of income",
+        required=False,
+        widget=forms.ClearableFileInput(attrs={"class": "form-control", "accept": ".pdf,.jpg,.jpeg,.png,.doc,.docx"}),
+    )
+    guarantor_form = forms.FileField(
+        label="Guarantor form",
+        required=False,
+        widget=forms.ClearableFileInput(attrs={"class": "form-control", "accept": ".pdf,.jpg,.jpeg,.png,.doc,.docx"}),
+    )
+    bank_statement = forms.FileField(
+        label="Bank statement",
+        required=False,
+        widget=forms.ClearableFileInput(attrs={"class": "form-control", "accept": ".pdf,.jpg,.jpeg,.png,.doc,.docx"}),
+    )
+    other = forms.FileField(
+        label="Other document",
+        required=False,
+        widget=forms.ClearableFileInput(attrs={"class": "form-control", "accept": ".pdf,.jpg,.jpeg,.png,.doc,.docx"}),
+    )
+    other_description = forms.CharField(
+        label="Other document description",
+        required=False,
+        max_length=255,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Describe the other document"}),
+    )
+
+    document_fields = [
+        "national_id",
+        "collateral_security",
+        "proof_of_income",
+        "guarantor_form",
+        "bank_statement",
+        "other",
+    ]
+
+    def _clean_upload_extension(self, field_name):
+        upload = self.cleaned_data.get(field_name)
+        if not upload:
+            return upload
+        extension = os.path.splitext(upload.name)[1].lstrip(".").lower()
+        if extension not in LOAN_DOCUMENT_ALLOWED_EXTENSIONS:
+            raise forms.ValidationError("Upload PDF, JPG, JPEG, PNG, DOC, or DOCX files.")
+        return upload
+
+    def clean_national_id(self):
+        return self._clean_upload_extension("national_id")
+
+    def clean_collateral_security(self):
+        return self._clean_upload_extension("collateral_security")
+
+    def clean_proof_of_income(self):
+        return self._clean_upload_extension("proof_of_income")
+
+    def clean_guarantor_form(self):
+        return self._clean_upload_extension("guarantor_form")
+
+    def clean_bank_statement(self):
+        return self._clean_upload_extension("bank_statement")
+
+    def clean_other(self):
+        return self._clean_upload_extension("other")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        other = cleaned_data.get("other")
+        other_description = cleaned_data.get("other_description")
+        if other and not other_description:
+            self.add_error("other_description", "Describe the other document.")
+        return cleaned_data
+
+    def save(self, loan, uploaded_by=None):
+        documents = []
+        for field_name in self.document_fields:
+            upload = self.cleaned_data.get(field_name)
+            if not upload:
+                continue
+            description = self.fields[field_name].label
+            if field_name == "other":
+                description = self.cleaned_data.get("other_description") or description
+            documents.append(
+                LoanApplicationDocument.objects.create(
+                    loan=loan,
+                    document_type=field_name,
+                    file=upload,
+                    description=description,
+                    uploaded_by=uploaded_by,
+                )
+            )
+        return documents
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -300,12 +614,7 @@ class LoanAllDisbursementForm(forms.ModelForm):
         today = timezone.now().date()
 
         for loan in approved_loans:
-            # Set disbursement_date if missing — use today
-            if not loan.disbursement_date:
-                loan.disbursement_date = today
-
-            loan.status = "disbursed"
-            loan.save()   # calculate_due_date() + calculate_interest() run here
+            loan.disburse(today)
 
             LoanDisbursement.objects.create(
                 loan=loan,

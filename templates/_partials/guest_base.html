@@ -24,6 +24,7 @@
         }
       }
     </style>
+    {% include '_partials/layout_css.html' %}
     <title>
       {% block title %}
         Sponsorship Management System(SMS)
@@ -31,14 +32,14 @@
     </title>
   </head>
 
-  <body>
+  <body class="app-public-shell">
     <div class="container-scroller">
       <div class="container-fluid page-body-wrapper">
         <!-- Topbar -->
         {% include '_partials/guest_nav.html' %}
 
         <div class="main-panel">
-          <div class="content-wrapper pb-0">
+          <div class="content-wrapper pb-0 app-page-container">
             <!-- Messages -->
             {% include '_partials/messages.html' %}
 

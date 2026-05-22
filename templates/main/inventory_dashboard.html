@@ -1,398 +1,399 @@
 {% extends 'inventory/base.html' %}
 {% load static %}
 {% load humanize %}
+
+{% block title %}Inventory Management Dashboard{% endblock title %}
+
 {% block content %}
-  <!-- Horizontal Card Section -->
-  <div class="container-fluid">
-    <div class="page-header flex-wrap">
-      <h3 class="mb-0" style="text-transform: uppercase;">Inventory Management Dashboard</h3>
+<style>
+  .inventory-dashboard {
+    color: #243447;
+  }
+
+  .inventory-header {
+    align-items: flex-end;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .inventory-title h1 {
+    color: #1f2933;
+    font-size: 1.55rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    margin: 0 0 4px;
+  }
+
+  .inventory-title p {
+    color: #667085;
+    margin: 0;
+  }
+
+  .inventory-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .inventory-actions .btn {
+    border-radius: 6px;
+    font-size: .84rem;
+    font-weight: 800;
+  }
+
+  .metric-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-bottom: 16px;
+  }
+
+  .metric-card {
+    background: #fff;
+    border: 1px solid #dfe5ec;
+    border-radius: 8px;
+    min-height: 122px;
+    padding: 18px;
+  }
+
+  .metric-card i {
+    color: #13745d;
+    float: right;
+    font-size: 1.35rem;
+  }
+
+  .metric-card span {
+    color: #667085;
+    display: block;
+    font-size: .76rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .metric-card strong {
+    color: #1f2933;
+    display: block;
+    font-size: 1.55rem;
+    font-weight: 900;
+    line-height: 1.12;
+    margin-top: 12px;
+    word-break: break-word;
+  }
+
+  .metric-card small {
+    color: #8792a2;
+    display: block;
+    font-weight: 700;
+    margin-top: 7px;
+  }
+
+  .metric-card.warning i {
+    color: #d99421;
+  }
+
+  .metric-card.danger i {
+    color: #e05252;
+  }
+
+  .dashboard-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .dash-panel {
+    background: #fff;
+    border: 1px solid #dfe5ec;
+    border-radius: 8px;
+    padding: 18px;
+  }
+
+  .span-4 { grid-column: span 4; }
+  .span-6 { grid-column: span 6; }
+  .span-8 { grid-column: span 8; }
+  .span-12 { grid-column: span 12; }
+
+  .panel-head {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .panel-head h2 {
+    color: #26384d;
+    font-size: 1rem;
+    font-weight: 900;
+    margin: 0;
+  }
+
+  .panel-head span {
+    color: #8792a2;
+    font-size: .8rem;
+    font-weight: 800;
+  }
+
+  .chart-box {
+    height: 310px;
+    position: relative;
+  }
+
+  .chart-box canvas {
+    height: 100% !important;
+    width: 100% !important;
+  }
+
+  .product-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .product-row {
+    align-items: center;
+    border: 1px solid #edf1f5;
+    border-radius: 8px;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    padding: 12px;
+  }
+
+  .rank-badge {
+    align-items: center;
+    background: #edf7f4;
+    border-radius: 8px;
+    color: #13745d;
+    display: inline-flex;
+    font-size: .86rem;
+    font-weight: 900;
+    height: 34px;
+    justify-content: center;
+    width: 34px;
+  }
+
+  .product-row h3 {
+    color: #26384d;
+    font-size: .94rem;
+    font-weight: 900;
+    margin: 0 0 3px;
+  }
+
+  .product-row p {
+    color: #8792a2;
+    font-size: .8rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .sold-pill {
+    background: #f7fafc;
+    border: 1px solid #edf1f5;
+    border-radius: 999px;
+    color: #475569;
+    font-size: .78rem;
+    font-weight: 900;
+    padding: 7px 10px;
+    white-space: nowrap;
+  }
+
+  .sales-strip {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-bottom: 16px;
+  }
+
+  .sales-card {
+    background: #fff;
+    border: 1px solid #dfe5ec;
+    border-radius: 8px;
+    padding: 15px;
+  }
+
+  .sales-card span {
+    color: #667085;
+    display: block;
+    font-size: .76rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .sales-card strong {
+    color: #26384d;
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 900;
+    margin-top: 8px;
+    word-break: break-word;
+  }
+
+  .empty-state {
+    color: #8792a2;
+    margin: 0;
+    padding: 12px 0;
+  }
+
+  @media (max-width: 1180px) {
+    .metric-grid,
+    .sales-strip {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .span-4,
+    .span-6,
+    .span-8 {
+      grid-column: span 12;
+    }
+  }
+
+  @media (max-width: 680px) {
+    .inventory-header {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .inventory-actions {
+      justify-content: flex-start;
+      width: 100%;
+    }
+
+    .inventory-actions .btn {
+      flex: 1 1 150px;
+    }
+
+    .metric-grid,
+    .sales-strip {
+      grid-template-columns: 1fr;
+    }
+
+    .chart-box {
+      height: 250px;
+    }
+
+    .product-row {
+      grid-template-columns: 34px minmax(0, 1fr);
+    }
+
+    .sold-pill {
+      grid-column: 2;
+      justify-self: start;
+    }
+  }
+</style>
+
+<main class="inventory-dashboard">
+  <header class="inventory-header">
+    <div class="inventory-title">
+      <h1>Inventory Management Dashboard</h1>
+      <p>Sales, product movement, stock value, and inventory health.</p>
     </div>
-    <hr class="bg-info" style="height: 3px;" />
+    <nav class="inventory-actions" aria-label="Inventory dashboard actions">
+      <a href="{% url 'sales:sales_add' %}" class="btn btn-dark">
+        <i class="mdi mdi-cart-plus mr-1"></i>New Sale
+      </a>
+      <a href="{% url 'products:products_add' %}" class="btn btn-outline-secondary">
+        <i class="mdi mdi-package-variant-closed mr-1"></i>Add Product
+      </a>
+      <a href="{% url 'products:inventory_list' %}" class="btn btn-outline-secondary">
+        <i class="mdi mdi-cube-outline mr-1"></i>Stock
+      </a>
+      <a href="{% url 'sales:sales_report' %}" class="btn btn-outline-secondary">
+        <i class="mdi mdi-file-chart mr-1"></i>Reports
+      </a>
+    </nav>
+  </header>
 
-    <!-- Content Row -->
-    <div class="row">
-      <!-- Earnings (Monthly) Card -->
-      <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card bg-primary text-white shadow h-100 py-2">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <div class="text-xs font-weight-bold mb-1">Av. Earnings (Monthly)</div>
-                <div class="h5 mb-0 font-weight-bold">UgX {{ avg_month|floatformat:'2'|intcomma }}</div>
-              </div>
-              <div>
-                <i class="mdi mdi-calendar mdi-36px"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Earnings (Annual) Card -->
-      <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card bg-success text-white shadow h-100 py-2">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <div class="text-xs font-weight-bold mb-1">Revenue (Annual)</div>
-                <div class="h5 mb-0 font-weight-bold">UgX {{ annual_earnings|floatformat:'2'|intcomma }}</div>
-              </div>
-              <div>
-                <i class="mdi mdi-cash-multiple mdi-36px"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Total Profit Card -->
-      <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card bg-warning text-white shadow h-100 py-2">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <div class="text-xs font-weight-bold mb-1">Net Profit</div>
-                <hr class="bg-white" style="height: 1px;" />
-                <div class="h5 mb-0 font-weight-bold">UgX: {{ total_profit|floatformat:'2'|intcomma }}</div>
-              </div>
-              <div>
-                <i class="mdi mdi-cash-multiple mdi-36px"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Products Card -->
-      <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card bg-info text-white shadow h-100 py-2">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <div class="text-xs font-weight-bold mb-1">Products ({{ products }})</div>
-                <hr class="bg-white" style="height: 1px;" />
-                <div class="text-xs font-weight-bold mb-1">Categories ({{ categories }})</div>
-              </div>
-              <div>
-                <i class="mdi mdi-package-variant mdi-36px"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+  <section class="metric-grid">
+    <div class="metric-card">
+      <i class="mdi mdi-calendar"></i>
+      <span>Average Monthly</span>
+      <strong>UGX {{ avg_month|floatformat:'2'|intcomma }}</strong>
+      <small>Current year average</small>
     </div>
-
-    <!-- Top Selling Products Chart -->
-    <div class="row">
-      <div class="col-xl-12 col-lg-12">
-        <div class="card shadow mb-4">
-          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-primary text-white">
-            <h6 class="m-0 font-weight-bold">Top Selling Products</h6>
-          </div>
-
-          <div class="card-body">
-            <div class="row text-center">
-              {% if top_products %}
-                {% for product in top_products %}
-                  <div class="col-md-4 mb-4">
-                    <div class="card h-100 border-light"
-                      style="background-color: {% if forloop.counter0 == 0 %}
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                         #d4edda
-
-
-
-
-
-
-
-
-
-
-
-
-
-                      {% elif forloop.counter0 == 1 %}
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                         #cce5ff
-
-
-
-
-
-
-
-
-
-
-
-
-
-                      {% elif forloop.counter0 == 2 %}
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                         #fff3cd
-
-
-
-
-
-
-
-
-
-
-
-
-
-                      {% elif forloop.counter0 == 3 %}
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                         #f8d7da
-
-
-
-
-
-
-
-
-
-
-
-
-
-                      {% elif forloop.counter0 == 4 %}
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                         #f0f8ff
-
-
-
-
-
-
-
-
-
-
-
-
-
-                      {% else %}
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                         #ffeeba
-
-
-
-
-
-
-
-
-
-
-
-
-
-                      {% endif %};">
-                      <div class="card-body">
-                        <h5 class="card-title font-weight-bold">{{ product.name }}</h5>
-                        <p class="card-text">
-                          <span class="badge badge-success">
-                            Total Sold:
-                            {{ product.total_quantity_sold|default:'0' }}
-                          </span>
-                        </p>
-                        <p class="card-text">Total Sales Value: UgX:
-                          {{ product.total_sales_value|floatformat:'2'|intcomma }}</p>
-                      </div>
-                    </div>
-                  </div>
-                {% endfor %}
-              {% else %}
-                <div class="col-12">
-                  <div class="alert alert-warning" role="alert">No sales available.</div>
-                </div>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="metric-card">
+      <i class="mdi mdi-cash-multiple"></i>
+      <span>Annual Revenue</span>
+      <strong>UGX {{ annual_earnings|floatformat:'2'|intcomma }}</strong>
+      <small>Jan to Dec, <span id="currentYear"></span></small>
     </div>
-
-    <div class="row">
-      <!-- Sales Today Card -->
-      <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card bg-success text-white shadow h-100 py-2">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <div class="text-xs font-weight-bold mb-1">Sales Today</div>
-                <div class="h5 mb-0 font-weight-bold">UgX {{ total_sales_today|floatformat:'2'|intcomma }}</div>
-              </div>
-              <div>
-                <i class="mdi mdi-calendar-today mdi-36px"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sales This Week Card -->
-      <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card bg-info text-white shadow h-100 py-2">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <div class="text-xs font-weight-bold mb-1">Sales This Week</div>
-                <div class="h5 mb-0 font-weight-bold">UgX {{ total_sales_week|floatformat:'2'|intcomma }}</div>
-              </div>
-              <div>
-                <i class="mdi mdi-calendar-week mdi-36px"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sales This Month Card -->
-      <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card bg-warning text-white shadow h-100 py-2">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <div class="text-xs font-weight-bold mb-1">Sales This Month</div>
-                <div class="h5 mb-0 font-weight-bold">UgX {{ total_sales_month|floatformat:'2'|intcomma }}</div>
-              </div>
-              <div>
-                <i class="mdi mdi-calendar-month mdi-36px"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Stock Balance Card -->
-      <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card bg-danger text-white shadow h-100 py-2">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <div class="text-xs font-weight-bold mb-1">Stock Balance</div>
-                <div class="h5 mb-0 font-weight-bold">{{ total_stock }}</div>
-              </div>
-              <div>
-                <i class="mdi mdi-cube mdi-36px"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="metric-card warning">
+      <i class="mdi mdi-trending-up"></i>
+      <span>Net Profit</span>
+      <strong>UGX {{ total_profit|floatformat:'2'|intcomma }}</strong>
+      <small>All recorded sales</small>
     </div>
+    <div class="metric-card danger">
+      <i class="mdi mdi-package-variant"></i>
+      <span>Products and Categories</span>
+      <strong>{{ products }} / {{ categories }}</strong>
+      <small>Active products / categories</small>
+    </div>
+  </section>
 
-    <!-- Year Earnings Overview Chart -->
-    <div class="row">
-      <div class="col-xl-12 col-lg-12">
-        <div class="card shadow mb-4">
-          <!-- Card Header -->
-          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-            <h6 class="m-0 font-weight-bold text-primary">Year Earnings Overview (Jan - Dec, <span id="currentYear"></span>)</h6>
-          </div>
-          <!-- Card Body -->
-          <div class="card-body">
-            <div class="chart-area">
-              <canvas id="myLineChart" height="400px"></canvas>
-            </div>
-          </div>
-        </div>
+  <section class="sales-strip">
+    <div class="sales-card">
+      <span>Sales Today</span>
+      <strong>UGX {{ total_sales_today|floatformat:'2'|intcomma }}</strong>
+    </div>
+    <div class="sales-card">
+      <span>Sales This Week</span>
+      <strong>UGX {{ total_sales_week|floatformat:'2'|intcomma }}</strong>
+    </div>
+    <div class="sales-card">
+      <span>Sales This Month</span>
+      <strong>UGX {{ total_sales_month|floatformat:'2'|intcomma }}</strong>
+    </div>
+    <div class="sales-card">
+      <span>Stock Balance</span>
+      <strong>{{ total_stock|intcomma }} units</strong>
+    </div>
+  </section>
+
+  <section class="dashboard-grid">
+    <div class="dash-panel span-8">
+      <div class="panel-head">
+        <h2>Year Earnings Overview</h2>
+        <span>Jan - Dec</span>
+      </div>
+      <div class="chart-box">
+        <canvas id="myLineChart"></canvas>
       </div>
     </div>
-    <!-- Year Earnings Overview Chart -->
-    <div class="row">
-      <div class="col-xl-12 col-lg-12">
-        <div class="card shadow mb-4">
-          <!-- Card Header -->
-          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-            <h6 class="m-0 font-weight-bold text-primary">Earnings over the years</h6>
-          </div>
-          <!-- Card Body -->
-          <div class="card-body">
-            <div class="chart-area">
-              <canvas id="salesChart" width="400" height="200"></canvas>
+
+    <div class="dash-panel span-4">
+      <div class="panel-head">
+        <h2>Top Selling Products</h2>
+        <span>By quantity</span>
+      </div>
+      <div class="product-list">
+        {% for product in top_products %}
+          <div class="product-row">
+            <span class="rank-badge">{{ forloop.counter }}</span>
+            <div>
+              <h3>{{ product.name }}</h3>
+              <p>UGX {{ product.total_sales_value|floatformat:'2'|intcomma }}</p>
             </div>
+            <span class="sold-pill">{{ product.total_quantity_sold|default:'0' }} sold</span>
           </div>
-        </div>
+        {% empty %}
+          <p class="empty-state">No sales available yet.</p>
+        {% endfor %}
       </div>
     </div>
-  </div>
+
+    <div class="dash-panel span-12">
+      <div class="panel-head">
+        <h2>Earnings Over the Years</h2>
+        <span>Long-term trend</span>
+      </div>
+      <div class="chart-box">
+        <canvas id="salesChart"></canvas>
+      </div>
+    </div>
+  </section>
+</main>
 {% endblock %}

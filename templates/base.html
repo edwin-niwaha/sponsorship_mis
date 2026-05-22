@@ -37,6 +37,7 @@
         }
       }
     </style>
+    {% include '_partials/layout_css.html' %}
     <title>
       {% block title %}
         Child Sponsorship Software
@@ -44,7 +45,7 @@
     </title>
   </head>
 
-  <body>
+  <body class="app-dashboard-shell">
     <div class="container-scroller">
       <!-- ========== Sidebar Start ========== -->
       {% include 'sms/_partials/sidebar.html' %}
@@ -56,7 +57,7 @@
         <!-- ========== Topbar End ========== -->
 
         <div class="main-panel">
-          <div class="content-wrapper pb-0">
+          <div class="content-wrapper pb-0 app-page-container">
             <!-- =============== Messages Start ================= -->
             {% include '_partials/messages.html' %}
             <!-- =============== Messages End ================= -->

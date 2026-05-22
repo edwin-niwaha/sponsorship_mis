@@ -3,33 +3,72 @@
 {% load humanize %}
 
 {% block content %}
+  <style>
+    .inventory-page-head {
+      align-items: center;
+      display: flex;
+      gap: 14px;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .inventory-page-head h1 {
+      color: #1f2933;
+      font-size: 1.35rem;
+      font-weight: 900;
+      margin: 0;
+    }
+    .inventory-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .inventory-card {
+      background: #fff;
+      border: 1px solid #dfe5ec;
+      border-radius: 8px;
+    }
+    .inventory-search {
+      margin-bottom: 16px;
+      max-width: 680px;
+    }
+    .stock-pill {
+      border-radius: 999px;
+      display: inline-block;
+      font-size: .78rem;
+      font-weight: 800;
+      padding: 5px 9px;
+    }
+    .stock-ok { background: #e7f7ef; color: #13745d; }
+    .stock-low { background: #fff4db; color: #946200; }
+    .stock-out { background: #fde8e8; color: #b42318; }
+  </style>
   <div class="container-fluid">
-    <div class="row mb-3">
-      <div class="col-md-12 d-flex justify-content-between align-items-center">
-        <a href="{% url 'products:products_add' %}" class="btn btn-dark ml-2"><i class="mdi mdi-plus mr-2"></i> Add Product</a>
-        <div class="d-flex">
-          <a href="{% url 'products:update_product_image' %}" class="btn btn-success font-weight-bold ml-2" title="Update Product Image"><i class="mdi mdi-cloud-upload mr-2"></i></a>
-          <button title="Print" type="button" class="btn btn-success ml-2" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
-        </div>
+    <header class="inventory-page-head">
+      <div>
+        <h1>{{ table_title }}</h1>
+        <p class="text-muted mb-0">Products, pricing, suppliers, variants, and stock status.</p>
       </div>
-    </div>
+      <div class="inventory-actions">
+        <a href="{% url 'products:products_add' %}" class="btn btn-dark"><i class="mdi mdi-plus mr-1"></i>Add Product</a>
+        <a href="{% url 'products:variant_add' %}" class="btn btn-outline-secondary"><i class="mdi mdi-shape-plus mr-1"></i>Add Variant</a>
+        <a href="{% url 'products:update_product_image' %}" class="btn btn-outline-secondary" title="Update Product Image"><i class="mdi mdi-cloud-upload"></i></a>
+        <button title="Print" type="button" class="btn btn-outline-secondary" onclick="printDiv('printMe')"><i class="mdi mdi-printer"></i></button>
+      </div>
+    </header>
 
     <!-- Search Form -->
-    <div class="row mb-3">
-      <div class="col-md-12">
-        <form method="get" action="{% url 'products:products_list' %}">
-          <div class="input-group">
-            <input type="text" class="form-control" name="search" value="{{ search_query }}" placeholder="Search by product name or category" />
-            <div class="input-group-append">
-              <button class="btn btn-primary" type="submit"><i class="mdi mdi-magnify"></i> Search</button>
-            </div>
-          </div>
-        </form>
+    <form method="get" action="{% url 'products:products_list' %}" class="inventory-search">
+      <div class="input-group">
+        <input type="text" class="form-control" name="search" value="{{ search_query }}" placeholder="Search by product, category, or supplier" />
+        <div class="input-group-append">
+          <button class="btn btn-outline-secondary" type="submit"><i class="mdi mdi-magnify"></i></button>
+        </div>
       </div>
-    </div>
+    </form>
 
     <!-- DataTable -->
-    <div id="printMe" class="card shadow mb-4">
+    <div id="printMe" class="inventory-card card mb-4">
       <div class="card-header py-3">
         <h3>{{ table_title|upper }}</h3>
       </div>
@@ -45,8 +84,9 @@
                 <th>Cost Price</th>
                 <th>Selling Price</th>
                 <th>Stock</th>
+                <th>Variants</th>
                 <th class="text-center print-hide">Status</th>
-                <th colspan="3" class="text-center print-hide">Action</th>
+                <th colspan="4" class="text-center print-hide">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -59,12 +99,15 @@
                     <td>{{ product.supplier }}</td>
                     <td class="text-right">{{ product.cost|floatformat:'2'|intcomma }}</td>
                     <td class="text-right">{{ product.price|floatformat:'2'|intcomma }}</td>
-                    <td class="text-right">{{ product.inventory.quantity|default:0 }}</td>
+                    <td class="text-right">{{ product.stock_on_hand|default:0|intcomma }}</td>
+                    <td class="text-center">{{ product.variants.count }}</td>
                     <td class="text-center print-hide">
-                      {% if product.status == 'ACTIVE' %}
-                        <span class="badge badge-success" style="font-size:0.8em;">{{ product.status }}</span>
-                      {% elif product.status == 'INACTIVE' %}
-                        <span class="badge badge-danger" style="font-size:0.8em;">{{ product.status }}</span>
+                      {% if product.stock_status == 'Out of stock' %}
+                        <span class="stock-pill stock-out">Out</span>
+                      {% elif product.stock_status == 'Low stock' %}
+                        <span class="stock-pill stock-low">Low</span>
+                      {% else %}
+                        <span class="stock-pill stock-ok">{{ product.status }}</span>
                       {% endif %}
                     </td>
                     <td class="text-center print-hide">
@@ -72,6 +115,9 @@
                     </td>
                     <td class="text-center print-hide">
                       <a href="{% url 'products:product_detail' product.id %}" class="text-decoration-none" title="View Product Details"><button type="button" class="btn btn-info btn-sm"><i class="bi bi-eye"></i></button></a>
+                    </td>
+                    <td class="text-center print-hide">
+                      <a href="{% url 'products:variant_add' %}?product={{ product.id }}" class="btn btn-secondary btn-sm" title="Add variant"><i class="mdi mdi-shape-plus"></i></a>
                     </td>
                     {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
                       <td class="text-center print-hide">
@@ -82,7 +128,7 @@
                 {% endfor %}
               {% else %}
                 <tr>
-                  <td colspan="10" class="text-center">No products available</td>
+                  <td colspan="11" class="text-center">No products available</td>
                 </tr>
               {% endif %}
             </tbody>
@@ -91,8 +137,8 @@
                 <th colspan="4">Total</th>
                 <th class="text-right">{{ total_cost|floatformat:'2'|intcomma }}</th>
                 <th class="text-right">{{ total_price|floatformat:'2'|intcomma }}</th>
-                <th class="text-right">{{ total_stock }}</th>
-                <th colspan="3" class="print-hide"></th>
+                <th class="text-right">{{ total_stock|intcomma }}</th>
+                <th colspan="4" class="print-hide"></th>
               </tr>
             </tfoot>
           </table>

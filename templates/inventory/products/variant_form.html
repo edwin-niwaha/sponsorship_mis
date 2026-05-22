@@ -1,0 +1,30 @@
+{% extends 'inventory/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<main class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="mb-1">{{ table_title }}</h3>
+      <p class="text-muted mb-0">Create or update SKU-level options for a product.</p>
+    </div>
+    <a href="{% url 'products:variants_list' %}" class="btn btn-outline-secondary">
+      <i class="mdi mdi-arrow-left mr-1"></i>Back
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <div class="form-group mt-4 mb-0">
+          <button type="submit" class="btn btn-dark btn-block">
+            <i class="mdi mdi-content-save mr-1"></i>Save Variant
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+{% endblock %}

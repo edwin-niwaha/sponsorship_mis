@@ -1,9 +1,10 @@
-{% extends 'sms/base_rpts.html' %}
+{% extends 'base.html' %}
 
 {% block title %}All Departed Children{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+{% include '_partials/reports_layout_styles.html' %}
+<div class="container-fluid reports-standard-page">
     <div class="page-header flex-wrap p-2">
         <h3 class="mb-0">{{table_title|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
         <form method="GET" action="{% url 'departed_children' %}">

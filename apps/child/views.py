@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.management import call_command
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from django.db.models import CharField, F, OuterRef, Subquery, Value
+from django.db.models import CharField, F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Concat, ExtractMonth
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
@@ -51,8 +51,9 @@ def child_list(request):
     ).values("picture")[:1]
 
     # Get all children who have not departed and annotate them with their profile picture
+    active_children = Child.objects.filter(is_departed=False)
     queryset = (
-        Child.objects.filter(is_departed=False)
+        active_children
         .annotate(picture=Subquery(latest_picture))
         .order_by("id")
     )
@@ -60,7 +61,13 @@ def child_list(request):
     # Search functionality
     search_query = request.GET.get("search", "")
     if search_query:
-        queryset = queryset.filter(full_name__icontains=search_query)
+        queryset = queryset.filter(
+            Q(full_name__icontains=search_query)
+            | Q(preferred_name__icontains=search_query)
+            | Q(residence__icontains=search_query)
+            | Q(district__icontains=search_query)
+            | Q(guardian__icontains=search_query)
+        )
 
     # Pagination
     paginator = Paginator(queryset, 50)
@@ -80,6 +87,10 @@ def child_list(request):
             "records": records,
             "table_title": "Children List",
             "search_query": search_query,
+            "active_children_count": active_children.count(),
+            "sponsored_children_count": active_children.filter(is_sponsored=True).count(),
+            "non_sponsored_children_count": active_children.filter(is_sponsored=False).count(),
+            "in_school_children_count": active_children.filter(is_child_in_school=True).count(),
         },
     )
 
@@ -88,11 +99,18 @@ def child_list(request):
 @admin_or_manager_or_staff_required
 def child_list_detailed(request):
     # queryset = Child.objects.all().filter(is_departed="No").order_by("id").select_related("profile_picture")
-    queryset = Child.objects.all().filter(is_departed=False).order_by("id")
+    active_children = Child.objects.filter(is_departed=False)
+    queryset = active_children.order_by("id")
 
-    search_query = request.GET.get("search")
+    search_query = request.GET.get("search", "")
     if search_query:
-        queryset = queryset.filter(full_name__icontains=search_query)
+        queryset = queryset.filter(
+            Q(full_name__icontains=search_query)
+            | Q(preferred_name__icontains=search_query)
+            | Q(residence__icontains=search_query)
+            | Q(district__icontains=search_query)
+            | Q(guardian__icontains=search_query)
+        )
 
     paginator = Paginator(queryset, 50)
     page = request.GET.get("page")
@@ -109,7 +127,15 @@ def child_list_detailed(request):
     return render(
         request,
         "child/child_list_detailed.html",
-        {"records": records, "table_title": "Children List"},
+        {
+            "records": records,
+            "table_title": "Detailed Child Master List",
+            "search_query": search_query,
+            "active_children_count": active_children.count(),
+            "sponsored_children_count": active_children.filter(is_sponsored=True).count(),
+            "non_sponsored_children_count": active_children.filter(is_sponsored=False).count(),
+            "in_school_children_count": active_children.filter(is_child_in_school=True).count(),
+        },
     )
 
 
@@ -441,6 +467,41 @@ def child_progress_report(request):
             "prefix_id": selected_child.prefixed_id if selected_child else None,
             "child_progress": child_progress,
             "page_obj": page_obj,
+        },
+    )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+@transaction.atomic
+def update_progress(request, pk):
+    progress_record = get_object_or_404(ChildProgress.objects.select_related("child"), pk=pk)
+
+    if request.method == "POST":
+        form = ChildProgressForm(request.POST, instance=progress_record)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                "Child progress updated successfully!",
+                extra_tags="bg-success",
+            )
+            return redirect(f"{reverse('child_progress_report')}?id={progress_record.child_id}")
+        messages.error(request, "Form is invalid.", extra_tags="bg-danger")
+    else:
+        form = ChildProgressForm(instance=progress_record)
+
+    children = Child.objects.filter(is_departed=False).order_by("id")
+    return render(
+        request,
+        "child/progress.html",
+        {
+            "form": form,
+            "form_name": "Edit Child Progress",
+            "children": children,
+            "selected_child_id": progress_record.child_id,
+            "selected_child": progress_record.child,
+            "editing_progress": True,
         },
     )
 

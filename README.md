@@ -58,10 +58,25 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 ### 6. Run the server
+Set this in `.env` for local development:
+```bash
+DJANGO_ENV=development
+```
+
+Then run:
 ```bash
 python manage.py runserver
 ```
 Open → http://localhost:8000
+
+Production uses `core.settings.production`. Set `DJANGO_ENV=production` in the
+hosting environment.
+
+For Google OAuth in development, add this authorized redirect URI in Google
+Cloud Console:
+```text
+http://localhost:8000/oauth/complete/google-oauth2/
+```
 
 ### Testing & Coverage 
 ```bash

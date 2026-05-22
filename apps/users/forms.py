@@ -2,6 +2,9 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
 
+from apps.client.models import Client
+from apps.sponsor.models import Sponsor
+
 from .models import Contact, DocumentUpload, Ebook, Policy, Profile
 
 
@@ -89,10 +92,12 @@ class LoginForm(AuthenticationForm):
     username = forms.CharField(
         max_length=100,
         required=True,
+        label="Email or username",
         widget=forms.TextInput(
             attrs={
-                "placeholder": "Username",
+                "placeholder": "Email or username",
                 "class": "form-control",
+                "autocomplete": "username",
             }
         ),
     )
@@ -114,6 +119,38 @@ class LoginForm(AuthenticationForm):
     class Meta:
         model = User
         fields = ["username", "password", "remember_me"]
+
+    def clean_username(self):
+        username = self.cleaned_data.get("username", "").strip()
+        if "@" not in username:
+            return username
+
+        user = User.objects.filter(email__iexact=username).order_by("id").first()
+        if user:
+            return user.get_username()
+        return username
+
+
+class LoginVerificationForm(forms.Form):
+    token = forms.CharField(
+        max_length=6,
+        min_length=6,
+        label="Verification code",
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "Enter 6-digit code",
+                "class": "form-control",
+                "autocomplete": "one-time-code",
+                "inputmode": "numeric",
+            }
+        ),
+    )
+
+    def clean_token(self):
+        token = self.cleaned_data.get("token", "").strip()
+        if not token.isdigit():
+            raise forms.ValidationError("Enter the 6-digit code sent to your email.")
+        return token
 
 
 # =================================== User Update  ===================================
@@ -155,10 +192,25 @@ class UpdateProfileForm(forms.ModelForm):
 
 
 class UpdateProfileAllForm(forms.ModelForm):
+    client = forms.ModelChoiceField(
+        queryset=Client.objects.order_by("full_name", "reg_number"),
+        required=False,
+        empty_label="No linked client",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    sponsor = forms.ModelChoiceField(
+        queryset=Sponsor.objects.order_by("first_name", "last_name", "email"),
+        required=False,
+        empty_label="No linked sponsor",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
     class Meta:
         model = Profile
-        fields = ["role"]
+        fields = ["account_type", "staff_role", "role", "client", "sponsor"]
         widgets = {
+            "account_type": forms.Select(attrs={"class": "form-control"}),
+            "staff_role": forms.Select(attrs={"class": "form-control"}),
             "role": forms.Select(attrs={"class": "form-control", "required": True}),
         }
 

@@ -1,0 +1,459 @@
+{% extends 'savings/base.html' %}
+{% load humanize %}
+
+{% block content %}
+  <div class="container-fluid financial-dashboard">
+    <section class="finance-hero">
+      <div>
+        <span class="finance-eyebrow">Savings Management</span>
+        <h3>Savings Management Dashboard</h3>
+        <p>Savings accounts, deposits, withdrawals, client balances, and pending approvals.</p>
+      </div>
+      <div class="finance-actions">
+        <a href="{% url 'savings_transaction_create' %}" class="btn btn-outline-dark btn-sm"><i class="mdi mdi-cash-plus"></i> Record Transaction</a>
+        <a href="{% url 'savings_account_create' %}" class="btn btn-dark btn-sm"><i class="mdi mdi-bank-plus"></i> Open Account</a>
+      </div>
+    </section>
+
+    <section class="finance-card-grid">
+      <a href="{% url 'savings_account_list' %}" class="finance-card primary-card">
+        <span class="finance-icon"><i class="mdi mdi-piggy-bank"></i></span>
+        <span class="finance-label">Total Savings Balance</span>
+        <strong>UGX {{ net_savings|floatformat:0|intcomma }}</strong>
+        <small>{{ active_accounts|intcomma }} active of {{ total_accounts|intcomma }} account{{ total_accounts|pluralize }}</small>
+      </a>
+
+      <div class="finance-card">
+        <span class="finance-icon success"><i class="mdi mdi-arrow-down-bold-circle"></i></span>
+        <span class="finance-label">Approved Deposits</span>
+        <strong>UGX {{ deposits_total|floatformat:0|intcomma }}</strong>
+        <small>{{ linked_clients|intcomma }} linked client{{ linked_clients|pluralize }}</small>
+      </div>
+
+      <div class="finance-card">
+        <span class="finance-icon danger"><i class="mdi mdi-arrow-up-bold-circle"></i></span>
+        <span class="finance-label">Approved Withdrawals</span>
+        <strong>UGX {{ withdrawals_total|floatformat:0|intcomma }}</strong>
+        <small>{{ pending_withdrawals_count|intcomma }} pending withdrawal{{ pending_withdrawals_count|pluralize }}</small>
+      </div>
+
+      <div class="finance-card">
+        <span class="finance-icon warning"><i class="mdi mdi-clock-alert-outline"></i></span>
+        <span class="finance-label">Pending Requests</span>
+        <strong>{{ pending_requests_count|intcomma }}</strong>
+        <small>{{ pending_deposits_count|intcomma }} deposit{{ pending_deposits_count|pluralize }}, {{ pending_withdrawals_count|intcomma }} withdrawal{{ pending_withdrawals_count|pluralize }}</small>
+      </div>
+    </section>
+
+    <section class="finance-split">
+      <div class="finance-panel">
+        <div class="finance-panel-header">
+          <div>
+            <h4>Pending Withdrawal Requests</h4>
+            <span>Client-initiated withdrawals awaiting review</span>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle finance-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Client</th>
+                <th>Account</th>
+                <th class="text-right">Amount</th>
+                <th class="text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for transaction in pending_withdrawals %}
+                <tr>
+                  <td>{{ transaction.transaction_date }}</td>
+                  <td>{{ transaction.account.client.full_name }}</td>
+                  <td>{{ transaction.account.account_number }}</td>
+                  <td class="text-right">UGX {{ transaction.amount|floatformat:0|intcomma }}</td>
+                  <td class="text-right">
+                    <form method="post" action="{% url 'savings_transaction_approve' transaction.id %}" class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                    </form>
+                    <form method="post" action="{% url 'savings_transaction_reject' transaction.id %}" class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-outline-warning btn-sm">Reject</button>
+                    </form>
+                    <a href="{% url 'savings_account_detail' transaction.account.id %}" class="btn btn-outline-primary btn-sm">View</a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="text-center text-muted">No pending withdrawal requests.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="finance-panel">
+        <div class="finance-panel-header">
+          <div>
+            <h4>Account Status</h4>
+            <span>Current savings account health</span>
+          </div>
+        </div>
+        <div class="status-list">
+          <div><span>Active</span><strong>{{ active_accounts|intcomma }}</strong></div>
+          <div><span>Dormant</span><strong>{{ dormant_accounts|intcomma }}</strong></div>
+          <div><span>Closed</span><strong>{{ closed_accounts|intcomma }}</strong></div>
+          <div class="total"><span>Total accounts</span><strong>{{ total_accounts|intcomma }}</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="finance-panel">
+      <div class="finance-panel-header">
+        <div>
+          <h4>Recent Savings Activity</h4>
+          <span>Latest deposits, withdrawals, charges, and adjustments</span>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle finance-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Client</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th class="text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for transaction in recent_transactions %}
+              <tr>
+                <td>{{ transaction.transaction_date }}</td>
+                <td>{{ transaction.account.client.full_name }}</td>
+                <td>{{ transaction.get_transaction_type_display }}</td>
+                <td><span class="finance-status {{ transaction.status }}">{{ transaction.get_status_display }}</span></td>
+                <td class="text-right">UGX {{ transaction.amount|floatformat:0|intcomma }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="text-center text-muted">No savings activity found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="row mb-3">
+      <div class="col-md-12 d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">{{ table_title|upper }}</h3>
+        <div>
+          <a href="{% url 'savings_transaction_create' %}" class="btn btn-outline-primary"><i class="mdi mdi-cash-plus"></i> Record Transaction</a>
+          <a href="{% url 'savings_account_create' %}" class="btn btn-dark"><i class="mdi mdi-plus"></i> Open Account</a>
+        </div>
+      </div>
+    </div>
+
+    <form method="get" class="mb-3">
+      <div class="input-group">
+        <input type="search" name="search" value="{{ search_query }}" class="form-control" placeholder="Search client, account no., registration no., phone" />
+        <div class="input-group-append">
+          <button class="btn btn-primary" type="submit"><i class="mdi mdi-magnify"></i> Search</button>
+        </div>
+      </div>
+    </form>
+
+    <div class="card shadow mb-4">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="my-table">
+            <thead>
+              <tr>
+                <th>Account No.</th>
+                <th>Client</th>
+                <th>Status</th>
+                <th>Opened</th>
+                <th class="text-right">Balance</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for account in accounts %}
+                <tr>
+                  <td>{{ account.account_number }}</td>
+                  <td>{{ account.client.full_name }}{% if account.client.reg_number %} - {{ account.client.reg_number }}{% endif %}</td>
+                  <td>{{ account.get_status_display }}</td>
+                  <td>{{ account.opening_date }}</td>
+                  <td class="text-right">{{ account.balance|floatformat:2|intcomma }}</td>
+                  <td><a href="{% url 'savings_account_detail' account.id %}" class="btn btn-primary btn-sm">View</a></td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center text-muted">No savings accounts found.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .financial-dashboard {
+      color: #233142;
+      padding-bottom: 28px;
+    }
+
+    .finance-hero {
+      align-items: center;
+      background: #fff;
+      border: 1px solid #d8dee6;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+      padding: 16px 18px;
+    }
+
+    .finance-eyebrow {
+      color: #247a6b;
+      display: block;
+      font-size: .75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .finance-hero h3,
+    .finance-panel h4 {
+      color: #1f344d;
+      font-weight: 800;
+      letter-spacing: 0;
+      margin: 0;
+    }
+
+    .finance-hero h3 {
+      font-size: 1.45rem;
+      line-height: 1.2;
+    }
+
+    .finance-hero p,
+    .finance-panel-header span,
+    .finance-card small {
+      color: #667085;
+    }
+
+    .finance-hero p {
+      margin: 4px 0 0;
+    }
+
+    .finance-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .finance-card-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-bottom: 14px;
+    }
+
+    .finance-card {
+      background: #fff;
+      border: 1px solid #d8dee6;
+      border-radius: 8px;
+      color: inherit;
+      min-height: 154px;
+      padding: 16px;
+      text-decoration: none;
+    }
+
+    .finance-card:hover {
+      border-color: #b9c5d3;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .primary-card {
+      background: #123d35;
+      border-color: #123d35;
+      color: #fff;
+    }
+
+    .primary-card .finance-label,
+    .primary-card small {
+      color: rgba(255, 255, 255, .78);
+    }
+
+    .finance-icon {
+      align-items: center;
+      background: #edf7f4;
+      border-radius: 7px;
+      color: #13745d;
+      display: inline-flex;
+      font-size: 1.25rem;
+      height: 42px;
+      justify-content: center;
+      margin-bottom: 14px;
+      width: 42px;
+    }
+
+    .primary-card .finance-icon {
+      background: rgba(255, 255, 255, .12);
+      color: #fff;
+    }
+
+    .finance-icon.success { background: #eaf7ef; color: #247a43; }
+    .finance-icon.danger { background: #fdecec; color: #b94141; }
+    .finance-icon.warning { background: #fff4de; color: #946000; }
+
+    .finance-label {
+      color: #667085;
+      display: block;
+      font-size: .76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .finance-card strong {
+      display: block;
+      font-size: 1.55rem;
+      line-height: 1.15;
+      margin: 5px 0 6px;
+      overflow-wrap: anywhere;
+    }
+
+    .finance-split {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+      margin-bottom: 14px;
+    }
+
+    .finance-panel {
+      background: #fff;
+      border: 1px solid #d8dee6;
+      border-radius: 8px;
+      margin-bottom: 14px;
+      padding: 16px;
+    }
+
+    .finance-panel-header {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .finance-panel h4 {
+      font-size: 1rem;
+    }
+
+    .finance-table {
+      margin-bottom: 0;
+    }
+
+    .finance-table thead th {
+      border-top: 0;
+      color: #667085;
+      font-size: .76rem;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .finance-table tbody td {
+      border-color: #edf0f4;
+      height: 46px;
+      vertical-align: middle;
+    }
+
+    .status-list {
+      display: grid;
+      gap: 0;
+    }
+
+    .status-list div {
+      align-items: center;
+      border-top: 1px solid #edf0f4;
+      display: flex;
+      justify-content: space-between;
+      min-height: 48px;
+    }
+
+    .status-list div:first-child {
+      border-top: 0;
+    }
+
+    .status-list span {
+      color: #516173;
+      font-weight: 700;
+    }
+
+    .status-list strong {
+      color: #1f344d;
+      font-size: 1.15rem;
+    }
+
+    .status-list .total {
+      border-top: 2px solid #d8dee6;
+    }
+
+    .finance-status {
+      border-radius: 6px;
+      display: inline-flex;
+      font-size: .78rem;
+      font-weight: 800;
+      min-height: 24px;
+      padding: 3px 8px;
+    }
+
+    .finance-status.approved {
+      background: #eaf7ef;
+      color: #247a43;
+    }
+
+    .finance-status.pending {
+      background: #fff4de;
+      color: #946000;
+    }
+
+    .finance-status.rejected {
+      background: #fdecec;
+      color: #b94141;
+    }
+
+    @media (max-width: 1199.98px) {
+      .finance-card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .finance-split {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 767.98px) {
+      .finance-hero,
+      .finance-panel-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .finance-actions {
+        justify-content: flex-start;
+        width: 100%;
+      }
+
+      .finance-actions .btn {
+        flex: 1 1 auto;
+      }
+
+      .finance-card-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+{% endblock %}

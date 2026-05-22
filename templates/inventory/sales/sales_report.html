@@ -1,118 +1,295 @@
 {% extends 'sms/base_rpts.html' %}
-{% load static %}
 {% load humanize %}
 {% load crispy_forms_tags %}
 
 {% block content %}
-  <div class="form-content my-5 p-4">
-    <div class="container-fluid">
-      <div class="card shadow-sm">
-        <!-- Card Header -->
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <!-- Back Button -->
-          <a href="{% url 'inventory-dashboard' %}" class="btn btn-info font-weight-bold"><i class="mdi mdi-arrow-left-bold mr-2"></i> Go back</a>
+<style>
+  .sales-report {
+    color: #243447;
+    margin-top: 8px;
+    padding: 0 0 24px;
+  }
+  .sales-report-header {
+    align-items: flex-start;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .sales-report-title h1 {
+    color: #1f2933;
+    font-size: 1.45rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    margin: 0 0 4px;
+  }
+  .sales-report-title p {
+    color: #667085;
+    margin: 0;
+  }
+  .sales-report-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  .report-filter {
+    align-items: flex-end;
+    background: #fff;
+    border: 1px solid #dfe5ec;
+    border-radius: 8px;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(160px, 1fr) minmax(160px, 1fr) auto;
+    margin-bottom: 14px;
+    padding: 12px;
+  }
+  .report-filter .form-group {
+    margin-bottom: 0;
+  }
+  .report-filter label {
+    color: #536273;
+    font-size: .78rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+  .report-filter input {
+    min-height: 38px;
+  }
+  .metric-strip {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-bottom: 14px;
+  }
+  .metric-tile {
+    background: #fff;
+    border: 1px solid #dfe5ec;
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .metric-tile span {
+    color: #667085;
+    display: block;
+    font-size: .75rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+  .metric-tile strong {
+    color: #1f2933;
+    display: block;
+    font-size: 1.35rem;
+    font-weight: 900;
+    margin-top: 7px;
+  }
+  .report-panel {
+    background: #fff;
+    border: 1px solid #dfe5ec;
+    border-radius: 8px;
+  }
+  .report-panel-head {
+    align-items: center;
+    border-bottom: 1px solid #edf1f5;
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 16px;
+  }
+  .report-panel-head h2 {
+    color: #26384d;
+    font-size: 1rem;
+    font-weight: 900;
+    margin: 0;
+  }
+  .report-panel-head span {
+    color: #8792a2;
+    font-size: .8rem;
+    font-weight: 800;
+  }
+  .report-table {
+    margin-bottom: 0;
+  }
+  .report-table thead th {
+    background: #f8fafc;
+    border-bottom: 1px solid #dfe5ec;
+    color: #536273;
+    font-size: .75rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .report-table td {
+    vertical-align: top;
+  }
+  .line-items {
+    display: grid;
+    gap: 6px;
+    min-width: 260px;
+  }
+  .line-item {
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #edf1f5;
+    border-radius: 8px;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 8px 10px;
+  }
+  .line-item strong {
+    color: #26384d;
+  }
+  .line-item small {
+    color: #667085;
+    display: block;
+  }
+  .empty-report {
+    color: #8792a2;
+    padding: 24px;
+    text-align: center;
+  }
+  @media print {
+    .sales-report-actions,
+    .report-filter,
+    .print-hide {
+      display: none !important;
+    }
+    .sales-report {
+      margin-top: 0;
+    }
+  }
+  @media (max-width: 992px) {
+    .sales-report-header {
+      flex-direction: column;
+    }
+    .sales-report-actions {
+      justify-content: flex-start;
+    }
+    .report-filter,
+    .metric-strip {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
 
-          <!-- Filter Form -->
-          <form method="GET" action="{% url 'sales:sales_report' %}" class="mb-0 d-flex align-items-center">
-            <div class="row mb-0">
-              <div class="col-md-6">{{ form.start_date|as_crispy_field }}</div>
-              <div class="col-md-6">{{ form.end_date|as_crispy_field }}</div>
-            </div>
-            <button type="submit" class="btn btn-primary mt-3 ml-2">Filter</button>
-          </form>
+<main class="sales-report">
+  <header class="sales-report-header print-hide">
+    <div class="sales-report-title">
+      <h1>Sales Report</h1>
+      <p>
+        {% if start_date and end_date %}
+          {{ start_date }} to {{ end_date }}
+        {% else %}
+          All recorded sales transactions
+        {% endif %}
+      </p>
+    </div>
+    <div class="sales-report-actions">
+      <a href="{% url 'inventory-dashboard' %}" class="btn btn-outline-secondary">
+        <i class="mdi mdi-arrow-left mr-1"></i>Dashboard
+      </a>
+      <button title="Print" type="button" class="btn btn-dark" onclick="printDiv('printMe')">
+        <i class="mdi mdi-printer mr-1"></i>Print
+      </button>
+    </div>
+  </header>
 
-          <!-- Print Button -->
-          <button title="Print" type="button" class="btn btn-success ml-2" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i> Print</button>
-        </div>
+  <form method="GET" action="{% url 'sales:sales_report' %}" class="report-filter print-hide">
+    <div>{{ form.start_date|as_crispy_field }}</div>
+    <div>{{ form.end_date|as_crispy_field }}</div>
+    <button type="submit" class="btn btn-primary">
+      <i class="mdi mdi-filter-variant mr-1"></i>Filter
+    </button>
+  </form>
 
-        <!-- Card Body -->
-        <div id="printMe" class="card-body">
-          <!-- Report Header -->
-          <div class="report-header text-center my-2">
-            <h5>
-              {{ table_title|upper }}
-              FROM <span class="text-primary">{{ start_date }}</span> TO
-              <span class="text-primary">{{ end_date }}</span>
-            </h5>
-          </div>
-
-          <!-- Data Table -->
-          <div id="printMe" class="card shadow mb-4">
-            <div class="card-header py-3">
-              <h3>{{ table_title|upper }}</h3>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="my-table" id="dataTable">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>S.ID</th>
-                      <th>Date</th>
-                      <th>Customer</th>
-                      <th>Product</th>
-                      <th class="text-center">Sold</th>
-                      <th class="text-center">Sales Revenue</th>
-                      <th class="text-center">Net Profit</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for s in sales %}
-                      <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td>{{ s.id }}</td>
-                        <td>{{ s.trans_date }}</td>
-                        <td>{{ s.customer.first_name }}</td>
-                        <td>
-                          <ul class="list-group list-group-flush">
-                            {% for detail in s.items.all %}
-                              <li class="list-group-item d-flex justify-content-between align-items-start">
-                                <div>
-                                  <strong>{{ detail.quantity }}x</strong>
-                                  {{ detail.product.name }}
-                                </div>
-                                <div class="text-end">
-                                  <small class="text-muted">
-                                    Cost:
-                                    {{ detail.product.cost|floatformat:'2'|intcomma }}
-                                  </small><br />
-                                  <small class="text-muted">Price: {{ detail.product.price|floatformat:'2'|intcomma }}</small>
-                                </div>
-                              </li>
-                            {% empty %}
-                              <li class="list-group-item text-danger">No items available.</li>
-                            {% endfor %}
-                          </ul>
-                        </td>
-
-                        <td class="text-center">{{ s.sum_items }}</td>
-                        <td class="text-right">{{ s.grand_total|floatformat:'2'|intcomma }}</td>
-                        <td class="text-right">{{ s.profit|floatformat:'2'|intcomma }}</td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colspan="5" class="text-right">
-                        <strong>Total</strong>
-                      </td>
-                      <td class="text-center">
-                        <strong>{{ total_items }}</strong>
-                      </td>
-                      <td class="text-right">
-                        <strong>{{ grand_total|floatformat:'2'|intcomma }}</strong>
-                      </td>
-                      <td class="text-right">
-                        <strong>{{ total_profit|floatformat:'2'|intcomma }}</strong>
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
+  <section id="printMe">
+    <div class="metric-strip">
+      <div class="metric-tile">
+        <span>Revenue</span>
+        <strong>UGX {{ grand_total|default:0|floatformat:'2'|intcomma }}</strong>
+      </div>
+      <div class="metric-tile">
+        <span>Net Profit</span>
+        <strong>UGX {{ total_profit|default:0|floatformat:'2'|intcomma }}</strong>
+      </div>
+      <div class="metric-tile">
+        <span>Items Sold</span>
+        <strong>{{ total_items|default:0|intcomma }}</strong>
+      </div>
+      <div class="metric-tile">
+        <span>Stock Balance</span>
+        <strong>{{ stock_balance|default:0|intcomma }}</strong>
       </div>
     </div>
-  </div>
+
+    <div class="report-panel">
+      <div class="report-panel-head">
+        <h2>Transaction Details</h2>
+        <span>{{ sales|length }} records</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table report-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Sale</th>
+              <th>Date</th>
+              <th>Customer</th>
+              <th>Items</th>
+              <th class="text-center">Qty</th>
+              <th class="text-right">Revenue</th>
+              <th class="text-right">Profit</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in sales %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>#{{ s.id }}</td>
+                <td>{{ s.trans_date|date:'M d, Y' }}</td>
+                <td>
+                  {% if s.customer %}
+                    {{ s.customer.first_name }} {{ s.customer.last_name }}
+                  {% else %}
+                    <span class="text-muted">Walk-in</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="line-items">
+                    {% for detail in s.items.all %}
+                      <div class="line-item">
+                        <div>
+                          <strong>{{ detail.item_name }}</strong>
+                          <small>{{ detail.quantity }} x UGX {{ detail.price|floatformat:'2'|intcomma }}</small>
+                        </div>
+                        <small>UGX {{ detail.total_detail|floatformat:'2'|intcomma }}</small>
+                      </div>
+                    {% empty %}
+                      <span class="text-muted">No items recorded.</span>
+                    {% endfor %}
+                  </div>
+                </td>
+                <td class="text-center">{{ s.sum_items }}</td>
+                <td class="text-right">UGX {{ s.grand_total|floatformat:'2'|intcomma }}</td>
+                <td class="text-right">UGX {{ s.profit|floatformat:'2'|intcomma }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="8" class="empty-report">No sales found for the selected period.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th colspan="5" class="text-right">Total</th>
+              <th class="text-center">{{ total_items|default:0|intcomma }}</th>
+              <th class="text-right">UGX {{ grand_total|default:0|floatformat:'2'|intcomma }}</th>
+              <th class="text-right">UGX {{ total_profit|default:0|floatformat:'2'|intcomma }}</th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
 {% endblock %}

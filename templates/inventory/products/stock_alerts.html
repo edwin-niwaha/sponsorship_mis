@@ -35,6 +35,22 @@
             <p class="text-muted">No products are currently low on stock.</p>
             {% endif %}
 
+            <h2 class="text-warning mt-4">Low Stock Variants</h2>
+            {% if low_stock_variants %}
+            <div class="list-group">
+                {% for variant in low_stock_variants %}
+                <a href="{% url 'products:product_detail' variant.product.id %}"
+                    class="list-group-item list-group-item-action list-group-item-warning">
+                    <h5 class="mb-1">{{ variant.display_name }}</h5>
+                    <p class="mb-1">Current Stock: {{ variant.quantity }}</p>
+                    <small class="text-muted">SKU: {{ variant.sku }} · Low Stock Threshold: {{ variant.low_stock_threshold }}</small>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">No variants are currently low on stock.</p>
+            {% endif %}
+
             <!-- Out of Stock Products -->
             <h2 class="text-danger mt-4">Out of Stock Products</h2>
             {% if out_of_stock_products %}
@@ -50,6 +66,22 @@
             </div>
             {% else %}
             <p class="text-muted">All products are in stock.</p>
+            {% endif %}
+
+            <h2 class="text-danger mt-4">Out of Stock Variants</h2>
+            {% if out_of_stock_variants %}
+            <div class="list-group">
+                {% for variant in out_of_stock_variants %}
+                <a href="{% url 'products:product_detail' variant.product.id %}"
+                    class="list-group-item list-group-item-action list-group-item-danger">
+                    <h5 class="mb-1">{{ variant.display_name }}</h5>
+                    <p class="mb-1">Current Stock: {{ variant.quantity }}</p>
+                    <small class="text-muted">SKU: {{ variant.sku }}</small>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">All variants are in stock.</p>
             {% endif %}
         </div>
     </div>

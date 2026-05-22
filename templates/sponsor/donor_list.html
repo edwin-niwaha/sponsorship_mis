@@ -3,7 +3,8 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-  <div class="container-fluid mt-5 pt-3">
+  {% include '_partials/sponsor_report_styles.html' %}
+  <div class="container-fluid sponsor-report-page">
     <div class="row justify-content-center">
       <div class="col-md-12">
         <h2 class="text-center mb-4">{{ form_title|upper }}</h2>

@@ -1,9 +1,45 @@
+const dashPalette = {
+  green: "#13745d",
+  greenSoft: "rgba(19, 116, 93, 0.14)",
+  blue: "#2563eb",
+  blueSoft: "rgba(37, 99, 235, 0.14)",
+  gold: "#d99421",
+  goldSoft: "rgba(217, 148, 33, 0.16)",
+  coral: "#e05252",
+  coralSoft: "rgba(224, 82, 82, 0.14)",
+  slate: "#475569",
+  grid: "rgba(148, 163, 184, 0.22)",
+};
+
+if (window.Chart && Chart.defaults) {
+  Chart.defaults.font = Chart.defaults.font || {};
+  Chart.defaults.font.family =
+    "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  Chart.defaults.color = "#516173";
+}
+
+const modernScaleOptions = {
+  grid: {
+    color: dashPalette.grid,
+    drawBorder: false,
+  },
+  ticks: {
+    padding: 8,
+  },
+};
+
 // =================================== Sponsorship types ===================================
 fetch("/dashboard/sponsorship-chart/")
   .then((response) => response.json())
   .then((data) => {
+    const chartElement = document.getElementById("sponsorshipChart");
+    if (!chartElement) {
+      return;
+    }
+
     const labels = data.map((item) => item.sponsorship_type);
     const values = data.map((item) => item.count);
+    const total = values.reduce((a, b) => a + b, 0);
 
     // Chart configuration
     const chartConfig = {
@@ -15,42 +51,34 @@ fetch("/dashboard/sponsorship-chart/")
             label: "Number of Sponsorships",
             data: values,
             backgroundColor: [
-              "#FF6384",
-              "#36A2EB",
-              "#FFCE56",
-              "#4BC0C0",
-              "#9966FF",
-              "#FF9F40",
-              "#FFBF00",
-              "#FF6F61",
-              "#6B5B95",
-              "#F7CAC9",
+              dashPalette.green,
+              dashPalette.blue,
+              dashPalette.gold,
+              dashPalette.coral,
+              "#7c3aed",
+              "#0f766e",
+              "#f59e0b",
+              "#db2777",
+              dashPalette.slate,
+              "#94a3b8",
             ],
-            borderColor: [
-              "#FF6384",
-              "#36A2EB",
-              "#FFCE56",
-              "#4BC0C0",
-              "#9966FF",
-              "#FF9F40",
-              "#FFBF00",
-              "#FF6F61",
-              "#6B5B95",
-              "#F7CAC9",
-            ],
-            borderWidth: 1,
+            borderColor: "#ffffff",
+            borderWidth: 3,
+            hoverOffset: 6,
           },
         ],
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
-          legend: { position: "top" },
+          legend: { position: "bottom" },
           tooltip: {
             callbacks: {
               label: (tooltipItem) => {
-                const total = values.reduce((a, b) => a + b, 0);
-                const percentage = ((tooltipItem.raw / total) * 100).toFixed(2);
+                const percentage = total
+                  ? ((tooltipItem.raw / total) * 100).toFixed(2)
+                  : "0.00";
                 return `${tooltipItem.label}: ${tooltipItem.raw} (${percentage}%)`;
               },
             },
@@ -60,7 +88,7 @@ fetch("/dashboard/sponsorship-chart/")
     };
 
     // Create the pie chart
-    new Chart(document.getElementById("sponsorshipChart"), chartConfig);
+    new Chart(chartElement, chartConfig);
   })
   .catch((error) => console.error("Error fetching sponsorship data:", error));
 
@@ -71,32 +99,6 @@ document.addEventListener("DOMContentLoaded", function () {
     .then((data) => {
       const ctx = document.getElementById("birthdayChart").getContext("2d");
 
-      // Define an array of colors to use for each bar
-      const backgroundColors = [
-        "rgba(255, 99, 132, 0.2)",
-        "rgba(54, 162, 235, 0.2)",
-        "rgba(255, 206, 86, 0.2)",
-        "rgba(75, 192, 192, 0.2)",
-        "rgba(153, 102, 255, 0.2)",
-        "rgba(255, 159, 64, 0.2)",
-        // Add more colors if you have more months
-      ];
-
-      const borderColors = [
-        "rgba(255, 99, 132, 1)",
-        "rgba(54, 162, 235, 1)",
-        "rgba(255, 206, 86, 1)",
-        "rgba(75, 192, 192, 1)",
-        "rgba(153, 102, 255, 1)",
-        "rgba(255, 159, 64, 1)",
-        // Add more colors if you have more months
-      ];
-
-      // Ensure there are enough colors for the number of bars
-      const numOfBars = data.months.length;
-      const effectiveBackgroundColors = backgroundColors.slice(0, numOfBars);
-      const effectiveBorderColors = borderColors.slice(0, numOfBars);
-
       new Chart(ctx, {
         type: "line",
         data: {
@@ -105,98 +107,36 @@ document.addEventListener("DOMContentLoaded", function () {
             {
               label: "Number of Birthdays",
               data: data.counts,
-              backgroundColor: effectiveBackgroundColors,
-              borderColor: effectiveBorderColors,
-              borderWidth: 1,
+              backgroundColor: dashPalette.goldSoft,
+              borderColor: dashPalette.gold,
+              borderWidth: 3,
+              pointBackgroundColor: "#ffffff",
+              pointBorderColor: dashPalette.gold,
+              pointRadius: 3,
+              tension: 0.35,
+              fill: true,
             },
           ],
         },
         options: {
+          responsive: true,
+          maintainAspectRatio: false,
           scales: {
             x: {
+              ...modernScaleOptions,
+            },
+            y: {
+              ...modernScaleOptions,
               beginAtZero: true,
             },
+          },
+          plugins: {
+            legend: { display: false },
           },
         },
       });
     });
 });
-
-// =================================== Birthday PieChart ===================================
-async function fetchData() {
-  try {
-    const response = await fetch("/dashboard/birthdays_by_month/"); // Replace with the actual URL
-    const data = await response.json();
-    renderPieChart(data);
-  } catch (error) {
-    console.error("Error fetching data:", error);
-  }
-}
-
-// Function to render the pie chart
-function renderPieChart(data) {
-  const ctx = document.getElementById("pieChart").getContext("2d");
-  const pieChart = new Chart(ctx, {
-    type: "pie",
-    data: {
-      labels: data.months,
-      datasets: [
-        {
-          label: "Number of Birthdays",
-          data: data.counts,
-          backgroundColor: [
-            "#FF6384",
-            "#36A2EB",
-            "#FFCE56",
-            "#E7E9ED",
-            "#4BC0C0",
-            "#FF9F40",
-            "#FFCD56",
-            "#FF4F81",
-            "#4B77BE",
-            "#F4D03F",
-            "#48C9B0",
-            "#E74C3C",
-          ],
-          borderColor: "rgba(0, 0, 0, 0.1)",
-          borderWidth: 1,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: "top",
-        },
-        datalabels: {
-          color: "#fff",
-          display: true,
-          formatter: function (value, context) {
-            return context.label + ": " + value;
-          },
-          font: {
-            weight: "bold",
-          },
-        },
-        tooltip: {
-          callbacks: {
-            label: function (context) {
-              let label = context.label || "";
-              if (label) {
-                label += ": " + context.raw + " birthdays";
-              }
-              return label;
-            },
-          },
-        },
-      },
-    },
-  });
-}
-
-// Fetch data when the page loads
-window.onload = fetchData;
 
 // =================================== Sponsors against children ===================================
 fetch("/dashboard/get_combined_data/")
@@ -243,29 +183,36 @@ fetch("/dashboard/get_combined_data/")
           {
             label: "Sponsors Registered",
             data: sponsorsCounts,
-            borderColor: "rgba(75, 192, 192, 1)",
-            backgroundColor: "rgba(75, 192, 192, 0.2)",
-            fill: false,
+            borderColor: dashPalette.green,
+            backgroundColor: dashPalette.greenSoft,
+            borderWidth: 3,
+            tension: 0.35,
+            fill: true,
           },
           {
             label: "Children Registered",
             data: childrenCounts,
-            borderColor: "rgba(255, 99, 132, 1)",
-            backgroundColor: "rgba(255, 99, 132, 0.2)",
-            fill: false,
+            borderColor: dashPalette.blue,
+            backgroundColor: dashPalette.blueSoft,
+            borderWidth: 3,
+            tension: 0.35,
+            fill: true,
           },
         ],
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         scales: {
           x: {
+            ...modernScaleOptions,
             title: {
               display: true,
               text: "Year",
             },
           },
           y: {
+            ...modernScaleOptions,
             title: {
               display: true,
               text: "Count",
@@ -309,23 +256,27 @@ function renderChart(data) {
         {
           label: "Number of Sponsors",
           data: counts,
-          backgroundColor: "rgba(0, 123, 255, 0.2)", // Bootstrap primary color with transparency
-          borderColor: "rgba(0, 123, 255, 1)", // Bootstrap primary color
-          borderWidth: 2,
-          fill: true, // Fill the area under the line
+          backgroundColor: dashPalette.greenSoft,
+          borderColor: dashPalette.green,
+          borderWidth: 3,
+          tension: 0.35,
+          fill: true,
         },
       ],
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       scales: {
         x: {
+          ...modernScaleOptions,
           title: {
             display: true,
             text: "Year",
           },
         },
         y: {
+          ...modernScaleOptions,
           title: {
             display: true,
             text: "Number of Sponsors",
@@ -380,23 +331,27 @@ function renderChildrenChart(data) {
         {
           label: "Number of Children",
           data: counts,
-          backgroundColor: "rgba(0, 123, 255, 0.2)", // Bootstrap primary color with transparency
-          borderColor: "rgba(0, 123, 255, 1)", // Bootstrap primary color
-          borderWidth: 2,
-          fill: true, // Fill the area under the line
+          backgroundColor: dashPalette.blueSoft,
+          borderColor: dashPalette.blue,
+          borderWidth: 3,
+          tension: 0.35,
+          fill: true,
         },
       ],
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       scales: {
         x: {
+          ...modernScaleOptions,
           title: {
             display: true,
             text: "Year",
           },
         },
         y: {
+          ...modernScaleOptions,
           title: {
             display: true,
             text: "Number of Children",
@@ -451,23 +406,26 @@ function renderPaymentsChart(data) {
         {
           label: "Amount Collected",
           data: totalAmounts,
-          backgroundColor: "rgba(40, 167, 69, 0.2)", // Bootstrap success color with transparency
-          borderColor: "rgba(40, 167, 69, 1)", // Bootstrap success color
+          backgroundColor: dashPalette.greenSoft,
+          borderColor: dashPalette.green,
+          borderRadius: 8,
           borderWidth: 2,
-          fill: true, // Fill the area under the line
         },
       ],
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       scales: {
         x: {
+          ...modernScaleOptions,
           title: {
             display: true,
             text: "Year",
           },
         },
         y: {
+          ...modernScaleOptions,
           title: {
             display: true,
             text: "Total Amount Collected (UGX)",
@@ -522,23 +480,26 @@ function renderStaffPaymentsChart(data) {
         {
           label: "Amount Collected",
           data: totalAmounts,
-          backgroundColor: "rgba(40, 167, 69, 0.2)", // Bootstrap success color with transparency
-          borderColor: "rgba(40, 167, 69, 1)", // Bootstrap success color
+          backgroundColor: dashPalette.goldSoft,
+          borderColor: dashPalette.gold,
+          borderRadius: 8,
           borderWidth: 2,
-          fill: true, // Fill the area under the line
         },
       ],
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       scales: {
         x: {
+          ...modernScaleOptions,
           title: {
             display: true,
             text: "Year",
           },
         },
         y: {
+          ...modernScaleOptions,
           title: {
             display: true,
             text: "Total Amount Collected (UGX)",

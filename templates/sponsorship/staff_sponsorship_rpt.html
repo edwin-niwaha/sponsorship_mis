@@ -3,7 +3,8 @@
 
 {% block content %}
 
-<div class="container">
+{% include '_partials/sponsor_report_styles.html' %}
+<div class="container sponsor-report-page">
     <div class="page-header flex-wrap">
         <h3 class="mb-0">
             {{table_title|upper}}
@@ -30,7 +31,7 @@
         </div>
     </div>
     <hr class="bg-info" style="height: 3px;" />
-    <form method="POST" action="{% url 'staff_sponsorship_report' %}">
+    <form method="POST" action="{% url 'staff_sponsorship_report' %}" class="report-filter">
         {% csrf_token %}
         <select name="id" id="dropdown" class="chzn-select" required style="width: 40%;">
             <option value="" selected disabled>Search staff...</option>

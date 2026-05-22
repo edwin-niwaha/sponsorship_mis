@@ -1,230 +1,345 @@
 {% extends 'base.html' %}
-{% load static %}
+
+{% block title %}All Reports{% endblock %}
 
 {% block content %}
-<div>
-    <div class="page-header d-flex justify-content-center">
-        <h3 class="mb-0">ALL REPORTS</h3>
-    </div>
-    <div class="row">
-        <!-- Combined Card Row -->
-        <div class="col-xl-12 stretch-card grid-margin">
-            <div class="card">
-                <div class="card-body">
-                    <div class="row">
-                        <!-- Card Box 1 -->
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-white bg-primary">
-                                <div class="card-body">
-                                    <h5 class="card-title text-center">
-                                        <a href="{% url 'all_children' %}" class="text-white">All Children</a>
-                                        <p class="text-white"> ({{children_count}}) </p>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card Box 2 -->
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-white bg-secondary">
-                                <div class="card-body">
-                                    <h5 class="card-title text-center">
-                                        <a href="{% url 'sponsored_children' %}" class="text-white">Sponsored</a>
-                                        <p class="text-white"> ({{sponsored_count}}) </p>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card Box 3 -->
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-white bg-success">
-                                <div class="card-body">
-                                    <h5 class="card-title text-center">
-                                        <a href="{% url 'un_sponsored_children' %}" class="text-white">Non-Sponsored</a>
-                                        <p class="text-white"> ({{non_sponsored_count}}) </p>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card Box 4 -->
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-white bg-danger">
-                                <div class="card-body">
-                                    <h5 class="card-title text-center">
-                                        <a href="{% url 'departed_children' %}" class="text-white">Departed CH</a>
-                                        <p class="text-white"> ({{children_departed_count}}) </p>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Progress Bar for Row 1 -->
-                    <div class="progress mb-4" style="height: 8px;">
-                        <div class="progress-bar bg-info" role="progressbar" style="width: 100%;" aria-valuenow="100"
-                            aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-
-                    <div class="row">
-                        <!-- Card Box 5 -->
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-white bg-warning">
-                                <div class="card-body">
-                                    <h5 class="card-title text-center">
-                                        <a href="{% url 'child_progress_report' %}" class="text-white">Child
-                                            Progress</a>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card Box 6 -->
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-white bg-info">
-                                <div class="card-body">
-                                    <h5 class="card-title text-center">
-                                        <a href="{% url 'child_correspondence_report' %}"
-                                            class="text-white">Correspondence</a>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card Box 7 -->
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-white bg-light">
-                                <div class="card-body">
-                                    <h5 class="card-title text-center">
-                                        <a href="{% url 'child_incident_report' %}" class="text-dark">Incidence</a>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card Box 8 -->
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-white bg-dark">
-                                <div class="card-body">
-                                    <h5 class="card-title text-center">
-                                        <a href="{% url 'children_master_list' %}" class="text-white">Child
-                                            MasterList</a>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Progress Bar for Row 2 -->
-                    <div class="progress mb-4" style="height: 8px;">
-                        <div class="progress-bar bg-danger" role="progressbar" style="width: 100%;" aria-valuenow="100"
-                            aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-
-                    <div class="row">
-                        <!-- Card Box 9 -->
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-white bg-primary">
-                                <div class="card-body">
-                                    <h5 class="card-title text-center">
-                                        <a href="{% url 'sponsor_list' %}" class="text-white">All Sponsors</a>
-                                        <p class="text-white"> ({{sponsors_count}}) </p>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card Box 10 -->
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-white bg-secondary">
-                                <div class="card-body">
-                                    <h5 class="card-title text-center">
-                                        <a href="{% url 'departed_sponsors' %}" class="text-white">Departed</a>
-                                        <p class="text-white"> ({{sponsors_departed_count}}) </p>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card Box 11 -->
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-white bg-success">
-                                <div class="card-body">
-                                    <h5 class="card-title text-center">
-                                        <a href="#" class="text-white"><u>SP Statements</u></a>
-                                    </h5>
-                                    <a href="{% url 'child_sponsor_payments_report' %}" class="text-white">Children</a>
-                                    |
-                                    <a href="{% url 'staff_sponsor_payments_report' %}" class="text-white">Staff</a>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card Box 12 -->
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-white bg-danger">
-                                <div class="card-body">
-                                    <h5 class="card-title text-center">
-                                        <a href="#" class="text-white"><u>Payments</u></a>
-                                    </h5>
-                                    <a href="{% url 'sponsor_payments_child' %}" class="text-white">Children</a>
-                                    |
-                                    <a href="{% url 'sponsor_payments_staff' %}" class="text-white">Staff</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Progress Bar for Row 3 -->
-                    <div class="progress mb-4" style="height: 8px;">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="100"
-                            aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-
-                    <div class="row">
-                        <!-- Card Box 13 -->
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-white bg-warning">
-                                <div class="card-body">
-                                    <h5 class="card-title text-center">
-                                        <a href="{% url 'staff_list' %}" class="text-white">All Staff</a>
-                                        <p class="text-white"> ({{staff_count}}) </p>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card Box 14 -->
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-white bg-info">
-                                <div class="card-body">
-                                    <h5 class="card-title text-center">
-                                        <a href="{%url 'sponsored_staff' %}" class="text-white">Sponsored</a>
-                                        <p class="text-white">
-                                            ({{sponsored_staff_count}}) </p>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card Box 15 -->
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-white bg-light">
-                                <div class="card-body">
-                                    <h5 class="card-title text-center">
-                                        <a href="{% url 'non_sponsored_staff' %}" class="text-dark">Non-Sponsored</a>
-                                        <p class="text-black"> ({{non_sponsored_staff_count}}) </p>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card Box 16 -->
-                        <div class="col-md-3 mb-3">
-                            <div class="card text-white bg-dark">
-                                <div class="card-body">
-                                    <h5 class="card-title text-center">
-                                        <a href="{% url 'departed_staff' %}" class="text-white">Departed Staff</a>
-                                        <p class="text-white"> ({{departed_staff_count}}) </p>
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Progress Bar for Row 4 -->
-                    <div class="progress mb-4" style="height: 8px;">
-                        <div class="progress-bar bg-warning" role="progressbar" style="width: 100%;" aria-valuenow="100"
-                            aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                </div>
-            </div>
+  <main class="reports-dashboard">
+    <header class="reports-hero">
+      <div>
+        <div class="reports-kicker">Reports Center</div>
+        <h1>ALL REPORTS</h1>
+        <p>Program, sponsorship, payment, child, sponsor, and staff reporting in one standard workspace.</p>
+      </div>
+      <div class="reports-summary">
+        <div>
+          <span>Children</span>
+          <strong>{{ children_count }}</strong>
         </div>
-    </div>
-</div>
+        <div>
+          <span>Sponsors</span>
+          <strong>{{ sponsors_count }}</strong>
+        </div>
+        <div>
+          <span>Staff</span>
+          <strong>{{ staff_count }}</strong>
+        </div>
+      </div>
+    </header>
+
+    <section class="report-group" aria-labelledby="children-reports-heading">
+      <div class="report-group-heading">
+        <h2 id="children-reports-heading">Children Reports</h2>
+        <span>Registration, sponsorship, progress, correspondence, and protection records</span>
+      </div>
+      <div class="report-card-grid">
+        <a class="report-card" href="{% url 'all_children' %}" aria-label="Open all children report">
+          <i class="mdi mdi-account-child"></i>
+          <span>All Children</span>
+          <strong>{{ children_count }}</strong>
+        </a>
+        <a class="report-card" href="{% url 'sponsored_children' %}" aria-label="Open sponsored children report">
+          <i class="mdi mdi-heart"></i>
+          <span>Sponsored</span>
+          <strong>{{ sponsored_count }}</strong>
+        </a>
+        <a class="report-card" href="{% url 'un_sponsored_children' %}" aria-label="Open non-sponsored children report">
+          <i class="mdi mdi-account-alert"></i>
+          <span>Non-Sponsored</span>
+          <strong>{{ non_sponsored_count }}</strong>
+        </a>
+        <a class="report-card" href="{% url 'departed_children' %}" aria-label="Open departed children report">
+          <i class="mdi mdi-account-off"></i>
+          <span>Departed CH</span>
+          <strong>{{ children_departed_count }}</strong>
+        </a>
+        <a class="report-card" href="{% url 'child_progress_report' %}" aria-label="Open child progress report">
+          <i class="mdi mdi-chart-timeline-variant"></i>
+          <span>Child Progress</span>
+          <em>View report</em>
+        </a>
+        <a class="report-card" href="{% url 'child_correspondence_report' %}" aria-label="Open child correspondence report">
+          <i class="mdi mdi-email-outline"></i>
+          <span>Correspondence</span>
+          <em>View report</em>
+        </a>
+        <a class="report-card" href="{% url 'child_incident_report' %}" aria-label="Open incidence report">
+          <i class="mdi mdi-shield-alert"></i>
+          <span>Incidence</span>
+          <em>View report</em>
+        </a>
+        <a class="report-card" href="{% url 'children_master_list' %}" aria-label="Open child master list report">
+          <i class="mdi mdi-file-document-box-multiple"></i>
+          <span>Child MasterList</span>
+          <em>View report</em>
+        </a>
+      </div>
+    </section>
+
+    <section class="report-group" aria-labelledby="sponsor-reports-heading">
+      <div class="report-group-heading">
+        <h2 id="sponsor-reports-heading">Sponsor Reports</h2>
+        <span>Sponsor directories, statements, and sponsor payment reports</span>
+      </div>
+      <div class="report-card-grid">
+        <a class="report-card" href="{% url 'sponsor_list' %}" aria-label="Open all sponsors report">
+          <i class="mdi mdi-account-group"></i>
+          <span>All Sponsors</span>
+          <strong>{{ sponsors_count }}</strong>
+        </a>
+        <a class="report-card" href="{% url 'departed_sponsors' %}" aria-label="Open departed sponsors report">
+          <i class="mdi mdi-account-remove"></i>
+          <span>Departed</span>
+          <strong>{{ sponsors_departed_count }}</strong>
+        </a>
+        <div class="report-card split-card">
+          <i class="mdi mdi-file-chart"></i>
+          <span>SP Statements</span>
+          <div class="split-actions">
+            <a href="{% url 'child_sponsor_payments_report' %}">Children</a>
+            <a href="{% url 'staff_sponsor_payments_report' %}">Staff</a>
+          </div>
+        </div>
+        <div class="report-card split-card">
+          <i class="mdi mdi-cash-multiple"></i>
+          <span>Payments</span>
+          <div class="split-actions">
+            <a href="{% url 'sponsor_payments_child' %}">Children</a>
+            <a href="{% url 'sponsor_payments_staff' %}">Staff</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="report-group" aria-labelledby="staff-reports-heading">
+      <div class="report-group-heading">
+        <h2 id="staff-reports-heading">Staff Reports</h2>
+        <span>Staff directory, sponsorship status, and departed staff records</span>
+      </div>
+      <div class="report-card-grid">
+        <a class="report-card" href="{% url 'staff_list' %}" aria-label="Open all staff report">
+          <i class="mdi mdi-badge-account-horizontal"></i>
+          <span>All Staff</span>
+          <strong>{{ staff_count }}</strong>
+        </a>
+        <a class="report-card" href="{% url 'sponsored_staff' %}" aria-label="Open sponsored staff report">
+          <i class="mdi mdi-account-heart"></i>
+          <span>Sponsored</span>
+          <strong>{{ sponsored_staff_count }}</strong>
+        </a>
+        <a class="report-card" href="{% url 'non_sponsored_staff' %}" aria-label="Open non-sponsored staff report">
+          <i class="mdi mdi-account-question"></i>
+          <span>Non-Sponsored</span>
+          <strong>{{ non_sponsored_staff_count }}</strong>
+        </a>
+        <a class="report-card" href="{% url 'departed_staff' %}" aria-label="Open departed staff report">
+          <i class="mdi mdi-account-cancel"></i>
+          <span>Departed Staff</span>
+          <strong>{{ departed_staff_count }}</strong>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <style>
+    .reports-dashboard {
+      color: #1f2933;
+      display: grid;
+      gap: 16px;
+      padding: 6px 0 20px;
+    }
+
+    .reports-hero {
+      align-items: center;
+      background: #fff;
+      border: 1px solid #d9dee5;
+      border-radius: 8px;
+      box-shadow: 0 12px 30px rgba(31, 41, 51, .08);
+      display: flex;
+      gap: 18px;
+      justify-content: space-between;
+      padding: 20px;
+    }
+
+    .reports-kicker {
+      color: #13745d;
+      font-size: .76rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .reports-hero h1 {
+      color: #1f344d;
+      font-size: 1.7rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 4px 0;
+    }
+
+    .reports-hero p {
+      color: #667085;
+      margin: 0;
+      max-width: 640px;
+    }
+
+    .reports-summary {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, minmax(92px, 1fr));
+      min-width: 330px;
+    }
+
+    .reports-summary div {
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .reports-summary span,
+    .report-group-heading span,
+    .report-card em {
+      color: #667085;
+      font-size: .78rem;
+      font-style: normal;
+      font-weight: 800;
+    }
+
+    .reports-summary strong {
+      color: #1f344d;
+      display: block;
+      font-size: 1.3rem;
+      margin-top: 3px;
+    }
+
+    .report-group {
+      background: #fff;
+      border: 1px solid #d9dee5;
+      border-radius: 8px;
+      box-shadow: 0 12px 30px rgba(31, 41, 51, .08);
+      padding: 16px;
+    }
+
+    .report-group-heading {
+      align-items: baseline;
+      border-bottom: 1px solid #e3e8ef;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      justify-content: space-between;
+      margin: -2px 0 14px;
+      padding-bottom: 12px;
+    }
+
+    .report-group-heading h2 {
+      color: #1f344d;
+      font-size: 1.05rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0;
+    }
+
+    .report-card-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .report-card {
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      color: #26384d;
+      display: grid;
+      gap: 7px;
+      min-height: 132px;
+      padding: 15px;
+      text-decoration: none;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+    }
+
+    .report-card:hover {
+      border-color: #b9d9d1;
+      box-shadow: 0 10px 24px rgba(31, 41, 51, .12);
+      color: #123d35;
+      text-decoration: none;
+      transform: translateY(-1px);
+    }
+
+    .report-card i {
+      align-items: center;
+      background: #edf7f4;
+      border: 1px solid #cfe8e0;
+      border-radius: 8px;
+      color: #13745d;
+      display: inline-flex;
+      font-size: 1.35rem;
+      height: 42px;
+      justify-content: center;
+      width: 42px;
+    }
+
+    .report-card span {
+      font-size: .94rem;
+      font-weight: 900;
+    }
+
+    .report-card strong {
+      color: #1f344d;
+      font-size: 1.28rem;
+      font-weight: 900;
+    }
+
+    .split-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .split-actions a {
+      background: #fff;
+      border: 1px solid #d9dee5;
+      border-radius: 6px;
+      color: #13745d;
+      font-size: .82rem;
+      font-weight: 900;
+      padding: 7px 10px;
+      text-decoration: none;
+    }
+
+    .split-actions a:hover {
+      background: #edf7f4;
+      color: #123d35;
+      text-decoration: none;
+    }
+
+    @media (max-width: 1199.98px) {
+      .report-card-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 991.98px) {
+      .reports-hero {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .reports-summary {
+        min-width: 0;
+      }
+
+      .report-card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575.98px) {
+      .reports-summary,
+      .report-card-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 {% endblock content %}

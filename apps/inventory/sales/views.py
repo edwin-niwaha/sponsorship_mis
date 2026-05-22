@@ -1,19 +1,18 @@
 import json
 import logging
-from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Count, DecimalField, ExpressionWrapper, F, Sum
+from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 
 from apps.inventory.customers.models import Customer
-from apps.inventory.products.models import Inventory, Product
+from apps.inventory.products.models import Inventory, Product, ProductVariant, StockMovement
 
 # Import custom decorators
 from apps.users.decorators import (
@@ -34,22 +33,16 @@ logger = logging.getLogger(__name__)
 @login_required
 @admin_or_manager_or_staff_required
 def sales_list_view(request):
-    # Annotate sales with calculated profit
+    # Fetch sales with enough item detail to calculate variant-aware profit.
     sales = (
         Sale.objects.all()
         .select_related("customer")
-        .prefetch_related("items__product")
-        .annotate(
-            profit=Sum(
-                ExpressionWrapper(
-                    F("items__price") - F("items__product__cost"),
-                    output_field=DecimalField(),
-                )
-                * F("items__quantity")
-            )
-        )
+        .prefetch_related("items__product", "items__variant")
         .order_by("id")
     )
+
+    for sale in sales:
+        sale.profit = sum(item.calculate_profit() for item in sale.items.all())
 
     paginator = Paginator(sales, 10)
     page_number = request.GET.get("page")
@@ -58,7 +51,7 @@ def sales_list_view(request):
     # Calculate aggregated totals
     grand_total = sales.aggregate(Sum("grand_total"))["grand_total__sum"] or 0
     total_items = sum(sale.sum_items() for sale in sales)
-    total_profit = sales.aggregate(Sum("profit"))["profit__sum"] or 0
+    total_profit = sum(sale.profit for sale in sales)
 
     context = {
         "table_title": "Sales List",
@@ -76,15 +69,44 @@ def sales_list_view(request):
 @login_required
 def sales_add_view(request):
     # Fetch only active products with their inventory
-    products = Product.objects.filter(status="ACTIVE").select_related("inventory")
+    products = (
+        Product.objects.filter(status="ACTIVE")
+        .select_related("inventory")
+        .prefetch_related("variants")
+    )
+    variants = ProductVariant.objects.filter(
+        status="ACTIVE", product__status="ACTIVE"
+    ).select_related("product")
+    sale_items = []
+    for product in products:
+        active_variants = list(product.variants.filter(status="ACTIVE"))
+        if not active_variants:
+            sale_items.append(
+                {
+                    "value": f"product:{product.id}",
+                    "name": product.name,
+                    "price": product.price,
+                    "cost": product.cost,
+                    "stock": product.base_stock,
+                }
+            )
+
+    for variant in variants:
+        sale_items.append(
+            {
+                "value": f"variant:{variant.id}",
+                "name": variant.display_name,
+                "price": variant.effective_price,
+                "cost": variant.effective_cost,
+                "stock": variant.quantity,
+            }
+        )
 
     context = {
         "customers": [c.to_select2() for c in Customer.objects.all()],
         "products": products,
-        "total_stock": sum(
-            product.inventory.quantity if hasattr(product, "inventory") else 0
-            for product in products
-        ),
+        "sale_items": sale_items,
+        "total_stock": sum(item["stock"] for item in sale_items),
     }
 
     if request.method == "POST":
@@ -113,35 +135,63 @@ def sales_add_view(request):
                 products_data = request.POST.getlist("products")
                 for product_data_str in products_data:
                     product_data = json.loads(product_data_str)
-                    product_obj = Product.objects.get(id=int(product_data["id"]))
+                    item_type = product_data.get("type", "product")
+                    item_id = int(product_data["id"])
                     quantity_requested = int(product_data["quantity"])
+                    variant_obj = None
 
-                    # Check if the product has inventory and stock is available
-                    if (
-                        not hasattr(product_obj, "inventory")
-                        or product_obj.inventory.quantity < quantity_requested
-                    ):
-                        raise ValueError(
-                            f"Oops! Insufficient stock for {product_obj.name}"
+                    if item_type == "variant":
+                        variant_obj = ProductVariant.objects.select_for_update().get(
+                            id=item_id
                         )
+                        product_obj = variant_obj.product
+                        if variant_obj.quantity < quantity_requested:
+                            raise ValueError(
+                                f"Oops! Insufficient stock for {variant_obj.display_name}"
+                            )
+                        variant_obj.quantity -= quantity_requested
+                        variant_obj.save(update_fields=["quantity", "updated_at"])
+                    else:
+                        product_obj = Product.objects.select_for_update().get(id=item_id)
+                        # Check if the product has inventory and stock is available
+                        if (
+                            not hasattr(product_obj, "inventory")
+                            or product_obj.inventory.quantity < quantity_requested
+                        ):
+                            raise ValueError(
+                                f"Oops! Insufficient stock for {product_obj.name}"
+                            )
 
-                    # Update inventory stock
-                    inventory_obj = product_obj.inventory
-                    inventory_obj.quantity -= quantity_requested
-                    inventory_obj.save()
-                    logger.info(
-                        f"Stock updated for {product_obj.name}: {inventory_obj.quantity}"
-                    )
+                        # Update inventory stock
+                        inventory_obj = product_obj.inventory
+                        inventory_obj.quantity -= quantity_requested
+                        inventory_obj.save()
+                        logger.info(
+                            f"Stock updated for {product_obj.name}: {inventory_obj.quantity}"
+                        )
 
                     # Create sale detail
                     detail_attributes = {
                         "sale": new_sale,
                         "product": product_obj,
+                        "variant": variant_obj,
                         "price": float(product_data["price"]),
                         "quantity": quantity_requested,
                         "total_detail": float(product_data["total_product"]),
                     }
                     SaleDetail.objects.create(**detail_attributes)
+                    StockMovement.objects.create(
+                        product=product_obj,
+                        variant=variant_obj,
+                        movement_type=StockMovement.SALE,
+                        quantity=-quantity_requested,
+                        unit_cost=(
+                            variant_obj.effective_cost if variant_obj else product_obj.cost
+                        ),
+                        unit_price=float(product_data["price"]),
+                        reference=f"Sale #{new_sale.id}",
+                        created_by=request.user,
+                    )
                     logger.info(f"Sale detail added: {detail_attributes}")
 
                 messages.success(
@@ -313,7 +363,7 @@ def receipt_pdf_view(request, sale_id):
 
 def sales_report_view(request):
     # Initialize the form with GET data
-    form = ReportPeriodForm(request.GET)
+    form = ReportPeriodForm(request.GET or None)
     start_date = None
     end_date = None
 
@@ -325,88 +375,32 @@ def sales_report_view(request):
     sales = (
         Sale.objects.all()
         .select_related("customer")
-        .prefetch_related("items__product__inventory")
+        .prefetch_related("items__product__inventory", "items__variant")
         .order_by("id")
     )
 
-    # Aggregate totals
-    total_sales = sales.aggregate(
-        total_revenue=Sum("items__total_detail"),  # Calculate directly from items
-        total_items_sold=Sum("items__quantity"),
-        total_transactions=Count("id"),
-    )
+    if start_date:
+        sales = sales.filter(trans_date__gte=start_date)
+    if end_date:
+        sales = sales.filter(trans_date__lte=end_date)
 
-    cogs = 0
     for sale in sales:
-        for item in sale.items.all():
-            product = item.product
-            cogs += product.cost * item.quantity
+        sale.profit = sum(item.calculate_profit() for item in sale.items.all())
 
     # Calculate stock balance
     stock_balance = (
         Inventory.objects.aggregate(total_stock=Sum("quantity"))["total_stock"] or 0
     )
 
-    # Prepare detailed sales data
-    sale_details = []
-    total_profit_after_sales = 0
-
-    for sale in sales:
-        sale_profit = 0
-        item_details = []
-
-        for item in sale.items.all():
-            product = item.product
-            # Get the original price from the ProductVolume (before discount)
-            original_price = product.price
-
-            # Apply discount if exists (use price from SaleDetail)
-            discounted_price = item.price  # Use the price from SaleDetail directly
-            item_profit = (
-                (Decimal(discounted_price) - product.cost) * item.quantity
-                if product
-                else 0
-            )
-            sale_profit += item_profit
-            total_profit_after_sales += item_profit
-
-            item_details.append(
-                {
-                    "product": product.name,
-                    "original_price": original_price,  # Add original price
-                    "price": discounted_price,  # Use price from SaleDetail
-                    "cost": (product.cost if product else 0),
-                    "quantity": item.quantity,
-                    "total": item.total_detail,
-                }
-            )
-
-        sale_details.append(
-            {
-                "trans_date": sale.trans_date,
-                "customer": (
-                    f"{sale.customer.first_name} {sale.customer.last_name}"
-                    if sale.customer
-                    else "N/A"
-                ),
-                "grand_total": sale.grand_total,
-                "profit": sale_profit,
-                "payment_method": sale.payment_method,
-                "item_details": item_details,
-            }
-        )
-
     context = {
         "form": form,
         "start_date": start_date,
         "end_date": end_date,
-        "total_revenue": total_sales["total_revenue"],
-        "total_items_sold": total_sales["total_items_sold"],
-        "total_transactions": total_sales["total_transactions"],
-        "total_cogs": cogs,
-        "sales": sale_details,
+        "sales": sales,
+        "grand_total": sales.aggregate(Sum("grand_total"))["grand_total__sum"] or 0,
+        "total_items": sum(sale.sum_items() for sale in sales),
+        "total_profit": sum(sale.profit for sale in sales),
         "stock_balance": stock_balance,
-        "total_profit_after_sales": total_profit_after_sales,
         "table_title": "Sales Report",
     }
 

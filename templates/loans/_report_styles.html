@@ -1,0 +1,197 @@
+<style>
+  .loan-report-page {
+    margin-top: -18px;
+    padding: 0 0 28px;
+  }
+
+  .loan-report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+    padding: 16px 18px;
+    border: 1px solid #dfe5ef;
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  .loan-report-title {
+    margin: 0;
+    color: #182230;
+    font-size: 1.2rem;
+    font-weight: 800;
+  }
+
+  .loan-report-subtitle {
+    margin: 4px 0 0;
+    color: #667085;
+    font-size: .86rem;
+  }
+
+  .loan-report-actions,
+  .loan-report-filters {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .loan-report-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .loan-report-kpi,
+  .loan-report-panel {
+    border: 1px solid #dfe5ef;
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  .loan-report-kpi {
+    padding: 12px 14px;
+  }
+
+  .loan-report-kpi span {
+    display: block;
+    color: #667085;
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .loan-report-kpi strong {
+    display: block;
+    margin-top: 4px;
+    color: #182230;
+    font-size: 1rem;
+  }
+
+  .loan-report-panel {
+    overflow: hidden;
+  }
+
+  .loan-report-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid #edf1f7;
+    background: #f8fafc;
+  }
+
+  .loan-report-table {
+    margin-bottom: 0;
+    color: #344054;
+    font-size: .84rem;
+    white-space: nowrap;
+  }
+
+  .loan-report-table thead th {
+    border-bottom: 1px solid #d0d5dd;
+    color: #475467;
+    font-size: .72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .loan-report-table td,
+  .loan-report-table th {
+    vertical-align: middle;
+    padding: .56rem .62rem;
+  }
+
+  .loan-status-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #eef4ff;
+    color: #175cd3;
+    font-size: .72rem;
+    font-weight: 800;
+  }
+
+  .loan-status-badge.danger {
+    background: #fef3f2;
+    color: #b42318;
+  }
+
+  .loan-status-badge.warning {
+    background: #fffaeb;
+    color: #b54708;
+  }
+
+  .loan-empty-state {
+    padding: 42px 16px;
+    text-align: center;
+    color: #667085;
+  }
+
+  .loan-pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 14px;
+  }
+
+  @media (max-width: 992px) {
+    .loan-report-page {
+      margin-top: -8px;
+    }
+
+    .loan-report-header {
+      flex-direction: column;
+    }
+
+    .loan-report-kpis {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 576px) {
+    .loan-report-kpis {
+      grid-template-columns: 1fr;
+    }
+
+    .loan-report-actions,
+    .loan-report-filters {
+      width: 100%;
+    }
+
+    .loan-report-filters .form-control,
+    .loan-report-filters .form-select,
+    .loan-report-filters .btn {
+      flex: 1 1 100%;
+    }
+  }
+
+  @media print {
+    .print-hide,
+    .loan-report-actions,
+    .loan-report-filters,
+    .pagination {
+      display: none !important;
+    }
+
+    .loan-report-page {
+      margin: 0;
+      padding: 0;
+    }
+
+    .loan-report-header,
+    .loan-report-panel,
+    .loan-report-kpi {
+      border: 0;
+      box-shadow: none;
+    }
+
+    .loan-report-table {
+      font-size: .72rem;
+    }
+  }
+</style>

@@ -1,0 +1,476 @@
+{% extends "accounts/base.html" %}
+{% load humanize static %}
+
+{% block title %}{{ report_title }}{% endblock title %}
+
+{% block content %}
+<style>
+  .sponsor-report-page {
+    background: #f5f7fb;
+    min-height: 80vh;
+    padding: 22px 0 56px;
+  }
+
+  .sponsor-report-wrap {
+    margin: 0 auto;
+    max-width: 1180px;
+    padding: 0 24px;
+  }
+
+  .report-topbar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .report-action {
+    align-items: center;
+    background: #fff;
+    border: 1px solid #d8e0ea;
+    border-radius: 8px;
+    color: #334155;
+    display: inline-flex;
+    font-weight: 800;
+    gap: 8px;
+    padding: 9px 12px;
+    text-decoration: none;
+  }
+
+  .report-action:hover {
+    border-color: #13745d;
+    color: #13745d;
+    text-decoration: none;
+  }
+
+  .report-action.primary {
+    background: #13745d;
+    border-color: #13745d;
+    color: #fff;
+  }
+
+  .payment-report {
+    background: #fff;
+    border: 1px solid #dde5ee;
+    border-radius: 8px;
+    box-shadow: 0 14px 34px rgba(31, 41, 51, .08);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .payment-report::before {
+    background-image: url("{% static 'images/file.png' %}");
+    background-position: center 58%;
+    background-repeat: no-repeat;
+    background-size: min(520px, 68%);
+    content: "";
+    inset: 0;
+    opacity: .045;
+    pointer-events: none;
+    position: absolute;
+    z-index: 0;
+  }
+
+  .payment-report > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .payment-report-hero {
+    background: linear-gradient(135deg, #f8fbff 0%, #edf7f4 100%);
+    border-bottom: 1px solid #dfe8ef;
+    display: grid;
+    gap: 18px;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, auto);
+    padding: 24px;
+  }
+
+  .report-kicker {
+    color: #13745d;
+    font-size: .76rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .payment-report-hero h1 {
+    color: #1f344d;
+    font-size: 1.7rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    margin: 5px 0 6px;
+  }
+
+  .payment-report-hero p,
+  .muted-copy {
+    color: #667085;
+    margin: 0;
+  }
+
+  .sponsor-id-box {
+    background: #fff;
+    border: 1px solid #d9e5df;
+    border-radius: 8px;
+    display: grid;
+    gap: 8px;
+    padding: 14px;
+  }
+
+  .sponsor-id-box span {
+    color: #667085;
+    font-size: .78rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .sponsor-id-box strong {
+    color: #1f344d;
+    font-size: 1.05rem;
+    font-weight: 900;
+  }
+
+  .report-stats,
+  .year-grid {
+    display: grid;
+    gap: 14px;
+  }
+
+  .report-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 18px 24px;
+  }
+
+  .stat-tile,
+  .year-tile {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 15px;
+  }
+
+  .stat-tile {
+    background: #fff;
+    display: grid;
+    gap: 8px;
+  }
+
+  .stat-tile i {
+    align-items: center;
+    background: #edf7f4;
+    border: 1px solid #cfe8e0;
+    border-radius: 8px;
+    color: #13745d;
+    display: inline-flex;
+    font-size: 1.15rem;
+    height: 38px;
+    justify-content: center;
+    width: 38px;
+  }
+
+  .stat-tile span,
+  .year-tile span {
+    color: #667085;
+    font-size: .77rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .stat-tile strong,
+  .year-tile strong {
+    color: #1f344d;
+    font-size: 1.2rem;
+    font-weight: 900;
+  }
+
+  .report-section {
+    border-top: 1px solid #edf1f5;
+    padding: 20px 24px;
+  }
+
+  .section-head {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .section-head h2 {
+    color: #26384d;
+    font-size: 1.05rem;
+    font-weight: 900;
+    margin: 0;
+  }
+
+  .section-head span {
+    color: #667085;
+    font-size: .82rem;
+    font-weight: 800;
+  }
+
+  .year-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .year-tile {
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .report-table-wrap {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow-x: auto;
+  }
+
+  .report-table {
+    border-collapse: collapse;
+    margin: 0;
+    min-width: 840px;
+    width: 100%;
+  }
+
+  .report-table th,
+  .report-table td {
+    border-bottom: 1px solid #edf1f5;
+    padding: 12px 14px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .report-table th {
+    background: #f8fafc;
+    color: #334155;
+    font-size: .75rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .report-table td {
+    color: #475569;
+    font-size: .9rem;
+  }
+
+  .report-table tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .name-cell strong,
+  .amount-cell {
+    color: #1f344d;
+    font-weight: 900;
+  }
+
+  .name-cell span {
+    color: #667085;
+    display: block;
+    font-size: .8rem;
+    margin-top: 3px;
+  }
+
+  .status-pill {
+    background: #e8f7ef;
+    border-radius: 999px;
+    color: #13745d;
+    display: inline-flex;
+    font-size: .75rem;
+    font-weight: 900;
+    padding: 5px 9px;
+  }
+
+  .report-empty {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    color: #667085;
+    padding: 18px;
+  }
+
+  @media (max-width: 991.98px) {
+    .payment-report-hero,
+    .report-stats,
+    .year-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .payment-report-hero {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 575.98px) {
+    .sponsor-report-wrap {
+      padding: 0 14px;
+    }
+
+    .report-stats,
+    .year-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .payment-report-hero,
+    .report-section {
+      padding: 18px;
+    }
+  }
+
+  @media print {
+    .navbar,
+    .sidebar,
+    .report-topbar,
+    .footer,
+    footer {
+      display: none !important;
+    }
+
+    .sponsor-report-page {
+      background: #fff;
+      padding: 0;
+    }
+
+    .sponsor-report-wrap {
+      max-width: none;
+      padding: 0;
+    }
+
+    .payment-report {
+      border: 0;
+      box-shadow: none;
+    }
+
+    .payment-report::before {
+      background-size: 460px auto;
+      opacity: .07;
+    }
+  }
+</style>
+
+<main class="sponsor-report-page">
+  <div class="sponsor-report-wrap">
+    <div class="report-topbar">
+      <a class="report-action" href="{% url 'sponsor_portal' %}">
+        <i class="fas fa-arrow-left"></i>
+        Back to Portal
+      </a>
+      <button class="report-action primary" type="button" onclick="window.print()">
+        <i class="fas fa-print"></i>
+        Print Report
+      </button>
+    </div>
+
+    <article class="payment-report" id="printMe">
+      <section class="payment-report-hero">
+        <div>
+          <div class="report-kicker">Sponsor Payment Report</div>
+          <h1>{{ report_title }}</h1>
+          <p>{{ report_subtitle }}</p>
+        </div>
+        <div class="sponsor-id-box">
+          <span>Sponsor Account</span>
+          {% if sponsor %}
+            <strong>{{ sponsor.first_name }} {{ sponsor.last_name }}</strong>
+            <p class="muted-copy">{{ sponsor.prefixed_id }} | {{ sponsor.email|default:"Email not recorded" }}</p>
+          {% else %}
+            <strong>Profile pending</strong>
+            <p class="muted-copy">This login is not linked to a sponsor record yet.</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="report-stats">
+        <div class="stat-tile">
+          <i class="fas fa-wallet"></i>
+          <span>Total Valid Payments</span>
+          <strong>UGX {{ total_amount|default:0|floatformat:0|intcomma }}</strong>
+        </div>
+        <div class="stat-tile">
+          <i class="fas fa-receipt"></i>
+          <span>Payment Records</span>
+          <strong>{{ payment_count|default:0|intcomma }}</strong>
+        </div>
+        <div class="stat-tile">
+          <i class="fas fa-calendar-check"></i>
+          <span>Latest Payment</span>
+          <strong>{% if latest_payment %}{{ latest_payment.payment_date }}{% else %}None yet{% endif %}</strong>
+        </div>
+        <div class="stat-tile">
+          <i class="fas fa-check-circle"></i>
+          <span>Report Status</span>
+          <strong>Validated</strong>
+        </div>
+      </section>
+
+      <section class="report-section">
+        <div class="section-head">
+          <h2>Yearly Summary</h2>
+          <span>{{ beneficiary_label }} payments grouped by year</span>
+        </div>
+        {% if yearly_totals %}
+          <div class="year-grid">
+            {% for item in yearly_totals %}
+              <div class="year-tile">
+                <span>{{ item.payment_year }}</span>
+                <strong>UGX {{ item.total|default:0|floatformat:0|intcomma }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="report-empty">No validated payment totals are available for this report yet.</div>
+        {% endif %}
+      </section>
+
+      <section class="report-section">
+        <div class="section-head">
+          <h2>Payment Ledger</h2>
+          <span>{{ payment_count|default:0|intcomma }} validated record{{ payment_count|pluralize }}</span>
+        </div>
+
+        {% if payments %}
+          <div class="report-table-wrap">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>{{ beneficiary_label }}</th>
+                  <th>Payment Period</th>
+                  <th>Payment Date</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for payment in payments %}
+                  <tr>
+                    <td class="name-cell">
+                      {% if report_kind == "staff" %}
+                        <strong>{{ payment.staff.first_name }} {{ payment.staff.last_name }}</strong>
+                        <span>{{ payment.staff.prefixed_id }} | {{ payment.staff.job_title|default:"Job title not recorded" }}</span>
+                      {% else %}
+                        <strong>{{ payment.child.full_name|default:"Child support" }}</strong>
+                        <span>{% if payment.child %}{{ payment.child.prefixed_id }} | {{ payment.child.gender|default:"Gender not recorded" }}{% else %}General child sponsorship support{% endif %}</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ payment.month }} {{ payment.payment_year }}</td>
+                    <td>{{ payment.payment_date }}</td>
+                    <td class="amount-cell">UGX {{ payment.amount|floatformat:0|intcomma }}</td>
+                    <td><span class="status-pill">Validated</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          {% if sponsor %}
+            <div class="report-empty">No validated {{ beneficiary_label|lower }} sponsorship payments are linked to your account yet.</div>
+          {% else %}
+            <div class="report-empty">Your login is not connected to a sponsor account. Please contact the sponsorship office to link your profile.</div>
+          {% endif %}
+        {% endif %}
+      </section>
+    </article>
+  </div>
+</main>
+{% endblock content %}

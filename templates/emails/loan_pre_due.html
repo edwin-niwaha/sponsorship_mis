@@ -2,36 +2,30 @@
 {% load humanize %}
 
 {% block content %}
-
 <p>Dear <strong>{{ borrower.full_name }}</strong>,</p>
 
-<p>
-This is a reminder that your next installment for Loan #{{ loan.id }}
-is due in <strong>{{ days_until }} day{{ days_until|pluralize }}</strong>.
-</p>
+<p>Your upcoming loan installment is due soon.</p>
 
 <table>
-<tr>
-<th>Due Date</th>
-<td>{{ next_due_date|date:"d M Y" }}</td>
-</tr>
-<tr>
-<th>Installment Amount</th>
-<td class="text-right amount">
-UGX {{ amount_upcoming|floatformat:"0"|intcomma }}
-</td>
-</tr>
-<tr>
-<th>Total Outstanding</th>
-<td class="text-right amount">
-UGX {{ total_outstanding|floatformat:"0"|intcomma }}
-</td>
-</tr>
+  <tr>
+    <th>Loan</th>
+    <td>#{{ loan.id }}</td>
+  </tr>
+  <tr>
+    <th>Due date</th>
+    <td>{{ payment_due_date|date:"d M Y" }}</td>
+  </tr>
+  <tr>
+    <th>{{ action_label }}</th>
+    <td class="text-right amount">UGX {{ action_amount|floatformat:"0"|intcomma }}</td>
+  </tr>
+  <tr>
+    <th>Total outstanding</th>
+    <td class="text-right amount">UGX {{ total_outstanding|floatformat:"0"|intcomma }}</td>
+  </tr>
 </table>
 
-<p>Please plan accordingly to avoid late charges.</p>
+<p>Please make payment on or before the due date to keep your SACCO account in good standing.</p>
 
-
-<p><strong>Pendeza Uganda</strong></p>
-
+<p><strong>Pendeza Uganda SACCO</strong></p>
 {% endblock %}

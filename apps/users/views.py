@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordResetView
 from django.contrib.messages.views import SuccessMessageMixin
@@ -7,7 +8,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.contrib.auth.models import User
 from django.db import transaction
+from django.db.models import Q
 from django.http import (
     HttpResponseBadRequest,
     HttpResponseRedirect,
@@ -27,6 +30,7 @@ from .forms import (
     DocumentForm,
     EbookUploadForm,
     LoginForm,
+    LoginVerificationForm,
     PolicyForm,
     RegisterForm,
     UpdateProfileAllForm,
@@ -41,6 +45,13 @@ from .models import (
     PolicyRead,
     Profile,
 )
+from .login_verification import (
+    LOGIN_VERIFICATION_SESSION_KEY,
+    LOGIN_VERIFICATION_TIMEOUT_SECONDS,
+    start_login_verification_session,
+    token_matches,
+)
+from .roles import get_login_redirect_url
 
 
 # =================================== Home User  ===================================
@@ -69,8 +80,7 @@ class RegisterView(View):
         if form.is_valid():
             user = form.save()  # Save the user and get the instance
 
-            # Auto-create a Profile for the user
-            Profile.objects.create(user=user)
+            Profile.objects.get_or_create(user=user)
 
             username = form.cleaned_data.get("username")
             messages.success(
@@ -83,43 +93,141 @@ class RegisterView(View):
 
 
 # =================================== Login View ===================================
-
-
-# class CustomLoginView(LoginView):
-#     form_class = LoginForm
-
-#     def form_valid(self, form):
-#         remember_me = form.cleaned_data.get("remember_me")
-
-#         if not remember_me:
-#             # set session expiry to 0 seconds. So it will automatically close the session after the browser is closed.
-#             self.request.session.set_expiry(0)
-
-#             # Set session as modified to force data updates/cookie to be saved.
-#             self.request.session.modified = True
-
-#         # else browser session will be as long as the session cookie time "SESSION_COOKIE_AGE" defined in settings.py
-#         return super(CustomLoginView, self).form_valid(form)
-
-
 class CustomLoginView(LoginView):
     form_class = LoginForm
+    verification_session_key = LOGIN_VERIFICATION_SESSION_KEY
+    verification_timeout_seconds = LOGIN_VERIFICATION_TIMEOUT_SECONDS
+
+    def get_success_url(self):
+        return self.get_success_url_for_user(
+            self.request.user,
+            redirect_to=self.get_redirect_url(),
+        )
+
+    def get_success_url_for_user(self, user, redirect_to=None):
+        return get_login_redirect_url(user, redirect_to=redirect_to)
+
+    def token_matches(self, token, signed_token):
+        return token_matches(token, signed_token)
 
     def form_valid(self, form):
         user = form.get_user()
 
         # Check if the user has a profile, create one if it doesn't exist
-        if not hasattr(user, "profile"):
-            Profile.objects.create(user=user)
+        Profile.objects.get_or_create(user=user)
+        if not user.email:
+            form.add_error(None, "Your account does not have an email address.")
+            return self.form_invalid(form)
 
         remember_me = form.cleaned_data.get("remember_me")
+        try:
+            start_login_verification_session(
+                self.request,
+                user,
+                remember_me=remember_me,
+                redirect_to=self.get_redirect_url(),
+            )
+        except Exception:
+            form.add_error(
+                None,
+                "We could not send the verification email. Please try again.",
+            )
+            return self.form_invalid(form)
+        messages.info(
+            self.request,
+            "We sent a verification code to your email. Enter it to finish signing in.",
+        )
+        return redirect("login_verify")
 
-        if not remember_me:
-            # Set session expiry to 0 seconds so the session ends when the browser is closed
-            self.request.session.set_expiry(0)
-            self.request.session.modified = True
 
-        return super().form_valid(form)
+class LoginVerificationView(View):
+    template_name = "accounts/login_verify.html"
+    form_class = LoginVerificationForm
+    session_key = CustomLoginView.verification_session_key
+
+    def get_pending_login(self, request):
+        return request.session.get(self.session_key)
+
+    def get_verification_email(self, pending):
+        email = pending.get("email")
+        if email:
+            return email
+        user_id = pending.get("user_id")
+        if not user_id:
+            return None
+        return User.objects.filter(pk=user_id).values_list("email", flat=True).first()
+
+    def get(self, request, *args, **kwargs):
+        pending = self.get_pending_login(request)
+        if not pending:
+            messages.info(request, "Please sign in first.")
+            return redirect("login")
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": self.form_class(),
+                "verification_email": self.get_verification_email(pending),
+            },
+        )
+
+    def post(self, request, *args, **kwargs):
+        pending = self.get_pending_login(request)
+        if not pending:
+            messages.info(request, "Please sign in first.")
+            return redirect("login")
+
+        form = self.form_class(request.POST)
+        if not form.is_valid():
+            return render(
+                request,
+                self.template_name,
+                {
+                    "form": form,
+                    "verification_email": self.get_verification_email(pending),
+                },
+            )
+
+        attempts = int(pending.get("attempts", 0)) + 1
+        pending["attempts"] = attempts
+        request.session[self.session_key] = pending
+        request.session.modified = True
+        if attempts > 5:
+            request.session.pop(self.session_key, None)
+            messages.error(request, "Too many invalid codes. Please sign in again.")
+            return redirect("login")
+
+        login_view = CustomLoginView()
+        token = form.cleaned_data["token"]
+        if not login_view.token_matches(token, pending.get("token", "")):
+            form.add_error("token", "Invalid or expired verification code.")
+            return render(
+                request,
+                self.template_name,
+                {
+                    "form": form,
+                    "verification_email": self.get_verification_email(pending),
+                },
+            )
+
+        user = get_object_or_404(User, pk=pending["user_id"])
+        Profile.objects.get_or_create(user=user)
+        auth_login(
+            request,
+            user,
+            backend="django.contrib.auth.backends.ModelBackend",
+        )
+        if not pending.get("remember_me"):
+            request.session.set_expiry(0)
+        request.session.pop(self.session_key, None)
+        request.session.modified = True
+        messages.success(request, "You are signed in.", extra_tags="bg-success")
+        return redirect(
+            login_view.get_success_url_for_user(
+                user,
+                redirect_to=pending.get("redirect_to"),
+            )
+        )
 
 
 # =================================== Reset password View  ===================================
@@ -154,12 +262,30 @@ class ChangePasswordView(PasswordChangeView):
 @admin_required
 def profile_list(request):
     # Fetch all profiles and related user data
-    queryset = Profile.objects.select_related("user").all().order_by("user__username")
+    queryset = (
+        Profile.objects.select_related("user", "client", "sponsor")
+        .all()
+        .order_by("user__username")
+    )
+    all_profiles = queryset
 
     # Search functionality
-    search_query = request.GET.get("search")
+    search_query = request.GET.get("search", "").strip()
     if search_query:
-        queryset = queryset.filter(user__username__icontains=search_query)
+        queryset = queryset.filter(
+            Q(user__username__icontains=search_query)
+            | Q(user__first_name__icontains=search_query)
+            | Q(user__last_name__icontains=search_query)
+            | Q(user__email__icontains=search_query)
+            | Q(role__icontains=search_query)
+            | Q(account_type__icontains=search_query)
+            | Q(staff_role__icontains=search_query)
+            | Q(client__full_name__icontains=search_query)
+            | Q(client__reg_number__icontains=search_query)
+            | Q(sponsor__first_name__icontains=search_query)
+            | Q(sponsor__last_name__icontains=search_query)
+            | Q(sponsor__email__icontains=search_query)
+        )
 
     # Pagination
     paginator = Paginator(queryset, 50)
@@ -180,6 +306,20 @@ def profile_list(request):
         {
             "profiles": profiles,
             "table_title": "Profile List",
+            "search_query": search_query,
+            "total_profiles": all_profiles.count(),
+            "staff_profiles": sum(
+                1 for profile in all_profiles if profile.resolved_account_type == "staff"
+            ),
+            "client_profiles": sum(
+                1 for profile in all_profiles if profile.resolved_account_type == "client"
+            ),
+            "sponsor_profiles": sum(
+                1 for profile in all_profiles if profile.resolved_account_type == "sponsor"
+            ),
+            "guest_profiles_count": sum(
+                1 for profile in all_profiles if profile.resolved_account_type == "guest"
+            ),
         },
     )
 

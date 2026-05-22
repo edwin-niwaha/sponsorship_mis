@@ -1,104 +1,144 @@
 {% extends "accounts/base.html" %}
-{% block title %} Login Page {% endblock title%}
+{% block title %}Sign In{% endblock title %}
 {% block content %}
-<div class="form-content my-3 p-3">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-7">
-                <div class="card shadow-lg border-0 rounded-lg mt-0 mb-3">
-                    <div class="card-header justify-content-center">
-                        <h3 class="font-weight-light my-1 text-center" style="color:#F79420;">SIGN IN</h3>
-                    </div>
-                    {% if form.errors %}
-                    <div class="alert alert-danger alert-dismissible" role="alert">
-                        <div id="form_errors">
-                            {% for key, value in form.errors.items %}
-                            <strong>{{ value }}</strong>
-                            {% endfor %}
-                        </div>
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    {% endif %}
-                    <div class="card-body">
-                        <form method="POST">
-                            {% csrf_token %}
-                            <div class="form-row">
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <a href="{% url 'social:begin' 'google-oauth2' %}"
-                                            class="btn btn-link btn-lg active btn-block btn-danger">
-                                            <i class="fab fa-google"></i>
-                                            <span class="ms-2 fs-12 text-uppercase">Sign in With Google</span>
-                                        </a>
+  <style>
+    .login-shell { max-width: 1080px; margin: 24px auto; }
+    .login-panel {
+      background: #fff;
+      border: 1px solid #d9dee5;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .login-copy {
+      background: #123d35;
+      color: #fff;
+      min-height: 100%;
+      padding: 34px;
+    }
+    .login-copy h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: 0; }
+    .login-copy p { color: rgba(255, 255, 255, .82); }
+    .login-audience-grid {
+      display: grid;
+      gap: 10px;
+      margin-top: 24px;
+    }
+    .login-audience {
+      background: rgba(255, 255, 255, .08);
+      border: 1px solid rgba(255, 255, 255, .14);
+      border-radius: 8px;
+      padding: 13px 14px;
+    }
+    .login-audience div {
+      font-weight: 900;
+      margin-bottom: 3px;
+    }
+    .login-audience p {
+      font-size: .88rem;
+      margin: 0;
+    }
+    .login-form-area { padding: 34px; }
+    .login-title { color: #26384d; font-size: 1.5rem; font-weight: 800; }
+    .google-btn {
+      align-items: center;
+      background: #fff;
+      border: 1px solid #d9dee5;
+      border-radius: 6px;
+      color: #26384d;
+      display: flex;
+      font-weight: 700;
+      justify-content: center;
+      min-height: 46px;
+      text-decoration: none;
+    }
+    .google-btn:hover { color: #26384d; text-decoration: none; background: #f8fafc; }
+    .divider { align-items: center; color: #667085; display: flex; font-size: .78rem; font-weight: 800; gap: 10px; text-transform: uppercase; }
+    .divider::before, .divider::after { background: #e3e8ef; content: ""; flex: 1; height: 1px; }
+    .login-route-note {
+      background: #f6f8fb;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      color: #516173;
+      font-size: .9rem;
+      padding: 12px 14px;
+    }
+    @media (max-width: 768px) {
+      .login-copy, .login-form-area { padding: 22px; }
+      .login-copy h1 { font-size: 1.45rem; }
+    }
+  </style>
 
-                                        <!-- <a href="{% url 'social:begin' 'github' %}"
-                                            class="btn btn-link btn-lg active btn-block btn-secondary">
-                                            <i class="fab fa-github"></i>
-                                            <span class="ms-2 fs-12 text-uppercase">Sign in with GitHub</span>
-                                        </a> -->
+  <main class="login-shell">
+    <div class="login-panel shadow-sm">
+      <div class="row no-gutters">
+        <div class="col-lg-5">
+          <section class="login-copy">
+            <h1>One secure portal</h1>
+            <p class="mb-0">Sign in once. We will take you to the right workspace.</p>
 
-                                        {% comment %} <a href="{% url 'social:begin' 'twitter' %}"
-                                            class="btn btn-link btn-lg active btn-block btn-primary">
-                                            <i class="fab fa-twitter"></i>
-                                            <span class="ms-2 fs-6 text-uppercase">Sign in With Twitter</span>
-                                        </a> {% endcomment %}
-
-                                        {% comment %} <a href="{% url 'social:begin' 'linkedin-oauth2' %}"
-                                            class="btn btn-link btn-lg active btn-block btn-primary">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                fill="currentColor" class="bi bi-linkedin" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854zm4.943 12.248V6.169H2.542v7.225zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.226 2.4 3.934c0 .694.521 1.248 1.327 1.248zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016l.016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225z" />
-                                            </svg>
-                                            <span class="ms-2 fs-6 text-uppercase">Sign in With linkedin</span>
-                                        </a> {% endcomment %}
-
-                                        <div class="g-signin2" data-longtitle="true" data-onsuccess="onSignIn"></div>
-                                        <hr>
-                                        <p class="text-center"><strong>OR</strong></p>
-                                        <hr>
-                                        <label class="small mb-1">Username</label>
-                                        {{ form.username }}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <label class="small mb-1">Password</label>
-                                        {{ form.password }}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <!-- Add a Remember me functionality -->
-                                        {{ form.remember_me }}
-                                        <label> Remember me</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="col-md-12">
-                                    <div class="form-group mt-0 mb-1">
-                                        <button name="login" class="col-md-12 btn btn-dark" id="login">Sign in</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="card-footer text-center">
-                        <div class="small">
-                            <a href="{% url 'users-register' %}">Don't have an account yet? Go to signup</a><br>
-                            <a href="{% url 'password_reset' %}"><i>Forgot Password?</i></a>
-                        </div>
-                    </div>
-                </div>
+            <div class="login-audience-grid">
+              <div class="login-audience">
+                <div>Sponsors</div>
+                <p>Follow sponsored children and giving activity.</p>
+              </div>
+              <div class="login-audience">
+                <div>Clients</div>
+                <p>Manage savings, withdrawals, loans, and repayments.</p>
+              </div>
+              <div class="login-audience">
+                <div>Staff</div>
+                <p>BOO, HOF, Accountant, ED, and program teams.</p>
+              </div>
             </div>
+          </section>
         </div>
+        <div class="col-lg-7">
+          <section class="login-form-area">
+            <div class="mb-4">
+              <div class="login-title">Sign in</div>
+              <div class="text-muted small">Use your email, username, or Google account, then verify with a code.</div>
+            </div>
+
+            <div class="login-route-note mb-3">
+              Your role controls where you land after verification. Google sign-in also requires the emailed code.
+            </div>
+
+            {% if form.errors %}
+              <div class="alert alert-danger" role="alert">
+                {% for key, value in form.errors.items %}
+                  <div>{{ value }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <a href="{% url 'social:begin' 'google-oauth2' %}" class="google-btn mb-3">
+              <i class="fab fa-google mr-2"></i> Continue with Google
+            </a>
+
+            <div class="divider my-3">or use password</div>
+
+            <form method="POST">
+              {% csrf_token %}
+              <div class="form-group">
+                <label class="small mb-1" for="{{ form.username.id_for_label }}">Email or username</label>
+                {{ form.username }}
+              </div>
+              <div class="form-group">
+                <label class="small mb-1" for="{{ form.password.id_for_label }}">Password</label>
+                {{ form.password }}
+              </div>
+              <div class="form-group d-flex justify-content-between align-items-center">
+                <label class="mb-0 small">{{ form.remember_me }} Remember me</label>
+                <a href="{% url 'password_reset' %}" class="small">Forgot password?</a>
+              </div>
+              <button name="login" class="btn btn-dark btn-block" id="login">Sign in</button>
+            </form>
+
+            <div class="border-top mt-4 pt-3 small text-center">
+              <a href="{% url 'users-register' %}">Create an account</a>
+            </div>
+          </section>
+        </div>
+      </div>
     </div>
-</div>
+  </main>
 {% endblock content %}

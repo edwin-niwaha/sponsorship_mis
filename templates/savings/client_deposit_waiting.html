@@ -1,0 +1,214 @@
+{% extends '_partials/guest_base.html' %}
+{% load humanize %}
+
+{% block title %}Confirm Deposit{% endblock %}
+
+{% block content %}
+  <main class="container py-4">
+    <section class="deposit-wait-shell">
+      <div class="deposit-wait-card">
+        <div class="deposit-status-icon" id="depositStatusIcon">
+          <span></span>
+        </div>
+        <div class="text-uppercase text-muted small fw-bold mb-2">Mobile money deposit</div>
+        <h1 class="h4 fw-bold mb-2">Approve the prompt on your phone</h1>
+        <p class="text-muted mb-4" id="depositStatusText">
+          We sent an MTN MoMo collection request for UGX {{ amount|floatformat:0|intcomma }}.
+          The 2% fee is UGX {{ fee_amount|floatformat:0|intcomma }}, so UGX {{ net_amount|floatformat:0|intcomma }} will be credited to your savings only after MTN confirms payment.
+        </p>
+
+        <div class="deposit-detail-grid">
+          <div>
+            <span>Account</span>
+            <strong>{{ account.account_number }}</strong>
+          </div>
+          <div>
+            <span>Gross Deposit</span>
+            <strong>UGX {{ amount|floatformat:0|intcomma }}</strong>
+          </div>
+          <div>
+            <span>MTN Fee</span>
+            <strong>UGX {{ fee_amount|floatformat:0|intcomma }}</strong>
+          </div>
+          <div>
+            <span>Net Credit</span>
+            <strong>UGX {{ net_amount|floatformat:0|intcomma }}</strong>
+          </div>
+          <div>
+            <span>Reference</span>
+            <strong>{{ reference }}</strong>
+          </div>
+          <div>
+            <span>Status</span>
+            <strong id="depositStatusLabel">{{ status_display }}</strong>
+          </div>
+        </div>
+
+        <div class="deposit-actions">
+          <a href="{% url 'client_savings_dashboard' %}" class="btn btn-outline-secondary">Back to Portal</a>
+          <a href="{% url 'client_savings_statement' %}" class="btn btn-dark">View Statement</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const statusUrl = "{% url 'client_savings_deposit_status' reference %}";
+      const text = document.getElementById("depositStatusText");
+      const label = document.getElementById("depositStatusLabel");
+      const icon = document.getElementById("depositStatusIcon");
+      let attempts = 0;
+
+      function setState(state, reason, redirectUrl) {
+        label.textContent = state === "SUCCESSFUL" ? "Successful" : state === "FAILED" ? "Failed" : "Pending";
+        icon.className = "deposit-status-icon " + (state === "SUCCESSFUL" ? "success" : state === "FAILED" ? "failed" : "");
+        if (state === "SUCCESSFUL") {
+          text.textContent = "Deposit confirmed. Your savings statement has been updated.";
+          window.setTimeout(function () { window.location.href = redirectUrl || "{% url 'client_savings_statement' %}"; }, 1200);
+        } else if (state === "FAILED") {
+          text.textContent = reason || "The mobile money deposit was not completed.";
+        }
+      }
+
+      function poll() {
+        attempts += 1;
+        fetch(statusUrl, {headers: {"X-Requested-With": "XMLHttpRequest"}})
+          .then(function (response) { return response.json(); })
+          .then(function (data) {
+            if (data.status === "SUCCESSFUL" || data.status === "FAILED") {
+              setState(data.status, data.reason, data.redirect_url);
+              return;
+            }
+            if (attempts < 40) {
+              window.setTimeout(poll, 5000);
+            } else {
+              text.textContent = "Payment is still pending. You can return to your portal and check your statement later.";
+            }
+          })
+          .catch(function () {
+            if (attempts < 40) {
+              window.setTimeout(poll, 5000);
+            }
+          });
+      }
+
+      window.setTimeout(poll, 3000);
+    })();
+  </script>
+
+  <style>
+    .deposit-wait-shell {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+      min-height: 68vh;
+    }
+
+    .deposit-wait-card {
+      background: #fff;
+      border: 1px solid #d9dee5;
+      border-radius: 8px;
+      box-shadow: 0 18px 55px rgba(31, 41, 51, .12);
+      max-width: 720px;
+      padding: 34px;
+      width: 100%;
+    }
+
+    .deposit-status-icon {
+      align-items: center;
+      background: #fff8ed;
+      border: 1px solid #f0dfbd;
+      border-radius: 999px;
+      display: flex;
+      height: 58px;
+      justify-content: center;
+      margin-bottom: 18px;
+      width: 58px;
+    }
+
+    .deposit-status-icon span {
+      animation: pulse 1.2s infinite;
+      background: #c77700;
+      border-radius: 999px;
+      height: 16px;
+      width: 16px;
+    }
+
+    .deposit-status-icon.success {
+      background: #edf7f4;
+      border-color: #cfe8e0;
+    }
+
+    .deposit-status-icon.success span {
+      animation: none;
+      background: #13745d;
+    }
+
+    .deposit-status-icon.failed {
+      background: #fff0f0;
+      border-color: #f1c7c7;
+    }
+
+    .deposit-status-icon.failed span {
+      animation: none;
+      background: #b42318;
+    }
+
+    .deposit-detail-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin: 22px 0;
+    }
+
+    .deposit-detail-grid div {
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .deposit-detail-grid span {
+      color: #667085;
+      display: block;
+      font-size: .75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .deposit-detail-grid strong {
+      color: #26384d;
+      display: block;
+      margin-top: 4px;
+      overflow-wrap: anywhere;
+    }
+
+    .deposit-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    @keyframes pulse {
+      0% { opacity: .45; transform: scale(.86); }
+      50% { opacity: 1; transform: scale(1.12); }
+      100% { opacity: .45; transform: scale(.86); }
+    }
+
+    @media (max-width: 575.98px) {
+      .deposit-wait-card {
+        padding: 24px;
+      }
+
+      .deposit-detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .deposit-actions .btn {
+        width: 100%;
+      }
+    }
+  </style>
+{% endblock %}

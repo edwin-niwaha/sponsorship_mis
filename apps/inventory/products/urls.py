@@ -31,6 +31,19 @@ urlpatterns = [
         views.products_delete_view,
         name="products_delete",
     ),
+    # ** Product Variant URLs **
+    path("variants/", views.variants_list_view, name="variants_list"),
+    path("variants/add/", views.variant_add_view, name="variant_add"),
+    path(
+        "variants/update/<int:pk>/",
+        views.variant_update_view,
+        name="variant_update",
+    ),
+    path(
+        "variants/delete/<int:pk>/",
+        views.variant_delete_view,
+        name="variant_delete",
+    ),
     # ** Product Image URLs **
     path("product-image/", views.update_product_image, name="update_product_image"),
     path("product-image/list/", views.product_images, name="product_images"),
@@ -46,6 +59,11 @@ urlpatterns = [
     path("inventory/list/", views.inventory_list_view, name="inventory_list"),
     path("inventory/report/", views.inventory_report_view, name="inventory-report"),
     path("inventory/add/", views.inventory_add_view, name="inventory_add"),
+    path(
+        "inventory/adjust/",
+        views.stock_adjustment_view,
+        name="stock_adjustment",
+    ),
     path(
         "inventory/update/<int:pk>/",
         views.inventory_update_view,

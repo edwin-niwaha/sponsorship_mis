@@ -1,37 +1,47 @@
 {% load static %}
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top app-public-navbar">
   <div class="container-fluid">
     <a class="navbar-brand d-flex align-items-center" href="/">
       <img src="{% static 'images/file.png' %}" alt="Logo" class="me-2" height="40" width="40" />
-      <span class="fw-bold">SMS</span>
+      <span class="fw-bold">Pendeza SMS</span>
     </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse" id="navbarNav">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#guestNavbar" aria-controls="guestNavbar" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="guestNavbar">
       <ul class="navbar-nav me-auto">
         <li class="nav-item">
-          <a class="nav-link" href="/">HOME</a>
+          <a class="nav-link" href="/">Home</a>
         </li>
-        {% if user.is_authenticated and user.profile.role != 'guest' %}
+        {% if user.is_authenticated and user.profile.resolved_account_type == 'client' %}
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'main-dashboard' %}">DASHBOARD</a>
+            <a class="nav-link" href="{% url 'client_savings_dashboard' %}">Client Portal</a>
+          </li>
+        {% endif %}
+        {% if user.is_authenticated and user.profile.resolved_account_type == 'staff' %}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'main-dashboard' %}">Dashboard</a>
+          </li>
+        {% endif %}
+        {% if user.is_authenticated and user.profile.resolved_account_type == 'sponsor' %}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'sponsor_portal' %}">Sponsor Portal</a>
           </li>
         {% endif %}
       </ul>
       <ul class="navbar-nav ms-auto">
         {% if user.is_authenticated %}
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'users-profile' %}">MY PROFILE</a>
+            <a class="nav-link" href="{% url 'users-profile' %}">My Profile</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'logout' %}" onclick="return confirm('Are you sure you want to logout?');">LOGOUT</a>
+            <a class="nav-link" href="{% url 'logout' %}" onclick="return confirm('Are you sure you want to logout?');">Logout</a>
           </li>
         {% else %}
           <li class="nav-item">
-            <a class="nav-link fw-bold" href="{% url 'login' %}">SIGN IN</a>
+            <a class="nav-link fw-bold" href="{% url 'login' %}">Sign In</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link fw-bold" href="{% url 'users-register' %}">SIGN UP</a>
+            <a class="nav-link fw-bold" href="{% url 'users-register' %}">Sign Up</a>
           </li>
         {% endif %}
       </ul>

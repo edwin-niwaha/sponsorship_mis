@@ -3,7 +3,8 @@
 
 {% block content %}
 
-<div class="container">
+{% include '_partials/sponsor_report_styles.html' %}
+<div class="container sponsor-report-page">
     <div class="page-header flex-wrap">
         <h3 class="mb-0">{{table_title|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
         <div class="d-flex">
@@ -27,7 +28,7 @@
             </a>
         </div>
     </div>
-    <form method="GET" action="{% url 'sponsor_depature_list' %}">
+    <form method="GET" action="{% url 'sponsor_depature_list' %}" class="report-filter">
         <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..."
             style="border-radius: 5px; height: 35px;">
         <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>

@@ -3,30 +3,29 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-  <div class="container-fluid mt-5 pt-3">
+  {% include '_partials/sponsor_report_styles.html' %}
+  <div class="container-fluid sponsor-report-page">
     <div class="row justify-content-center">
       <div class="col-md-12">
-        <h2 class="text-center mb-4">{{ form_title|upper }}</h2>
-
-        <div class="row mb-3">
-          <div class="col-md-12 d-flex justify-content-between align-items-center">
-            <a href="{% url 'register_sponsor' %}" class="btn btn-dark ml-2"><i class="mdi mdi-plus mr-2"></i>Add Sponsor</a>
-            <button title="Print" type="button" class="btn btn-success ml-2" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
+        <div class="report-hero">
+          <div>
+            <h2>{{ table_title|default:'Sponsors List'|upper }}</h2>
+            <p class="report-subtitle">Manage sponsor profiles, contact details, sponsorship type, and expected support.</p>
+          </div>
+          <div class="report-toolbar">
+            <a href="{% url 'register_sponsor' %}" class="btn btn-dark"><i class="mdi mdi-plus mr-2"></i>Add Sponsor</a>
+            <button title="Print" type="button" class="btn btn-outline-success" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
           </div>
         </div>
 
         <div id="printMe" class="card shadow mb-4">
-          <div class="card-header py-3 d-flex justify-content-between">
-            <h3 class="m-0">{{ table_title|upper }}</h3>
+          <div class="card-header py-3 d-flex flex-wrap justify-content-between align-items-center">
+            <h3 class="m-0">Sponsor Records</h3>
             <!-- Filters and Sorting -->
-            <form method="get" action="{% url 'sponsor_list' %}" class="py-2">
-              <div class="row g-3">
-                <div class="col-12 col-md-12 d-flex">
-                  <div class="me-2 w-100">
-                    <input type="text" name="search" id="searchInput" value="{{ request.GET.search }}" placeholder="Search..." class="form-control pl-5" />
-                  </div>
-                  <button type="submit" class="btn btn-primary"><i class="mdi mdi-magnify me-2"></i></button>
-                </div>
+            <form method="get" action="{% url 'sponsor_list' %}" class="report-filter py-0 mb-0">
+              <div class="d-flex">
+                <input type="text" name="search" id="searchInput" value="{{ request.GET.search }}" placeholder="Search by name, email, ID, or phone..." class="form-control" />
+                <button type="submit" class="btn btn-primary ml-2"><i class="mdi mdi-magnify"></i></button>
               </div>
             </form>
           </div>
@@ -69,7 +68,7 @@
                       <td>{{ sponsor.gender }}</td>
                       <td>{{ sponsor.date_of_birth|date:'d/m/Y' }}</td>
                       <td>{{ sponsor.email }}</td>
-                      <td>{{ sponsor.sponsorship_type }}</td>
+                      <td><span class="badge-soft">{{ sponsor.sponsorship_type|default:'-' }}</span></td>
                       <td>{{ sponsor.expected_amt|floatformat:'2'|intcomma }}</td>
                       <td>{{ sponsor.job_title }}</td>
                       <td>{{ sponsor.region }}</td>

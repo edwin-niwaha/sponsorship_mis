@@ -19,10 +19,41 @@ from .forms import (
     InventoryForm,
     ProductForm,
     ProductImageForm,
+    ProductVariantForm,
+    StockAdjustmentForm,
 )
 
 # Import models and forms
-from .models import Category, Inventory, Product, ProductImage
+from .models import Category, Inventory, Product, ProductImage, ProductVariant, StockMovement
+
+
+def _stock_delta(movement_type, quantity):
+    if movement_type in [StockMovement.STOCK_OUT, StockMovement.SALE]:
+        return -quantity
+    return quantity
+
+
+def _record_stock_movement(
+    *,
+    product,
+    variant=None,
+    movement_type,
+    quantity,
+    user=None,
+    reference="",
+    notes="",
+):
+    return StockMovement.objects.create(
+        product=product,
+        variant=variant,
+        movement_type=movement_type,
+        quantity=quantity,
+        unit_cost=variant.effective_cost if variant else product.cost,
+        unit_price=variant.effective_price if variant else product.price,
+        reference=reference,
+        notes=notes,
+        created_by=user if getattr(user, "is_authenticated", False) else None,
+    )
 
 
 # =================================== categories view ===================================
@@ -200,13 +231,13 @@ def products_list_view(request):
     # Filter products based on search query
     if search_query:
         # Adjust the filter to handle ForeignKey relationships
-        products = Product.objects.filter(
+        products = Product.objects.select_related("category", "supplier").prefetch_related("variants").filter(
             Q(name__icontains=search_query)
             | Q(category__name__icontains=search_query)  # Filter by category name
             | Q(supplier__name__icontains=search_query)  # Filter by supplier name
         )
     else:
-        products = Product.objects.all()
+        products = Product.objects.select_related("category", "supplier").prefetch_related("variants").all()
 
     # If no products are found, handle empty case
     if not products.exists():
@@ -234,9 +265,7 @@ def products_list_view(request):
     # Calculate totals
     total_price = products.aggregate(total_price=Sum("price"))["total_price"] or 0
     total_cost = products.aggregate(total_cost=Sum("cost"))["total_cost"] or 0
-    total_stock = (
-        products.aggregate(total_stock=Sum("inventory__quantity"))["total_stock"] or 0
-    )
+    total_stock = sum(product.stock_on_hand for product in products)
 
     context = {
         "products": page_obj,
@@ -381,12 +410,23 @@ def products_delete_view(request, product_id):
 
 
 def product_detail_view(request, id):
-    product = get_object_or_404(Product, id=id)
+    product = get_object_or_404(
+        Product.objects.select_related("category", "supplier")
+        .prefetch_related("variants", "stock_movements"),
+        id=id,
+    )
     images = product.images.all()  # Fetch related product images
+    variants = product.variants.all()
+    movements = product.stock_movements.select_related("variant", "created_by")[:10]
     return render(
         request,
         "inventory/products/product_detail.html",
-        {"product": product, "images": images},
+        {
+            "product": product,
+            "images": images,
+            "variants": variants,
+            "movements": movements,
+        },
     )
 
 
@@ -398,16 +438,24 @@ def stock_alerts_view(request):
     low_stock_products = Inventory.objects.filter(
         quantity__lte=F("low_stock_threshold"), quantity__gt=0
     ).select_related("product")
+    low_stock_variants = ProductVariant.objects.filter(
+        quantity__lte=F("low_stock_threshold"), quantity__gt=0
+    ).select_related("product")
 
     # Fetch products that are out of stock
     out_of_stock_products = Inventory.objects.filter(quantity=0).select_related(
+        "product"
+    )
+    out_of_stock_variants = ProductVariant.objects.filter(quantity=0).select_related(
         "product"
     )
 
     # Passing data to the template
     context = {
         "low_stock_products": low_stock_products,
+        "low_stock_variants": low_stock_variants,
         "out_of_stock_products": out_of_stock_products,
+        "out_of_stock_variants": out_of_stock_variants,
     }
 
     return render(request, "inventory/products/stock_alerts.html", context)
@@ -516,11 +564,21 @@ def delete_product_image(request, pk):
 def inventory_list_view(request):
     # Query Inventory and include related Product details
     queryset = Inventory.objects.select_related("product").all()
+    variants = ProductVariant.objects.select_related("product", "product__category")
 
     # Search functionality: filter by product name if search_query is provided
     search_query = request.GET.get("search", "")  # Default to empty string if no search
     if search_query:
-        queryset = queryset.filter(product__name__icontains=search_query)
+        queryset = queryset.filter(
+            Q(product__name__icontains=search_query)
+            | Q(product__category__name__icontains=search_query)
+        )
+        variants = variants.filter(
+            Q(product__name__icontains=search_query)
+            | Q(name__icontains=search_query)
+            | Q(sku__icontains=search_query)
+            | Q(product__category__name__icontains=search_query)
+        )
 
     # Pagination
     paginator = Paginator(queryset, 10)  # 10 items per page
@@ -535,6 +593,7 @@ def inventory_list_view(request):
 
     context = {
         "inventories": inventories,
+        "variants": variants,
         "table_title": "Inventory List",
         "search_query": search_query,  # Pass search query to the template
     }
@@ -548,7 +607,8 @@ def inventory_list_view(request):
 @admin_or_manager_or_staff_required
 def inventory_report_view(request):
     # Fetch all inventories with related products
-    inventories = Inventory.objects.select_related("product").all()
+    inventories = Inventory.objects.select_related("product", "product__category").all()
+    variants = ProductVariant.objects.select_related("product", "product__category")
 
     # Add pagination
     paginator = Paginator(inventories, 25)
@@ -556,12 +616,16 @@ def inventory_report_view(request):
     page_obj = paginator.get_page(page_number)
 
     # Calculate total stock from inventory quantities
-    total_stock = inventories.aggregate(total_stock=Sum("quantity"))["total_stock"] or 0
+    total_stock = (
+        (inventories.aggregate(total_stock=Sum("quantity"))["total_stock"] or 0)
+        + (variants.aggregate(total_stock=Sum("quantity"))["total_stock"] or 0)
+    )
 
     # Prepare context for rendering
     context = {
         "active_icon": "inventory",
         "inventories": page_obj,
+        "variants": variants,
         "total_stock": total_stock,
         "table_title": "Inventory Report",
     }
@@ -595,6 +659,13 @@ def inventory_add_view(request):
                 )
             else:
                 form.save()
+                _record_stock_movement(
+                    product=product,
+                    movement_type=StockMovement.STOCK_IN,
+                    quantity=form.cleaned_data["quantity"],
+                    user=request.user,
+                    reference="Initial inventory",
+                )
                 messages.success(
                     request, "Inventory added successfully!", extra_tags="bg-success"
                 )
@@ -627,11 +698,21 @@ def inventory_update_view(request, pk):
     }
     # Fetch the Inventory object using pk
     inventory = get_object_or_404(Inventory, pk=pk)
+    original_quantity = inventory.quantity
 
     if request.method == "POST":
         form = InventoryForm(request.POST, instance=inventory)
         if form.is_valid():
-            form.save()
+            updated_inventory = form.save()
+            quantity_delta = updated_inventory.quantity - original_quantity
+            if quantity_delta:
+                _record_stock_movement(
+                    product=updated_inventory.product,
+                    movement_type=StockMovement.ADJUSTMENT,
+                    quantity=quantity_delta,
+                    user=request.user,
+                    reference="Inventory update",
+                )
             messages.success(
                 request, "Inventory updated successfully!", extra_tags="bg-success"
             )
@@ -651,3 +732,156 @@ def inventory_delete_view(request, pk):
     inventory.delete()
     messages.info(request, "Inventory deleted successfully!", extra_tags="bg-warning")
     return HttpResponseRedirect(reverse("products:inventory_list"))
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def variants_list_view(request):
+    search_query = request.GET.get("search", "")
+    variants = ProductVariant.objects.select_related(
+        "product", "product__category", "product__supplier"
+    )
+
+    if search_query:
+        variants = variants.filter(
+            Q(name__icontains=search_query)
+            | Q(sku__icontains=search_query)
+            | Q(product__name__icontains=search_query)
+            | Q(product__category__name__icontains=search_query)
+        )
+
+    paginator = Paginator(variants, 15)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    context = {
+        "variants": page_obj,
+        "search_query": search_query,
+        "table_title": "Product Variants",
+    }
+    return render(request, "inventory/products/variants.html", context)
+
+
+@login_required
+@admin_or_manager_or_staff_required
+@transaction.atomic
+def variant_add_view(request):
+    initial = {}
+    product_id = request.GET.get("product")
+    if product_id:
+        initial["product"] = product_id
+
+    if request.method == "POST":
+        form = ProductVariantForm(request.POST)
+        if form.is_valid():
+            variant = form.save()
+            _record_stock_movement(
+                product=variant.product,
+                variant=variant,
+                movement_type=StockMovement.STOCK_IN,
+                quantity=variant.quantity,
+                user=request.user,
+                reference="Initial variant stock",
+            )
+            messages.success(
+                request,
+                f"Variant {variant.display_name} created successfully!",
+                extra_tags="bg-success",
+            )
+            return redirect("products:variants_list")
+    else:
+        form = ProductVariantForm(initial=initial)
+
+    return render(
+        request,
+        "inventory/products/variant_form.html",
+        {"form": form, "table_title": "Add Product Variant"},
+    )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+@transaction.atomic
+def variant_update_view(request, pk):
+    variant = get_object_or_404(ProductVariant, pk=pk)
+    original_quantity = variant.quantity
+
+    if request.method == "POST":
+        form = ProductVariantForm(request.POST, instance=variant)
+        if form.is_valid():
+            updated_variant = form.save()
+            quantity_delta = updated_variant.quantity - original_quantity
+            if quantity_delta:
+                _record_stock_movement(
+                    product=updated_variant.product,
+                    variant=updated_variant,
+                    movement_type=StockMovement.ADJUSTMENT,
+                    quantity=quantity_delta,
+                    user=request.user,
+                    reference="Variant update",
+                )
+            messages.success(
+                request,
+                f"Variant {updated_variant.display_name} updated successfully!",
+                extra_tags="bg-success",
+            )
+            return redirect("products:variants_list")
+    else:
+        form = ProductVariantForm(instance=variant)
+
+    return render(
+        request,
+        "inventory/products/variant_form.html",
+        {"form": form, "variant": variant, "table_title": "Update Product Variant"},
+    )
+
+
+@login_required
+@admin_required
+@transaction.atomic
+def variant_delete_view(request, pk):
+    variant = get_object_or_404(ProductVariant, pk=pk)
+    variant.delete()
+    messages.info(request, "Product variant deleted successfully.", extra_tags="bg-warning")
+    return redirect("products:variants_list")
+
+
+@login_required
+@admin_or_manager_or_staff_required
+@transaction.atomic
+def stock_adjustment_view(request):
+    if request.method == "POST":
+        form = StockAdjustmentForm(request.POST)
+        if form.is_valid():
+            product = form.cleaned_data["product"]
+            variant = form.cleaned_data["variant"]
+            movement_type = form.cleaned_data["movement_type"]
+            quantity = form.cleaned_data["quantity"]
+            notes = form.cleaned_data["notes"]
+            delta = _stock_delta(movement_type, quantity)
+
+            if variant:
+                variant.adjust_stock(delta)
+                product = variant.product
+            else:
+                inventory, _ = Inventory.objects.get_or_create(product=product)
+                inventory.adjust_stock(delta)
+
+            _record_stock_movement(
+                product=product,
+                variant=variant,
+                movement_type=movement_type,
+                quantity=delta,
+                user=request.user,
+                reference="Manual stock adjustment",
+                notes=notes,
+            )
+            messages.success(request, "Stock adjusted successfully.", extra_tags="bg-success")
+            return redirect("products:inventory_list")
+    else:
+        form = StockAdjustmentForm()
+
+    return render(
+        request,
+        "inventory/products/stock_adjustment.html",
+        {"form": form, "table_title": "Adjust Stock"},
+    )

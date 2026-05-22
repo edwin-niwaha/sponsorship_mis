@@ -1,0 +1,541 @@
+{% extends '_partials/guest_base.html' %}
+{% load humanize %}
+
+{% block title %}My Savings{% endblock %}
+
+{% block content %}
+  <main class="container py-4">
+    <div class="bg-white border rounded-2 p-3 mb-3 d-flex flex-wrap justify-content-between align-items-start gap-3">
+      <div>
+        <h1 class="h4 fw-bold mb-1">{{ form_name }}</h1>
+        <div class="text-muted small">
+          {% if client %}{{ client.full_name }}{% else %}Client account not linked{% endif %}
+        </div>
+      </div>
+      {% if account %}
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{% url 'client_savings_statement' %}" class="btn btn-outline-secondary btn-sm">
+            Statement
+          </a>
+          <button type="button" class="btn btn-outline-dark btn-sm" data-bs-toggle="modal" data-bs-target="#depositRequestModal">
+            Mobile Money Deposit
+          </button>
+          <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#directDepositModal">
+            Direct Collection Line
+          </button>
+          <button type="button" class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#withdrawalRequestModal">
+            Withdraw
+          </button>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if not client %}
+      <div class="alert alert-warning">Your login is not linked to a client record. Please contact staff.</div>
+    {% elif not account %}
+      <div class="alert alert-info">No savings account has been opened for your client record yet.</div>
+    {% else %}
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <div class="bg-white border rounded-2 p-3">
+            <div class="text-muted small">Account No.</div>
+            <div class="fw-bold">{{ account.account_number }}</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="bg-white border rounded-2 p-3">
+            <div class="text-muted small">Status</div>
+            <div class="fw-bold">{{ account.get_status_display }}</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="bg-white border rounded-2 p-3">
+            <div class="text-muted small">Available Balance</div>
+            <div class="fw-bold">{{ account.balance|floatformat:2|intcomma }}</div>
+          </div>
+        </div>
+      </div>
+
+      <section class="statement-overview mb-3">
+        <div class="statement-metric">
+          <span>Total Deposits</span>
+          <strong>{{ statement_summary.credits|floatformat:2|intcomma }}</strong>
+        </div>
+        <div class="statement-metric debit">
+          <span>Withdrawals & Fees</span>
+          <strong>{{ statement_summary.debits|floatformat:2|intcomma }}</strong>
+        </div>
+        <div class="statement-metric balance">
+          <span>Current Balance</span>
+          <strong>{{ statement_summary.balance|floatformat:2|intcomma }}</strong>
+        </div>
+      </section>
+
+      <section class="bg-white border rounded-2 p-3 mb-3">
+        <h2 class="h6 fw-bold text-uppercase mb-3">Pending Requests</h2>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th>Date</th><th>Type</th><th class="text-end">Amount</th><th>Reference</th></tr></thead>
+            <tbody>
+              {% for transaction in pending_requests %}
+                <tr>
+                  <td>{{ transaction.transaction_date }}</td>
+                  <td>{{ transaction.get_transaction_type_display }}</td>
+                  <td class="text-end">{{ transaction.amount|floatformat:2|intcomma }}</td>
+                  <td>{{ transaction.reference|default:'-' }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" class="text-center text-muted">No pending savings requests.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="bg-white border rounded-2 p-3 mb-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+          <h2 class="h6 fw-bold text-uppercase mb-0">Recent Statement</h2>
+          <a href="{% url 'client_savings_statement' %}" class="btn btn-outline-dark btn-sm">View Full Statement</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th>Date</th><th>Type</th><th class="text-end">Amount</th><th>Status</th><th>Reference</th></tr></thead>
+            <tbody>
+              {% for transaction in transactions %}
+                <tr>
+                  <td>{{ transaction.transaction_date }}</td>
+                  <td>{{ transaction.get_transaction_type_display }}</td>
+                  <td class="text-end">{{ transaction.amount|floatformat:2|intcomma }}</td>
+                  <td>{{ transaction.get_status_display }}</td>
+                  <td>{{ transaction.reference|default:'-' }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="text-center text-muted">No savings transactions found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    {% endif %}
+
+    {% if client %}
+      <section class="bg-white border rounded-2 p-3 mt-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+          <h2 class="h6 fw-bold text-uppercase mb-0">My Loan Details</h2>
+          {% if loans %}
+            <button class="btn btn-outline-secondary btn-sm" disabled>Loan application locked</button>
+          {% else %}
+            <a href="{% url 'loans:client_loan_apply' %}" class="btn btn-outline-primary btn-sm">Apply for Loan</a>
+          {% endif %}
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Loan</th>
+                <th>Purpose</th>
+                <th>Status</th>
+                <th class="text-end">Principal</th>
+                <th class="text-end">Total Payable</th>
+                <th>Due Date</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for loan in loans %}
+                <tr>
+                  <td>#{{ loan.id }}</td>
+                  <td>{{ loan.get_loan_purpose_display }}</td>
+                  <td>{{ loan.get_status_display }}</td>
+                  <td class="text-end">{{ loan.principal_amount|floatformat:2|intcomma }}</td>
+                  <td class="text-end">{{ loan.total_repayable|floatformat:2|intcomma }}</td>
+                  <td>{{ loan.due_date|default:'-' }}</td>
+                  <td class="text-end">
+                    <a href="{% url 'loans:client_loan_application_detail' loan.id %}" class="btn btn-outline-primary btn-sm">View</a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="7" class="text-center text-muted">No loan records found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {% endif %}
+
+    {% if account %}
+      <div class="modal fade savings-request-modal" id="depositRequestModal" tabindex="-1" aria-labelledby="depositRequestModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <form method="post" action="{% url 'client_savings_deposit_payment' %}">
+              {% csrf_token %}
+              <div class="modal-header">
+                <div>
+                  <div class="modal-kicker">MTN MoMo collection</div>
+                  <h5 class="modal-title" id="depositRequestModalLabel">Make Savings Deposit</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="account-strip">
+                  <span>{{ account.account_number }}</span>
+                  <strong>Balance {{ account.balance|floatformat:2|intcomma }}</strong>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" for="depositAmount">Amount</label>
+                  <input type="number" name="amount" id="depositAmount" class="form-control" min="5000" step="100" placeholder="Minimum 5,000 UGX" required>
+                </div>
+                <div class="deposit-fee-panel mb-3">
+                  <div>
+                    <span>MTN fee (2%)</span>
+                    <strong id="depositFeePreview">UGX 0.00</strong>
+                  </div>
+                  <div>
+                    <span>Credited to savings</span>
+                    <strong id="depositNetPreview">UGX 0.00</strong>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" for="depositPhone">MTN Mobile Money Number</label>
+                  <input type="text" name="phone" id="depositPhone" class="form-control" value="{{ deposit_form.initial.phone }}" placeholder="07XXXXXXXX" inputmode="numeric" required>
+                  <div class="form-text">You will receive an MTN approval prompt on this phone.</div>
+                </div>
+                <div class="mb-0">
+                  <label class="form-label" for="depositNotes">Notes</label>
+                  <textarea name="notes" id="depositNotes" class="form-control" rows="2" placeholder="Optional note for your statement"></textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-dark">Send Payment Prompt</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade savings-request-modal" id="directDepositModal" tabindex="-1" aria-labelledby="directDepositModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <form method="post" action="{% url 'client_savings_deposit_request' %}">
+              {% csrf_token %}
+              <div class="modal-header">
+                <div>
+                  <div class="modal-kicker">Direct deposit</div>
+                  <h5 class="modal-title" id="directDepositModalLabel">Pay to Collection Line</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="collection-line-card mb-3">
+                  <span>Send mobile money to</span>
+                  <strong>+256 784 871903</strong>
+                  <p>No automatic MTN prompt fee is charged by this system. Your savings account is credited only after staff verifies the transaction.</p>
+                  <small>Verification may take 2-3 working days.</small>
+                </div>
+                <input type="hidden" name="transaction_type" value="deposit">
+                <input type="hidden" name="payment_method" value="mobile_money">
+                <div class="mb-3">
+                  <label class="form-label" for="directDepositAmount">Amount Sent</label>
+                  <input type="number" name="amount" id="directDepositAmount" class="form-control" min="0.01" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" for="directDepositReference">Mobile Money Transaction ID</label>
+                  <input type="text" name="reference" id="directDepositReference" class="form-control" placeholder="Example: 1234567890" required>
+                  <div class="form-text">Enter the transaction ID from your mobile money confirmation message.</div>
+                </div>
+                <div class="mb-0">
+                  <label class="form-label" for="directDepositNotes">Notes</label>
+                  <textarea name="notes" id="directDepositNotes" class="form-control" rows="2" placeholder="Optional note"></textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-dark">Submit for Verification</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade savings-request-modal" id="withdrawalRequestModal" tabindex="-1" aria-labelledby="withdrawalRequestModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <form method="post" action="{% url 'client_savings_withdrawal_request' %}">
+              {% csrf_token %}
+              <div class="modal-header">
+                <div>
+                  <div class="modal-kicker">Savings withdrawal</div>
+                  <h5 class="modal-title" id="withdrawalRequestModalLabel">Submit Withdrawal Request</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="account-strip withdrawal">
+                  <span>{{ account.account_number }}</span>
+                  <strong>Available {{ account.balance|floatformat:2|intcomma }}</strong>
+                </div>
+                <input type="hidden" name="transaction_type" value="withdrawal">
+                <div class="mb-3">
+                  <label class="form-label" for="withdrawalAmount">Amount</label>
+                  <input type="number" name="amount" id="withdrawalAmount" class="form-control" min="0.01" max="{{ account.balance|floatformat:2 }}" step="0.01" required>
+                  <div class="form-text">You cannot request more than your available savings balance.</div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" for="withdrawalPaymentMethod">Preferred Payout Method</label>
+                  <select name="payment_method" id="withdrawalPaymentMethod" class="form-control" required>
+                    <option value="mobile_money">Mobile Money</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="cash">Cash</option>
+                    <option value="cheque">Cheque</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" for="withdrawalReference">Reference</label>
+                  <input type="text" name="reference" id="withdrawalReference" class="form-control" placeholder="Phone number, bank ref, or note">
+                </div>
+                <div class="mb-0">
+                  <label class="form-label" for="withdrawalNotes">Reason / Notes</label>
+                  <textarea name="notes" id="withdrawalNotes" class="form-control" rows="3" placeholder="Optional reason for withdrawal"></textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-dark">Submit Withdrawal</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </main>
+
+  <script>
+    (function () {
+      const amountInput = document.getElementById("depositAmount");
+      const feePreview = document.getElementById("depositFeePreview");
+      const netPreview = document.getElementById("depositNetPreview");
+      const formatter = new Intl.NumberFormat("en-UG", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+
+      function updateDepositBreakdown() {
+        const amount = Number(amountInput && amountInput.value ? amountInput.value : 0);
+        const fee = amount > 0 ? amount * 0.02 : 0;
+        const net = Math.max(amount - fee, 0);
+        feePreview.textContent = "UGX " + formatter.format(fee);
+        netPreview.textContent = "UGX " + formatter.format(net);
+      }
+
+      if (amountInput) {
+        amountInput.addEventListener("input", updateDepositBreakdown);
+        updateDepositBreakdown();
+      }
+    })();
+  </script>
+
+  <style>
+    .savings-request-modal .modal-content {
+      border: 1px solid #d9dee5;
+      border-radius: 8px;
+      box-shadow: 0 24px 70px rgba(31, 41, 51, .22);
+      overflow: hidden;
+    }
+
+    .savings-request-modal .modal-header {
+      align-items: flex-start;
+      background: #f8fafc;
+      border-bottom: 1px solid #e3e8ef;
+      padding: 18px 20px;
+    }
+
+    .savings-request-modal .modal-title {
+      color: #1f344d;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .modal-kicker {
+      color: #13745d;
+      font-size: .74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .savings-request-modal .modal-body {
+      padding: 20px;
+    }
+
+    .savings-request-modal .form-label {
+      color: #344054;
+      font-size: .86rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .savings-request-modal .form-control {
+      border-color: #d9dee5;
+      border-radius: 7px;
+      min-height: 44px;
+    }
+
+    .account-strip {
+      align-items: center;
+      background: #edf7f4;
+      border: 1px solid #cfe8e0;
+      border-radius: 8px;
+      color: #123d35;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 12px 14px;
+    }
+
+    .account-strip.withdrawal {
+      background: #fff4de;
+      border-color: #f2d7a4;
+      color: #6d4700;
+    }
+
+    .account-strip span {
+      font-size: .82rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .account-strip strong {
+      font-size: .92rem;
+      text-align: right;
+    }
+
+    .savings-request-modal .modal-footer {
+      background: #fff;
+      border-top: 1px solid #e3e8ef;
+      padding: 14px 20px;
+    }
+
+    .deposit-fee-panel {
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      padding: 12px;
+    }
+
+    .deposit-fee-panel span {
+      color: #667085;
+      display: block;
+      font-size: .74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .deposit-fee-panel strong {
+      color: #26384d;
+      display: block;
+      margin-top: 3px;
+    }
+
+    .collection-line-card {
+      background: #edf7f4;
+      border: 1px solid #cfe8e0;
+      border-radius: 8px;
+      color: #123d35;
+      padding: 14px;
+    }
+
+    .collection-line-card span {
+      display: block;
+      font-size: .74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .collection-line-card strong {
+      display: block;
+      font-size: 1.25rem;
+      margin-top: 3px;
+    }
+
+    .collection-line-card p {
+      color: #31564f;
+      font-size: .9rem;
+      margin: 8px 0 4px;
+    }
+
+    .collection-line-card small {
+      color: #7a4b00;
+      font-weight: 800;
+    }
+
+    .statement-overview {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .statement-metric {
+      background: #f7fbfa;
+      border: 1px solid #d6ece6;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .statement-metric span {
+      color: #526171;
+      display: block;
+      font-size: .78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .statement-metric strong {
+      color: #123d35;
+      display: block;
+      font-size: 1.25rem;
+      margin-top: 6px;
+    }
+
+    .statement-metric.debit {
+      background: #fff8ed;
+      border-color: #f0dfbd;
+    }
+
+    .statement-metric.debit strong {
+      color: #7a4b00;
+    }
+
+    .statement-metric.balance {
+      background: #f5f7fb;
+      border-color: #dce4ef;
+    }
+
+    .statement-metric.balance strong {
+      color: #1f344d;
+    }
+
+    @media (max-width: 575.98px) {
+      .statement-overview {
+        grid-template-columns: 1fr;
+      }
+
+      .account-strip {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .deposit-fee-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .account-strip strong {
+        text-align: left;
+      }
+    }
+  </style>
+{% endblock %}

@@ -4,6 +4,20 @@
 
 {% block content %}
 <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="mb-1">{{ product.name }}</h3>
+            <p class="text-muted mb-0">Product profile, variants, stock, and recent movement.</p>
+        </div>
+        <div>
+            <a href="{% url 'products:variant_add' %}?product={{ product.id }}" class="btn btn-dark">
+                <i class="mdi mdi-shape-plus mr-1"></i>Add Variant
+            </a>
+            <a href="{% url 'products:products_list' %}" class="btn btn-outline-secondary">
+                <i class="mdi mdi-arrow-left-bold mr-1"></i>Back
+            </a>
+        </div>
+    </div>
     <div class="row">
         <!-- Product Image Carousel -->
         <div class="col-md-6">
@@ -28,12 +42,6 @@
                         </div>
                     </div>
                     {% endif %}
-                </div>
-                <!-- Back Button -->
-                <div class="text-center mt-4">
-                    <a href="{% url 'products:products_list' %}" class="btn btn-info">
-                        <i class="mdi mdi-arrow-left-bold mr-2"></i>Back to Products
-                    </a>
                 </div>
             </div>
         </div>
@@ -74,7 +82,11 @@
                             </tr>
                             <tr>
                                 <th>Stock</th>
-                                <td>{{ product.inventory.quantity|default:0 }}</td>
+                                <td>{{ product.stock_on_hand|default:0 }}</td>
+                            </tr>
+                            <tr>
+                                <th>Stock Status</th>
+                                <td>{{ product.stock_status }}</td>
                             </tr>
                             <tr>
                                 <th>Profit Margin</th>
@@ -82,6 +94,70 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <strong>Product Variants</strong>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>SKU</th>
+                                    <th class="text-right">Price</th>
+                                    <th class="text-right">Stock</th>
+                                    <th>Status</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for variant in variants %}
+                                    <tr>
+                                        <td>{{ variant.name }}</td>
+                                        <td>{{ variant.sku }}</td>
+                                        <td class="text-right">{{ variant.effective_price|floatformat:'2'|intcomma }}</td>
+                                        <td class="text-right">{{ variant.quantity }}</td>
+                                        <td>{{ variant.stock_status }}</td>
+                                        <td class="text-right">
+                                            <a href="{% url 'products:variant_update' variant.id %}" class="btn btn-warning btn-sm"><i class="bi bi-pencil"></i></a>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">No variants have been added for this product.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <strong>Recent Stock Movements</strong>
+                </div>
+                <div class="card-body">
+                    {% for movement in movements %}
+                        <div class="border-bottom py-2">
+                            <strong>{{ movement.get_movement_type_display }}</strong>
+                            <span class="float-right">{{ movement.quantity }}</span>
+                            <div class="text-muted small">
+                                {% if movement.variant %}{{ movement.variant.name }} · {% endif %}{{ movement.created_at|date:'M d, Y H:i' }}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted mb-0">No stock movements recorded yet.</p>
+                    {% endfor %}
                 </div>
             </div>
         </div>

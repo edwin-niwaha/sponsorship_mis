@@ -1,12 +1,13 @@
 import json
 import logging
+from collections import defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.db.models import Count, F, FloatField, Sum
-from django.db.models.functions import Coalesce, ExtractYear
+from django.db.models.functions import Coalesce, ExtractMonth, ExtractYear
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
@@ -17,7 +18,11 @@ from apps.inventory.products.models import Category, Product
 from apps.inventory.sales.models import Sale
 from apps.loans.models import Loan, LoanDisbursement, LoanRepayment
 from apps.sponsor.models import Sponsor
-from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
+from apps.sponsorship.models import (
+    SPONSORSHIP_TYPE_CHOICES,
+    ChildSponsorship,
+    StaffSponsorship,
+)
 from apps.users.decorators import admin_or_manager_or_staff_required
 
 logger = logging.getLogger(__name__)
@@ -33,6 +38,7 @@ def home(request):
 
 CACHE_KEY = "loan_dashboard_summary"
 CACHE_TTL = 300  # seconds (5 minutes)
+DASHBOARD_OVERVIEW_CACHE_KEY = "sponsorship_dashboard_overview"
 
 
 def get_loan_dashboard_summary(force_refresh=False):
@@ -161,50 +167,34 @@ def get_loan_dashboard_summary(force_refresh=False):
 @login_required
 @admin_or_manager_or_staff_required
 def dashboard(request):
-    # -------- Sponsorship stats --------
-    sponsors_count = Sponsor.objects.filter(is_departed=False).count()
-    children_count = Child.objects.count()
-    sponsored_count = Child.objects.filter(is_departed=False, is_sponsored=True).count()
-    non_sponsored_count = Child.objects.filter(
-        is_departed=False, is_sponsored=False
-    ).count()
-    children_departed_count = Child.objects.filter(is_departed=True).count()
-
-    # -------- Top performance --------
-    top_sponsors = get_top_sponsors()
-    top_children = get_top_children_sponsored()
-    top_staff = get_top_staff_sponsored()
-
-    # -------- Loan dashboard (cached) --------
-    loan_summary = get_loan_dashboard_summary()
-
-    context = {
-        # Sponsorship
-        "sponsors_count": sponsors_count,
-        "children_count": children_count,
-        "children_departed_count": children_departed_count,
-        "sponsored_count": sponsored_count,
-        "non_sponsored_count": non_sponsored_count,
-
-        # Top stats
-        "top_sponsors_with_counts": list(
-            zip(top_sponsors["sponsors"], top_sponsors["counts"])
-        ),
-        "top_children_with_counts": list(
-            zip(top_children["children"], top_children["counts"])
-        ),
-        "top_staff_with_counts": list(
-            zip(top_staff["staff_active"], top_staff["counts"])
-        ),
-
-        # Loans
-        "due_loans": loan_summary["due_loans"],
-        "overdue_loans": loan_summary["overdue_loans"],
-        "due_loans_count": loan_summary["due_loans_count"],
-        "overdue_loans_count": loan_summary["overdue_loans_count"],
-        "due_loans_total": loan_summary["due_loans_total"],
-        "overdue_loans_total": loan_summary["overdue_loans_total"],
-    }
+    context = cache.get(DASHBOARD_OVERVIEW_CACHE_KEY)
+    if context is None:
+        top_sponsors = get_top_sponsors()
+        top_children = get_top_children_sponsored()
+        top_staff = get_top_staff_sponsored()
+        context = {
+            "sponsors_count": Sponsor.objects.filter(is_departed=False).count(),
+            "children_count": Child.objects.count(),
+            "children_departed_count": Child.objects.filter(is_departed=True).count(),
+            "sponsored_count": Child.objects.filter(
+                is_departed=False,
+                is_sponsored=True,
+            ).count(),
+            "non_sponsored_count": Child.objects.filter(
+                is_departed=False,
+                is_sponsored=False,
+            ).count(),
+            "top_sponsors_with_counts": list(
+                zip(top_sponsors["sponsors"], top_sponsors["counts"])
+            ),
+            "top_children_with_counts": list(
+                zip(top_children["children"], top_children["counts"])
+            ),
+            "top_staff_with_counts": list(
+                zip(top_staff["staff_active"], top_staff["counts"])
+            ),
+        }
+        cache.set(DASHBOARD_OVERVIEW_CACHE_KEY, context, 300)
 
     return render(request, "main/main_dashboard.html", context)
 
@@ -274,10 +264,44 @@ def get_top_staff_sponsored():
 
 
 def sponsorship_chart(request):
-    data = ChildSponsorship.objects.values("sponsorship_type").annotate(
-        count=Count("sponsorship_type")
+    category_counts = defaultdict(int)
+    sponsorship_categories = [
+        choice_value for choice_value, _ in SPONSORSHIP_TYPE_CHOICES if choice_value
+    ]
+
+    child_categories = ChildSponsorship.objects.exclude(
+        sponsorship_type__isnull=True
+    ).exclude(
+        sponsorship_type=""
+    ).values(
+        "sponsorship_type"
+    ).annotate(
+        count=Count("id")
     )
-    return JsonResponse(list(data), safe=False)
+    staff_categories = StaffSponsorship.objects.exclude(
+        sponsorship_type__isnull=True
+    ).exclude(
+        sponsorship_type=""
+    ).values(
+        "sponsorship_type"
+    ).annotate(
+        count=Count("id")
+    )
+
+    for item in child_categories:
+        category_counts[item["sponsorship_type"]] += item["count"]
+
+    for item in staff_categories:
+        category_counts[item["sponsorship_type"]] += item["count"]
+
+    data = [
+        {
+            "sponsorship_type": sponsorship_type,
+            "count": category_counts[sponsorship_type],
+        }
+        for sponsorship_type in sponsorship_categories
+    ]
+    return JsonResponse(data, safe=False)
 
 
 # =================================== Sponsors Graph ===================================
@@ -576,6 +600,7 @@ def sales_data_api(request):
 @admin_or_manager_or_staff_required
 def loans_dashboard(request):
     today = timezone.now().date()
+    year = today.year
 
     # Loan counts
     new_loan_applications = Loan.objects.filter(status="pending").count()
@@ -590,6 +615,8 @@ def loans_dashboard(request):
         .prefetch_related("disbursements")
         .count()
     )
+    closed_loans = Loan.objects.filter(status="closed").count()
+    repaid_loans = Loan.objects.filter(status="repaid").count()
 
     # Initialize aggregates
     due_loans = []
@@ -740,6 +767,91 @@ def loans_dashboard(request):
         ),
     }
 
+    active_loans_count = due_loans_count + overdue_loans_count
+    portfolio_at_risk_rate = (
+        (overdue_loans_count / active_loans_count) * 100 if active_loans_count else 0
+    )
+
+    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    monthly_disbursements = [0 for _ in range(12)]
+    for item in (
+        LoanDisbursement.objects.filter(loan__disbursement_date__year=year)
+        .annotate(month=ExtractMonth("loan__disbursement_date"))
+        .values("month")
+        .annotate(total=Coalesce(Sum("loan__principal_amount"), Decimal("0.00")))
+    ):
+        if item["month"]:
+            monthly_disbursements[item["month"] - 1] = float(item["total"] or 0)
+
+    monthly_repayments = [0 for _ in range(12)]
+    for item in (
+        LoanRepayment.objects.filter(repayment_date__year=year)
+        .annotate(month=ExtractMonth("repayment_date"))
+        .values("month")
+        .annotate(
+            total=Coalesce(
+                Sum("principal_payment") + Sum("interest_payment") + Sum("penalty_payment"),
+                Decimal("0.00"),
+            )
+        )
+    ):
+        if item["month"]:
+            monthly_repayments[item["month"] - 1] = float(item["total"] or 0)
+
+    purpose_labels = dict(Loan.LOAN_PURPOSE_CHOICES)
+    purpose_mix = (
+        Loan.objects.values("loan_purpose")
+        .annotate(count=Count("id"))
+        .order_by("-count")
+    )
+    loan_purpose_chart = {
+        "labels": [
+            purpose_labels.get(item["loan_purpose"], item["loan_purpose"] or "Unknown")
+            for item in purpose_mix
+        ],
+        "data": [item["count"] for item in purpose_mix],
+    }
+
+    loan_dashboard_charts = {
+        "pipeline": {
+            "labels": ["New", "Approved", "Disbursed", "Repaid", "Closed", "Rejected"],
+            "data": [
+                new_loan_applications,
+                approved_loans,
+                disbursed_loans,
+                repaid_loans,
+                closed_loans,
+                rejected_loans,
+            ],
+        },
+        "risk": {
+            "labels": ["Due today", "Overdue"],
+            "data": [due_loans_count, overdue_loans_count],
+        },
+        "repayments": {
+            "labels": ["Principal", "Interest", "Penalties"],
+            "data": [
+                float(total_repayments_amount["total_principal"]),
+                float(total_repayments_amount["total_interest"]),
+                float(total_repayments_amount["total_penalty"]),
+            ],
+        },
+        "receivables": {
+            "labels": ["Principal", "Interest", "Penalties"],
+            "data": [
+                float(total_loans_amount["total_principal_receivable"]),
+                float(total_loans_amount["total_interest_receivable"]),
+                float(total_loans_amount["total_penalty_receivable"]),
+            ],
+        },
+        "cashflow": {
+            "labels": months,
+            "disbursements": monthly_disbursements,
+            "repayments": monthly_repayments,
+        },
+        "purpose": loan_purpose_chart,
+    }
+
     # Recent activity
     recent_activity = []
     for repayment in LoanRepayment.objects.select_related("loan").order_by(
@@ -802,6 +914,9 @@ def loans_dashboard(request):
         "approved_loans": approved_loans,
         "rejected_loans": rejected_loans,
         "disbursed_loans": disbursed_loans,
+        "closed_loans": closed_loans,
+        "repaid_loans": repaid_loans,
+        "portfolio_at_risk_rate": portfolio_at_risk_rate,
         "due_loans_count": due_loans_count,
         "due_loans_total_due_balance": due_loans_total_due_balance,
         "due_loans_total_penalty_balance": due_loans_total_penalty_balance,
@@ -813,6 +928,7 @@ def loans_dashboard(request):
         "total_repayments": total_repayments_amount,
         "total_loans": total_loans_amount,
         "recent_activity": recent_activity,
+        "loan_dashboard_charts": loan_dashboard_charts,
     }
 
     return render(request, "main/loans_dashboard.html", context)

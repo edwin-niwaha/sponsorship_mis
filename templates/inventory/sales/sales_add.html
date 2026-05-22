@@ -64,14 +64,8 @@
                       <label for="searchbox_products">Search Product:</label>
                       <select class="form-control select2" id="searchbox_products" name="searchbox_products">
                         <option value="" selected disabled hidden>Select a product</option>
-                        {% for product in products %}
-                          {% if product.discount_value %}
-                            {% with discounted_price=product.get_discounted_price %}
-                              <option value="{{ product.id }}" data-price="{{ discounted_price }}" data-cost="{{ product.cost }}" data-name="{{ product.name }}" data-discount="{{ product.discount_value }}">{{ product.name }} - Was: {{ product.price|floatformat:'2'|intcomma }} ➔ Now: {{ discounted_price|floatformat:'2'|intcomma }} ({{ product.discount_value }}% Off)</option>
-                            {% endwith %}
-                          {% else %}
-                            <option value="{{ product.id }}" data-price="{{ product.price }}" data-cost="{{ product.cost }}" data-name="{{ product.name }}">{{ product.name }} - Price: {{ product.price|floatformat:'2'|intcomma }}</option>
-                          {% endif %}
+                        {% for item in sale_items %}
+                          <option value="{{ item.value }}" data-price="{{ item.price }}" data-cost="{{ item.cost }}" data-name="{{ item.name }}" data-stock="{{ item.stock }}">{{ item.name }} - Price: {{ item.price|floatformat:'2'|intcomma }} - Stock: {{ item.stock|intcomma }}</option>
                         {% endfor %}
                       </select>
                     </div>
@@ -196,8 +190,9 @@
           const selectedOption = productSelect.querySelector(`option[value="${productId}"]`);
           const productName = selectedOption.getAttribute('data-name');
           const productPrice = parseFloat(selectedOption.getAttribute('data-price'));
+          const availableStock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
 
-          console.log('Selected product:', { productId, productName, productPrice });
+          console.log('Selected product:', { productId, productName, productPrice, availableStock });
 
           if (productId && !selectedProducts.includes(productId)) {
             selectedProducts.push(productId);
@@ -206,9 +201,9 @@
             const newRow = document.createElement('tr');
             newRow.innerHTML = `
               <td>${++productIndex}</td>
-              <td>${productName}</td>
+              <td>${productName}<div class="text-muted small">Available: ${availableStock}</div></td>
               <td>${productPrice.toFixed(2)}</td>
-              <td><input type="number" class="form-control quantity-input" value="1" min="1" data-price="${productPrice}" data-product-id="${productId}"></td>
+              <td><input type="number" class="form-control quantity-input" value="1" min="1" max="${availableStock}" data-price="${productPrice}" data-product-id="${productId}" data-stock="${availableStock}"></td>
               <td class="product-total">${productPrice.toFixed(2)}</td>
               <td class="text-center"><button type="button" class="btn btn-danger btn-sm delete-product" data-product-id="${productId}"><i class="mdi mdi-trash-can-outline"></i></button></td>
             `;
@@ -258,7 +253,12 @@
         // Update the total for a specific product
         function updateProductTotal(input) {
           const price = parseFloat(input.getAttribute('data-price'));
-          const quantity = parseInt(input.value) || 1;
+          const availableStock = parseInt(input.getAttribute('data-stock')) || 0;
+          let quantity = parseInt(input.value) || 1;
+          if (quantity > availableStock) {
+            quantity = availableStock;
+            input.value = availableStock;
+          }
           const productTotal = price * quantity;
           input.closest('tr').querySelector('.product-total').textContent = productTotal.toFixed(2);
           console.log('Updated product total:', productTotal);
@@ -296,30 +296,51 @@
             return false;
           }
 
+          if (!selectedProducts.length) {
+            alert('Select at least one product or variant.');
+            return false;
+          }
+
           // Remove existing hidden product inputs
           const existingProductInputs = document.querySelectorAll('input[name="products"]');
           existingProductInputs.forEach(input => input.remove());
 
           // Add hidden inputs with product data
+          let isValid = true;
           selectedProducts.forEach(productId => {
+            if (!isValid) {
+              return;
+            }
             const row = Array.from(productTableBody.querySelectorAll('tr')).find(row =>
               row.querySelector('.delete-product').getAttribute('data-product-id') === productId
             );
             const quantity = parseInt(row.querySelector('.quantity-input').value);
+            const availableStock = parseInt(row.querySelector('.quantity-input').getAttribute('data-stock')) || 0;
+            if (quantity > availableStock) {
+              alert('Quantity cannot exceed available stock.');
+              isValid = false;
+              return;
+            }
             const price = parseFloat(row.querySelector('.product-total').textContent) / quantity;
             const totalProduct = parseFloat(row.querySelector('.product-total').textContent);
+            const [itemType, itemId] = productId.split(':');
 
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = 'products';
             input.value = JSON.stringify({
-              id: productId,
+              type: itemType,
+              id: itemId,
               price: price,
               quantity: quantity,
               total_product: totalProduct
             });
             form.appendChild(input);
           });
+
+          if (!isValid) {
+            return false;
+          }
 
           console.log('Form validated, hidden inputs added:', selectedProducts);
           return true;

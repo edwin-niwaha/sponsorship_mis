@@ -1,232 +1,553 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load crispy_forms_tags %}
 
-{% block head %}
-{% endblock %}
+{% block title %}Child Profile Report{% endblock %}
 
 {% block content %}
+{% include '_partials/reports_layout_styles.html' %}
 
-<div class="container">
-    <div class="page-header flex-wrap">
-        <h3 class="mb-0"> {{table_title|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
+<div class="container-fluid reports-standard-page child-profile-report">
+  <div class="profile-hero">
+    <div class="profile-person">
+      {% if profile_picture %}
+        <img src="{{ profile_picture.picture.url }}" alt="{{ record.full_name }}">
+      {% elif record.profile_picture.all %}
+        {% with record.profile_picture.all.0 as child_picture %}
+          <img src="{{ child_picture.picture.url }}" alt="{{ record.full_name }}">
+        {% endwith %}
+      {% else %}
+        <span class="profile-avatar">{{ record.full_name|first }}</span>
+      {% endif %}
+      <div>
+        <div class="profile-kicker">Child Profile Report</div>
+        <h3>{{ record.full_name }}</h3>
+        <p>{{ record.prefixed_id }} | {{ age }} year(s) old | {{ record.gender|default:"Gender not recorded" }}</p>
+      </div>
+    </div>
 
-        <div class="d-flex">
-            <button title="Print PDF" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
-                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
+    <div class="profile-actions no-print">
+      <button title="Print Standard Child Profile" type="button" class="btn btn-outline-success" onclick="printDiv('printMe')">
+        <i class="mdi mdi-printer"></i> Print Standard
+      </button>
+      <button title="Export To Excel" type="button" class="btn btn-outline-success" onclick="ExportToExcel('xlsx')">
+        <i class="mdi mdi-file-excel"></i>
+      </button>
+      <button title="Export To Word" type="button" class="btn btn-outline-success" onclick="Export2Doc('printMe');">
+        <i class="mdi mdi-file-word"></i>
+      </button>
+      <a title="Edit Child" class="btn btn-success" href="{% url 'update_child' record.id %}">
+        <i class="mdi mdi-pencil mr-1"></i>Edit
+      </a>
+      <a title="Children List" class="btn btn-outline-secondary" href="{% url 'child_list' %}">
+        <i class="mdi mdi-format-list-bulleted"></i>
+      </a>
+    </div>
+  </div>
 
-            <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success"
-                onclick="ExportToExcel('xlsx')">
-                <i class="mdi mdi-file-excel btn-icon-prepend"></i> </button>
+  <div class="profile-stat-grid">
+    <div class="profile-stat-card">
+      <i class="mdi mdi-school"></i>
+      <span>In School</span>
+      <strong>{% if record.is_child_in_school %}Yes{% else %}No{% endif %}</strong>
+    </div>
+    <div class="profile-stat-card">
+      <i class="mdi mdi-heart"></i>
+      <span>Sponsorship</span>
+      <strong>{% if record.is_sponsored %}Sponsored{% else %}Not Sponsored{% endif %}</strong>
+    </div>
+    <div class="profile-stat-card">
+      <i class="mdi mdi-home-map-marker"></i>
+      <span>Residence</span>
+      <strong>{{ record.residence|default:"-" }}</strong>
+    </div>
+    <div class="profile-stat-card">
+      <i class="mdi mdi-calendar-account"></i>
+      <span>Year Enrolled</span>
+      <strong>{{ record.year_enrolled|default:"-" }}</strong>
+    </div>
+  </div>
 
-            <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success"
-                onclick="Export2Doc('printMe');">
-                <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
+  <div id="printMe" class="profile-report-body standard-print-area">
+    <style>
+      .print-document-header,
+      .print-watermark {
+        display: none;
+      }
 
-            <a title="Register Child" class="btn btn-sm ml-3 btn-success" href="{% url 'register_child' %}"><i
-                    class="mdi mdi-account-plus btn-icon-prepend"></i>
-            </a>
-            <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'child_list' %}"><i
-                    class="mdi mdi-chart-line btn-icon-prepend"></i>
-            </a>
+      @media print {
+        @page {
+          margin: 14mm 12mm;
+          size: A4 portrait;
+        }
+
+        body {
+          background: #fff !important;
+          color: #111827 !important;
+          font-family: Arial, sans-serif !important;
+        }
+
+        .standard-print-area {
+          background: #fff !important;
+          position: relative;
+        }
+
+        .print-document-header {
+          align-items: center;
+          border-bottom: 2px solid #13745d;
+          display: flex !important;
+          gap: 14px;
+          justify-content: space-between;
+          margin-bottom: 18px;
+          padding-bottom: 12px;
+          position: relative;
+          z-index: 2;
+        }
+
+        .print-brand {
+          height: 64px;
+          object-fit: contain;
+          width: 64px;
+        }
+
+        .print-header-main {
+          align-items: center;
+          display: flex;
+          gap: 14px;
+        }
+
+        .print-header-photo,
+        .print-header-avatar {
+          border: 2px solid #13745d;
+          border-radius: 50%;
+          flex: 0 0 auto;
+          height: 82px;
+          width: 82px;
+        }
+
+        .print-header-photo {
+          object-fit: cover;
+        }
+
+        .print-header-avatar {
+          align-items: center;
+          background: #edf7f4;
+          color: #13745d;
+          display: inline-flex;
+          font-size: 1.8rem;
+          font-weight: 900;
+          justify-content: center;
+          text-transform: uppercase;
+        }
+
+        .print-document-header span {
+          color: #13745d;
+          display: block;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0;
+          text-transform: uppercase;
+        }
+
+        .print-document-header h2 {
+          color: #1f344d;
+          font-size: 20px;
+          font-weight: 900;
+          margin: 2px 0;
+        }
+
+        .print-document-header p {
+          color: #4b5563;
+          font-size: 12px;
+          margin: 0;
+        }
+
+        .print-watermark {
+          display: block !important;
+          inset: 35% auto auto 50%;
+          opacity: .07;
+          position: fixed;
+          transform: translate(-50%, -50%);
+          width: 420px;
+          z-index: 0;
+        }
+
+        .profile-section,
+        .profile-info-item {
+          background: transparent !important;
+          box-shadow: none !important;
+          position: relative;
+          z-index: 2;
+        }
+
+        .profile-section {
+          border: 1px solid #d1d5db !important;
+          border-radius: 8px !important;
+          margin-bottom: 12px !important;
+          padding: 12px !important;
+          page-break-inside: avoid;
+        }
+
+        .profile-info-grid {
+          grid-template-columns: repeat(2, 1fr) !important;
+          gap: 8px !important;
+        }
+
+        .profile-info-item {
+          border: 1px solid #d1d5db !important;
+          border-left: 3px solid #13745d !important;
+          border-radius: 6px !important;
+          display: grid !important;
+          gap: 6px !important;
+          padding: 9px 10px !important;
+        }
+
+        .profile-info-item span {
+          display: block !important;
+          line-height: 1.25 !important;
+          margin-bottom: 0 !important;
+        }
+
+        .profile-info-item strong {
+          display: block !important;
+          line-height: 1.45 !important;
+          padding-top: 2px !important;
+        }
+
+        .profile-section-heading {
+          border-bottom: 1px solid #d1d5db !important;
+          margin-bottom: 10px !important;
+          padding-bottom: 8px !important;
+        }
+
+        .no-print,
+        .profile-link-row {
+          display: none !important;
+        }
+      }
+    </style>
+
+    <img class="print-watermark" src="{% static 'images/file.png' %}" alt="">
+    <div class="print-document-header">
+      <div class="print-header-main">
+        <img class="print-brand" src="{% static 'images/file.png' %}" alt="">
+        <div>
+          <h2>{{ table_title|upper }}</h2>
+          <p>{{ record.full_name }} | {{ record.prefixed_id }} | {{ record.gender|default:"Gender not recorded" }} | {{ age }} year(s) old</p>
         </div>
+      </div>
+      {% if profile_picture %}
+        <img src="{{ profile_picture.picture.url }}" alt="{{ record.full_name }}" class="print-header-photo">
+      {% elif record.profile_picture.all %}
+        {% with record.profile_picture.all.0 as child_picture %}
+          <img src="{{ child_picture.picture.url }}" alt="{{ record.full_name }}" class="print-header-photo">
+        {% endwith %}
+      {% else %}
+        <span class="print-header-avatar">{{ record.full_name|first }}</span>
+      {% endif %}
     </div>
-    <hr>
-    <div id="printMe" class="tab-pane show active">
-        <header style="text-align: center;">
-            <i style="font-size: 2em; font-family: 'Lucida Calligraphy', 'Lucida Sans Unicode', sans-serif;"
-                class="text-success">{{record.full_name}}</i> -
-            <i style="font-size: 2em;">Profile</i>
-        </header>
-        <table class=" my-table">
-            <tr>
-                <td class="text-white bg-info" colspan="4"><b>Basic Info</b>
-                </td>
-            </tr>
-            <tr>
-                <td width="45%" rowspan="2" colspan="2">
-                    {% if record.profile_picture.all %}
-                        {% with record.profile_picture.all.0 as profile_picture %}
-                            <img class="rounded-circle account-img" height="100" width="100" 
-                                src="{{ profile_picture.picture.url }}" style="cursor: pointer" />
-                        {% endwith %}
-                    {% else %}
-                        No avatar!
-                    {% endif %}
-                    <i class="text-info">Reg. No:</i> {{ record.prefixed_id }}
-                </td>
-                
-                <td class="text-info">Full Name:</td>
-                <td>{{record.full_name}}</td>
-            </tr>
-            <tr>
-                <td class="text-info">Preferred Name:</td>
-                <td>{{record.preferred_name}}</td>
-            </tr>
-            <tr>
-                <td class="text-info">Current Residence: </td>
-                <td>{{record.residence}}</td>
-                <td class="text-info">Home District: </td>
-                <td>{{record.district}}</td>
-            </tr>
-            <tr>
-                <td colspan="3">
-                    <i class="text-info">Tribe: &rarr;</i>{{record.tribe}} |
-                    <i class="text-info">Gender: &rarr;</i>{{record.gender}} |
-                    <i class="text-info">Date of Birth: &rarr;</i>{{record.date_of_birth}}
-                </td>
-                <td class="text-success">{{ age }} year(s) old</td>
-            </tr>
-            <tr>
-                <td colspan="2"><i class="text-info">Weight: &rarr;</i><i>{{record.weight}} Kgs</i>
-                    <i class="text-info">Height: &rarr;</i><i>{{record.height}} cms</i>
-                </td>
-                <td colspan="2"><i class="text-info">Aspiration: &rarr;</i>
-                    <i>{{record.aspiration}}</i>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="text-info">Interest and abilities: </td>
-                <td colspan="2">{{record.c_interest}}</td>
-            </tr>
-            <tr>
-                <td class="text-white bg-info" colspan="4"><b>Education Details </b>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <i class="text-info">Is the child in school? &rarr; </i>
-                    {% if record.is_child_in_school %}
-                    Yes
-                    {% else %}
-                    No
-                    {% endif %}
-                </td>
-                <td colspan="2">
-                    {% if record.is_child_in_school %}
-                    <a href="{% url 'child_progress_report' %}"
-                        class="link-info link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">
-                        <i class="text-success">View education details...</i>
-                    </a>
-                    {% else %}
-                    <i class="text-warning">Education details not available...</i>
-                </td>
-            </tr>
-            {% endif %}
 
-            <tr>
-                <td class="text-white bg-info" colspan="4"><b>Sponsorship details...</b>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2"><i class="text-info">Is the child sponsored? &rarr; </i>
-                    {% if record.is_sponsored %}
-                    Yes
-                    {% else %}
-                    No
-                    {% endif %}
-                </td>
-                <td colspan="2">
-                    {% if record.is_sponsored%}
-                    <a href="{% url 'child_sponsorship_report' %}"
-                        class="link-info link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">
-                        <i class="text-success">View sponsorship details...</i>
-                    </a>
-                    {% else %}
-                    <i class="text-warning">Sponsorship details not available...</i>
-                    {% endif %}
-                </td>
-            </tr>
-            <tr>
-                <td class="text-white bg-info" colspan="4"><b>Family Background </b>
-                </td>
-            </tr>
-            <tr>
-                <td class="text-info">Siblings: </td>
-                <td>{{record.siblings}}</td>
-                <td class="text-info">Current Guardian: </td>
-                <td>{{record.guardian}}</td>
-            </tr>
-            <tr>
-                <td class="text-info">Gurdian Contact: </td>
-                <td>{{record.guardian_contact}}</td>
-                <td class="text-info">Relationsip with the Guardian </td>
-                <td>{{record.relationship_with_guardian}}</td>
-            </tr>
-            <tr>
-                <td>
-                    <i class="text-info">Father's Name: </i>
-                </td>
-                <td>
-                    {{record.father_name}}
-                </td>
-                <td colspan="2">
-                    <i class="text-info">Is the Father alive? &rarr; </i>{{record.is_father_alive}}
-                </td>
+    <section class="profile-section">
+      <div class="profile-section-heading">
+        <i class="mdi mdi-card-account-details-outline"></i>
+        <h4>Basic Information</h4>
+      </div>
+      <div class="profile-info-grid">
+        <div class="profile-info-item"><span>Registration No.</span><strong>{{ record.prefixed_id }}</strong></div>
+        <div class="profile-info-item"><span>Full Name</span><strong>{{ record.full_name|default:"-" }}</strong></div>
+        <div class="profile-info-item"><span>Preferred Name</span><strong>{{ record.preferred_name|default:"-" }}</strong></div>
+        <div class="profile-info-item"><span>Date of Birth</span><strong>{{ record.date_of_birth|default:"-" }}</strong></div>
+        <div class="profile-info-item"><span>Gender</span><strong>{{ record.gender|default:"-" }}</strong></div>
+        <div class="profile-info-item"><span>Tribe</span><strong>{{ record.tribe|default:"-" }}</strong></div>
+        <div class="profile-info-item"><span>District</span><strong>{{ record.district|default:"-" }}</strong></div>
+        <div class="profile-info-item"><span>Weight</span><strong>{{ record.weight|default:"-" }} Kgs</strong></div>
+        <div class="profile-info-item"><span>Height</span><strong>{{ record.height|default:"-" }} cms</strong></div>
+      </div>
+    </section>
 
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2"><i class="text-info">If not what happened/if alive what is happening? &rarr;
-                    </i>
-                </td>
-                <td colspan="2">{{record.father_description}}</td>
-            </tr>
+    <section class="profile-section">
+      <div class="profile-section-heading">
+        <i class="mdi mdi-school-outline"></i>
+        <h4>Education And Sponsorship</h4>
+      </div>
+      <div class="profile-info-grid">
+        <div class="profile-info-item"><span>In School</span><strong>{% if record.is_child_in_school %}Yes{% else %}No{% endif %}</strong></div>
+        <div class="profile-info-item"><span>Sponsorship Status</span><strong>{% if record.is_sponsored %}Sponsored{% else %}Not Sponsored{% endif %}</strong></div>
+        <div class="profile-info-item span-2"><span>Aspiration</span><strong>{{ record.aspiration|default:"-" }}</strong></div>
+        <div class="profile-info-item span-2"><span>Interest And Abilities</span><strong>{{ record.c_interest|default:"-" }}</strong></div>
+      </div>
+      <div class="profile-link-row no-print">
+        {% if record.is_child_in_school %}
+          <a href="{% url 'child_progress_report' %}?id={{ record.id }}" class="btn btn-sm btn-outline-success">
+            <i class="mdi mdi-chart-line mr-1"></i>View education details
+          </a>
+        {% endif %}
+        {% if record.is_sponsored %}
+          <a href="{% url 'child_sponsorship_report' %}" class="btn btn-sm btn-outline-success">
+            <i class="mdi mdi-hand-heart mr-1"></i>View sponsorship details
+          </a>
+        {% endif %}
+      </div>
+    </section>
 
-            <tr>
-                <td>
-                    <i class="text-info">Mother's Name: </i>
-                </td>
-                <td>
-                    {{record.mother_name}}
-                </td>
-                <td colspan="2">
-                    <i class="text-info">Is the Mother alive? &rarr; </i>{{record.is_mother_alive}}
-                </td>
+    <section class="profile-section">
+      <div class="profile-section-heading">
+        <i class="mdi mdi-account-group-outline"></i>
+        <h4>Family Background</h4>
+      </div>
+      <div class="profile-info-grid">
+        <div class="profile-info-item"><span>Guardian</span><strong>{{ record.guardian|default:"-" }}</strong></div>
+        <div class="profile-info-item"><span>Guardian Contact</span><strong>{{ record.guardian_contact|default:"-" }}</strong></div>
+        <div class="profile-info-item"><span>Relationship With Guardian</span><strong>{{ record.relationship_with_guardian|default:"-" }}</strong></div>
+        <div class="profile-info-item"><span>Siblings</span><strong>{{ record.siblings|default:"-" }}</strong></div>
+        <div class="profile-info-item"><span>Father's Name</span><strong>{{ record.father_name|default:"-" }}</strong></div>
+        <div class="profile-info-item"><span>Father Alive?</span><strong>{{ record.is_father_alive|default:"-" }}</strong></div>
+        <div class="profile-info-item span-2"><span>Father Description</span><strong>{{ record.father_description|default:"-" }}</strong></div>
+        <div class="profile-info-item"><span>Mother's Name</span><strong>{{ record.mother_name|default:"-" }}</strong></div>
+        <div class="profile-info-item"><span>Mother Alive?</span><strong>{{ record.is_mother_alive|default:"-" }}</strong></div>
+        <div class="profile-info-item span-2"><span>Mother Description</span><strong>{{ record.mother_description|default:"-" }}</strong></div>
+        <div class="profile-info-item span-2"><span>Other Background Information</span><strong>{{ record.background_info|default:"-" }}</strong></div>
+      </div>
+    </section>
 
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2"><i class="text-info">If not what happened/if alive what is happening? &rarr;
-                    </i>
-                </td>
-                <td colspan="2">{{record.mother_description}}</td>
-            </tr>
-
-            <tr>
-                <td colspan="2"><i class="text-info">Other family back ground information:</i> &rarr; </td>
-                <td colspan="2">{{record.background_info}}</td>
-            </tr>
-            <tr>
-                <td class="text-white bg-info" colspan="4"><b>More Info...</b>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="text-info">Child’s health status: &rarr;</td>
-                <td colspan="2">{{record.health_status}}</td>
-            </tr>
-            <tr>
-                <td colspan="2"><i class="text-info">Child’s responsibilities: &rarr;</i></td>
-                <td colspan="2">{{record.responsibility}}</td>
-            </tr>
-            <tr>
-                <td colspan="3"><i class="text-info">Relationship with Christ:</i> &rarr;
-                    {{record.relationship_with_christ}} |
-                    <i class="text-info">Religion:</i> &rarr;{{record.religion}}
-                </td>
-                <td><i class="text-info">Year enrolled:</i> {{record.year_enrolled}}</td>
-            </tr>
-            <tr>
-                <td colspan="2"><i class="text-info">Prayer needs/request</i> &rarr; </td>
-                <td colspan="2">{{record.prayer_request}}</td>
-            </tr>
-            <tr>
-                <td colspan="3"><i class="text-info">Staff Comment:</i> &rarr; {{record.staff_comment}}</td>
-                <td> <i class="text-info">Compiled by: </i> {{record.compiled_by}}</td>
-            </tr>
-        </table>
-        <hr class="bg-info" style="height: 3px;" />
-    </div>
+    <section class="profile-section">
+      <div class="profile-section-heading">
+        <i class="mdi mdi-notebook-outline"></i>
+        <h4>More Information</h4>
+      </div>
+      <div class="profile-info-grid">
+        <div class="profile-info-item span-2"><span>Health Status</span><strong>{{ record.health_status|default:"-" }}</strong></div>
+        <div class="profile-info-item span-2"><span>Responsibilities</span><strong>{{ record.responsibility|default:"-" }}</strong></div>
+        <div class="profile-info-item"><span>Relationship With Christ</span><strong>{{ record.relationship_with_christ|default:"-" }}</strong></div>
+        <div class="profile-info-item"><span>Religion</span><strong>{{ record.religion|default:"-" }}</strong></div>
+        <div class="profile-info-item span-2"><span>Prayer Request</span><strong>{{ record.prayer_request|default:"-" }}</strong></div>
+        <div class="profile-info-item span-2"><span>Staff Comment</span><strong>{{ record.staff_comment|default:"-" }}</strong></div>
+        <div class="profile-info-item"><span>Compiled By</span><strong>{{ record.compiled_by|default:"-" }}</strong></div>
+      </div>
+    </section>
+  </div>
 </div>
 
+<style>
+  .child-profile-report {
+    padding-top: 6px;
+  }
 
+  .profile-hero,
+  .profile-stat-card,
+  .profile-section {
+    background: #fff;
+    border: 1px solid #d9dee5;
+    border-radius: 8px;
+    box-shadow: 0 12px 30px rgba(31, 41, 51, .08);
+  }
+
+  .profile-hero {
+    align-items: center;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding: 18px 20px;
+  }
+
+  .profile-person {
+    align-items: center;
+    display: flex;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .profile-person img,
+  .profile-avatar {
+    border-radius: 50%;
+    flex: 0 0 auto;
+    height: 76px;
+    width: 76px;
+  }
+
+  .profile-person img {
+    object-fit: cover;
+  }
+
+  .profile-avatar {
+    align-items: center;
+    background: #edf7f4;
+    border: 1px solid #cfe8e0;
+    color: #13745d;
+    display: inline-flex;
+    font-size: 1.7rem;
+    font-weight: 900;
+    justify-content: center;
+    text-transform: uppercase;
+  }
+
+  .profile-kicker {
+    color: #13745d;
+    font-size: .76rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+
+  .profile-hero h3 {
+    color: #1f344d;
+    font-size: 1.55rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    margin: 4px 0;
+  }
+
+  .profile-hero p {
+    color: #667085;
+    margin: 0;
+  }
+
+  .profile-actions,
+  .profile-link-row {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .profile-stat-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-bottom: 14px;
+  }
+
+  .profile-stat-card {
+    display: grid;
+    gap: 6px;
+    min-height: 118px;
+    padding: 15px;
+  }
+
+  .profile-stat-card i {
+    align-items: center;
+    background: #edf7f4;
+    border: 1px solid #cfe8e0;
+    border-radius: 8px;
+    color: #13745d;
+    display: inline-flex;
+    font-size: 1.35rem;
+    height: 42px;
+    justify-content: center;
+    width: 42px;
+  }
+
+  .profile-stat-card span,
+  .profile-info-item span {
+    color: #667085;
+    font-size: .78rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .profile-stat-card strong {
+    color: #1f344d;
+    font-size: 1.05rem;
+    font-weight: 900;
+  }
+
+  .profile-report-body {
+    display: grid;
+    gap: 14px;
+  }
+
+  .profile-section {
+    padding: 16px;
+  }
+
+  .profile-section-heading {
+    align-items: center;
+    border-bottom: 1px solid #e3e8ef;
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+  }
+
+  .profile-section-heading i {
+    color: #13745d;
+    font-size: 1.2rem;
+  }
+
+  .profile-section-heading h4 {
+    color: #1f344d;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    margin: 0;
+  }
+
+  .profile-info-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .profile-info-item {
+    background: #f8fafc;
+    border: 1px solid #e3e8ef;
+    border-radius: 8px;
+    display: grid;
+    gap: 9px;
+    padding: 13px 14px;
+  }
+
+  .profile-info-item span {
+    display: block;
+    line-height: 1.25;
+  }
+
+  .profile-info-item strong {
+    color: #1f344d;
+    display: block;
+    font-size: .95rem;
+    font-weight: 800;
+    line-height: 1.45;
+    padding-top: 1px;
+    word-break: break-word;
+  }
+
+  .span-2 {
+    grid-column: span 2;
+  }
+
+  .profile-link-row {
+    border-top: 1px solid #e3e8ef;
+    margin-top: 14px;
+    padding-top: 12px;
+  }
+
+  @media (max-width: 1199.98px) {
+    .profile-stat-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .profile-hero {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .profile-actions .btn,
+    .profile-link-row .btn {
+      flex: 1 1 auto;
+    }
+
+    .profile-stat-grid,
+    .profile-info-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .span-2 {
+      grid-column: auto;
+    }
+  }
+</style>
 {% endblock content %}

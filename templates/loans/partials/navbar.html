@@ -65,6 +65,54 @@
                 </div>
             </li>
 
+            <li class="nav-item dropdown d-none d-sm-flex">
+                <a class="nav-link count-indicator dropdown-toggle" id="withdrawalDropdown" href="#"
+                    data-toggle="dropdown">
+                    <i class="mdi mdi-bank-transfer-out"></i>
+                    <span class="count count-varient1">{{ pending_withdrawal_count }}</span>
+                </a>
+                <div class="dropdown-menu navbar-dropdown navbar-dropdown-large preview-list"
+                    aria-labelledby="withdrawalDropdown">
+                    <h6 class="p-3 mb-0">Pending Withdrawals</h6>
+                    {% for withdrawal in pending_withdrawal_requests %}
+                    <a class="dropdown-item preview-item" href="{% url 'savings_account_detail' withdrawal.account.id %}">
+                        <div class="preview-item-content flex-grow">
+                            <span class="badge badge-pill badge-warning">Withdrawal</span>
+                            <p class="text-small text-muted ellipsis mb-0">
+                                {{ withdrawal.account.client.full_name }} - {{ withdrawal.amount|floatformat:2 }}
+                            </p>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <p class="dropdown-item">No pending withdrawals.</p>
+                    {% endfor %}
+                </div>
+            </li>
+
+            <li class="nav-item dropdown d-none d-sm-flex">
+                <a class="nav-link count-indicator dropdown-toggle" id="loanApplicationDropdown" href="#"
+                    data-toggle="dropdown">
+                    <i class="mdi mdi-file-document-box-outline"></i>
+                    <span class="count count-varient2">{{ pending_loan_application_count }}</span>
+                </a>
+                <div class="dropdown-menu navbar-dropdown navbar-dropdown-large preview-list"
+                    aria-labelledby="loanApplicationDropdown">
+                    <h6 class="p-3 mb-0">Pending Loan Applications</h6>
+                    {% for loan in pending_loan_applications %}
+                    <a class="dropdown-item preview-item" href="{% url 'loans:loan_applications' %}">
+                        <div class="preview-item-content flex-grow">
+                            <span class="badge badge-pill badge-info">Loan</span>
+                            <p class="text-small text-muted ellipsis mb-0">
+                                {{ loan.borrower.full_name }} - {{ loan.principal_amount|floatformat:2 }}
+                            </p>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <p class="dropdown-item">No pending loan applications.</p>
+                    {% endfor %}
+                </div>
+            </li>
+
         </ul>
 
         <ul class="navbar-nav navbar-nav-right ml-lg-auto">

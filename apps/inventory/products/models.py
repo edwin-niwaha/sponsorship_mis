@@ -1,4 +1,5 @@
 from cloudinary.models import CloudinaryField
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms import model_to_dict
@@ -74,9 +75,7 @@ class Product(models.Model):
                 "id": self.id,
                 "text": self.name,
                 "category": self.category.name if self.category else None,
-                "quantity": (
-                    self.inventory.quantity if hasattr(self, "inventory") else 0
-                ),
+                "quantity": self.stock_on_hand,
                 "total_product": 0,
             }
         )
@@ -91,6 +90,135 @@ class Product(models.Model):
     @property
     def prefixed_id(self):
         return f"SKU{self.pk:03d}"
+
+    @property
+    def active_variants(self):
+        return self.variants.filter(status="ACTIVE")
+
+    @property
+    def has_variants(self):
+        return self.variants.exists()
+
+    @property
+    def base_stock(self):
+        return self.inventory.quantity if hasattr(self, "inventory") else 0
+
+    @property
+    def variant_stock(self):
+        return self.variants.aggregate(total=models.Sum("quantity"))["total"] or 0
+
+    @property
+    def stock_on_hand(self):
+        if self.has_variants:
+            return self.variant_stock
+        return self.base_stock
+
+    @property
+    def stock_status(self):
+        if self.stock_on_hand <= 0:
+            return "Out of stock"
+        if hasattr(self, "inventory") and self.stock_on_hand <= self.inventory.low_stock_threshold:
+            return "Low stock"
+        return "In stock"
+
+
+class ProductVariant(models.Model):
+    product = models.ForeignKey(
+        Product,
+        related_name="variants",
+        on_delete=models.CASCADE,
+        verbose_name="Product",
+    )
+    name = models.CharField(max_length=120, verbose_name="Variant Name")
+    sku = models.CharField(max_length=64, unique=True, verbose_name="SKU")
+    barcode = models.CharField(max_length=64, blank=True, verbose_name="Barcode")
+    option_value = models.CharField(
+        max_length=120,
+        blank=True,
+        verbose_name="Option Value",
+        help_text="Example: Small, Blue, 500ml, Pack of 12.",
+    )
+    cost = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Cost Price",
+    )
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Selling Price",
+    )
+    quantity = models.PositiveIntegerField(default=0, verbose_name="Stock Quantity")
+    low_stock_threshold = models.PositiveIntegerField(
+        default=5, verbose_name="Low Stock Threshold"
+    )
+    status = models.CharField(
+        choices=STATUS_CHOICES,
+        max_length=10,
+        default="ACTIVE",
+        verbose_name="Status",
+    )
+    is_default = models.BooleanField(default=False, verbose_name="Default Variant")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        db_table = "product_variant"
+        ordering = ["product__name", "name"]
+        unique_together = (("product", "name"),)
+
+    def __str__(self):
+        return f"{self.product.name} - {self.name}"
+
+    @property
+    def display_name(self):
+        return f"{self.product.name} - {self.name}"
+
+    @property
+    def effective_cost(self):
+        return self.cost if self.cost is not None else self.product.cost
+
+    @property
+    def effective_price(self):
+        return self.price if self.price is not None else self.product.price
+
+    @property
+    def is_low_stock(self):
+        return 0 < self.quantity <= self.low_stock_threshold
+
+    @property
+    def is_out_of_stock(self):
+        return self.quantity <= 0
+
+    @property
+    def stock_status(self):
+        if self.is_out_of_stock:
+            return "Out of stock"
+        if self.is_low_stock:
+            return "Low stock"
+        return "In stock"
+
+    def adjust_stock(self, quantity_delta):
+        new_quantity = self.quantity + quantity_delta
+        if new_quantity < 0:
+            raise ValidationError("Variant stock cannot be negative.")
+        self.quantity = new_quantity
+        self.save(update_fields=["quantity", "updated_at"])
+
+    def to_json(self):
+        return {
+            "id": self.id,
+            "text": self.display_name,
+            "product": self.product.name,
+            "sku": self.sku,
+            "price": float(self.effective_price),
+            "cost": float(self.effective_cost),
+            "quantity": self.quantity,
+        }
 
 
 class ProductImage(models.Model):
@@ -148,22 +276,94 @@ class Inventory(models.Model):
         """Check stock levels and update stock status."""
         self.is_out_of_stock = self.quantity <= 0
 
-        # Trigger low stock alert if quantity is less than or equal to threshold
-        if self.quantity <= self.low_stock_threshold and not self.is_out_of_stock:
-            self.send_low_stock_alert()
-
-    def send_low_stock_alert(self):
-        """Send an alert for low stock."""
-        # Implement notification logic here
-        # For example, sending an email or logging the alert
-        print(
-            f"Low stock alert for {self.product.name}. Current stock: {self.quantity}"
-        )
-
     def save(self, *args, **kwargs):
         # Ensure stock alerts are checked before saving
         self.check_stock_alerts()
         super().save(*args, **kwargs)
 
+    @property
+    def is_low_stock(self):
+        return 0 < self.quantity <= self.low_stock_threshold
+
+    @property
+    def stock_status(self):
+        if self.is_out_of_stock:
+            return "Out of stock"
+        if self.is_low_stock:
+            return "Low stock"
+        return "In stock"
+
+    def adjust_stock(self, quantity_delta):
+        new_quantity = self.quantity + quantity_delta
+        if new_quantity < 0:
+            raise ValidationError("Product stock cannot be negative.")
+        self.quantity = new_quantity
+        self.save(update_fields=["quantity", "is_out_of_stock"])
+
     def __str__(self):
         return f"{self.product.name} - Stock: {self.quantity}"
+
+
+class StockMovement(models.Model):
+    STOCK_IN = "IN"
+    STOCK_OUT = "OUT"
+    ADJUSTMENT = "ADJUSTMENT"
+    SALE = "SALE"
+    RETURN = "RETURN"
+
+    MOVEMENT_TYPE_CHOICES = [
+        (STOCK_IN, "Stock In"),
+        (STOCK_OUT, "Stock Out"),
+        (ADJUSTMENT, "Adjustment"),
+        (SALE, "Sale"),
+        (RETURN, "Return"),
+    ]
+
+    product = models.ForeignKey(
+        Product,
+        related_name="stock_movements",
+        on_delete=models.CASCADE,
+        verbose_name="Product",
+    )
+    variant = models.ForeignKey(
+        ProductVariant,
+        related_name="stock_movements",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Variant",
+    )
+    movement_type = models.CharField(max_length=20, choices=MOVEMENT_TYPE_CHOICES)
+    quantity = models.IntegerField(verbose_name="Quantity Change")
+    unit_cost = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Unit Cost",
+    )
+    unit_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Unit Price",
+    )
+    reference = models.CharField(max_length=100, blank=True, verbose_name="Reference")
+    notes = models.TextField(blank=True, verbose_name="Notes")
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="inventory_stock_movements",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+
+    class Meta:
+        db_table = "stock_movement"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        item = self.variant.display_name if self.variant else self.product.name
+        return f"{item}: {self.movement_type} {self.quantity}"

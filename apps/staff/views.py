@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
+from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -18,12 +19,17 @@ from .models import Staff, StaffDeparture
 @login_required
 @admin_or_manager_or_staff_required
 def staff_list(request):
-    queryset = Staff.objects.all().filter(is_departed=False).order_by("id")
+    active_staff = Staff.objects.filter(is_departed=False)
+    queryset = active_staff.order_by("id")
 
     search_query = request.GET.get("search")
     if search_query:
-        queryset = queryset.filter(first_name__icontains=search_query).filter(
-            last_name__icontains=search_query
+        queryset = queryset.filter(
+            Q(first_name__icontains=search_query)
+            | Q(last_name__icontains=search_query)
+            | Q(email__icontains=search_query)
+            | Q(department__icontains=search_query)
+            | Q(job_title__icontains=search_query)
         )
 
     paginator = Paginator(queryset, 50)
@@ -41,7 +47,15 @@ def staff_list(request):
     return render(
         request,
         "staff/staff_details.html",
-        {"records": records, "table_title": "Staff List"},
+        {
+            "records": records,
+            "table_title": "Staff List",
+            "active_staff_count": active_staff.count(),
+            "sponsored_staff_count": active_staff.filter(is_sponsored=True).count(),
+            "non_sponsored_staff_count": active_staff.filter(is_sponsored=False).count(),
+            "departed_staff_count": Staff.objects.filter(is_departed=True).count(),
+            "search_query": search_query or "",
+        },
     )
 
 

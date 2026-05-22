@@ -2,7 +2,7 @@ import uuid
 
 import requests
 
-from core import settings
+from django.conf import settings
 
 BASE_URL = "https://proxy.momoapi.mtn.com"
 

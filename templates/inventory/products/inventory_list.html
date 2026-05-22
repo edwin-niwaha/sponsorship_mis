@@ -5,18 +5,33 @@
   <div class="container-fluid">
     <div class="row mb-3">
       <div class="col-md-12 d-flex justify-content-between align-items-center">
-        <a href="{% url 'products:inventory_add' %}" class="btn btn-dark ml-2">
-          <i class="mdi mdi-plus mr-2"></i>
-          Add Inventory
-        </a>
-        <form method="GET" action="{% url 'products:inventory_list' %}">
-          <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..." style="border-radius: 5px; height: 35px;" />
-          <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
-        </form>
-
-        <div class="d-flex">
-          <button title="Print" type="button" class="btn btn-success ml-2" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
+        <div>
+          <h3 class="mb-1">{{ table_title }}</h3>
+          <p class="text-muted mb-0">Track base product stock and variant-level stock.</p>
         </div>
+        <div class="d-flex">
+          <a href="{% url 'products:inventory_add' %}" class="btn btn-dark ml-2">
+            <i class="mdi mdi-plus mr-1"></i>Add Stock
+          </a>
+          <a href="{% url 'products:stock_adjustment' %}" class="btn btn-outline-secondary ml-2">
+            <i class="mdi mdi-swap-vertical mr-1"></i>Adjust Stock
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-md-8">
+        <form method="GET" action="{% url 'products:inventory_list' %}">
+          <div class="input-group">
+            <input type="text" name="search" class="form-control" value="{{ search_query }}" placeholder="Search product, variant, SKU, or category" />
+            <div class="input-group-append">
+              <button type="submit" class="btn btn-outline-secondary"><i class="mdi mdi-magnify"></i></button>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="col-md-4 text-md-right mt-2 mt-md-0">
+        <button title="Print" type="button" class="btn btn-outline-secondary" onclick="printDiv('printMe')"><i class="mdi mdi-printer"></i></button>
       </div>
     </div>
 
@@ -27,15 +42,16 @@
       </div>
       <div class="card-body">
         <div class="table-responsive">
-          {% if inventories %}
+          {% if inventories or variants %}
             <table class="table table-bordered table-hover">
               <thead class="table-dark">
                 <tr>
                   <th>#</th>
-                  <th>Product</th>
+                  <th>Stock Item</th>
                   <th>Category</th>
                   <th>Stock Quantity</th>
                   <th>Low Stock Threshold</th>
+                  <th>Status</th>
                   <th class="print-hide">Actions</th>
                 </tr>
               </thead>
@@ -47,6 +63,7 @@
                     <td>{{ inventory.product.category }}</td>
                     <td>{{ inventory.quantity }}</td>
                     <td>{{ inventory.low_stock_threshold }}</td>
+                    <td>{{ inventory.stock_status }}</td>
                     <td class="print-hide">
                       <a href="{% url 'products:inventory_update' inventory.id %}" class="btn btn-warning"><i class="bi bi-pencil"></i></a>
                       <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ inventory.id }}"><i class="bi bi-trash"></i></button>
@@ -71,6 +88,22 @@
                           </div>
                         </div>
                       </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+                {% for variant in variants %}
+                  <tr>
+                    <td>V{{ forloop.counter }}</td>
+                    <td>
+                      <strong>{{ variant.display_name }}</strong>
+                      <div class="text-muted small">SKU: {{ variant.sku }}</div>
+                    </td>
+                    <td>{{ variant.product.category }}</td>
+                    <td>{{ variant.quantity }}</td>
+                    <td>{{ variant.low_stock_threshold }}</td>
+                    <td>{{ variant.stock_status }}</td>
+                    <td class="print-hide">
+                      <a href="{% url 'products:variant_update' variant.id %}" class="btn btn-warning"><i class="bi bi-pencil"></i></a>
                     </td>
                   </tr>
                 {% endfor %}

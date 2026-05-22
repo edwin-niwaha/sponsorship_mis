@@ -1,0 +1,59 @@
+{% extends '_partials/guest_base.html' %}
+{% load humanize %}
+
+{% block title %}My Loan Applications{% endblock %}
+
+{% block content %}
+  <main class="container py-4">
+    <div class="bg-white border rounded-2 p-3 mb-3 d-flex flex-wrap justify-content-between align-items-start gap-3">
+      <div>
+        <h1 class="h4 fw-bold mb-1">{{ form_title }}</h1>
+        <div class="text-muted small">
+          {% if client %}{{ client.full_name }}{% else %}Client account not linked{% endif %}
+        </div>
+      </div>
+      {% if client %}
+        <a href="{% url 'loans:client_loan_apply' %}" class="btn btn-dark btn-sm">
+          <i class="mdi mdi-plus"></i> Apply
+        </a>
+      {% endif %}
+    </div>
+
+    <div class="bg-white border rounded-2">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Application</th>
+              <th>Purpose</th>
+              <th class="text-end">Amount</th>
+              <th>Status</th>
+              <th>Submitted</th>
+              <th class="text-center">Documents</th>
+              <th class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for loan in loans %}
+              <tr>
+                <td class="fw-semibold">#{{ loan.id }}</td>
+                <td>{{ loan.get_loan_purpose_display }}</td>
+                <td class="text-end">{{ loan.principal_amount|floatformat:2|intcomma }}</td>
+                <td><span class="badge bg-secondary">{{ loan.get_status_display }}</span></td>
+                <td>{{ loan.created_at|date:'M d, Y' }}</td>
+                <td class="text-center">{{ loan.document_count }}</td>
+                <td class="text-end">
+                  <a href="{% url 'loans:client_loan_application_detail' loan.id %}" class="btn btn-outline-primary btn-sm">View</a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="7" class="text-center text-muted py-4">No loan applications found.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+{% endblock %}

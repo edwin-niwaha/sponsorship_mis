@@ -1,0 +1,89 @@
+{% load humanize %}
+<div class="table-responsive">
+  {% if items %}
+    <table class="table table-hover loan-report-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Loan ID</th>
+          <th>Borrower</th>
+          <th class="text-end">Principal</th>
+          <th class="text-center">Rate</th>
+          <th class="text-center">Period</th>
+          <th>Disbursed</th>
+          <th>Maturity</th>
+          <th class="text-end">Action Amount</th>
+          <th class="text-end">Principal Bal</th>
+          <th class="text-end">Interest Bal</th>
+          <th class="text-end">Penalty</th>
+          <th class="text-end">Total Bal</th>
+          <th class="text-center">Age</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+          <tr class="{% if mode == 'overdue' and item.days_past_maturity > 60 %}table-danger{% elif mode == 'arrears' and item.days_arrears > 60 %}table-warning{% endif %}">
+            <td class="text-center">{{ forloop.counter }}</td>
+            <td>#{{ item.loan.id }}</td>
+            <td>{{ item.loan.borrower.full_name }}</td>
+            <td class="text-end">UGX {{ item.loan.principal_amount|floatformat:0|intcomma }}</td>
+            <td class="text-center">{{ item.loan.interest_rate|floatformat:0 }}%</td>
+            <td class="text-center">{{ item.loan.loan_period_months }}m</td>
+            <td>{{ item.loan.disbursement_date|date:'d/m/Y' }}</td>
+            <td>{{ item.loan.due_date|date:'d/m/Y' }}</td>
+            <td class="text-end fw-bold">
+              {% if mode == 'due' %}
+                UGX {{ item.due_amount|floatformat:0|intcomma }}
+              {% elif mode == 'arrears' %}
+                UGX {{ item.arrears_amount|floatformat:0|intcomma }}
+              {% else %}
+                UGX {{ item.maturity_amount|floatformat:0|intcomma }}
+              {% endif %}
+            </td>
+            <td class="text-end">UGX {{ item.principal_balance|floatformat:0|intcomma }}</td>
+            <td class="text-end">UGX {{ item.interest_balance|floatformat:0|intcomma }}</td>
+            <td class="text-end">UGX {{ item.penalty_balance|floatformat:0|intcomma }}</td>
+            <td class="text-end fw-bold">UGX {{ item.total_outstanding|floatformat:0|intcomma }}</td>
+            <td class="text-center">
+              {% if mode == 'arrears' %}
+                <span class="loan-status-badge warning">{{ item.days_arrears }} days</span>
+              {% elif mode == 'overdue' %}
+                <span class="loan-status-badge danger">{{ item.days_past_maturity }} days</span>
+              {% else %}
+                <span class="loan-status-badge">Due</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="loan-empty-state">{{ empty_text }}</div>
+  {% endif %}
+</div>
+
+{% if items.has_other_pages %}
+  <nav class="loan-pagination print-hide">
+    <ul class="pagination pagination-sm mb-0">
+      {% if items.has_previous %}
+        {% if mode == 'due' %}
+          <li class="page-item"><a class="page-link" href="?selected_date={{ selected_date|date:'Y-m-d' }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}&page_due={{ items.previous_page_number }}">Previous</a></li>
+        {% elif mode == 'arrears' %}
+          <li class="page-item"><a class="page-link" href="?selected_date={{ selected_date|date:'Y-m-d' }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}&page_arrears={{ items.previous_page_number }}">Previous</a></li>
+        {% else %}
+          <li class="page-item"><a class="page-link" href="?selected_date={{ selected_date|date:'Y-m-d' }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}&page_overdue={{ items.previous_page_number }}">Previous</a></li>
+        {% endif %}
+      {% endif %}
+      <li class="page-item active"><span class="page-link">{{ items.number }} of {{ items.paginator.num_pages }}</span></li>
+      {% if items.has_next %}
+        {% if mode == 'due' %}
+          <li class="page-item"><a class="page-link" href="?selected_date={{ selected_date|date:'Y-m-d' }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}&page_due={{ items.next_page_number }}">Next</a></li>
+        {% elif mode == 'arrears' %}
+          <li class="page-item"><a class="page-link" href="?selected_date={{ selected_date|date:'Y-m-d' }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}&page_arrears={{ items.next_page_number }}">Next</a></li>
+        {% else %}
+          <li class="page-item"><a class="page-link" href="?selected_date={{ selected_date|date:'Y-m-d' }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}&page_overdue={{ items.next_page_number }}">Next</a></li>
+        {% endif %}
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}

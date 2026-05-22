@@ -29,7 +29,7 @@
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Product</th>
+                  <th>Stock Item</th>
                   <th>Stock Quantity</th>
                   <th>Threshold</th>
                   <th>Status</th>
@@ -43,11 +43,21 @@
                     <td>{{ inventory.quantity }}</td>
                     <td>{{ inventory.low_stock_threshold }}</td>
                     <td>
-                      {% if inventory.quantity <= 0 %}
-                        <span class="badge badge-danger">Out of Stock</span>
-                      {% else %}
-                        <span class="badge badge-success">In Stock</span>
-                      {% endif %}
+                      <span class="badge badge-{% if inventory.quantity <= 0 %}danger{% elif inventory.is_low_stock %}warning{% else %}success{% endif %}">{{ inventory.stock_status }}</span>
+                    </td>
+                  </tr>
+                {% endfor %}
+                {% for variant in variants %}
+                  <tr>
+                    <td>V{{ forloop.counter }}</td>
+                    <td>
+                      {{ variant.display_name }}
+                      <div class="text-muted small">SKU: {{ variant.sku }}</div>
+                    </td>
+                    <td>{{ variant.quantity }}</td>
+                    <td>{{ variant.low_stock_threshold }}</td>
+                    <td>
+                      <span class="badge badge-{% if variant.is_out_of_stock %}danger{% elif variant.is_low_stock %}warning{% else %}success{% endif %}">{{ variant.stock_status }}</span>
                     </td>
                   </tr>
                 {% endfor %}

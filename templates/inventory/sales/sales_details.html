@@ -44,7 +44,7 @@
                                                 {% for detail in details %}
                                                 <tr>
                                                     <td>{{forloop.counter}}</td>
-                                                    <td>{{detail.product.name}}</td>
+                                                    <td>{{ detail.item_name }}</td>
                                                     <td class="text-right">{{detail.price|floatformat:"2"|intcomma}}
                                                     </td>
                                                     <td class="text-center">{{detail.quantity}}</td>

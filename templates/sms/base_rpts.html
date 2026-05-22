@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/3.6.0/mdb.min.css" />
     <link rel="shortcut icon" href="{% static 'images/file.png' %}" />
+    {% include '_partials/layout_css.html' %}
 
     <title>
       {% block title %}
@@ -29,13 +30,9 @@
           display: none;
         }
       }
-      /* Ensure content is not hidden under fixed navbar */
-      body {
-        padding-top: 70px;
-      }
     </style>
   </head>
-  <body>
+  <body class="app-public-shell">
     <!-- Topbar -->
     {% block topbar %}
       {% include 'accounts/_partials/navbar.html' %}
@@ -45,7 +42,7 @@
     {% include '_partials/messages.html' %}
 
     <!-- Main Content -->
-    <div class="container-fluid">
+    <div class="container-fluid public-content-shell">
       {% block content %}
 
       {% endblock %}

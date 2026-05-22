@@ -2,137 +2,574 @@
 {% load static %}
 
 {% block content %}
+<style>
+  .profile-report-page {
+    background: #f5f7fb;
+    min-height: 80vh;
+    padding: 18px 0 48px;
+  }
 
-<div class="container">
-  <div class="page-header flex-wrap">
-    <h3 class="mb-0">{{ table_title|upper }}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-    <div class="d-flex">
-      <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick="printDiv('printMe')">
-        <i class="mdi mdi-printer btn-icon-prepend"></i>
-      </button>
-      <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success" onclick="ExportToExcel('xlsx')">
-        <i class="mdi mdi-file-excel btn-icon-prepend"></i>
-      </button>
-      <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success" onclick="Export2Doc('printMe')">
-        <i class="mdi mdi-file-word btn-icon-prepend"></i>
-      </button>
-      <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'profile_list' %}">
-        <i class="mdi mdi-chart-line btn-icon-prepend"></i>
-      </a>
-    </div>
-  </div>
+  .profile-report-wrap {
+    margin: 0 auto;
+    max-width: 1200px;
+    padding: 0 18px;
+  }
 
-  <form method="GET" action="{% url 'profile_list' %}">
-    <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..."
-      style="border-radius: 5px; height: 35px;">
-    <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
-  </form>
+  .profile-report-hero,
+  .profile-stat-card,
+  .profile-report-panel {
+    background: #fff;
+    border: 1px solid #dde5ee;
+    border-radius: 8px;
+    box-shadow: 0 12px 28px rgba(31, 41, 51, .07);
+  }
 
-  <div id="printMe" class="tab-pane show active">
-    <header style="text-align: center;">
-    </header>
-    <hr class="bg-info" style="height: 3px;" />
-    <div class="table-responsive">
-      <table class="my-table" id="dataTable">
-        <thead>
-          <tr>
-            <th scope="col">Avatar</th>
-            <th scope="col">First Name</th>
-            <th scope="col">Last Name</th>
-            <th scope="col">Email</th>
-            <th scope="col">Username</th>
-            <th scope="col">Role</th>
-            <th scope="col" colspan="3">Action</th>
-          </tr>
-        </thead>
-        <tbody class="table-group-divider">
-          {% for profile in profiles %}
-          <tr>
-            <td>
-              {% if profile.avatar %}
-              <a onclick="return confirm('Are you sure you want to update the profile picture?');">
-                <img class="rounded-circle account-img" height="50" width="50" src="{{ profile.avatar.url }}" alt="">
-              </a>
-              {% else %}
-              No Picture!
-              {% endif %}
-            </td>
-            <td>{{ profile.user.first_name }}</td>
-            <td>{{ profile.user.last_name }}</td>
-            <td>{{ profile.user.email }}</td>
-            <td>{{ profile.user.username }}</td>
-            <td>{{ profile.get_role_display }}</td>
-            <td>
-              {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
-              <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_profile' profile.id %}"
-                onclick="return confirm('Are you sure you want to update this record? ');">
-                <i class="bi bi-pencil"></i>
-              </a>
-              {% else %}
-              <button class="btn btn-primary btn-sm" onclick="showNoPermissionMessage('edit')">
-                <i class="bi bi-pencil"></i>
-              </button>
-              {% endif %}
-            </td>
-            <td>
-              {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-              <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_profile' profile.id %}"
-                onclick="return confirm('Are you sure about this? This record will be deleted permanently.');">
-                <i class="bi bi-trash"></i>
-              </a>
-              {% else %}
-              <button class="btn btn-danger btn-sm" onclick="showNoPermissionMessage('delete')">
-                <i class="bi bi-trash"></i>
-              </button>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  .profile-report-hero {
+    align-items: center;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding: 20px;
+  }
 
-      <hr class="bg-info" style="height: 3px;" />
+  .report-kicker {
+    color: #13745d;
+    font-size: .76rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
 
-      <!-- Pagination links &raquo; -->
-      <div class="pagination">
-        <span class="step-links">
-          {% if profiles.has_previous %}
-          <a href="?page=1">
-            <!-- first -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
-              <path fill="#2375e1"
-                d="M14 3.002a1 1 0 0 0-1.578-.816l-7 4.963a1 1 0 0 0-.007 1.628l7 5.037A1 1 0 0 0 14 13.003zM2 2.5a.5.5 0 0 1 1 0v11a.5.5 0 0 1-1 0z" />
-            </svg>
-          </a>
-          <a href="?page={{ profiles.previous_page_number }}">
-            <!-- previous -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-              <path fill="#2375e1" d="m4 10l9 9l1.4-1.5L7 10l7.4-7.5L13 1z" /></svg>
-          </a>
-          {% endif %}
+  .profile-report-hero h3 {
+    color: #1f344d;
+    font-size: 1.55rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    margin: 4px 0;
+  }
 
-          <span class="current">
-            Page {{ profiles.number }} of {{ profiles.paginator.num_pages }}.
-          </span>
+  .profile-report-hero p,
+  .muted-copy {
+    color: #667085;
+    margin: 0;
+  }
 
-          {% if profiles.has_next %}
-          <a href="?page={{ profiles.next_page_number }}">
-            <!-- Next -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-              <path fill="#2375e1" d="M7 1L5.6 2.5L13 10l-7.4 7.5L7 19l9-9z" /></svg>
-          </a>
-          <a href="?page={{ profiles.paginator.num_pages }}">
-            <!-- last -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 28 28">
-              <path fill="#2375e1"
-                d="M23.5 3.75a.75.75 0 0 1 1.5 0v20.5a.75.75 0 0 1-1.5 0zM3 5.254C3 3.438 5.041 2.37 6.533 3.406l12.504 8.68a2.25 2.25 0 0 1 .013 3.688l-12.504 8.81C5.056 25.634 3 24.57 3 22.745z" />
-            </svg>
-          </a>
-          {% endif %}
-        </span>
+  .report-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .report-action-btn {
+    align-items: center;
+    background: #fff;
+    border: 1px solid #d8e0ea;
+    border-radius: 8px;
+    color: #334155;
+    display: inline-flex;
+    font-weight: 800;
+    gap: 8px;
+    min-height: 38px;
+    padding: 8px 11px;
+    text-decoration: none;
+  }
+
+  .report-action-btn:hover {
+    border-color: #13745d;
+    color: #13745d;
+    text-decoration: none;
+  }
+
+  .report-action-btn.primary {
+    background: #13745d;
+    border-color: #13745d;
+    color: #fff;
+  }
+
+  .profile-stat-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin-bottom: 14px;
+  }
+
+  .profile-stat-card {
+    display: grid;
+    gap: 8px;
+    min-height: 116px;
+    padding: 15px;
+  }
+
+  .profile-stat-card i {
+    align-items: center;
+    background: #edf7f4;
+    border: 1px solid #cfe8e0;
+    border-radius: 8px;
+    color: #13745d;
+    display: inline-flex;
+    font-size: 1.1rem;
+    height: 38px;
+    justify-content: center;
+    width: 38px;
+  }
+
+  .profile-stat-card span {
+    color: #667085;
+    font-size: .76rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .profile-stat-card strong {
+    color: #1f344d;
+    font-size: 1.32rem;
+    font-weight: 900;
+  }
+
+  .profile-report-panel {
+    overflow: hidden;
+    position: relative;
+  }
+
+  .profile-report-panel::before {
+    background-image: url("{% static 'images/file.png' %}");
+    background-position: center 58%;
+    background-repeat: no-repeat;
+    background-size: min(520px, 70%);
+    content: "";
+    inset: 0;
+    opacity: .04;
+    pointer-events: none;
+    position: absolute;
+    z-index: 0;
+  }
+
+  .profile-report-panel > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .profile-filter-bar {
+    align-items: center;
+    border-bottom: 1px solid #edf1f5;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-between;
+    padding: 16px;
+  }
+
+  .profile-search {
+    display: flex;
+    flex: 1 1 360px;
+    gap: 8px;
+    max-width: 560px;
+  }
+
+  .profile-search input {
+    border: 1px solid #cfd8e3;
+    border-radius: 8px;
+    color: #334155;
+    flex: 1;
+    min-height: 40px;
+    padding: 8px 11px;
+  }
+
+  .profile-search button {
+    background: #13745d;
+    border: 1px solid #13745d;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 900;
+    min-width: 44px;
+  }
+
+  .profile-table-wrap {
+    overflow-x: auto;
+  }
+
+  .profile-table {
+    border-collapse: collapse;
+    margin: 0;
+    min-width: 1040px;
+    width: 100%;
+  }
+
+  .profile-table th,
+  .profile-table td {
+    border-bottom: 1px solid #edf1f5;
+    padding: 13px 14px;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  .profile-table th {
+    background: #f8fafc;
+    color: #334155;
+    font-size: .74rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .profile-table td {
+    color: #475569;
+    font-size: .88rem;
+  }
+
+  .profile-table tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .identity-cell {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    min-width: 220px;
+  }
+
+  .profile-avatar {
+    align-items: center;
+    background: #edf7f4;
+    border: 1px solid #cfe8e0;
+    border-radius: 50%;
+    color: #13745d;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-weight: 900;
+    height: 44px;
+    justify-content: center;
+    object-fit: cover;
+    text-transform: uppercase;
+    width: 44px;
+  }
+
+  .identity-cell strong,
+  .identity-cell span,
+  .linked-account strong,
+  .linked-account span {
+    display: block;
+  }
+
+  .identity-cell strong,
+  .linked-account strong {
+    color: #1f344d;
+    font-weight: 900;
+  }
+
+  .identity-cell span,
+  .linked-account span {
+    color: #667085;
+    font-size: .8rem;
+  }
+
+  .profile-badge {
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: .74rem;
+    font-weight: 900;
+    padding: 5px 9px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .badge-staff {
+    background: #e8f7ef;
+    color: #13745d;
+  }
+
+  .badge-client {
+    background: #e8f1ff;
+    color: #1d4ed8;
+  }
+
+  .badge-sponsor {
+    background: #fff4df;
+    color: #92400e;
+  }
+
+  .badge-guest {
+    background: #f1f5f9;
+    color: #475569;
+  }
+
+  .action-group {
+    display: flex;
+    gap: 7px;
+  }
+
+  .icon-action {
+    align-items: center;
+    border-radius: 8px;
+    display: inline-flex;
+    height: 34px;
+    justify-content: center;
+    width: 34px;
+  }
+
+  .profile-pagination {
+    align-items: center;
+    border-top: 1px solid #edf1f5;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-between;
+    padding: 14px 16px;
+  }
+
+  .page-links {
+    display: flex;
+    gap: 8px;
+  }
+
+  .page-links a,
+  .page-links span {
+    align-items: center;
+    border: 1px solid #d8e0ea;
+    border-radius: 8px;
+    color: #334155;
+    display: inline-flex;
+    font-weight: 800;
+    min-height: 34px;
+    padding: 6px 10px;
+    text-decoration: none;
+  }
+
+  .page-links a:hover {
+    border-color: #13745d;
+    color: #13745d;
+  }
+
+  .empty-state {
+    color: #667085;
+    padding: 22px;
+    text-align: center;
+  }
+
+  @media (max-width: 991.98px) {
+    .profile-report-hero {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .report-actions {
+      justify-content: flex-start;
+    }
+
+    .profile-stat-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 575.98px) {
+    .profile-report-wrap {
+      padding: 0 12px;
+    }
+
+    .profile-stat-grid,
+    .profile-search {
+      grid-template-columns: 1fr;
+      width: 100%;
+    }
+
+    .profile-stat-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+
+    .report-action-btn {
+      justify-content: center;
+      width: 100%;
+    }
+  }
+
+  @media print {
+    .navbar,
+    .sidebar,
+    .page-header,
+    .report-actions,
+    .profile-filter-bar,
+    .profile-pagination,
+    footer,
+    .footer {
+      display: none !important;
+    }
+
+    .profile-report-page {
+      background: #fff;
+      padding: 0;
+    }
+
+    .profile-report-wrap {
+      max-width: none;
+      padding: 0;
+    }
+
+    .profile-report-panel,
+    .profile-report-hero,
+    .profile-stat-card {
+      border: 0;
+      box-shadow: none;
+    }
+
+    .profile-report-panel::before {
+      background-size: 460px auto;
+      opacity: .07;
+    }
+  }
+</style>
+
+<main class="profile-report-page">
+  <div class="profile-report-wrap">
+    <section class="profile-report-hero">
+      <div>
+        <div class="report-kicker">System Access Report</div>
+        <h3>{{ table_title|upper }}</h3>
+        <p>Review user accounts, role assignments, linked client records, and linked sponsor records.</p>
       </div>
-    </div>
+      <div class="report-actions">
+        <button title="Print" type="button" class="report-action-btn primary" onclick="printDiv('printMe')">
+          <i class="mdi mdi-printer"></i>
+          
+        </button>
+        <button title="Export To Excel" type="button" class="report-action-btn" onclick="ExportToExcel('xlsx')">
+          <i class="mdi mdi-file-excel"></i>
+          
+        </button>
+        <button title="Export To Word" type="button" class="report-action-btn" onclick="Export2Doc('printMe')">
+          <i class="mdi mdi-file-word"></i>
+          
+        </button>
+      </div>
+    </section>
+
+    <section id="printMe" class="profile-report-panel">
+      <div class="profile-filter-bar">
+        <div>
+          <strong>{{ table_title }}</strong>
+          <p class="muted-copy">{{ profiles.paginator.count }} record{{ profiles.paginator.count|pluralize }}{% if search_query %} matching "{{ search_query }}"{% endif %}</p>
+        </div>
+        <form class="profile-search" method="GET" action="{% url 'profile_list' %}">
+          <input type="text" name="search" id="searchInput" value="{{ search_query }}" placeholder="Search name, email, username, role, client, or sponsor">
+          <button type="submit" title="Search"><i class="mdi mdi-magnify"></i></button>
+        </form>
+      </div>
+
+      <div class="profile-table-wrap">
+        <table class="profile-table" id="dataTable">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Account Type</th>
+              <th>System Role</th>
+              <th>Linked Account</th>
+              <th class="no-print">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for profile in profiles %}
+              <tr>
+                <td>
+                  <div class="identity-cell">
+                    {% if profile.avatar %}
+                      <img class="profile-avatar" src="{{ profile.avatar.url }}" alt="{{ profile.user.username }}">
+                    {% else %}
+                      <span class="profile-avatar">{{ profile.user.username|first }}</span>
+                    {% endif %}
+                    <span>
+                      <strong>
+                        {% if profile.user.first_name or profile.user.last_name %}
+                          {{ profile.user.first_name }} {{ profile.user.last_name }}
+                        {% else %}
+                          {{ profile.user.username }}
+                        {% endif %}
+                      </strong>
+                      <span>@{{ profile.user.username }}</span>
+                    </span>
+                  </div>
+                </td>
+                <td>{{ profile.user.email|default:"Not recorded" }}</td>
+                <td>
+                  {% if profile.resolved_account_type == 'staff' %}
+                    <span class="profile-badge badge-staff">Staff</span>
+                  {% elif profile.resolved_account_type == 'client' %}
+                    <span class="profile-badge badge-client">Client</span>
+                  {% elif profile.resolved_account_type == 'sponsor' %}
+                    <span class="profile-badge badge-sponsor">Sponsor</span>
+                  {% else %}
+                    <span class="profile-badge badge-guest">Guest</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if profile.resolved_account_type == 'staff' %}
+                    {{ profile.get_staff_role_display|default:profile.get_role_display }}
+                  {% else %}
+                    {{ profile.get_role_display|default:"Guest" }}
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="linked-account">
+                    {% if profile.client %}
+                      <strong>{{ profile.client.full_name }}</strong>
+                      <span>{{ profile.client.reg_number|default:"Client record" }}</span>
+                    {% elif profile.sponsor %}
+                      <strong>{{ profile.sponsor.first_name }} {{ profile.sponsor.last_name }}</strong>
+                      <span>{{ profile.sponsor.prefixed_id }}{% if profile.sponsor.email %} | {{ profile.sponsor.email }}{% endif %}</span>
+                    {% else %}
+                      <strong>Not linked</strong>
+                      <span>Needs staff review if access is required</span>
+                    {% endif %}
+                  </div>
+                </td>
+                <td class="no-print">
+                  <div class="action-group">
+                    {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
+                      <a class="btn btn-primary btn-sm icon-action" title="Edit" href="{% url 'update_profile' profile.id %}" onclick="return confirm('Are you sure you want to update this record?');">
+                        <i class="bi bi-pencil"></i>
+                      </a>
+                    {% else %}
+                      <button class="btn btn-primary btn-sm icon-action" onclick="showNoPermissionMessage('edit')">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                    {% endif %}
+                    {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+                      <a class="btn btn-danger btn-sm icon-action" title="Erase" href="{% url 'delete_profile' profile.id %}" onclick="return confirm('Are you sure about this? This record will be deleted permanently.');">
+                        <i class="bi bi-trash"></i>
+                      </a>
+                    {% else %}
+                      <button class="btn btn-danger btn-sm icon-action" onclick="showNoPermissionMessage('delete')">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="7" class="empty-state">No profiles found for this search.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="profile-pagination no-print">
+        <span class="muted-copy">Page {{ profiles.number }} of {{ profiles.paginator.num_pages }}</span>
+        <div class="page-links">
+          {% if profiles.has_previous %}
+            <a href="?{% if search_query %}search={{ search_query }}&{% endif %}page=1">First</a>
+            <a href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ profiles.previous_page_number }}">Previous</a>
+          {% endif %}
+          <span>{{ profiles.number }}</span>
+          {% if profiles.has_next %}
+            <a href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ profiles.next_page_number }}">Next</a>
+            <a href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ profiles.paginator.num_pages }}">Last</a>
+          {% endif %}
+        </div>
+      </div>
+    </section>
   </div>
-</div>
+</main>
 
 {% endblock content %}

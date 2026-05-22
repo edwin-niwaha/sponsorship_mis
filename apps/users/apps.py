@@ -6,5 +6,5 @@ class UsersConfig(AppConfig):
     name = "apps.users"
 
     def ready(self):
+        import apps.users.checks  # noqa
         # import apps.users.signals  # noqa
-        pass

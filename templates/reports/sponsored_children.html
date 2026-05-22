@@ -1,4 +1,4 @@
-{% extends 'sms/base_rpts.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
 {% block title %}
@@ -6,7 +6,8 @@
 {% endblock %}
 
 {% block content %}
-  <div class="container-fluid mt-4">
+{% include '_partials/reports_layout_styles.html' %}
+<div class="container-fluid reports-standard-page">
     <div class="page-header d-flex flex-wrap p-2 align-items-center">
       <h3 class="mb-0 me-auto">{{ table_title|upper }}</h3>
       <form method="GET" action="{% url 'sponsored_children' %}" class="d-flex align-items-center">
@@ -117,3 +118,4 @@
     })
   </script>
 {% endblock %}
+

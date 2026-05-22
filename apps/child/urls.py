@@ -24,6 +24,7 @@ urlpatterns = [
     ),
     path("progress/", views.child_progress, name="child_progress"),
     path("progress/report/", views.child_progress_report, name="child_progress_report"),
+    path("progress/update/<int:pk>", views.update_progress, name="update_progress"),
     path("progress/delete/<int:pk>", views.delete_progress, name="delete_progress"),
     path("correspondence/", views.child_correspondence, name="child_correspondence"),
     path(

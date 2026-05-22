@@ -2,94 +2,425 @@
 {% load static %}
 
 {% block content %}
-  <!-- Hero Section -->
-  <div class="container-fluid py-5" style="background: linear-gradient(135deg, #FFFFFF 0%, #f8f9fa 100%);">
-    <div class="row align-items-center g-5">
-      <div class="col-lg-7 text-center text-lg-start px-4">
-        <div class="text-center">
-          <h1 class="display-5 fw-bold mb-4" style="color: #127D61;">Sponsorship Management System (SMS)<br /></h1>
-        </div>
-        <p class="lead mb-4 text-muted">A secure, modern platform purpose-built for Pendeza Uganda to manage child sponsorships, recurring donations, donor relationships, automated receipts, and impact reporting — all in one place.</p>
-        <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
-          {% if user.is_authenticated %}
-            <a href="{% url 'main-dashboard' %}" class="btn btn-lg px-5 py-3 text-white shadow" style="background: linear-gradient(135deg, #127D61, #09C998); border-radius: 50px;">Access Dashboard</a>
-          {% else %}
-            <a href="{% url 'login' %}" class="btn btn-lg px-5 py-3 text-white shadow" style="background: linear-gradient(135deg, #127D61, #09C998); border-radius: 50px;">Staff Login</a>
-          {% endif %}
+<style>
+  .public-content-shell {
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0 !important;
+  }
 
-          <!-- Single, professional Donate button -->
-          <a href="{% url 'initiate_payment' %}" class="btn btn-lg px-5 py-3 fw-semibold shadow" style="background: #F79420; color: white; border-radius: 50px;">Donate to Support a Child</a>
-        </div>
-      </div>
-      <div class="col-lg-5 text-center">
-        <img src="{% static 'images/hero.png' %}" class="img-fluid mx-auto" alt="Management Software Illustration" style="max-width: 100%; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.02)';" onmouseout="this.style.transform='scale(1)';" />
-      </div>
-    </div>
-  </div>
+  .landing-page {
+    background: #f6f8fb;
+    color: #1f2933;
+  }
 
-  <!-- Key Features -->
-  <div class="container-fluid py-5 bg-light">
-    <div class="row">
-      <div class="col-lg-10 mx-auto">
-        <h2 class="text-center fw-bold mb-5" style="color: #127D61;">Built for Pendeza Uganda – Adaptable for Any NGO</h2> <div class="row row-cols-1 row-cols-md-3 g-4">
-          <div class="col">
-            <div class="card border-start border-5 border-success h-100 shadow-sm">
-              <div class="card-body p-4">
-                <h5 class="card-title fw-bold text-success">Child Sponsorship Management</h5>
-                <p class="card-text text-muted">Match sponsors with children, track commitments, and automate progress updates.</p>
-              </div>
-            </div>
-          </div>
-          <div class="col">
-            <div class="card border-start border-5 border-warning h-100 shadow-sm">
-              <div class="card-body p-4">
-                <h5 class="card-title fw-bold text-warning">Secure Donation Processing</h5>
-                <p class="card-text text-muted">Accept one-time and recurring donations with instant tax-compliant receipts.</p>
-              </div>
-            </div>
-          </div>
-          <div class="col">
-            <div class="card border-start border-5 border-primary h-100 shadow-sm">
-              <div class="card-body p-4">
-                <h5 class="card-title fw-bold text-primary">Donor Relationship Tools</h5>
-                <p class="card-text text-muted">Segment donors, send personalized updates, and nurture long-term partnerships.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  .landing-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
 
-  <!-- Benefits / Trust Section -->
-  <div class="container-fluid py-5">
-    <div class="row">
-      <div class="col-lg-10 mx-auto text-center">
-        <h2 class="fw-bold mb-4" style="color: #127D61;">Trusted by Pendeza Uganda Since 2023</h2>
-        <p class="lead text-muted col-lg-8 mx-auto">Every feature in SMS is tailored to help Pendeza Uganda deliver education, healthcare, and hope to vulnerable children — transparently, efficiently, and securely.</p>
-      </div>
-    </div>
-  </div>
+  .landing-hero {
+    background: linear-gradient(135deg, #10302b 0%, #17473f 100%);
+    color: #fff;
+    min-height: 600px;
+    display: flex;
+    align-items: center;
+    padding: 70px 0;
+    overflow: hidden;
+  }
 
-  <!-- Final CTA – Clean & Professional -->
-  <section class="py-5 mb-4 text-white text-center" style="background: linear-gradient(135deg, #127D61, #09C998); border-radius: 15px;">
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-8 mx-auto">
-          <h3 class="fw-bold mb-4">Support the Work of Pendeza Uganda</h3>
-          <p class="mb-4 opacity-90">Your contribution directly funds education, nutrition, and medical care for children in need.</p>
-          <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
-            <a href="{% url 'initiate_payment' %}" class="btn btn-warning btn-lg px-5 py-3 fw-bold shadow">Donate Securely Now</a>
-            {% if not user.is_authenticated %}
-              <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg px-5 py-3">Staff & Partner Login</a>
-            {% endif %}
-          </div>
-          <p class="mt-3 small opacity-75">
-            Pendeza Uganda is a registered nonprofit organization in Uganda.<br />
-            All donations are processed securely and acknowledged instantly.
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 520px;
+    gap: 48px;
+    align-items: center;
+  }
+
+  .hero-content {
+    max-width: 620px;
+    text-align: left;
+  }
+
+  .hero-kicker {
+    color: #f2b84b;
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .hero-title {
+    font-size: 3.3rem;
+    font-weight: 900;
+    line-height: 1.05;
+    margin: 14px 0 18px;
+  }
+
+  .hero-copy {
+    color: rgba(255, 255, 255, .86);
+    font-size: 1.08rem;
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  .landing-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 30px;
+  }
+
+  .landing-actions .btn {
+    border-radius: 7px;
+    font-weight: 800;
+    padding: 12px 20px;
+  }
+
+  .hero-carousel-wrap {
+    position: relative;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, .28);
+    border: 1px solid rgba(255, 255, 255, .18);
+  }
+
+  .hero-carousel-wrap::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: linear-gradient(180deg, transparent 45%, rgba(0, 0, 0, .45));
+    pointer-events: none;
+  }
+
+  .hero-carousel-img {
+    width: 100%;
+    height: 430px;
+    object-fit: cover;
+  }
+
+  .carousel-caption {
+    background: rgba(11, 24, 34, .78);
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 8px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, .24);
+    display: inline-block;
+    max-width: 78%;
+    padding: 14px 16px;
+    z-index: 3;
+    text-align: left;
+    left: 28px;
+    right: 28px;
+    bottom: 22px;
+  }
+
+  .carousel-caption h5 {
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 900;
+    margin-bottom: 4px;
+  }
+
+  .carousel-caption p {
+    font-size: .88rem;
+    line-height: 1.45;
+    margin-bottom: 0;
+    color: rgba(255, 255, 255, .9);
+  }
+
+  .section-band {
+    padding: 54px 0;
+  }
+
+  .section-heading {
+    margin-bottom: 24px;
+  }
+
+  .section-heading h2 {
+    color: #26384d;
+    font-size: 1.65rem;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+
+  .section-heading p {
+    color: #667085;
+    margin-bottom: 0;
+    max-width: 620px;
+  }
+
+  .service-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .service-card {
+    background: #fff;
+    border: 1px solid #dfe5ec;
+    border-radius: 8px;
+    display: flex;
+    gap: 14px;
+    min-height: 148px;
+    padding: 18px;
+    text-decoration: none;
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+  }
+
+  .service-card:hover {
+    border-color: #b8c6d6;
+    box-shadow: 0 14px 30px rgba(31, 41, 51, .08);
+    text-decoration: none;
+    transform: translateY(-2px);
+  }
+
+  .service-icon {
+    align-items: center;
+    background: #edf7f4;
+    border-radius: 6px;
+    color: #13745d;
+    display: inline-flex;
+    flex: 0 0 44px;
+    font-size: 1.2rem;
+    height: 44px;
+    justify-content: center;
+    width: 44px;
+  }
+
+  .service-card h3 {
+    color: #243447;
+    font-size: 1rem;
+    font-weight: 900;
+    margin: 0 0 8px;
+  }
+
+  .service-card p {
+    color: #667085;
+    font-size: .92rem;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .portal-band {
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 44px 0;
+  }
+
+  .portal-row {
+    align-items: center;
+    display: flex;
+    gap: 22px;
+    justify-content: space-between;
+  }
+
+  .portal-row h2 {
+    color: #26384d;
+    font-size: 1.45rem;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+
+  .portal-row p {
+    color: #667085;
+    margin: 0;
+    max-width: 650px;
+  }
+
+  @media (max-width: 991.98px) {
+    .landing-hero {
+      min-height: auto;
+      padding: 52px 0;
+    }
+
+    .hero-grid {
+      grid-template-columns: 1fr;
+      gap: 34px;
+    }
+
+    .hero-title {
+      font-size: 2.45rem;
+    }
+
+    .hero-carousel-img {
+      height: 340px;
+    }
+
+    .carousel-caption {
+      max-width: calc(100% - 56px);
+    }
+
+    .service-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .portal-row {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+
+  @media (max-width: 575.98px) {
+    .landing-inner {
+      padding: 0 18px;
+    }
+
+    .hero-title {
+      font-size: 2rem;
+    }
+
+    .landing-actions .btn {
+      width: 100%;
+    }
+
+    .hero-carousel-img {
+      height: 260px;
+    }
+
+    .carousel-caption {
+      bottom: 14px;
+      left: 14px;
+      max-width: calc(100% - 28px);
+      padding: 12px 13px;
+      right: 14px;
+    }
+  }
+</style>
+
+<main class="landing-page">
+  <section class="landing-hero">
+    <div class="landing-inner">
+      <div class="hero-grid">
+        <div class="hero-content">
+
+          <h1 class="hero-title">
+            Sponsor Hope. Build Futures.
+          </h1>
+
+          <p class="hero-copy">
+            Support children, families, and communities with simple, secure giving.
           </p>
+
+          <div class="landing-actions">
+            {% if user.is_authenticated %}
+              {% if user.profile.resolved_account_type == 'staff' %}
+                <a href="{% url 'main-dashboard' %}" class="btn btn-warning">Open Dashboard</a>
+              {% elif user.profile.resolved_account_type == 'sponsor' %}
+                <a href="{% url 'sponsor_portal' %}" class="btn btn-warning">Open Sponsor Portal</a>
+              {% elif user.profile.resolved_account_type == 'client' %}
+                <a href="{% url 'client_savings_dashboard' %}" class="btn btn-warning">Open Client Portal</a>
+              {% else %}
+                <a href="{% url 'users-profile' %}" class="btn btn-warning">Complete Profile</a>
+              {% endif %}
+            {% else %}
+              <a href="{% url 'login' %}" class="btn btn-warning">Sign In</a>
+            {% endif %}
+
+            <a href="{% url 'initiate_payment' %}" class="btn btn-outline-light">Donate</a>
+          </div>
+        </div>
+
+        <div class="hero-carousel-wrap">
+          <div id="landingHeroCarousel" class="carousel slide carousel-fade" data-ride="carousel" data-interval="3500">
+            <ol class="carousel-indicators">
+              <li data-target="#landingHeroCarousel" data-slide-to="0" class="active"></li>
+              <li data-target="#landingHeroCarousel" data-slide-to="1"></li>
+              <li data-target="#landingHeroCarousel" data-slide-to="2"></li>
+            </ol>
+
+            <div class="carousel-inner">
+              <div class="carousel-item active">
+                <img src="{% static 'images/slide/hero.png' %}" class="hero-carousel-img" alt="Sponsored children in Uganda">
+                <div class="carousel-caption d-none d-md-block">
+                  <h5>Every child deserves a chance</h5>
+                  <p>Education, care, and hope in one steady act of support.</p>
+                </div>
+              </div>
+
+              <div class="carousel-item">
+                <img src="{% static 'images/slide/kids.jpg' %}" class="hero-carousel-img" alt="Community support in Uganda">
+                <div class="carousel-caption d-none d-md-block">
+                  <h5>Stronger families</h5>
+                  <p>Practical support for savings, loans, and daily resilience.</p>
+                </div>
+              </div>
+
+              <div class="carousel-item">
+                <img src="{% static 'images/slide/kids2.jpg' %}" class="hero-carousel-img" alt="Children supported through sponsorship">
+                <div class="carousel-caption d-none d-md-block">
+                  <h5>Impact you can follow</h5>
+                  <p>A clear link between sponsors, teams, and communities.</p>
+                </div>
+              </div>
+            </div>
+
+            <a class="carousel-control-prev" href="#landingHeroCarousel" role="button" data-slide="prev">
+              <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+              <span class="sr-only">Previous</span>
+            </a>
+
+            <a class="carousel-control-next" href="#landingHeroCarousel" role="button" data-slide="next">
+              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+              <span class="sr-only">Next</span>
+            </a>
+          </div>
         </div>
       </div>
     </div>
   </section>
+
+  <section class="section-band">
+    <div class="landing-inner">
+      <div class="section-heading">
+        <h2>Choose Your Impact</h2>
+        <p>Give, save, apply, or serve from one simple place.</p>
+      </div>
+
+      <div class="service-grid">
+        <a href="{% url 'initiate_payment' %}" class="service-card">
+          <span class="service-icon"><i class="fas fa-hand-holding-heart"></i></span>
+          <div>
+            <h3>Sponsor a Child</h3>
+            <p>Help a child stay in school and thrive.</p>
+          </div>
+        </a>
+
+        <a href="{% if user.is_authenticated and user.profile.resolved_account_type == 'client' %}{% url 'client_savings_dashboard' %}{% else %}{% url 'login' %}{% endif %}" class="service-card">
+          <span class="service-icon"><i class="fas fa-wallet"></i></span>
+          <div>
+            <h3>Access Client Services</h3>
+            <p>Manage savings and support services securely.</p>
+          </div>
+        </a>
+
+        <a href="{% if user.is_authenticated and user.profile.resolved_account_type == 'client' %}{% url 'loans:client_loan_apply' %}{% else %}{% url 'login' %}{% endif %}" class="service-card">
+          <span class="service-icon"><i class="fas fa-file-signature"></i></span>
+          <div>
+            <h3>Apply for Financial Support</h3>
+            <p>Request support through a clear application flow.</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="portal-band">
+    <div class="landing-inner portal-row">
+      <div>
+        <h2>Tools for Staff and Program Teams</h2>
+        <p>
+          Manage programs, records, reports, and daily operations.
+        </p>
+      </div>
+
+      {% if user.is_authenticated and user.profile.resolved_account_type == 'staff' %}
+        <a href="{% url 'main-dashboard' %}" class="btn btn-dark">Go to Dashboard</a>
+      {% else %}
+        <a href="{% url 'login' %}" class="btn btn-dark">Staff Sign In</a>
+      {% endif %}
+    </div>
+  </section>
+</main>
 {% endblock %}

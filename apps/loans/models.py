@@ -1,11 +1,14 @@
 import logging
+import os
 from datetime import date, datetime
 from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 
+from cloudinary.models import CloudinaryField
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
 from django.db.models import Sum
@@ -21,6 +24,8 @@ PAYMENT_METHOD_CHOICES = [
     ("cheque", "Cheque"),
     ("mobile_money", "Mobile Money"),
 ]
+
+LOAN_DOCUMENT_ALLOWED_EXTENSIONS = ["pdf", "jpg", "jpeg", "png", "doc", "docx"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -130,6 +135,13 @@ class Loan(models.Model):
     ]
 
     FINAL_STATUSES = frozenset({"closed", "repaid", "rejected"})
+    REJECTED_STATUSES = frozenset({"rejected", "ed_rejected", "hof_rejected"})
+    ACTIVE_STATUSES = frozenset({"disbursed", "overdue"})
+    APPROVAL_TRANSITIONS = {
+        ("pending", "boo"): ("boo_approved", "approved_by_boo"),
+        ("boo_approved", "hof"): ("hof_approved", "approved_by_hof"),
+        ("hof_approved", "ed"): ("approved", "approved_by_ed"),
+    }
 
     # ── Fields — identical names/types to production ──────────────────────────
 
@@ -255,6 +267,18 @@ class Loan(models.Model):
                 fields=["last_reminder_sent"],
                 name="loan_last_reminder_idx",
             ),
+            models.Index(
+                fields=["status", "loan_purpose"],
+                name="loan_status_purpose_idx",
+            ),
+            models.Index(
+                fields=["applied_by", "status"],
+                name="loan_officer_status_idx",
+            ),
+            models.Index(
+                fields=["start_date", "status"],
+                name="loan_start_status_idx",
+            ),
         ]
 
     # ── Validation ────────────────────────────────────────────────────────────
@@ -266,6 +290,8 @@ class Loan(models.Model):
             raise ValidationError("Due date must be after the disbursement date.")
         if self.loan_period_months is not None and self.loan_period_months <= 0:
             raise ValidationError("Loan period must be a positive integer.")
+        if self.status == "disbursed" and not self.disbursement_date:
+            raise ValidationError({"disbursement_date": "Disbursed loans must have a disbursement date."})
 
     # ── Computed properties ───────────────────────────────────────────────────
 
@@ -369,8 +395,8 @@ class Loan(models.Model):
         )
         unpaid_penalties = (
             self.penalties
-            .filter(is_paid=False)
-            .aggregate(total=Sum("penalty_amount"))["total"]
+            .filter(is_paid=False, is_deleted=False)
+            .aggregate(total=Sum("remaining_amount"))["total"]
             or Decimal("0.00")
         )
         return {
@@ -383,10 +409,63 @@ class Loan(models.Model):
                 Decimal("0.00"),
             ),
             "penalty_balance": max(
-                unpaid_penalties - (totals["paid_penalty"] or Decimal("0")),
+                unpaid_penalties,
                 Decimal("0.00"),
             ),
         }
+
+    def outstanding_balance(self) -> Decimal:
+        return sum(self.calculate_remaining_balances().values())
+
+    def report_balances(self) -> dict:
+        balances = self.calculate_remaining_balances()
+        return {
+            **balances,
+            "total_outstanding": sum(balances.values()),
+        }
+
+    def is_active_for_reporting(self) -> bool:
+        return self.status in self.ACTIVE_STATUSES and self.disbursement_date is not None
+
+    def approve(self, user):
+        role = getattr(getattr(user, "profile", None), "role", None)
+        key = (self.status, role)
+        if key not in self.APPROVAL_TRANSITIONS:
+            raise ValidationError("You are not authorized to approve this loan at this stage.")
+        new_status, approved_by_field = self.APPROVAL_TRANSITIONS[key]
+        self.status = new_status
+        setattr(self, approved_by_field, user)
+        if new_status == "approved":
+            self.approved_date = timezone.now().date()
+        self.save()
+        return new_status
+
+    def reject(self, reason="Please review this loan"):
+        rejection_map = {
+            "pending": "rejected",
+            "boo_approved": "hof_rejected",
+            "hof_approved": "ed_rejected",
+        }
+        if self.status not in rejection_map:
+            raise ValidationError(f"Loan {self.id} cannot be rejected at status '{self.status}'.")
+        self.status = rejection_map[self.status]
+        self.reason_for_rejection = reason
+        self.save()
+        return self.status
+
+    def disburse(self, disbursement_date):
+        if self.status != "approved":
+            raise ValidationError("Only fully approved loans can be disbursed.")
+        if self.status in self.REJECTED_STATUSES:
+            raise ValidationError("Rejected loans cannot be disbursed.")
+        if not disbursement_date:
+            raise ValidationError({"disbursement_date": "Disbursement date is required."})
+        if disbursement_date < self.start_date:
+            raise ValidationError("Disbursement date cannot be before the loan application date.")
+        self.disbursement_date = disbursement_date
+        self.status = "disbursed"
+        self.save()
+        return self
 
     def update_status(self):
         """
@@ -454,8 +533,6 @@ class Loan(models.Model):
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
-        if is_new:
-            super().save(*args, **kwargs)  # generate PK first
 
         if not self.account:
             try:
@@ -469,6 +546,7 @@ class Loan(models.Model):
         if not is_new:
             self.update_status()
 
+        self.full_clean(exclude=["applied_by"])
         super().save(*args, **kwargs)
 
     # ── Misc ──────────────────────────────────────────────────────────────────
@@ -526,11 +604,18 @@ class LoanDisbursement(models.Model):
         return self.loan.total_interest or Decimal("0.00")
 
     def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        if self.loan.status != "disbursed":
+            raise ValidationError("Create a disbursement only after the loan has been approved and marked disbursed.")
+        if not self.loan.disbursement_date:
+            raise ValidationError("Disbursed loans must have a disbursement date.")
         if not self.loan.account:
             self.loan.account = ChartOfAccounts.objects.get(account_number="1050")
             self.loan.save()
+        self.full_clean()
         super().save(*args, **kwargs)
-        self._create_transaction_entries()
+        if is_new:
+            self._create_transaction_entries()
 
     def _create_transaction_entries(self):
         if not self.account or not self.loan.account:
@@ -612,6 +697,8 @@ class LoanRepayment(models.Model):
     def clean(self):
         if not self.loan_id:
             raise ValidationError("Please select a loan.")
+        if self.loan.status not in Loan.ACTIVE_STATUSES:
+            raise ValidationError("Repayments can only be recorded for active disbursed or overdue loans.")
 
         balances = self.loan.calculate_remaining_balances()
         errors   = {}
@@ -619,6 +706,8 @@ class LoanRepayment(models.Model):
         total_balance = sum(balances.values())
         total_payment = self.principal_payment + self.interest_payment + self.penalty_payment
 
+        if total_payment <= 0:
+            raise ValidationError("At least one payment amount must be greater than zero.")
         if total_payment > total_balance:
             raise ValidationError(
                 f"Repayment of {total_payment:,.2f} exceeds remaining balance of {total_balance:,.2f}."
@@ -642,9 +731,11 @@ class LoanRepayment(models.Model):
             raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
+        is_new = self.pk is None
         self.full_clean()
         super().save(*args, **kwargs)
-        self._create_transaction_entries()
+        if is_new:
+            self._create_transaction_entries()
         if self.loan:
             self.loan.update_status()
 
@@ -683,15 +774,16 @@ class LoanRepayment(models.Model):
         for penalty in self.loan.penalties.filter(is_paid=False).order_by("penalty_date"):
             if remaining <= 0:
                 break
-            if remaining >= penalty.penalty_amount:
-                remaining -= penalty.penalty_amount
+            payable = penalty.remaining_amount or penalty.penalty_amount
+            if remaining >= payable:
+                remaining -= payable
                 LoanPenalty.objects.filter(pk=penalty.pk).update(
                     is_paid=True,
                     remaining_amount=Decimal("0.00"),
                 )
             else:
                 LoanPenalty.objects.filter(pk=penalty.pk).update(
-                    remaining_amount=penalty.penalty_amount - remaining,
+                    remaining_amount=payable - remaining,
                 )
                 remaining = Decimal("0.00")
 
@@ -868,3 +960,61 @@ class TransactionHistory(models.Model):
 
     def __str__(self):
         return f"Transaction {self.id} - {self.transaction_type} {self.amount}"
+
+
+class LoanApplicationDocument(models.Model):
+    DOCUMENT_TYPE_NATIONAL_ID = "national_id"
+    DOCUMENT_TYPE_COLLATERAL_SECURITY = "collateral_security"
+
+    DOCUMENT_TYPE_CHOICES = [
+        (DOCUMENT_TYPE_NATIONAL_ID, "National ID"),
+        (DOCUMENT_TYPE_COLLATERAL_SECURITY, "Collateral / Security"),
+        ("proof_of_income", "Proof of Income"),
+        ("guarantor_form", "Guarantor Form"),
+        ("bank_statement", "Bank Statement"),
+        ("other", "Other"),
+    ]
+
+    loan = models.ForeignKey(
+        Loan,
+        on_delete=models.CASCADE,
+        related_name="documents",
+    )
+    document_type = models.CharField(max_length=30, choices=DOCUMENT_TYPE_CHOICES)
+    file = CloudinaryField(
+        "loan_documents",
+        resource_type="auto",
+        validators=[FileExtensionValidator(allowed_extensions=LOAN_DOCUMENT_ALLOWED_EXTENSIONS)],
+    )
+    description = models.CharField(max_length=255, blank=True)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="uploaded_loan_documents",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "loan_application_documents"
+        verbose_name = "Loan Application Document"
+        verbose_name_plural = "Loan Application Documents"
+        ordering = ["loan_id", "document_type", "-created_at"]
+        indexes = [
+            models.Index(fields=["loan", "document_type"], name="loan_doc_type_idx"),
+            models.Index(fields=["uploaded_by", "created_at"], name="loan_doc_user_created_idx"),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.file:
+            extension = os.path.splitext(getattr(self.file, "name", "") or "")[1].lstrip(".").lower()
+            if extension and extension not in LOAN_DOCUMENT_ALLOWED_EXTENSIONS:
+                raise ValidationError(
+                    {"file": "Unsupported file type. Upload PDF, JPG, JPEG, PNG, DOC, or DOCX files."}
+                )
+
+    def __str__(self):
+        return f"{self.get_document_type_display()} for Loan {self.loan_id}"

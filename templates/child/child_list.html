@@ -1,111 +1,322 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}Children Master List{% endblock %}
+
 {% block content %}
-  <div class="container">
-    <div class="page-header flex-wrap">
-      <h3 class="mb-0">{{ table_title|upper }}</h3>
-      <div class="d-flex">
-        <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
-        <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success" onclick="ExportToExcel('xlsx')"><i class="mdi mdi-file-excel btn-icon-prepend"></i></button>
-        <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success" onclick="Export2Doc('printMe');"><i class="mdi mdi-file-word btn-icon-prepend"></i></button>
-        <a title="Register Child" class="btn btn-sm ml-3 btn-success" href="{% url 'register_child' %}"><i class="mdi mdi-account-plus btn-icon-prepend"></i></a>
-        <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'child_list' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
-      </div>
+{% include '_partials/reports_layout_styles.html' %}
+
+<div class="container-fluid reports-standard-page child-list-report">
+  <div class="child-list-hero">
+    <div>
+      <div class="child-list-kicker">Children Reports</div>
+      <h3>{{ table_title|upper }}</h3>
+      <p>Search, review, print, and manage active children records from one standard workspace.</p>
     </div>
-
-    <form method="GET" action="{% url 'child_list' %}">
-      <input type="text" name="search" value="{{ search_query }}" id="searchInput" placeholder="Search..." style="border-radius: 5px; height: 35px;" />
-      <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
-      <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'child_list_detailed' %}">View detailed rpt</a>
-    </form>
-
-    <div id="printMe" class="tab-pane show active">
-      <header style="text-align: center;"></header>
-      <hr class="bg-info" style="height: 3px;" />
-
-      <div class="table-responsive">
-        <table class="my-table" id="dataTable">
-          <thead>
-            <tr>
-              <th scope="col">Reg.No</th>
-              <th scope="col">Picture</th>
-              <th scope="col">Full Name</th>
-              <th scope="col">Gender</th>
-              <th scope="col">D.O.B</th>
-              <th scope="col" colspan="3">Action</th>
-            </tr>
-          </thead>
-          <tbody class="table-group-divider">
-            {% for child in records %}
-              <tr>
-                <td>{{ child.prefixed_id }}</td>
-                <td>
-                  {% if child.picture %}
-                    <a title="Click to update picture" href="{% url 'update_picture' %}" onclick="return confirm('Are you sure you want to update child picture? ');"><img class="rounded-circle account-img" height="50" width="50" src="{{ child.picture.url }}" alt="" /></a>
-                  {% else %}
-                    No Picture!
-                  {% endif %}
-                </td>
-                <td>{{ child.full_name }}</td>
-                <td>{{ child.gender }}</td>
-                <td>{{ child.date_of_birth }}</td>
-                <td>
-                  {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
-                    <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_child' child.id %}" onclick="return confirm('Are you sure you want to update this record? ');"><i class="bi bi-pencil"></i></a>
-                  {% else %}
-                    <button class="btn btn-primary btn-sm" onclick="showNoPermissionMessage('edit')"><i class="bi bi-pencil"></i></button>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                    <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_child' child.id %}" onclick="return confirm('Are you sure about this? This record will be deleted permanently');"><i class="bi bi-trash"></i></a>
-                  {% else %}
-                    <button class="btn btn-danger btn-sm" onclick="showNoPermissionMessage('delete')"><i class="bi bi-trash"></i></button>
-                  {% endif %}
-                </td>
-                <td>
-                  <a class="btn btn-info btn-sm" title="View Details" href="{% url 'child_details' child.id %}"><i class="bi bi-eye"></i></a>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-
-        <hr class="bg-info" style="height: 3px;" />
-
-        <div class="pagination">
-          <span class="step-links">
-            {% if records.has_previous %}
-              <a href="?page=1&search={{ search_query }}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
-                  <path fill="#2375e1" d="M14 3.002a1 1 0 0 0-1.578-.816l-7 4.963a1 1 0 0 0-.007 1.628l7 5.037A1 1 0 0 0 14 13.003zM2 2.5a.5.5 0 0 1 1 0v11a.5.5 0 0 1-1 0z" />
-                </svg>
-              </a>
-              <a href="?page={{ records.previous_page_number }}&search={{ search_query }}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-                  <path fill="#2375e1" d="m4 10l9 9l1.4-1.5L7 10l7.4-7.5L13 1z" />
-                </svg>
-              </a>
-            {% endif %}
-
-            <span class="current">Page {{ records.number }} of {{ records.paginator.num_pages }}.</span>
-
-            {% if records.has_next %}
-              <a href="?page={{ records.next_page_number }}&search={{ search_query }}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-                  <path fill="#2375e1" d="M7 1L5.6 2.5L13 10l-7.4 7.5L7 19l9-9z" />
-                </svg>
-              </a>
-              <a href="?page={{ records.paginator.num_pages }}&search={{ search_query }}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 28 28">
-                  <path fill="#2375e1" d="M23.5 3.75a.75.75 0 0 1 1.5 0v20.5a.75.75 0 0 1-1.5 0zM3 5.254C3 3.438 5.041 2.37 6.533 3.406l12.504 8.68a2.25 2.25 0 0 1 .013 3.688l-12.504 8.81C5.056 25.634 3 24.57 3 22.745z" />
-                </svg>
-              </a>
-            {% endif %}
-          </span>
-        </div>
-      </div>
+    <div class="child-list-actions">
+      <button title="Print" type="button" class="btn btn-outline-success" onclick="printDiv('printMe')">
+        <i class="mdi mdi-printer"></i>
+      </button>
+      <button title="Export To Excel" type="button" class="btn btn-outline-success" onclick="ExportToExcel('xlsx')">
+        <i class="mdi mdi-file-excel"></i>
+      </button>
+      <button title="Export To Word" type="button" class="btn btn-outline-success" onclick="Export2Doc('printMe');">
+        <i class="mdi mdi-file-word"></i>
+      </button>
+      <a title="Register Child" class="btn btn-success" href="{% url 'register_child' %}">
+        <i class="mdi mdi-account-plus mr-1"></i>Add Child
+      </a>
+      <a title="Detailed Child Report" class="btn btn-outline-secondary" href="{% url 'child_list_detailed' %}">
+        <i class="mdi mdi-file-document-outline mr-1"></i>Detailed
+      </a>
     </div>
   </div>
+
+  <div class="page-header flex-wrap p-2">
+    <h3 class="mb-0">MASTER LIST</h3>
+    <form method="GET" action="{% url 'child_list' %}" class="child-list-search">
+      <div class="child-search-input">
+        <i class="mdi mdi-magnify"></i>
+        <input type="text" name="search" value="{{ search_query }}" id="searchInput" placeholder="Search name, residence, district, guardian..." />
+      </div>
+      <button type="submit" class="btn btn-sm btn-success">Search</button>
+      {% if search_query %}
+        <a href="{% url 'child_list' %}" class="btn btn-sm btn-outline-secondary">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div id="printMe" class="child-list-table-panel">
+    <div class="table-container">
+      <table class="my-table child-list-table" id="dataTable">
+        <thead>
+          <tr>
+            <th scope="col">Reg.No</th>
+            <th scope="col">Child</th>
+            <th scope="col">Gender</th>
+            <th scope="col">Date of Birth</th>
+            <th scope="col">Residence</th>
+            <th scope="col">Guardian</th>
+            <th scope="col">Status</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="table-group-divider">
+          {% for child in records %}
+            <tr>
+              <td><strong>{{ child.prefixed_id }}</strong></td>
+              <td>
+                <div class="child-identity">
+                  {% if child.picture %}
+                    <a title="Update picture" href="{% url 'update_picture' %}">
+                      <img src="{{ child.picture }}" alt="{{ child.full_name }}">
+                    </a>
+                  {% else %}
+                    <span class="child-avatar">{{ child.full_name|first }}</span>
+                  {% endif %}
+                  <div>
+                    <strong>{{ child.full_name }}</strong>
+                    <small>{% if child.preferred_name %}Prefers {{ child.preferred_name }}{% else %}Preferred name not recorded{% endif %}</small>
+                  </div>
+                </div>
+              </td>
+              <td>{{ child.gender|default:"-" }}</td>
+              <td>{{ child.date_of_birth|default:"-" }}</td>
+              <td>
+                <strong>{{ child.residence|default:"-" }}</strong>
+                <small>{{ child.district|default:"District not recorded" }}</small>
+              </td>
+              <td>
+                <strong>{{ child.guardian|default:"-" }}</strong>
+                <small>{{ child.guardian_contact|default:"No contact" }}</small>
+              </td>
+              <td>
+                {% if child.is_sponsored %}
+                  <span class="status-pill positive">Sponsored</span>
+                {% else %}
+                  <span class="status-pill warning">Non-Sponsored</span>
+                {% endif %}
+                {% if child.is_child_in_school %}
+                  <span class="status-pill neutral mt-1">In School</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="child-row-actions">
+                  <a class="btn btn-info btn-sm" title="View Details" href="{% url 'child_details' child.id %}">
+                    <i class="mdi mdi-eye"></i>
+                  </a>
+                  {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
+                    <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_child' child.id %}">
+                      <i class="mdi mdi-pencil"></i>
+                    </a>
+                  {% else %}
+                    <button class="btn btn-primary btn-sm" onclick="showNoPermissionMessage('edit')">
+                      <i class="mdi mdi-pencil"></i>
+                    </button>
+                  {% endif %}
+                  {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+                    <a class="btn btn-danger btn-sm" title="Delete" href="{% url 'delete_child' child.id %}" onclick="return confirm('Are you sure about this? This record will be deleted permanently');">
+                      <i class="mdi mdi-delete"></i>
+                    </a>
+                  {% else %}
+                    <button class="btn btn-danger btn-sm" onclick="showNoPermissionMessage('delete')">
+                      <i class="mdi mdi-delete"></i>
+                    </button>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="8" class="text-center py-4 text-muted">No child records found.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="pagination">
+    <span class="step-links">
+      {% if records.has_previous %}
+        <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}" title="First page"><i class="mdi mdi-page-first"></i></a>
+        <a href="?page={{ records.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" title="Previous page"><i class="mdi mdi-chevron-left"></i></a>
+      {% endif %}
+
+      <span class="current">Page {{ records.number }} of {{ records.paginator.num_pages }}.</span>
+
+      {% if records.has_next %}
+        <a href="?page={{ records.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" title="Next page"><i class="mdi mdi-chevron-right"></i></a>
+        <a href="?page={{ records.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}" title="Last page"><i class="mdi mdi-page-last"></i></a>
+      {% endif %}
+    </span>
+  </div>
+</div>
+
+<style>
+  .child-list-report {
+    padding-top: 6px;
+  }
+
+  .child-list-hero,
+  .child-list-table-panel {
+    background: #fff;
+    border: 1px solid #d9dee5;
+    border-radius: 8px;
+    box-shadow: 0 12px 30px rgba(31, 41, 51, .08);
+  }
+
+  .child-list-hero {
+    align-items: center;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding: 18px 20px;
+  }
+
+  .child-list-kicker {
+    color: #13745d;
+    font-size: .76rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+
+  .child-list-hero h3 {
+    color: #1f344d;
+    font-size: 1.45rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    margin: 4px 0;
+  }
+
+  .child-list-hero p {
+    color: #667085;
+    margin: 0;
+    max-width: 680px;
+  }
+
+  .child-list-actions,
+  .child-list-search,
+  .child-row-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .child-search-input {
+    align-items: center;
+    background: #fff;
+    border: 1px solid #d9dee5;
+    border-radius: 8px;
+    display: flex;
+    min-width: 360px;
+    padding: 0 10px;
+  }
+
+  .child-search-input i {
+    color: #667085;
+  }
+
+  .child-search-input input {
+    border: 0;
+    color: #26384d;
+    height: 36px;
+    outline: 0;
+    padding: 0 8px;
+    width: 100%;
+  }
+
+  .child-list-table-panel {
+    overflow: hidden;
+  }
+
+  .child-list-table th,
+  .child-list-table td {
+    vertical-align: middle;
+  }
+
+  .child-list-table td small {
+    color: #667085;
+    display: block;
+    font-size: .78rem;
+    line-height: 1.45;
+    margin-top: 3px;
+  }
+
+  .child-identity {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    min-width: 220px;
+  }
+
+  .child-identity img,
+  .child-avatar {
+    border-radius: 50%;
+    flex: 0 0 auto;
+    height: 42px;
+    width: 42px;
+  }
+
+  .child-identity img {
+    object-fit: cover;
+  }
+
+  .child-avatar {
+    align-items: center;
+    background: #edf7f4;
+    border: 1px solid #cfe8e0;
+    color: #13745d;
+    display: inline-flex;
+    font-weight: 900;
+    justify-content: center;
+    text-transform: uppercase;
+  }
+
+  .status-pill {
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: .75rem;
+    font-weight: 900;
+    padding: 5px 9px;
+  }
+
+  .status-pill.positive {
+    background: #edf7f4;
+    color: #13745d;
+  }
+
+  .status-pill.warning {
+    background: #fff7ed;
+    color: #b45309;
+  }
+
+  .status-pill.neutral {
+    background: #eef2f6;
+    color: #4b5563;
+  }
+
+  @media (max-width: 767.98px) {
+    .child-list-hero {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .child-search-input,
+    .child-list-search,
+    .child-list-actions {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .child-list-search .btn,
+    .child-list-actions .btn {
+      flex: 1 1 auto;
+    }
+
+  }
+</style>
 {% endblock %}

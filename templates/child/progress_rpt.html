@@ -217,6 +217,15 @@
         overflow: hidden;
     }
 
+    .record-card summary {
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .record-card summary::-webkit-details-marker {
+        display: none;
+    }
+
     .record-card-header {
         padding: 1.15rem 1.25rem;
         background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
@@ -259,6 +268,79 @@
         font-size: .82rem;
         font-weight: 700;
         letter-spacing: .2px;
+    }
+
+    .expand-toggle {
+        align-items: center;
+        background: rgba(255,255,255,.18);
+        border: 1px solid rgba(255,255,255,.28);
+        border-radius: 999px;
+        color: #fff;
+        display: inline-flex;
+        font-size: .82rem;
+        font-weight: 800;
+        gap: .35rem;
+        padding: .42rem .8rem;
+    }
+
+    .expand-toggle::after {
+        content: "View details";
+    }
+
+    details[open] .expand-toggle::after {
+        content: "Hide details";
+    }
+
+    .expand-toggle i {
+        transition: transform .18s ease;
+    }
+
+    details[open] .expand-toggle i {
+        transform: rotate(180deg);
+    }
+
+    .record-preview {
+        background: #fff;
+        border-bottom: 1px solid #edf0f2;
+        display: grid;
+        gap: .75rem;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        padding: 1rem 1.25rem;
+    }
+
+    @media (min-width: 768px) {
+        .record-preview {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    .preview-item {
+        background: var(--brand-light);
+        border: 1px solid var(--brand-border);
+        border-radius: var(--radius-sm);
+        display: grid;
+        gap: .45rem;
+        padding: .8rem .9rem;
+    }
+
+    .preview-label {
+        color: var(--brand-muted);
+        font-size: .72rem;
+        font-weight: 800;
+        line-height: 1.25;
+        margin-bottom: 0;
+        text-transform: uppercase;
+    }
+
+    .preview-value {
+        color: var(--brand-dark);
+        font-size: .95rem;
+        font-weight: 800;
+        line-height: 1.4;
+    }
+
+    .record-card-details {
+        background: #fff;
     }
 
     .record-card-body {
@@ -314,6 +396,8 @@
         border: 1px solid var(--brand-border);
         border-left: 4px solid var(--brand-primary);
         border-radius: var(--radius-md);
+        display: grid;
+        gap: .5rem;
         padding: .95rem 1rem;
         min-height: 100%;
     }
@@ -323,7 +407,8 @@
         font-weight: 800;
         color: var(--brand-muted);
         text-transform: uppercase;
-        margin-bottom: .35rem;
+        line-height: 1.25;
+        margin-bottom: 0;
         letter-spacing: .25px;
     }
 
@@ -331,6 +416,7 @@
         color: var(--brand-dark);
         font-size: .98rem;
         line-height: 1.55;
+        padding-top: .1rem;
         white-space: normal;
         word-break: break-word;
     }
@@ -442,6 +528,10 @@
             page-break-inside: avoid;
             margin-bottom: 1rem;
         }
+
+        .record-card-details {
+            display: block !important;
+        }
     }
 </style>
 
@@ -453,8 +543,8 @@
         </div>
 
         <div class="report-actions">
-            <button title="Print" type="button" class="btn btn-sm btn-success" onclick="printDiv('printMe')">
-                <i class="mdi mdi-printer btn-icon-prepend"></i>
+            <button title="Print Standard Report" type="button" class="btn btn-sm btn-success" onclick="printProgressReport()">
+                <i class="mdi mdi-printer btn-icon-prepend"></i> Print Standard
             </button>
 
             <button title="Export To Excel" type="button" class="btn btn-sm btn-success"
@@ -517,7 +607,171 @@
         </form>
     </div>
 
-    <div id="printMe">
+    <div id="printMe" class="standard-print-area">
+        <style>
+            .print-document-header,
+            .print-watermark {
+                display: none;
+            }
+
+            @media print {
+                @page {
+                    margin: 14mm 12mm;
+                    size: A4 portrait;
+                }
+
+                body {
+                    background: #fff !important;
+                    color: #111827 !important;
+                    font-family: Arial, sans-serif !important;
+                }
+
+                .standard-print-area {
+                    background: #fff !important;
+                    position: relative;
+                }
+
+                .print-document-header {
+                    align-items: center;
+                    border-bottom: 2px solid #13745d;
+                    display: flex !important;
+                    gap: 14px;
+                    margin-bottom: 18px;
+                    padding-bottom: 12px;
+                    position: relative;
+                    z-index: 2;
+                }
+
+                .print-document-header img {
+                    height: 64px;
+                    object-fit: contain;
+                    width: 64px;
+                }
+
+                .print-document-header span {
+                    color: #13745d;
+                    display: block;
+                    font-size: 11px;
+                    font-weight: 800;
+                    letter-spacing: 0;
+                    text-transform: uppercase;
+                }
+
+                .print-document-header h2 {
+                    color: #1f344d;
+                    font-size: 20px;
+                    font-weight: 900;
+                    margin: 2px 0;
+                }
+
+                .print-document-header p {
+                    color: #4b5563;
+                    font-size: 12px;
+                    margin: 0;
+                }
+
+                .print-watermark {
+                    display: block !important;
+                    inset: 35% auto auto 50%;
+                    opacity: .07;
+                    position: fixed;
+                    transform: translate(-50%, -50%);
+                    width: 420px;
+                    z-index: 0;
+                }
+
+                .child-summary,
+                .record-card,
+                .record-card-body,
+                .record-card-footer,
+                .record-preview,
+                .info-item,
+                .stat-box {
+                    background: transparent !important;
+                    box-shadow: none !important;
+                    position: relative;
+                    z-index: 2;
+                }
+
+                details.record-card {
+                    border: 1px solid #d1d5db !important;
+                    border-radius: 8px !important;
+                    margin-bottom: 14px !important;
+                }
+
+                details.record-card > * {
+                    display: block !important;
+                }
+
+                .record-card-header {
+                    background: #13745d !important;
+                    color: #fff !important;
+                    padding: 12px 14px !important;
+                }
+
+                .record-preview {
+                    border-bottom: 1px solid #e5e7eb !important;
+                    grid-template-columns: repeat(3, 1fr) !important;
+                    padding: 10px 12px !important;
+                }
+
+                .record-card-body {
+                    padding: 12px !important;
+                }
+
+                .info-grid {
+                    grid-template-columns: repeat(3, 1fr) !important;
+                    gap: 8px !important;
+                }
+
+                .info-item,
+                .preview-item {
+                    border: 1px solid #d1d5db !important;
+                    border-left: 3px solid #13745d !important;
+                    border-radius: 6px !important;
+                    display: grid !important;
+                    gap: 6px !important;
+                    padding: 9px 10px !important;
+                }
+
+                .info-label,
+                .preview-label {
+                    display: block !important;
+                    line-height: 1.25 !important;
+                    margin-bottom: 0 !important;
+                }
+
+                .info-value,
+                .preview-value {
+                    display: block !important;
+                    line-height: 1.45 !important;
+                    padding-top: 2px !important;
+                }
+
+                .record-card-footer,
+                .expand-toggle,
+                .no-print,
+                .pagination-wrap {
+                    display: none !important;
+                }
+            }
+        </style>
+
+        <img class="print-watermark" src="{% static 'images/file.png' %}" alt="">
+        <div class="print-document-header">
+            <img src="{% static 'images/file.png' %}" alt="">
+            <div>
+                <h2>{{ table_title|upper }}</h2>
+                <p>
+                    {% if selected_child %}
+                        {{ child_name }} | {{ prefix_id }} | Generated report
+                    {% else %}
+                        Select a child to generate the standard progress report
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
         {% if selected_child %}
         <div class="glass-card child-summary">
             <div class="child-summary-content">
@@ -617,13 +871,13 @@
         {% if child_progress %}
         <div class="records-wrap">
             {% for progress in child_progress %}
-            <div class="glass-card record-card">
-                <div class="record-card-header">
+            <details class="glass-card record-card">
+                <summary class="record-card-header">
                     <div class="record-card-header-top">
                         <div>
                             <h4 class="record-card-title">{{ progress.name_of_school }}</h4>
                             <p class="record-card-subtitle">
-                                Progress Record {{ forloop.counter }}{% if page_obj and page_obj.number > 1 %} on this page{% endif %}
+                                Progress Record {{ forloop.counter }}{% if page_obj and page_obj.number > 1 %} on this page{% endif %}. Click to expand.
                             </p>
                         </div>
 
@@ -637,195 +891,220 @@
                             <span class="record-chip">
                                 <i class="mdi mdi-school"></i> {{ progress.education_level|default:"N/A" }}
                             </span>
+                            <span class="expand-toggle">
+                                <i class="mdi mdi-chevron-down"></i>
+                            </span>
                         </div>
+                    </div>
+                </summary>
+
+                <div class="record-preview">
+                    <div class="preview-item">
+                        <div class="preview-label">Class</div>
+                        <div class="preview-value">{{ progress.child_class|default:"Not provided" }}</div>
+                    </div>
+                    <div class="preview-item">
+                        <div class="preview-label">Best Subject</div>
+                        <div class="preview-value">{{ progress.best_subject|default:"Not provided" }}</div>
+                    </div>
+                    <div class="preview-item">
+                        <div class="preview-label">Score</div>
+                        <div class="preview-value">{{ progress.score|default:"0" }}</div>
                     </div>
                 </div>
 
-                <div class="record-card-body">
-                    <div class="section-block">
-                        <div class="section-heading">Academic Information</div>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <div class="info-label">Name of School</div>
-                                <div class="info-value">
-                                    {% if progress.name_of_school %}
-                                        {{ progress.name_of_school }}
-                                    {% else %}
-                                        <span class="info-value empty">Not provided</span>
-                                    {% endif %}
+                <div class="record-card-details">
+                    <div class="record-card-body">
+                        <div class="section-block">
+                            <div class="section-heading">Academic Information</div>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">Name of School</div>
+                                    <div class="info-value">
+                                        {% if progress.name_of_school %}
+                                            {{ progress.name_of_school }}
+                                        {% else %}
+                                            <span class="info-value empty">Not provided</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">Academic Year</div>
+                                    <div class="info-value">
+                                        {% if progress.year %}
+                                            {{ progress.year }}
+                                        {% else %}
+                                            <span class="info-value empty">Not provided</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">School Term</div>
+                                    <div class="info-value">
+                                        {% if progress.term %}
+                                            {{ progress.term }}
+                                        {% else %}
+                                            <span class="info-value empty">Not provided</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">Previous Schools Attended</div>
+                                    <div class="info-value">
+                                        {% if progress.previous_schools %}
+                                            {{ progress.previous_schools }}
+                                        {% else %}
+                                            <span class="info-value empty">Not provided</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">Level of Education</div>
+                                    <div class="info-value">
+                                        {% if progress.education_level %}
+                                            {{ progress.education_level }}
+                                        {% else %}
+                                            <span class="info-value empty">Not provided</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">Class</div>
+                                    <div class="info-value">
+                                        {% if progress.child_class %}
+                                            {{ progress.child_class }}
+                                        {% else %}
+                                            <span class="info-value empty">Not provided</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">Best Subject</div>
+                                    <div class="info-value">
+                                        {% if progress.best_subject %}
+                                            {{ progress.best_subject }}
+                                        {% else %}
+                                            <span class="info-value empty">Not provided</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">Score</div>
+                                    <div class="info-value">
+                                        <span class="score-pill">{{ progress.score|default:"0" }}</span>
+                                    </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="info-item">
-                                <div class="info-label">Academic Year</div>
-                                <div class="info-value">
-                                    {% if progress.year %}
-                                        {{ progress.year }}
-                                    {% else %}
-                                        <span class="info-value empty">Not provided</span>
-                                    {% endif %}
+                        <div class="section-block">
+                            <div class="section-heading">Activities and Responsibilities</div>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">Co-curricular Activity</div>
+                                    <div class="info-value">
+                                        {% if progress.co_curricular_activity %}
+                                            {{ progress.co_curricular_activity }}
+                                        {% else %}
+                                            <span class="info-value empty">Not provided</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">Responsibility at School</div>
+                                    <div class="info-value">
+                                        {% if progress.responsibility_at_school %}
+                                            {{ progress.responsibility_at_school }}
+                                        {% else %}
+                                            <span class="info-value empty">Not provided</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-label">Responsibility at Home</div>
+                                    <div class="info-value">
+                                        {% if progress.responsibility_at_home %}
+                                            {{ progress.responsibility_at_home }}
+                                        {% else %}
+                                            <span class="info-value empty">Not provided</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="info-item">
-                                <div class="info-label">School Term</div>
-                                <div class="info-value">
-                                    {% if progress.term %}
-                                        {{ progress.term }}
-                                    {% else %}
-                                        <span class="info-value empty">Not provided</span>
-                                    {% endif %}
+                        <div class="section-block">
+                            <div class="section-heading">Plans and Notes</div>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">Future Plans</div>
+                                    <div class="info-value">
+                                        {% if progress.future_plans %}
+                                            {{ progress.future_plans }}
+                                        {% else %}
+                                            <span class="info-value empty">Not provided</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div class="info-item">
-                                <div class="info-label">Previous Schools Attended</div>
-                                <div class="info-value">
-                                    {% if progress.previous_schools %}
-                                        {{ progress.previous_schools }}
-                                    {% else %}
-                                        <span class="info-value empty">Not provided</span>
-                                    {% endif %}
+                                <div class="info-item">
+                                    <div class="info-label">Notes</div>
+                                    <div class="info-value">
+                                        {% if progress.notes %}
+                                            {{ progress.notes }}
+                                        {% else %}
+                                            <span class="info-value empty">Not provided</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div class="info-item">
-                                <div class="info-label">Level of Education</div>
-                                <div class="info-value">
-                                    {% if progress.education_level %}
-                                        {{ progress.education_level }}
-                                    {% else %}
-                                        <span class="info-value empty">Not provided</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <div class="info-item">
-                                <div class="info-label">Class</div>
-                                <div class="info-value">
-                                    {% if progress.child_class %}
-                                        {{ progress.child_class }}
-                                    {% else %}
-                                        <span class="info-value empty">Not provided</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <div class="info-item">
-                                <div class="info-label">Best Subject</div>
-                                <div class="info-value">
-                                    {% if progress.best_subject %}
-                                        {{ progress.best_subject }}
-                                    {% else %}
-                                        <span class="info-value empty">Not provided</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <div class="info-item">
-                                <div class="info-label">Score</div>
-                                <div class="info-value">
-                                    <span class="score-pill">{{ progress.score|default:"0" }}</span>
+                                <div class="info-item">
+                                    <div class="info-label">Record Updated</div>
+                                    <div class="info-value">
+                                        {{ progress.updated_at|date:"d M Y, H:i" }}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="section-block">
-                        <div class="section-heading">Activities and Responsibilities</div>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <div class="info-label">Co-curricular Activity</div>
-                                <div class="info-value">
-                                    {% if progress.co_curricular_activity %}
-                                        {{ progress.co_curricular_activity }}
-                                    {% else %}
-                                        <span class="info-value empty">Not provided</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <div class="info-item">
-                                <div class="info-label">Responsibility at School</div>
-                                <div class="info-value">
-                                    {% if progress.responsibility_at_school %}
-                                        {{ progress.responsibility_at_school }}
-                                    {% else %}
-                                        <span class="info-value empty">Not provided</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <div class="info-item">
-                                <div class="info-label">Responsibility at Home</div>
-                                <div class="info-value">
-                                    {% if progress.responsibility_at_home %}
-                                        {{ progress.responsibility_at_home }}
-                                    {% else %}
-                                        <span class="info-value empty">Not provided</span>
-                                    {% endif %}
-                                </div>
-                            </div>
+                    <div class="record-card-footer no-print">
+                        <div class="record-meta-footer">
+                            <span><strong>Created:</strong> {{ progress.created_at|date:"d M Y, H:i" }}</span>
+                            <span><strong>Updated:</strong> {{ progress.updated_at|date:"d M Y, H:i" }}</span>
                         </div>
-                    </div>
 
-                    <div class="section-block">
-                        <div class="section-heading">Plans and Notes</div>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <div class="info-label">Future Plans</div>
-                                <div class="info-value">
-                                    {% if progress.future_plans %}
-                                        {{ progress.future_plans }}
-                                    {% else %}
-                                        <span class="info-value empty">Not provided</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <div class="info-item">
-                                <div class="info-label">Notes</div>
-                                <div class="info-value">
-                                    {% if progress.notes %}
-                                        {{ progress.notes }}
-                                    {% else %}
-                                        <span class="info-value empty">Not provided</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <div class="info-item">
-                                <div class="info-label">Record Updated</div>
-                                <div class="info-value">
-                                    {{ progress.updated_at|date:"d M Y, H:i" }}
-                                </div>
-                            </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a class="btn btn-primary btn-sm"
+                               title="Edit Record"
+                               href="{% url 'update_progress' progress.id %}">
+                                <i class="mdi mdi-pencil"></i> Edit
+                            </a>
+                            {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+                            <a class="btn btn-danger btn-sm"
+                               title="Delete Record"
+                               href="{% url 'delete_progress' progress.id %}"
+                               onclick="return confirm('Are you sure about this? This record will be deleted permanently');">
+                                <i class="bi bi-trash"></i> Delete
+                            </a>
+                            {% else %}
+                            <button type="button" class="btn btn-danger btn-sm" onclick="showNoPermissionMessage('delete')">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
-
-                <div class="record-card-footer no-print">
-                    <div class="record-meta-footer">
-                        <span><strong>Created:</strong> {{ progress.created_at|date:"d M Y, H:i" }}</span>
-                        <span><strong>Updated:</strong> {{ progress.updated_at|date:"d M Y, H:i" }}</span>
-                    </div>
-
-                    <div>
-                        {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                        <a class="btn btn-danger btn-sm"
-                           title="Delete Record"
-                           href="{% url 'delete_progress' progress.id %}"
-                           onclick="return confirm('Are you sure about this? This record will be deleted permanently');">
-                            <i class="bi bi-trash"></i> Delete
-                        </a>
-                        {% else %}
-                        <button type="button" class="btn btn-danger btn-sm" onclick="showNoPermissionMessage('delete')">
-                            <i class="bi bi-trash"></i> Delete
-                        </button>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
+            </details>
             {% endfor %}
         </div>
 
@@ -902,6 +1181,15 @@
         dropdown.addEventListener("change", function () {
             this.form.submit();
         });
+    }
+
+    function printProgressReport() {
+        const report = document.getElementById("printMe");
+        const records = report ? report.querySelectorAll("details.record-card") : [];
+        records.forEach(function (record) {
+            record.setAttribute("open", "open");
+        });
+        printDiv("printMe");
     }
 </script>
 {% endblock content %}

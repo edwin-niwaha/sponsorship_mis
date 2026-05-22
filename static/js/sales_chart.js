@@ -17,32 +17,59 @@ async function fetchSalesData() {
 async function renderChart() {
   const salesData = await fetchSalesData();
 
-  // if (!salesData) {
-  //   alert("Failed to load sales data.");
-  //   return;
-  // }
+  if (!salesData) return;
 
-  const ctx = document.getElementById("salesChart").getContext("2d");
-  const salesChart = new Chart(ctx, {
-    type: "line", // Use a line chart
+  const chartEl = document.getElementById("salesChart");
+  if (!chartEl) return;
+
+  const ctx = chartEl.getContext("2d");
+  new Chart(ctx, {
+    type: "bar",
     data: {
-      labels: salesData.years, // X-axis labels (years)
+      labels: salesData.years,
       datasets: [
         {
           label: "Total Sales",
-          data: salesData.total_sales, // Y-axis data (total sales)
-          borderColor: "rgba(75, 192, 192, 1)",
-          backgroundColor: "rgba(75, 192, 192, 0.2)",
+          data: salesData.total_sales,
+          borderColor: "#d99421",
+          backgroundColor: "rgba(217, 148, 33, 0.18)",
+          borderRadius: 8,
           borderWidth: 2,
-          fill: true,
         },
       ],
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       scales: {
+        x: {
+          grid: {
+            display: false,
+          },
+        },
         y: {
           beginAtZero: true,
+          grid: {
+            color: "rgba(148, 163, 184, 0.22)",
+            drawBorder: false,
+          },
+          ticks: {
+            callback: function (value) {
+              return "UGX " + Number(value).toLocaleString();
+            },
+          },
+        },
+      },
+      plugins: {
+        legend: {
+          display: false,
+        },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              return "UGX " + Number(context.raw || 0).toLocaleString();
+            },
+          },
         },
       },
     },

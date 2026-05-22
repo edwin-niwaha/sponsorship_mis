@@ -1,0 +1,591 @@
+{% extends "accounts/base.html" %}
+{% load humanize %}
+
+{% block title %}Sponsor Portal{% endblock title %}
+
+{% block content %}
+<style>
+  .sponsor-portal {
+    background: #f6f8fb;
+    min-height: 80vh;
+    padding: 24px 0 56px;
+  }
+
+  .sponsor-wrap {
+    margin: 0 auto;
+    max-width: 1180px;
+    padding: 0 24px;
+  }
+
+  .portal-hero,
+  .portal-card,
+  .portal-panel {
+    background: #fff;
+    border: 1px solid #dfe5ec;
+    border-radius: 8px;
+    box-shadow: 0 14px 34px rgba(31, 41, 51, .08);
+  }
+
+  .portal-hero {
+    align-items: center;
+    display: flex;
+    gap: 18px;
+    justify-content: space-between;
+    padding: 24px;
+  }
+
+  .portal-kicker {
+    color: #13745d;
+    font-size: .76rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .portal-hero h1 {
+    color: #1f344d;
+    font-size: 1.8rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    margin: 4px 0;
+  }
+
+  .portal-hero p,
+  .portal-muted {
+    color: #667085;
+    margin: 0;
+  }
+
+  .portal-identity {
+    align-items: center;
+    background: #edf7f4;
+    border: 1px solid #cfe8e0;
+    border-radius: 8px;
+    display: flex;
+    gap: 12px;
+    min-width: 260px;
+    padding: 12px;
+  }
+
+  .portal-avatar {
+    align-items: center;
+    background: #13745d;
+    border-radius: 50%;
+    color: #fff;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-weight: 900;
+    height: 46px;
+    justify-content: center;
+    text-transform: uppercase;
+    width: 46px;
+  }
+
+  .portal-identity strong,
+  .portal-identity span {
+    display: block;
+  }
+
+  .portal-identity strong {
+    color: #1f344d;
+    font-weight: 900;
+  }
+
+  .portal-identity span {
+    color: #667085;
+    font-size: .82rem;
+  }
+
+  .portal-stats {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 16px 0;
+  }
+
+  .portal-card {
+    display: grid;
+    gap: 8px;
+    min-height: 124px;
+    padding: 16px;
+  }
+
+  .portal-card i {
+    align-items: center;
+    background: #edf7f4;
+    border: 1px solid #cfe8e0;
+    border-radius: 8px;
+    color: #13745d;
+    display: inline-flex;
+    font-size: 1.35rem;
+    height: 42px;
+    justify-content: center;
+    width: 42px;
+  }
+
+  .portal-card span {
+    color: #667085;
+    font-size: .78rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .portal-card strong {
+    color: #1f344d;
+    font-size: 1.35rem;
+    font-weight: 900;
+  }
+
+  .portal-layout {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: minmax(0, 1.4fr) minmax(320px, .8fr);
+  }
+
+  .portal-stack {
+    display: grid;
+    gap: 16px;
+  }
+
+  .portal-panel {
+    padding: 18px;
+  }
+
+  .portal-panel-head {
+    align-items: baseline;
+    border-bottom: 1px solid #edf1f5;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+  }
+
+  .portal-panel h2 {
+    color: #26384d;
+    font-size: 1.08rem;
+    font-weight: 900;
+    margin: 0;
+  }
+
+  .portal-panel-head span {
+    color: #667085;
+    font-size: .82rem;
+    font-weight: 800;
+  }
+
+  .sponsored-row,
+  .payment-row,
+  .account-row {
+    border-top: 1px solid #edf1f5;
+    display: grid;
+    gap: 6px;
+    padding: 12px 0;
+  }
+
+  .sponsored-row:first-of-type,
+  .payment-row:first-of-type,
+  .account-row:first-of-type {
+    border-top: 0;
+  }
+
+  .sponsored-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .sponsored-title {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .mini-avatar {
+    align-items: center;
+    background: #edf7f4;
+    border: 1px solid #cfe8e0;
+    border-radius: 50%;
+    color: #13745d;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: .82rem;
+    font-weight: 900;
+    height: 38px;
+    justify-content: center;
+    text-transform: uppercase;
+    width: 38px;
+  }
+
+  .sponsored-title strong,
+  .sponsored-title small,
+  .sponsored-meta small {
+    display: block;
+  }
+
+  .sponsored-title strong {
+    color: #1f344d;
+    font-weight: 900;
+  }
+
+  .sponsored-title small,
+  .sponsored-meta small,
+  .account-row span,
+  .payment-row span {
+    color: #667085;
+    font-size: .82rem;
+  }
+
+  .sponsored-meta {
+    grid-column: 1 / -1;
+    padding-left: 48px;
+  }
+
+  .status-pill {
+    align-self: start;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 900;
+    padding: 5px 9px;
+  }
+
+  .status-active {
+    background: #e8f7ef;
+    color: #13745d;
+  }
+
+  .status-paused {
+    background: #fff3d8;
+    color: #8a5b00;
+  }
+
+  .payment-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .payment-row strong,
+  .account-row strong {
+    color: #1f344d;
+    font-weight: 900;
+  }
+
+  .portal-empty {
+    background: #f8fafc;
+    border: 1px dashed #cfd8e3;
+    border-radius: 8px;
+    color: #667085;
+    margin: 0;
+    padding: 14px;
+  }
+
+  .recommendation-list {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+  }
+
+  .report-link-grid {
+    display: grid;
+    gap: 10px;
+  }
+
+  .report-link-card {
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #e3e8ef;
+    border-radius: 8px;
+    color: #334155;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 12px;
+    text-decoration: none;
+  }
+
+  .report-link-card:hover {
+    border-color: #13745d;
+    color: #13745d;
+    text-decoration: none;
+  }
+
+  .report-link-card i {
+    align-items: center;
+    background: #edf7f4;
+    border: 1px solid #cfe8e0;
+    border-radius: 8px;
+    color: #13745d;
+    display: inline-flex;
+    height: 38px;
+    justify-content: center;
+    width: 38px;
+  }
+
+  .report-link-card strong,
+  .report-link-card span {
+    display: block;
+  }
+
+  .report-link-card strong {
+    color: #1f344d;
+    font-weight: 900;
+  }
+
+  .report-link-card span {
+    color: #667085;
+    font-size: .82rem;
+  }
+
+  .report-link-card .fa-chevron-right {
+    background: transparent;
+    border: 0;
+    color: #94a3b8;
+    height: auto;
+    width: auto;
+  }
+
+  .recommendation-list li {
+    background: #f8fafc;
+    border: 1px solid #e3e8ef;
+    border-radius: 8px;
+    color: #4b5563;
+    list-style: none;
+    padding: 12px;
+  }
+
+  @media (max-width: 991.98px) {
+    .portal-hero,
+    .portal-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .portal-hero {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .portal-stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 575.98px) {
+    .sponsor-wrap {
+      padding: 0 14px;
+    }
+
+    .portal-stats,
+    .sponsored-row,
+    .payment-row {
+      grid-template-columns: 1fr;
+    }
+
+    .sponsored-meta {
+      padding-left: 0;
+    }
+  }
+</style>
+
+<main class="sponsor-portal">
+  <div class="sponsor-wrap">
+    <section class="portal-hero">
+      <div>
+        <div class="portal-kicker">Sponsor Portal</div>
+        <h1>{% if sponsor %}Welcome, {{ sponsor.first_name }}{% else %}Sponsor Portal{% endif %}</h1>
+        {% if sponsor %}
+          <p>Track the children, staff, payments, and support records connected to your sponsorship.</p>
+        {% else %}
+          <p>Your sponsor profile is not linked yet. Contact staff to connect your login to your sponsorship record.</p>
+        {% endif %}
+      </div>
+
+      <div class="portal-identity">
+        <span class="portal-avatar">{% if sponsor %}{{ sponsor.first_name|first }}{{ sponsor.last_name|first }}{% else %}?{% endif %}</span>
+        <div>
+          <strong>{% if sponsor %}{{ sponsor.first_name }} {{ sponsor.last_name }}{% else %}Profile pending{% endif %}</strong>
+          <span>{% if sponsor %}{{ sponsor.prefixed_id }} | {{ sponsor.email }}{% else %}Not linked to a sponsor record{% endif %}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="portal-stats">
+      <div class="portal-card">
+        <i class="fas fa-hands-helping"></i>
+        <span>Active Sponsorships</span>
+        <strong>{{ active_count }}</strong>
+      </div>
+      <div class="portal-card">
+        <i class="fas fa-child"></i>
+        <span>Children Supported</span>
+        <strong>{{ active_child_count }}</strong>
+      </div>
+      <div class="portal-card">
+        <i class="fas fa-user-tie"></i>
+        <span>Staff Supported</span>
+        <strong>{{ active_staff_count }}</strong>
+      </div>
+      <div class="portal-card">
+        <i class="fas fa-money-bill-wave"></i>
+        <span>Total Valid Payments</span>
+        <strong>UGX {{ total_payment_amount|default:0|floatformat:0|intcomma }}</strong>
+      </div>
+    </section>
+
+    <section class="portal-layout">
+      <div class="portal-stack">
+        <section class="portal-panel">
+          <div class="portal-panel-head">
+            <h2>Sponsored Children</h2>
+            <span>{{ active_child_count }} active</span>
+          </div>
+          {% if child_sponsorships %}
+            {% for sponsorship in child_sponsorships %}
+              <div class="sponsored-row">
+                <div class="sponsored-title">
+                  <span class="mini-avatar">{{ sponsorship.child.full_name|first }}</span>
+                  <div>
+                    <strong>{{ sponsorship.child.full_name }}</strong>
+                    <small>{{ sponsorship.child.prefixed_id }} | {{ sponsorship.child.gender|default:"Gender not recorded" }}</small>
+                  </div>
+                </div>
+                {% if sponsorship.is_active %}
+                  <span class="status-pill status-active">Active</span>
+                {% else %}
+                  <span class="status-pill status-paused">Inactive</span>
+                {% endif %}
+                <div class="sponsored-meta">
+                  <small><strong>Type:</strong> {{ sponsorship.sponsorship_type|default:"Sponsorship" }}</small>
+                  <small><strong>Started:</strong> {{ sponsorship.start_date|default:"Not recorded" }}{% if sponsorship.end_date %} | <strong>Ends:</strong> {{ sponsorship.end_date }}{% endif %}</small>
+                  <small><strong>Residence:</strong> {{ sponsorship.child.residence|default:"Not recorded" }}{% if sponsorship.child.is_child_in_school %} | In school{% endif %}</small>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="portal-empty">No child sponsorship records are linked to this account yet.</p>
+          {% endif %}
+        </section>
+
+        <section class="portal-panel">
+          <div class="portal-panel-head">
+            <h2>Sponsored Staff</h2>
+            <span>{{ active_staff_count }} active</span>
+          </div>
+          {% if staff_sponsorships %}
+            {% for sponsorship in staff_sponsorships %}
+              <div class="sponsored-row">
+                <div class="sponsored-title">
+                  <span class="mini-avatar">{{ sponsorship.staff.first_name|first }}{{ sponsorship.staff.last_name|first }}</span>
+                  <div>
+                    <strong>{{ sponsorship.staff.first_name }} {{ sponsorship.staff.last_name }}</strong>
+                    <small>{{ sponsorship.staff.prefixed_id }} | {{ sponsorship.staff.job_title|default:"Job title not recorded" }}</small>
+                  </div>
+                </div>
+                {% if sponsorship.is_active %}
+                  <span class="status-pill status-active">Active</span>
+                {% else %}
+                  <span class="status-pill status-paused">Inactive</span>
+                {% endif %}
+                <div class="sponsored-meta">
+                  <small><strong>Type:</strong> {{ sponsorship.sponsorship_type|default:"Sponsorship" }}</small>
+                  <small><strong>Department:</strong> {{ sponsorship.staff.department|default:"Not recorded" }} | <strong>Email:</strong> {{ sponsorship.staff.email|default:"Not recorded" }}</small>
+                  <small><strong>Started:</strong> {{ sponsorship.start_date|default:"Not recorded" }}{% if sponsorship.end_date %} | <strong>Ends:</strong> {{ sponsorship.end_date }}{% endif %}</small>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="portal-empty">No staff sponsorship records are linked to this account yet.</p>
+          {% endif %}
+        </section>
+      </div>
+
+      <aside class="portal-stack">
+        <section class="portal-panel">
+          <div class="portal-panel-head">
+            <h2>Account Summary</h2>
+          </div>
+          <div class="account-row">
+            <span>Sponsorship type</span>
+            <strong>{% if sponsor %}{{ sponsor.sponsorship_type|default:"Not recorded" }}{% else %}Pending{% endif %}</strong>
+          </div>
+          <div class="account-row">
+            <span>Expected support</span>
+            <strong>UGX {{ expected_amount|default:0|floatformat:0|intcomma }}</strong>
+          </div>
+          <div class="account-row">
+            <span>Start date</span>
+            <strong>{% if sponsor %}{{ sponsor.start_date|default:"Not recorded" }}{% else %}Pending{% endif %}</strong>
+          </div>
+          <div class="account-row">
+            <span>Primary phone</span>
+            <strong>{% if sponsor %}{{ sponsor.mobile_telephone|default:"Not recorded" }}{% else %}Pending{% endif %}</strong>
+          </div>
+        </section>
+
+        <section class="portal-panel">
+          <div class="portal-panel-head">
+            <h2>Recent Payments</h2>
+            <span>Validated records</span>
+          </div>
+          {% if recent_child_payments or recent_staff_payments %}
+            {% for payment in recent_child_payments %}
+              <div class="payment-row">
+                <div>
+                  <strong>{{ payment.child.full_name|default:"Child support" }}</strong>
+                  <span>{{ payment.month }} {{ payment.payment_year }} | {{ payment.payment_date }}</span>
+                </div>
+                <strong>UGX {{ payment.amount|floatformat:0|intcomma }}</strong>
+              </div>
+            {% endfor %}
+            {% for payment in recent_staff_payments %}
+              <div class="payment-row">
+                <div>
+                  <strong>{{ payment.staff.first_name }} {{ payment.staff.last_name }}</strong>
+                  <span>{{ payment.month }} {{ payment.payment_year }} | {{ payment.payment_date }}</span>
+                </div>
+                <strong>UGX {{ payment.amount|floatformat:0|intcomma }}</strong>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="portal-empty">No validated payment records are visible yet.</p>
+          {% endif %}
+        </section>
+
+        <section class="portal-panel">
+          <div class="portal-panel-head">
+            <h2>Payment Reports</h2>
+            <span>Printable sponsor records</span>
+          </div>
+          <div class="report-link-grid">
+            <a class="report-link-card" href="{% url 'sponsor_child_payment_report' %}">
+              <i class="fas fa-child"></i>
+              <span>
+                <strong>Child Payment Report</strong>
+                <span>Validated payments for children you sponsor.</span>
+              </span>
+              <i class="fas fa-chevron-right"></i>
+            </a>
+            <a class="report-link-card" href="{% url 'sponsor_staff_payment_report' %}">
+              <i class="fas fa-user-tie"></i>
+              <span>
+                <strong>Staff Payment Report</strong>
+                <span>Validated payments for staff you sponsor.</span>
+              </span>
+              <i class="fas fa-chevron-right"></i>
+            </a>
+          </div>
+        </section>
+
+        <section class="portal-panel">
+          <div class="portal-panel-head">
+            <h2>Recommended Actions</h2>
+          </div>
+          <ul class="recommendation-list">
+            <li>Review your active child and staff sponsorship records regularly.</li>
+            <li>Contact the sponsorship office if your phone, email, or address changes.</li>
+            <li>Use payment records as your confirmation history after staff validation.</li>
+          </ul>
+        </section>
+      </aside>
+    </section>
+  </div>
+</main>
+{% endblock content %}

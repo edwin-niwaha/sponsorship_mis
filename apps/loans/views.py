@@ -6,16 +6,18 @@ import pytz
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import Count, Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from django.utils.html import strip_tags
 from openpyxl import load_workbook
 
@@ -28,12 +30,16 @@ from apps.users.decorators import (
 
 from .forms import (
     ChartOfAccountsForm,
+    ClientSelfServiceLoanApplicationForm,
     ImportCOAForm,
     ImportLoansForm,
     LoanAllDisbursementForm,
     LoanApplicationForm,
+    LoanApplicationDocumentForm,
+    LoanApplicationUpdateForm,
     LoanDisbursementForm,
     LoanPenaltyForm,
+    LoanReportFilterForm,
     LoanRepaymentForm,
 )
 from .models import (
@@ -43,6 +49,17 @@ from .models import (
     LoanRepayment,
     TransactionHistory,
 )
+from .services.reporting import (
+    ReportColumn,
+    export_rows_csv,
+    filtered_loans,
+    loan_financial_row,
+    paginate_rows,
+    parse_report_filters,
+    repayment_rows,
+    summarize_amounts,
+)
+from .tasks import send_loan_application_email_task, send_loan_approval_notification_task
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +90,19 @@ def paginate_queryset(queryset, page_number, per_page=50):
         return paginator.page(paginator.num_pages)
 
 
+def loan_queryset_report_summary(queryset):
+    """Small report totals for loan list pages without relying on DB-only properties."""
+    loans = list(queryset)
+    total_principal = sum((loan.principal_amount or Decimal("0.00")) for loan in loans)
+    total_interest = sum((loan.total_interest or Decimal("0.00")) for loan in loans)
+    return {
+        "loan_count": len(loans),
+        "total_principal": total_principal,
+        "total_interest": total_interest,
+        "total_exposure": total_principal + total_interest,
+    }
+
+
 def _is_ajax(request):
     return request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
@@ -85,6 +115,28 @@ def _json_or_message(request, success, message, status=200, redirect_url=None):
     fn  = messages.success if success else messages.error
     fn(request, message, extra_tags=tag)
     return None   # caller should redirect
+
+
+def _get_self_service_client(user):
+    profile = getattr(user, "profile", None)
+    if profile and profile.client_id:
+        return profile.client
+    email = (getattr(user, "email", "") or "").strip()
+    if not email:
+        return None
+    return Client.objects.filter(email__iexact=email).exclude(email="no-email@example.com").first()
+
+
+def _self_service_loan_queryset(user):
+    client = _get_self_service_client(user)
+    if client is None:
+        return Loan.objects.none(), None
+    return (
+        Loan.objects.filter(borrower=client)
+        .select_related("borrower", "applied_by")
+        .prefetch_related("documents", "repayments", "disbursements")
+        .order_by("-created_at", "-id")
+    ), client
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -329,12 +381,42 @@ def send_email_to_boo_and_hof(loan: Loan):
 @login_required
 @admin_or_manager_or_staff_required
 def loan_applications_view(request):
-    search_query = request.GET.get("search", "")
-    qs = get_loan_queryset(search_query).filter(
-        status__in=["pending", "boo_approved", "hof_approved"]
+    search_query = request.GET.get("search", "").strip()
+    status_filter = request.GET.get("status", "").strip()
+    sort_by = request.GET.get("sort", "-created_at").strip()
+    allowed_statuses = ["pending", "boo_approved", "hof_approved"]
+
+    qs = (
+        Loan.objects.select_related("borrower", "applied_by")
+        .filter(status__in=allowed_statuses)
     )
+
+    if search_query:
+        qs = qs.filter(
+            Q(id__icontains=search_query)
+            | Q(borrower__full_name__icontains=search_query)
+            | Q(borrower__reg_number__icontains=search_query)
+            | Q(borrower__mobile_telephone__icontains=search_query)
+            | Q(applied_by__username__icontains=search_query)
+        )
+
+    if status_filter in allowed_statuses:
+        qs = qs.filter(status=status_filter)
+
     if request.user.profile.role in ["staff", "guest"]:
         qs = qs.filter(applied_by=request.user)
+
+    if sort_by not in {"-created_at", "created_at", "-principal_amount", "principal_amount", "borrower__full_name"}:
+        sort_by = "-created_at"
+    qs = qs.order_by(sort_by, "-id")
+
+    summary_qs = qs
+    status_counts = {
+        "pending": summary_qs.filter(status="pending").count(),
+        "boo_approved": summary_qs.filter(status="boo_approved").count(),
+        "hof_approved": summary_qs.filter(status="hof_approved").count(),
+    }
+    total_principal = summary_qs.aggregate(total=Sum("principal_amount"))["total"] or Decimal("0.00")
 
     loans = paginate_queryset(qs, request.GET.get("page"))
     return render(request, "loans/loan_applications.html", {
@@ -342,6 +424,17 @@ def loan_applications_view(request):
         "page_obj": loans,
         "table_title": "Loan Applications",
         "search_query": search_query,
+        "status_filter": status_filter,
+        "status_counts": status_counts,
+        "total_applications": summary_qs.count(),
+        "total_principal": total_principal,
+        "sort_by": sort_by,
+        "status_choices": [
+            ("", "All workflow stages"),
+            ("pending", "Pending BOO review"),
+            ("boo_approved", "Pending HOF review"),
+            ("hof_approved", "Pending ED review"),
+        ],
     })
 
 
@@ -374,65 +467,51 @@ def loan_applications_all_view(request):
         "search_query": search_query,
         "current_sort": sort_by,
         "show_bad": show_bad,
+        "report_summary": loan_queryset_report_summary(qs),
     })
 
 
 @login_required
 def loan_apply(request):
-    form   = LoanApplicationForm(request.POST or None)
-    borrowers = Client.objects.all().order_by("id")
+    form = LoanApplicationForm(request.POST or None, user=request.user)
     user  = request.user
     role  = getattr(user.profile, "role", "guest")
 
     if request.method == "POST" and form.is_valid():
-        borrower_id = request.POST.get("id")
-        borrower    = get_object_or_404(Client, pk=borrower_id)
+        try:
+            with transaction.atomic():
+                application = form.save(commit=False)
+                application.applied_by = user
+                application.applied_by_role = role
+                application.created_by = user
+                application.save()
 
-        # Check for running loan with outstanding balance
-        has_balance = any(
-            sum(loan.calculate_remaining_balances().values()) > 0
-            for loan in Loan.objects.filter(
-                borrower=borrower, status__in=["disbursed", "overdue"]
-            )
-        )
-        if has_balance:
-            msg = (
-                f"{borrower} has an existing loan with an outstanding balance. "
-                "Please settle it before applying for a new loan."
-            )
-            resp = _json_or_message(request, False, msg, status=400)
+            borrower = application.borrower
+            client_name = borrower.get_full_name()
+
+            try:
+                send_loan_application_email_task.delay(
+                    recipient_name=user.username,
+                    recipient_email=user.email,
+                    application_id=application.id,
+                    client_name=client_name,
+                    is_applicant=True,
+                )
+                send_loan_application_email_task.delay(
+                    recipient_name="Loan Officer",
+                    recipient_email=settings.BOO_EMAIL,
+                    application_id=application.id,
+                    client_name=client_name,
+                    is_applicant=False,
+                )
+            except Exception:
+                logger.exception("Loan application %s was saved but notification queuing failed.", application.id)
+
+            resp = _json_or_message(request, True, "Loan application submitted successfully.")
             if resp:
                 return resp
-            return redirect("loans:apply_for_loan")
-
-        try:
-            application               = form.save(commit=False)
-            application.borrower      = borrower
-            application.disbursement_date = timezone.now().date()
-            application.applied_by    = user
-            application.applied_by_role = role
-            application.save()
-
-            client_name = getattr(borrower, "get_full_name", lambda: str(borrower))()
-
-            # Queue async emails (Celery task)
-            send_loan_application_email_task.delay(
-                recipient_name=user.username,
-                recipient_email=user.email,
-                application_id=application.id,
-                client_name=client_name,
-                is_applicant=True,
-            )
-            send_loan_application_email_task.delay(
-                recipient_name="Loan Officer",
-                recipient_email=settings.BOO_EMAIL,
-                application_id=application.id,
-                client_name=client_name,
-                is_applicant=False,
-            )
-
-            resp = _json_or_message(request, True, "Loan application submitted successfully!")
-            return resp or redirect("loans:apply_for_loan")
+            messages.success(request, "Loan application submitted successfully.", extra_tags="bg-success")
+            return redirect("loans:loan_applications")
 
         except ValidationError as e:
             logger.error("Validation error in loan_apply: %s", e)
@@ -452,18 +531,165 @@ def loan_apply(request):
         resp = _json_or_message(request, False, "Please correct the errors below.", status=400)
         if resp:
             return resp
+        messages.error(request, "Please correct the errors below.", extra_tags="bg-danger")
+
+    open_applications = Loan.objects.filter(status__in=["pending", "boo_approved", "hof_approved"]).count()
+    active_loans = Loan.objects.filter(status__in=Loan.ACTIVE_STATUSES).count()
+    clients = Client.objects.order_by("full_name", "reg_number")
 
     return render(request, "loans/apply_for_loan.html", {
         "form": form,
         "form_title": "Loan Application Form",
-        "borrowers": borrowers,
+        "clients": clients,
+        "selected_client_id": request.POST.get("client", ""),
+        "open_applications": open_applications,
+        "active_loans": active_loans,
+    })
+
+
+@login_required
+def client_loan_apply(request):
+    current_client = _get_self_service_client(request.user)
+    if current_client is None:
+        messages.error(
+            request,
+            "We could not match your account to a client record. Please contact staff or complete client registration.",
+            extra_tags="bg-danger",
+        )
+        return redirect("loans:client_loan_applications")
+
+    blocking_statuses = {"pending", "boo_approved", "hof_approved", "approved", *Loan.ACTIVE_STATUSES}
+    blocking_loan = (
+        Loan.objects.filter(borrower=current_client, status__in=blocking_statuses)
+        .order_by("-created_at")
+        .first()
+    )
+    open_applications = Loan.objects.filter(
+        borrower=current_client,
+        status__in=["pending", "boo_approved", "hof_approved", "approved"],
+    ).count()
+    active_loans = Loan.objects.filter(borrower=current_client, status__in=Loan.ACTIVE_STATUSES).count()
+
+    if blocking_loan is not None and request.method == "POST":
+        messages.error(
+            request,
+            "You already have a pending application or running loan. Please wait until it is completed before applying again.",
+            extra_tags="bg-danger",
+        )
+        return redirect("loans:client_loan_applications")
+
+    if request.method == "POST":
+        form = ClientSelfServiceLoanApplicationForm(request.POST)
+        document_form = LoanApplicationDocumentForm(request.POST, request.FILES)
+        if form.is_valid() and document_form.is_valid():
+            try:
+                with transaction.atomic():
+                    application = form.save(commit=False, borrower=current_client, user=request.user)
+                    application.save()
+                    document_form.save(application, uploaded_by=request.user)
+
+                try:
+                    send_loan_application_email_task.delay(
+                        recipient_name=request.user.get_full_name() or request.user.username,
+                        recipient_email=request.user.email,
+                        application_id=application.id,
+                        client_name=current_client.get_full_name(),
+                        is_applicant=True,
+                    )
+                    send_loan_application_email_task.delay(
+                        recipient_name="Loan Officer",
+                        recipient_email=settings.BOO_EMAIL,
+                        application_id=application.id,
+                        client_name=current_client.get_full_name(),
+                        is_applicant=False,
+                    )
+                except Exception:
+                    logger.exception(
+                        "Self-service loan application %s was saved but notification queuing failed.",
+                        application.id,
+                    )
+
+                messages.success(request, "Loan application submitted successfully.", extra_tags="bg-success")
+                return redirect("loans:client_loan_application_detail", loan_id=application.id)
+            except ValidationError as exc:
+                messages.error(request, str(exc), extra_tags="bg-danger")
+        else:
+            messages.error(request, "Please correct the errors below.", extra_tags="bg-danger")
+    else:
+        form = ClientSelfServiceLoanApplicationForm()
+        document_form = LoanApplicationDocumentForm()
+
+    return render(request, "loans/client_apply_for_loan.html", {
+        "form": form,
+        "document_form": document_form,
+        "form_title": "Apply for a Loan",
+        "client": current_client,
+        "open_applications": open_applications,
+        "active_loans": active_loans,
+        "blocking_loan": blocking_loan,
+    })
+
+
+@login_required
+def client_loan_applications(request):
+    qs, current_client = _self_service_loan_queryset(request.user)
+    if current_client is None:
+        messages.warning(
+            request,
+            "We could not match your account to a client record. Please contact staff or complete client registration.",
+            extra_tags="bg-warning",
+        )
+        loans = []
+    else:
+        loans = paginate_queryset(qs.annotate(document_count=Count("documents")), request.GET.get("page"), per_page=20)
+
+    return render(request, "loans/client_loan_applications.html", {
+        "client": current_client,
+        "loans": loans,
+        "page_obj": loans,
+        "form_title": "My Loan Applications",
+    })
+
+
+@login_required
+def client_loan_application_detail(request, loan_id):
+    qs, current_client = _self_service_loan_queryset(request.user)
+    if current_client is None:
+        messages.error(
+            request,
+            "We could not match your account to a client record. Please contact staff or complete client registration.",
+            extra_tags="bg-danger",
+        )
+        return redirect("loans:client_loan_applications")
+
+    loan = get_object_or_404(qs, id=loan_id)
+    repayments = loan.repayments.all()
+    totals = repayments.aggregate(
+        total_principal=Sum("principal_payment"),
+        total_interest=Sum("interest_payment"),
+        total_penalty=Sum("penalty_payment"),
+    )
+    balances = loan.calculate_remaining_balances()
+
+    return render(request, "loans/client_loan_application_detail.html", {
+        "client": current_client,
+        "loan": loan,
+        "documents": loan.documents.all(),
+        "repayments": repayments,
+        "remaining_principal": balances["principal_balance"],
+        "remaining_interest": balances["interest_balance"],
+        "remaining_penalty": balances["penalty_balance"],
+        "total_principal": totals["total_principal"] or Decimal("0.00"),
+        "total_interest": totals["total_interest"] or Decimal("0.00"),
+        "total_penalty": totals["total_penalty"] or Decimal("0.00"),
+        "form_title": f"Loan Application {loan.id}",
     })
 
 
 @admin_or_manager_required
 def update_loan(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
-    form = LoanApplicationForm(request.POST or None, instance=loan)
+    form = LoanApplicationUpdateForm(request.POST or None, instance=loan)
 
     if request.method == "POST":
         if form.is_valid():
@@ -551,6 +777,9 @@ def disbursed_loans_view(request):
         "table_title": "Disbursed Loans",
         "total_disbursed": total_disbursed,
         "total_interest_all": total_interest_all,
+        "total_recoverable": total_disbursed + total_interest_all,
+        "loan_count": qs.count(),
+        "search_query": request.GET.get("search", ""),
     })
 
 
@@ -564,6 +793,7 @@ def approved_loans_view(request):
         "loans": paginate_queryset(qs, request.GET.get("page")),
         "table_title": "Pending Loan Disbursements",
         "search_query": request.GET.get("search"),
+        "report_summary": loan_queryset_report_summary(qs),
     })
 
 
@@ -579,6 +809,7 @@ def rejected_loans_view(request):
         "loans": paginate_queryset(qs, request.GET.get("page")),
         "table_title": "Rejected Loans",
         "search_query": request.GET.get("search"),
+        "report_summary": loan_queryset_report_summary(qs),
     })
 
 
@@ -596,10 +827,12 @@ def disburse_loan(request):
         loan                      = form.cleaned_data["loan"]
         disbursement.loan         = loan
         disbursement_date         = form.cleaned_data.get("disbursement_date")
-        loan.disbursement_date    = disbursement_date
-        loan.status               = "disbursed"
-        loan.save()
-        disbursement.save()         # triggers _post_entries() in model
+        try:
+            loan.disburse(disbursement_date)
+            disbursement.save()         # triggers journal entries on insert
+        except ValidationError as exc:
+            messages.error(request, str(exc), extra_tags="bg-danger")
+            return redirect("loans:disburse_loan")
 
         messages.success(request, f"Loan ID {loan.id} disbursed successfully.", extra_tags="bg-success")
         return redirect("loans:disburse_loan")
@@ -638,7 +871,11 @@ def disburse_all_loans(request):
 
     form = LoanAllDisbursementForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        count = form.save(eligible)
+        try:
+            count = form.save(eligible)
+        except ValidationError as exc:
+            messages.error(request, str(exc), extra_tags="bg-danger")
+            return redirect("loans:disburse_all_loans")
         messages.success(request, f"{count} loans disbursed successfully.", extra_tags="bg-success")
         if ineligible:
             messages.warning(
@@ -673,10 +910,10 @@ _APPROVAL_TRANSITIONS = {
 def approve_loan(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
     user = request.user
-    role = user.profile.role
-    key  = (loan.status, role)
 
-    if key not in _APPROVAL_TRANSITIONS:
+    try:
+        new_status = loan.approve(user)
+    except ValidationError:
         messages.error(
             request,
             "You are not authorized to approve this loan at this stage.",
@@ -684,60 +921,25 @@ def approve_loan(request, loan_id):
         )
         return redirect("loans:loan_applications")
 
-    new_status, approved_by_field = _APPROVAL_TRANSITIONS[key]
-    loan.status = new_status
-    setattr(loan, approved_by_field, user)
-    if new_status == "approved":
-        loan.approved_date = timezone.now().date()
-    loan.save()
+    base_url = request.build_absolute_uri("/")
+    approver_name = user.get_full_name() or user.username
 
-    # Email notifications per stage
-    abs_url = request.build_absolute_uri
+    def queue_approval_notification():
+        try:
+            send_loan_approval_notification_task.delay(
+                loan.id,
+                new_status,
+                approver_name,
+                base_url,
+            )
+        except Exception:
+            logger.exception(
+                "Loan %s was approved as %s, but approval notification queuing failed.",
+                loan.id,
+                new_status,
+            )
 
-    if new_status == "boo_approved":
-        _send_html_email(
-            f"Loan {loan.id} Approved by BOO",
-            f"""<html><body style="font-family:Arial,sans-serif;background:#f4f4f9;padding:20px;">
-            <div style="max-width:600px;margin:0 auto;background:#fff;padding:30px;border-radius:8px;">
-            <h2 style="color:#2c3e50;text-align:center;">Loan Approval Notification</h2>
-            <p>Dear HOF,<br>Loan <strong>{loan.id}</strong> for <strong>{loan.borrower.full_name}</strong>
-            (UGX {loan.principal_amount:,.2f}) approved by <strong>{user.username}</strong>.
-            Please review for HOF approval.</p>
-            <p style="text-align:center;">
-                <a href="{abs_url('/loans/applications/')}" style="background:#4CAF50;color:#fff;padding:12px 20px;text-decoration:none;border-radius:5px;">Approve Loan</a>
-            </p></div></body></html>""",
-            to=[settings.HOF_EMAIL],
-        )
-
-    elif new_status == "hof_approved":
-        _send_html_email(
-            f"Loan {loan.id} Approved by HOF",
-            f"""<html><body style="font-family:Arial,sans-serif;background:#f4f4f9;padding:20px;">
-            <div style="max-width:600px;margin:0 auto;background:#fff;padding:30px;border-radius:8px;">
-            <h2 style="color:#2c3e50;text-align:center;">Loan Approval Notification</h2>
-            <p>Dear ED,<br>Loan <strong>{loan.id}</strong> for <strong>{loan.borrower.full_name}</strong>
-            (UGX {loan.principal_amount:,.2f}) approved by <strong>{user.username}</strong>.
-            Please review for ED approval.</p>
-            <p style="text-align:center;">
-                <a href="{abs_url('/loans/applications/')}" style="background:#4CAF50;color:#fff;padding:12px 20px;text-decoration:none;border-radius:5px;">Approve Loan</a>
-            </p></div></body></html>""",
-            to=[settings.ED_EMAIL],
-        )
-
-    elif new_status == "approved":
-        _send_html_email(
-            f"Loan {loan.id} Fully Approved by ED",
-            f"""<html><body style="font-family:Arial,sans-serif;background:#f4f4f9;padding:20px;">
-            <div style="max-width:600px;margin:0 auto;background:#fff;padding:30px;border-radius:8px;">
-            <h2 style="color:#2c3e50;text-align:center;">Loan Approval Notification</h2>
-            <p>Dear Team,<br>Loan <strong>{loan.id}</strong> for <strong>{loan.borrower.full_name}</strong>
-            (UGX {loan.principal_amount:,.2f}) fully approved by <strong>{user.username}</strong>.
-            Please proceed with disbursement.</p>
-            <p style="text-align:center;">
-                <a href="{abs_url('/loans/disburse/')}" style="background:#3498db;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;">Disburse the Loan</a>
-            </p></div></body></html>""",
-            to=[settings.BOO_EMAIL, settings.HOF_EMAIL, settings.ACCOUNTANT_EMAIL],
-        )
+    transaction.on_commit(queue_approval_notification)
 
     messages.success(request, f"Loan {loan.id} approved ({new_status}).", extra_tags="bg-success")
     return redirect("loans:loan_applications")
@@ -750,16 +952,16 @@ def approve_all_loans(request):
     role = user.profile.role
 
     stage_map = {
-        "boo": ("pending",      "boo_approved", "approved_by_boo"),
-        "hof": ("boo_approved", "hof_approved", "approved_by_hof"),
-        "ed":  ("hof_approved", "approved",     "approved_by_ed"),
+        "boo": "pending",
+        "hof": "boo_approved",
+        "ed": "hof_approved",
     }
 
     if role not in stage_map:
         messages.error(request, "You are not authorized.", extra_tags="bg-danger")
         return redirect("loans:loan_applications")
 
-    pending_status, new_status, field = stage_map[role]
+    pending_status = stage_map[role]
     pending_loans = Loan.objects.filter(status=pending_status)
 
     if not pending_loans.exists():
@@ -771,11 +973,7 @@ def approve_all_loans(request):
         return redirect("loans:loan_applications")
 
     for loan in pending_loans:
-        loan.status = new_status
-        setattr(loan, field, user)
-        if role == "ed":
-            loan.approved_date = timezone.now().date()
-        loan.save()
+        loan.approve(user)
 
     messages.success(request, f"All {pending_status} loans approved.", extra_tags="bg-success")
     return redirect("loans:loan_applications")
@@ -795,6 +993,7 @@ def reject_loan(request, loan_id):
         return redirect("loans:loan_applications")
 
     rejection_map = {
+        "pending": "rejected",
         "boo_approved": "hof_rejected",
         "hof_approved": "ed_rejected",
     }
@@ -807,9 +1006,15 @@ def reject_loan(request, loan_id):
         )
         return redirect("loans:loan_applications")
 
-    loan.status               = rejection_map[loan.status]
-    loan.reason_for_rejection = "Please review this loan"
-    loan.save()
+    try:
+        loan.reject()
+    except ValidationError:
+        messages.error(
+            request,
+            f"Loan {loan.id} cannot be rejected at status '{loan.status}'.",
+            extra_tags="bg-warning",
+        )
+        return redirect("loans:loan_applications")
 
     if loan.status == "hof_rejected":
         send_email_to_boo(loan)
@@ -921,7 +1126,7 @@ def loan_penalty_create_view(request):
 @admin_or_manager_or_staff_required
 def loan_detail_view(request, loan_id):
     loan      = get_object_or_404(
-        Loan.objects.select_related("borrower", "account").prefetch_related("repayments"),
+        Loan.objects.select_related("borrower", "account").prefetch_related("repayments", "documents"),
         id=loan_id,
     )
     balances  = loan.calculate_remaining_balances()
@@ -937,6 +1142,7 @@ def loan_detail_view(request, loan_id):
         "remaining_principal": balances["principal_balance"],
         "remaining_interest":  balances["interest_balance"],
         "remaining_penalty":   balances["penalty_balance"],
+        "documents":           loan.documents.all(),
         "repayments":          repayments,
         "borrower_name":       loan.borrower.full_name,
         "total_principal":     totals["total_principal"] or 0,
@@ -1192,6 +1398,8 @@ def ledger_report_view(request):
         "total_debits":      total_debits,
         "total_credits":     total_credits,
         "opening_balance":   opening_balance,
+        "closing_balance":   opening_balance + total_debits - total_credits,
+        "transaction_count": len(ledger_data),
     })
 
 
@@ -1201,14 +1409,12 @@ def loan_aging_report(request):
     today = timezone.now().date()
 
     bucket_keys = [
-        "Current 0-Days (Performing)",
-        "1-30 Days (Watch)",
-        "31-60 Days (SUBSTANDARD)",
-        "61-90 Days (SUBSTANDARD)",
-        "91-120 Days (DOUBTFUL)",
-        "121-180 Days (DOUBTFUL)",
-        "181-365 Days (LOSS)",
-        "Over 365 Days (LOSS)",
+        "Current",
+        "1-30 days overdue",
+        "31-60 days overdue",
+        "61-90 days overdue",
+        "91-180 days overdue",
+        "Over 180 days overdue",
     ]
     aging_buckets = {k: [] for k in bucket_keys}
     zero_totals   = lambda: {
@@ -1245,6 +1451,7 @@ def loan_aging_report(request):
                 total_interest =Sum("interest_payment"),
                 total_penalty  =Sum("penalty_payment"),
             )
+            last_repayment = loan.repayments.order_by("-repayment_date").first()
             total_paid_all = (
                 (paid_all["total_principal"] or Decimal("0.00"))
                 + (paid_all["total_interest"]  or Decimal("0.00"))
@@ -1268,23 +1475,25 @@ def loan_aging_report(request):
                 "total_due_by_today":    aging["total_due_by_today"],
                 "total_paid_pi":         aging["total_paid_pi"],
                 "shortfall":             aging["shortfall"],
+                "overdue_amount":        aging["shortfall"],
                 "principal_due":         balances["principal_balance"],
                 "interest_due":          balances["interest_balance"],
                 "penalty_due":           balances["penalty_balance"],
                 "outstanding_balance":   outstanding,
                 "total_paid":            total_paid_all,
+                "last_repayment_date":   last_repayment.repayment_date if last_repayment else None,
+                "loan_product":          loan.get_loan_purpose_display(),
                 "status":                loan.status,
             }
 
             d = aging["days_overdue"]
-            if   d == 0:          bucket_key = "Current 0-Days (Performing)"
-            elif d <= 30:         bucket_key = "1-30 Days (Watch)"
-            elif d <= 60:         bucket_key = "31-60 Days (SUBSTANDARD)"
-            elif d <= 90:         bucket_key = "61-90 Days (SUBSTANDARD)"
-            elif d <= 120:        bucket_key = "91-120 Days (DOUBTFUL)"
-            elif d <= 180:        bucket_key = "121-180 Days (DOUBTFUL)"
-            elif d <= 365:        bucket_key = "181-365 Days (LOSS)"
-            else:                 bucket_key = "Over 365 Days (LOSS)"
+            if   d == 0:          bucket_key = "Current"
+            elif d <= 30:         bucket_key = "1-30 days overdue"
+            elif d <= 60:         bucket_key = "31-60 days overdue"
+            elif d <= 90:         bucket_key = "61-90 days overdue"
+            elif d <= 180:        bucket_key = "91-180 days overdue"
+            else:                 bucket_key = "Over 180 days overdue"
+            loan_info["aging_bucket"] = bucket_key
 
             aging_buckets[bucket_key].append(loan_info)
             bt = bucket_totals[bucket_key]
@@ -1886,3 +2095,456 @@ def loan_reports_dashboard(request):
     return render(request, "loans/loan_reports.html", {
         "form_title": "Loan Management Dashboard",
     })
+
+
+STANDARD_LOAN_COLUMNS = [
+    ReportColumn("loan_id", "Loan No."),
+    ReportColumn("client", "Client"),
+    ReportColumn("loan_product", "Product"),
+    ReportColumn("loan_officer", "Loan Officer"),
+    ReportColumn("status", "Status"),
+    ReportColumn("disbursement_date", "Disbursed"),
+    ReportColumn("maturity_date", "Maturity"),
+    ReportColumn("principal", "Principal", "right", True),
+    ReportColumn("interest", "Interest", "right", True),
+    ReportColumn("paid_amount", "Paid", "right", True),
+    ReportColumn("outstanding_principal", "Principal Bal.", "right", True),
+    ReportColumn("outstanding_interest", "Interest Bal.", "right", True),
+    ReportColumn("outstanding_penalties", "Penalties/Fees", "right", True),
+    ReportColumn("outstanding_amount", "Outstanding", "right", True),
+    ReportColumn("overdue_amount", "Overdue", "right", True),
+    ReportColumn("days_in_arrears", "Days Arrears", "right"),
+    ReportColumn("aging_bucket", "Aging Bucket"),
+]
+
+AGING_COLUMNS = [
+    ReportColumn("client", "Client"),
+    ReportColumn("loan_id", "Loan No."),
+    ReportColumn("loan_product", "Product"),
+    ReportColumn("loan_officer", "Officer"),
+    ReportColumn("disbursement_date", "Disbursed"),
+    ReportColumn("maturity_date", "Maturity"),
+    ReportColumn("outstanding_principal", "Principal Bal.", "right", True),
+    ReportColumn("outstanding_interest", "Interest Bal.", "right", True),
+    ReportColumn("outstanding_penalties", "Penalties/Fees", "right", True),
+    ReportColumn("outstanding_amount", "Total Outstanding", "right", True),
+    ReportColumn("overdue_amount", "Overdue", "right", True),
+    ReportColumn("days_in_arrears", "Days Arrears", "right"),
+    ReportColumn("aging_bucket", "Aging Bucket"),
+    ReportColumn("last_repayment_date", "Last Payment"),
+]
+
+COLLECTION_COLUMNS = [
+    ReportColumn("repayment_date", "Date"),
+    ReportColumn("loan_id", "Loan No."),
+    ReportColumn("client", "Client"),
+    ReportColumn("principal", "Principal", "right", True),
+    ReportColumn("interest", "Interest", "right", True),
+    ReportColumn("fees", "Fees", "right", True),
+    ReportColumn("penalties", "Penalties", "right", True),
+    ReportColumn("paid_amount", "Total Paid", "right", True),
+    ReportColumn("account", "Account"),
+    ReportColumn("description", "Description"),
+]
+
+PAR_COLUMNS = [
+    ReportColumn("bucket", "Risk Band"),
+    ReportColumn("loan_count", "Loans", "right"),
+    ReportColumn("outstanding_amount", "Outstanding", "right", True),
+    ReportColumn("portfolio_percent", "% of Portfolio", "right"),
+]
+
+DUE_OVERDUE_COLUMNS = [
+    ReportColumn("category", "Category"),
+    ReportColumn("client", "Client"),
+    ReportColumn("loan_id", "Loan No."),
+    ReportColumn("loan_product", "Product"),
+    ReportColumn("loan_officer", "Officer"),
+    ReportColumn("disbursement_date", "Disbursed"),
+    ReportColumn("maturity_date", "Maturity"),
+    ReportColumn("expected_due", "Expected Due", "right", True),
+    ReportColumn("overdue_amount", "Due/Overdue", "right", True),
+    ReportColumn("outstanding_amount", "Outstanding", "right", True),
+    ReportColumn("days_in_arrears", "Days Arrears", "right"),
+    ReportColumn("aging_bucket", "Aging Bucket"),
+]
+
+PERFORMANCE_COLUMNS = [
+    ReportColumn("loan_officer", "Loan Officer"),
+    ReportColumn("loan_count", "Loans", "right"),
+    ReportColumn("principal", "Principal", "right", True),
+    ReportColumn("paid_amount", "Collected", "right", True),
+    ReportColumn("outstanding_amount", "Outstanding", "right", True),
+    ReportColumn("overdue_amount", "Overdue", "right", True),
+]
+
+LOAN_TOTAL_KEYS = [
+    "principal",
+    "interest",
+    "paid_amount",
+    "outstanding_principal",
+    "outstanding_interest",
+    "outstanding_penalties",
+    "outstanding_amount",
+    "overdue_amount",
+]
+
+COLLECTION_TOTAL_KEYS = ["principal", "interest", "fees", "penalties", "paid_amount"]
+
+
+def _loan_report_rows(filters, *, date_field="disbursement_date", statuses=None):
+    qs = filtered_loans(filters, date_field=date_field)
+    if statuses:
+        qs = qs.filter(status__in=statuses)
+    return [loan_financial_row(loan) for loan in qs]
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def loan_aging_report(request):
+    filters = parse_report_filters(request)
+    rows = [
+        row
+        for row in _loan_report_rows(filters, statuses=["disbursed", "overdue"])
+        if row["outstanding_amount"] > 0
+    ]
+    rows.sort(key=lambda item: (item["days_in_arrears"], item["client"]))
+    return _standard_report_response(
+        request,
+        "Loan Aging Report",
+        "loan_aging_report.csv",
+        AGING_COLUMNS,
+        rows,
+        LOAN_TOTAL_KEYS,
+        filters,
+    )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def loan_arrears_report(request):
+    filters = parse_report_filters(request)
+    rows = [
+        row
+        for row in _loan_report_rows(filters, statuses=["disbursed", "overdue"])
+        if row["days_in_arrears"] > 0 and row["outstanding_amount"] > 0
+    ]
+    rows.sort(key=lambda item: (-item["days_in_arrears"], -item["outstanding_amount"]))
+    return _standard_report_response(
+        request,
+        "Loan Arrears Report",
+        "loan_arrears_report.csv",
+        AGING_COLUMNS,
+        rows,
+        LOAN_TOTAL_KEYS,
+        filters,
+    )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def loan_portfolio_report(request):
+    filters = parse_report_filters(request)
+    rows = [
+        row
+        for row in _loan_report_rows(filters)
+        if row["outstanding_amount"] > 0
+    ]
+    return _standard_report_response(
+        request,
+        "Loan Portfolio Summary",
+        "loan_portfolio_summary.csv",
+        STANDARD_LOAN_COLUMNS,
+        rows,
+        LOAN_TOTAL_KEYS,
+        filters,
+    )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def portfolio_at_risk(request):
+    filters = parse_report_filters(request)
+    portfolio_rows = [
+        row
+        for row in _loan_report_rows(filters, statuses=["disbursed", "overdue"])
+        if row["outstanding_amount"] > 0
+    ]
+    total_portfolio = sum((row["outstanding_amount"] for row in portfolio_rows), Decimal("0.00"))
+    bands = [
+        ("PAR > 1 day", 1),
+        ("PAR > 30 days", 30),
+        ("PAR > 60 days", 60),
+        ("PAR > 90 days", 90),
+        ("PAR > 120 days", 120),
+        ("PAR > 180 days", 180),
+    ]
+    rows = []
+    for label, threshold in bands:
+        affected = [row for row in portfolio_rows if row["days_in_arrears"] >= threshold]
+        outstanding = sum((row["outstanding_amount"] for row in affected), Decimal("0.00"))
+        percent = (outstanding / total_portfolio * Decimal("100")) if total_portfolio else Decimal("0.00")
+        rows.append({
+            "bucket": label,
+            "loan_count": len(affected),
+            "outstanding_amount": outstanding,
+            "portfolio_percent": f"{percent:.2f}%",
+        })
+    return _standard_report_response(
+        request,
+        "Portfolio at Risk Report",
+        "portfolio_at_risk_report.csv",
+        PAR_COLUMNS,
+        rows,
+        ["outstanding_amount"],
+        filters,
+    )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def non_performing_loans(request):
+    filters = parse_report_filters(request)
+    rows = [
+        row
+        for row in _loan_report_rows(filters, statuses=["disbursed", "overdue"])
+        if row["days_in_arrears"] >= 90 and row["outstanding_amount"] > 0
+    ]
+    rows.sort(key=lambda item: (-item["days_in_arrears"], -item["outstanding_amount"]))
+    return _standard_report_response(
+        request,
+        "Non-Performing Loans Report",
+        "non_performing_loans_report.csv",
+        AGING_COLUMNS,
+        rows,
+        LOAN_TOTAL_KEYS,
+        filters,
+    )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def loan_due_overdue_report(request):
+    filters = parse_report_filters(request)
+    selected_date = parse_date(request.GET.get("date") or "") or timezone.localdate()
+    rows = []
+    for row in _loan_report_rows(filters, statuses=["disbursed", "overdue"]):
+        if row["outstanding_amount"] <= 0:
+            continue
+        category = "Current"
+        if row["days_in_arrears"] > 0:
+            category = "In arrears"
+        if row["maturity_date"] and row["maturity_date"] < selected_date and row["outstanding_amount"] > 0:
+            category = "Past maturity"
+        if row["expected_due"] > 0 and row["days_in_arrears"] == 0:
+            category = "Due"
+        rows.append({**row, "category": category})
+    rows.sort(key=lambda item: (item["category"], -item["days_in_arrears"], item["client"]))
+    return _standard_report_response(
+        request,
+        "Due, Arrears And Past Maturity Report",
+        "due_arrears_past_maturity_report.csv",
+        DUE_OVERDUE_COLUMNS,
+        rows,
+        ["expected_due", "overdue_amount", "outstanding_amount"],
+        filters,
+    )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def loan_disbursement_report(request):
+    filters = parse_report_filters(request)
+    rows = [
+        loan_financial_row(loan)
+        for loan in filtered_loans(filters).filter(disbursement_date__isnull=False)
+    ]
+    return _standard_report_response(
+        request,
+        "Loan Disbursement Report",
+        "loan_disbursement_report.csv",
+        STANDARD_LOAN_COLUMNS,
+        rows,
+        LOAN_TOTAL_KEYS,
+        filters,
+    )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def loan_collection_report(request):
+    filters = parse_report_filters(request)
+    rows = repayment_rows(filters)
+    return _standard_report_response(
+        request,
+        "Loan Collection Report",
+        "loan_collection_report.csv",
+        COLLECTION_COLUMNS,
+        rows,
+        COLLECTION_TOTAL_KEYS,
+        filters,
+    )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def outstanding_loan_balances_report(request):
+    filters = parse_report_filters(request)
+    rows = [
+        row
+        for row in (loan_financial_row(loan) for loan in filtered_loans(filters))
+        if row["outstanding_amount"] > 0
+    ]
+    return _standard_report_response(
+        request,
+        "Outstanding Loan Balances Report",
+        "outstanding_loan_balances_report.csv",
+        STANDARD_LOAN_COLUMNS,
+        rows,
+        LOAN_TOTAL_KEYS,
+        filters,
+    )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def defaulted_loans_report(request):
+    filters = parse_report_filters(request)
+    rows = [
+        row
+        for row in (loan_financial_row(loan) for loan in filtered_loans(filters))
+        if row["days_in_arrears"] > 90 and row["outstanding_amount"] > 0
+    ]
+    return _standard_report_response(
+        request,
+        "Defaulted Loans Report",
+        "defaulted_loans_report.csv",
+        STANDARD_LOAN_COLUMNS,
+        rows,
+        LOAN_TOTAL_KEYS,
+        filters,
+    )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def closed_loans_report(request):
+    filters = parse_report_filters(request)
+    rows = [
+        loan_financial_row(loan)
+        for loan in filtered_loans(filters, date_field="updated_at").filter(status__in=["closed", "repaid"])
+    ]
+    return _standard_report_response(
+        request,
+        "Closed Loans Report",
+        "closed_loans_report.csv",
+        STANDARD_LOAN_COLUMNS,
+        rows,
+        LOAN_TOTAL_KEYS,
+        filters,
+    )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def loan_officer_performance_report(request):
+    filters = parse_report_filters(request)
+    rows = []
+    grouped = {}
+    for loan in filtered_loans(filters):
+        row = loan_financial_row(loan)
+        officer = row["loan_officer"]
+        grouped.setdefault(officer, {
+            "loan_officer": officer,
+            "loan_count": 0,
+            "principal": Decimal("0.00"),
+            "paid_amount": Decimal("0.00"),
+            "outstanding_amount": Decimal("0.00"),
+            "overdue_amount": Decimal("0.00"),
+        })
+        grouped[officer]["loan_count"] += 1
+        for key in ["principal", "paid_amount", "outstanding_amount", "overdue_amount"]:
+            grouped[officer][key] += row[key]
+    rows = sorted(grouped.values(), key=lambda item: item["loan_officer"])
+    return _standard_report_response(
+        request,
+        "Loan Officer Performance Report",
+        "loan_officer_performance_report.csv",
+        PERFORMANCE_COLUMNS,
+        rows,
+        ["principal", "paid_amount", "outstanding_amount", "overdue_amount"],
+        filters,
+    )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def loan_product_performance_report(request):
+    filters = parse_report_filters(request)
+    grouped = {}
+    for loan in filtered_loans(filters):
+        row = loan_financial_row(loan)
+        product = row["loan_product"]
+        grouped.setdefault(product, {
+            "loan_product": product,
+            "loan_count": 0,
+            "principal": Decimal("0.00"),
+            "paid_amount": Decimal("0.00"),
+            "outstanding_amount": Decimal("0.00"),
+            "overdue_amount": Decimal("0.00"),
+        })
+        grouped[product]["loan_count"] += 1
+        for key in ["principal", "paid_amount", "outstanding_amount", "overdue_amount"]:
+            grouped[product][key] += row[key]
+    rows = sorted(grouped.values(), key=lambda item: item["loan_product"])
+    columns = [
+        ReportColumn("loan_product", "Loan Product"),
+        ReportColumn("loan_count", "Loans", "right"),
+        ReportColumn("principal", "Principal", "right", True),
+        ReportColumn("paid_amount", "Collected", "right", True),
+        ReportColumn("outstanding_amount", "Outstanding", "right", True),
+        ReportColumn("overdue_amount", "Overdue", "right", True),
+    ]
+    return _standard_report_response(
+        request,
+        "Loan Product Performance Report",
+        "loan_product_performance_report.csv",
+        columns,
+        rows,
+        ["principal", "paid_amount", "outstanding_amount", "overdue_amount"],
+        filters,
+    )
+
+
+def _standard_report_response(request, title, csv_filename, columns, rows, total_keys, filters):
+    if filters.get("export") == "csv":
+        return export_rows_csv(csv_filename, columns, rows)
+
+    page_obj = paginate_rows(rows, request.GET.get("page"), filters.get("per_page", 50))
+    filter_form = LoanReportFilterForm(request.GET or None)
+    filter_form.is_valid()
+
+    return render(request, "loans/standard_report.html", {
+        "organization_name": "Pendeza Uganda",
+        "table_title": title,
+        "columns": columns,
+        "rows": list(page_obj.object_list),
+        "all_rows": rows,
+        "page_obj": page_obj,
+        "totals": summarize_amounts(rows, total_keys),
+        "total_keys": set(total_keys),
+        "filters": filters,
+        "filter_form": filter_form,
+        "generated_at": timezone.now(),
+        "status_choices": Loan.STATUS_CHOICES,
+        "loan_product_choices": Loan.LOAN_PURPOSE_CHOICES,
+        "clients": Client.objects.order_by("full_name"),
+        "loan_officers": User.objects.filter(applied_loans__isnull=False).distinct().order_by("username"),
+        "csv_url": _csv_url(request),
+    })
+
+
+def _csv_url(request):
+    params = request.GET.copy()
+    params["export"] = "csv"
+    return f"{request.path}?{params.urlencode()}"

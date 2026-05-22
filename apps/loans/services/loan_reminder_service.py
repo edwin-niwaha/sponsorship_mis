@@ -1,109 +1,113 @@
 from datetime import date
 from decimal import Decimal
-from typing import Optional, Dict
-
-from django.utils import timezone
+from typing import Dict, Optional
 
 from apps.loans.models import Loan
 
 
 class LoanReminderService:
+    """
+    Builds borrower-facing reminder data for active SACCO loans.
 
-    def __init__(self, loan: Loan, today: date, pre_due_days: int = 3):
+    The service intentionally returns only actionable values needed by email,
+    while the model remains the source of truth for balances and schedules.
+    """
+
+    def __init__(self, loan: Loan, today: date, pre_due_days: int = 7):
         self.loan = loan
         self.today = today
         self.pre_due_days = pre_due_days
 
     def get_info(self) -> Optional[Dict]:
-        """
-        Determines reminder category and computes accurate financial values.
-        """
-
-        if self.loan.status not in ["disbursed", "overdue"]:
+        if not self.loan.is_active_for_reporting():
             return None
 
-        if not self.loan.disbursement_date:
-            return None
-
-        balances = self.loan.calculate_remaining_balances()
-        total_outstanding = sum(balances.values())
+        balances = self.loan.report_balances()
+        total_outstanding = balances["total_outstanding"]
 
         if total_outstanding <= Decimal("0.00"):
             return None
 
         schedule = self.loan.generate_payment_schedule()
+        if not schedule:
+            return None
 
-        # PRE-DUE
-        upcoming = [
-            p for p in schedule
-            if p["payment_due_date"] > self.today
-            and 0 < (p["payment_due_date"] - self.today).days <= self.pre_due_days
-        ]
-
-        if upcoming:
-            next_payment = min(upcoming, key=lambda x: x["payment_due_date"])
-            return {
-                "category": "pre_due",
-                "days_until": (next_payment["payment_due_date"] - self.today).days,
-                "next_due_date": next_payment["payment_due_date"],
-                "amount_upcoming": next_payment["total_payment"],
-                **balances,
-                "total_outstanding": total_outstanding,
-            }
-
-        # DUE TODAY
         today_installments = [
-            p for p in schedule
-            if p["payment_due_date"] == self.today
+            payment
+            for payment in schedule
+            if payment["payment_due_date"] == self.today
         ]
 
         if today_installments:
-            expected = sum(p["total_payment"] for p in today_installments)
-            real_due = self.loan.calculate_total_amount_due_balance(
+            expected = sum(payment["total_payment"] for payment in today_installments)
+            amount_due = self.loan.calculate_total_amount_due_balance(
                 self.today,
-                expected
+                expected,
             )
-
-            if real_due > 0:
+            if amount_due > 0:
                 return {
                     "category": "due_today",
-                    "amount_due_today": real_due,
+                    "notice_title": "Payment due today",
+                    "action_label": "Amount due today",
+                    "action_amount": min(amount_due, total_outstanding),
+                    "payment_due_date": self.today,
                     **balances,
-                    "total_outstanding": total_outstanding,
                 }
 
-        # OVERDUE
+        upcoming = [
+            payment
+            for payment in schedule
+            if payment["payment_due_date"] > self.today
+            and 0 < (payment["payment_due_date"] - self.today).days <= self.pre_due_days
+        ]
+
+        if upcoming:
+            next_payment = min(upcoming, key=lambda payment: payment["payment_due_date"])
+            return {
+                "category": "pre_due",
+                "notice_title": "Upcoming loan payment",
+                "action_label": "Next installment",
+                "action_amount": min(next_payment["total_payment"], total_outstanding),
+                "days_until": (next_payment["payment_due_date"] - self.today).days,
+                "payment_due_date": next_payment["payment_due_date"],
+                **balances,
+            }
+
         missed = [
-            p for p in schedule
-            if p["payment_due_date"] < self.today
+            payment
+            for payment in schedule
+            if payment["payment_due_date"] < self.today
         ]
 
         if missed:
-            earliest = min(p["payment_due_date"] for p in missed)
-            expected_overdue = sum(p["total_payment"] for p in missed)
+            earliest = min(payment["payment_due_date"] for payment in missed)
+            expected_overdue = sum(payment["total_payment"] for payment in missed)
 
-            real_overdue = self.loan.calculate_total_amount_due_balance(
+            amount_overdue = self.loan.calculate_total_amount_due_balance(
                 self.today,
-                expected_overdue
+                expected_overdue,
             )
 
-            if real_overdue > 0:
+            if amount_overdue > 0:
                 return {
                     "category": "overdue",
+                    "notice_title": "Overdue loan payment",
+                    "action_label": "Overdue amount",
+                    "action_amount": min(amount_overdue, total_outstanding),
                     "days_overdue": (self.today - earliest).days,
-                    "amount_overdue": real_overdue,
+                    "payment_due_date": earliest,
                     **balances,
-                    "total_outstanding": total_outstanding,
                 }
 
-        # Maturity overdue
         if self.loan.due_date and self.loan.due_date < self.today:
             return {
                 "category": "overdue",
+                "notice_title": "Overdue loan payment",
+                "action_label": "Outstanding balance",
+                "action_amount": total_outstanding,
                 "days_overdue": (self.today - self.loan.due_date).days,
-                "amount_overdue": total_outstanding,
+                "payment_due_date": self.loan.due_date,
                 **balances,
-                "total_outstanding": total_outstanding,
             }
 
         return None

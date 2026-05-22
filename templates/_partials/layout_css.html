@@ -1,0 +1,121 @@
+<style>
+  :root {
+    --app-header-height: 60px;
+    --app-public-header-height: 74px;
+    --app-bg: #f5f7fa;
+    --app-surface: #ffffff;
+    --app-border: #d9dee5;
+    --app-ink: #1f2933;
+    --app-muted: #667085;
+  }
+
+  html {
+    scroll-padding-top: calc(var(--app-header-height) + 16px);
+  }
+
+  body {
+    background: var(--app-bg);
+    color: var(--app-ink);
+  }
+
+  body.app-dashboard-shell .page-body-wrapper {
+    min-height: 100vh;
+    padding-top: var(--app-header-height);
+  }
+
+  body.app-dashboard-shell .navbar.fixed-top {
+    min-height: 56px;
+    background: var(--app-surface);
+    border-bottom: 1px solid var(--app-border);
+    box-shadow: 0 8px 22px rgba(31, 41, 51, 0.08);
+    z-index: 1030;
+  }
+
+  body.app-dashboard-shell .navbar-menu-wrapper {
+    min-height: 56px;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  body.app-dashboard-shell .main-panel {
+    min-height: calc(100vh - var(--app-header-height));
+  }
+
+  body.app-dashboard-shell .content-wrapper {
+    background: var(--app-bg);
+    padding-top: .65rem !important;
+  }
+
+  body.app-dashboard-shell .dropdown-menu,
+  body.app-public-shell .dropdown-menu {
+    border: 1px solid var(--app-border);
+    border-radius: 6px;
+    box-shadow: 0 16px 36px rgba(31, 41, 51, 0.14);
+  }
+
+  body.app-public-shell {
+    padding-top: var(--app-public-header-height);
+  }
+
+  body.app-public-shell .navbar.fixed-top {
+    min-height: 64px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 22px rgba(31, 41, 51, 0.16);
+    z-index: 1030;
+  }
+
+  body.app-public-shell .content-wrapper,
+  body.app-public-shell .public-content-shell {
+    padding-top: 1rem;
+  }
+
+  .app-page-container {
+    width: 100%;
+  }
+
+  .navbar .nav-link,
+  .navbar .dropdown-item {
+    letter-spacing: 0;
+  }
+
+  @media (max-width: 991.98px) {
+    :root {
+      --app-header-height: 58px;
+      --app-public-header-height: 68px;
+    }
+
+    body.app-dashboard-shell .navbar-menu-wrapper {
+      padding-left: .75rem;
+      padding-right: .75rem;
+    }
+
+    body.app-dashboard-shell .content-wrapper {
+      padding-left: .875rem;
+      padding-right: .875rem;
+    }
+  }
+
+  @media print {
+    body.app-dashboard-shell,
+    body.app-public-shell {
+      background: #fff;
+      padding-top: 0;
+    }
+
+    body.app-dashboard-shell .page-body-wrapper {
+      padding-top: 0;
+    }
+
+    .navbar,
+    .sidebar,
+    .print-hide {
+      display: none !important;
+    }
+
+    body.app-dashboard-shell .content-wrapper,
+    body.app-public-shell .content-wrapper,
+    body.app-public-shell .public-content-shell {
+      padding: 0 !important;
+    }
+  }
+</style>

@@ -2,15 +2,26 @@ name: Send Loan Notifications
 
 on:
   schedule:
-    - cron: "0 5 * * *"
+    - cron: "0 5 * * 1,4" # 08:00 EAT every Monday and Thursday
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: send-loan-notifications
+  cancel-in-progress: false
+
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # Fix Node.js 24 deprecation warning
+  DEBUG: "False"
+  PYTHONUNBUFFERED: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   send_loan_notifications:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout Code
@@ -20,11 +31,75 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Validate required secrets
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+          BOO_EMAIL: ${{ secrets.BOO_EMAIL }}
+          HOF_EMAIL: ${{ secrets.HOF_EMAIL }}
+        run: |
+          missing=0
+          for name in SECRET_KEY DATABASE_URL EMAIL_HOST_USER EMAIL_HOST_PASSWORD BOO_EMAIL HOF_EMAIL; do
+            if [ -z "${!name}" ]; then
+              echo "::error title=Missing secret::$name is required for loan notifications"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Export database settings
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python - <<'PY'
+          import os
+          from urllib.parse import unquote, urlparse
+
+          url = os.environ["DATABASE_URL"]
+          parsed = urlparse(url)
+          if parsed.scheme not in {"postgres", "postgresql"}:
+              raise SystemExit("DATABASE_URL must use postgres:// or postgresql://")
+
+          values = {
+              "DB_NAME": parsed.path.lstrip("/"),
+              "DB_USER": unquote(parsed.username or ""),
+              "DB_PASSWORD": unquote(parsed.password or ""),
+              "DB_HOST": parsed.hostname or "",
+              "DB_PORT": str(parsed.port or 5432),
+          }
+
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
+              for key, value in values.items():
+                  if not value:
+                      raise SystemExit(f"DATABASE_URL did not provide {key}")
+                  env_file.write(f"{key}={value}\n")
+          PY
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python -m pip install -r requirements.txt
+
+      - name: Validate Django configuration
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BOO_EMAIL: ${{ secrets.BOO_EMAIL }}
+          HOF_EMAIL: ${{ secrets.HOF_EMAIL }}
+          PROGS_ADMIN_EMAIL: ${{ secrets.PROGS_ADMIN_EMAIL }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+        run: |
+          mkdir -p logs
+          python manage.py check
 
       - name: Run Loan Notifications Command
         env:
@@ -35,6 +110,17 @@ jobs:
           BOO_EMAIL: ${{ secrets.BOO_EMAIL }}
           HOF_EMAIL: ${{ secrets.HOF_EMAIL }}
           PROGS_ADMIN_EMAIL: ${{ secrets.PROGS_ADMIN_EMAIL }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
         run: |
-          python manage.py check          # validates Django config before running
-          python manage.py send_loan_notifications --verbosity=2
+          for attempt in 1 2 3; do
+            echo "Loan notification attempt ${attempt}/3"
+            if python manage.py send_loan_notifications --verbosity=2; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 30))
+            fi
+          done
+          exit 1

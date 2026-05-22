@@ -5,6 +5,18 @@ from . import views
 app_name = "loans"
 
 urlpatterns = [
+    # Client self-service URLs
+    path("self-service/apply/", views.client_loan_apply, name="client_loan_apply"),
+    path(
+        "self-service/applications/",
+        views.client_loan_applications,
+        name="client_loan_applications",
+    ),
+    path(
+        "self-service/applications/<int:loan_id>/",
+        views.client_loan_application_detail,
+        name="client_loan_application_detail",
+    ),
     # Loan application URLs
     path("apply/", views.loan_apply, name="apply_for_loan"),
     path("applications/", views.loan_applications_view, name="loan_applications"),
@@ -45,6 +57,13 @@ urlpatterns = [
     path("loan-aging-report/", views.loan_aging_report, name="loan_aging_report"),
     path("loan-arrears-report/", views.loan_arrears_report, name="loan-arrears-report"),
     path("loan-portfolio/", views.loan_portfolio_report, name="loan_portfolio_report"),
+    path("reports/disbursements/", views.loan_disbursement_report, name="loan_disbursement_report"),
+    path("reports/collections/", views.loan_collection_report, name="loan_collection_report"),
+    path("reports/outstanding-balances/", views.outstanding_loan_balances_report, name="outstanding_balances_report"),
+    path("reports/defaulted/", views.defaulted_loans_report, name="defaulted_loans_report"),
+    path("reports/closed/", views.closed_loans_report, name="closed_loans_report"),
+    path("reports/officer-performance/", views.loan_officer_performance_report, name="loan_officer_performance_report"),
+    path("reports/product-performance/", views.loan_product_performance_report, name="loan_product_performance_report"),
     path(
         "portfolio-at-risk/", views.portfolio_at_risk, name="portfolio_at_risk_report"
     ),

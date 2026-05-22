@@ -1,0 +1,108 @@
+{% extends "accounts/base.html" %}
+{% block title %}Verify Sign In{% endblock title %}
+{% block content %}
+  <style>
+    .verify-shell { max-width: 520px; margin: 32px auto; }
+    .verify-panel {
+      background: #fff;
+      border: 1px solid #d9dee5;
+      border-radius: 8px;
+      padding: 32px;
+    }
+    .verify-title {
+      color: #26384d;
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin-bottom: 8px;
+    }
+    .verify-sent-notice {
+      align-items: flex-start;
+      background: #edf7f4;
+      border: 1px solid #cfe8e0;
+      border-radius: 8px;
+      color: #123d35;
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding: 14px;
+    }
+    .verify-sent-icon {
+      align-items: center;
+      background: #13745d;
+      border-radius: 999px;
+      color: #fff;
+      display: inline-flex;
+      flex: 0 0 34px;
+      font-size: .95rem;
+      height: 34px;
+      justify-content: center;
+      width: 34px;
+    }
+    .verify-sent-notice strong {
+      display: block;
+      font-weight: 900;
+      margin-bottom: 2px;
+    }
+    .verify-sent-notice p {
+      color: #31564f;
+      font-size: .9rem;
+      margin: 0;
+    }
+    .verify-sent-email {
+      color: #0f513f;
+      font-weight: 900;
+      overflow-wrap: anywhere;
+    }
+  </style>
+
+  <main class="verify-shell">
+    <section class="verify-panel shadow-sm">
+      <div class="verify-sent-notice" role="status" aria-live="polite">
+        <span class="verify-sent-icon" aria-hidden="true"><i class="fas fa-check"></i></span>
+        <div>
+          <strong>Verification code sent</strong>
+          <p>
+            {% if verification_email %}
+              We sent a 6-digit sign-in code to <span class="verify-sent-email">{{ verification_email }}</span>.
+            {% else %}
+              We sent a 6-digit sign-in code to your email address.
+            {% endif %}
+            It expires in 10 minutes. Check your inbox or spam folder.
+          </p>
+        </div>
+      </div>
+
+      <div class="verify-title">Check your email</div>
+      <p class="text-muted mb-2">
+        {% if verification_email %}
+          Enter the 6-digit verification code we sent to your email:
+          <strong class="text-dark">{{ verification_email }}</strong>.
+        {% else %}
+          Enter the 6-digit verification code we sent to your email to finish signing in.
+        {% endif %}
+      </p>
+
+      {% if form.errors %}
+        <div class="alert alert-danger" role="alert">
+          {% for key, value in form.errors.items %}
+            <div>{{ value }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="small mb-1" for="{{ form.token.id_for_label }}">Verification code</label>
+          {{ form.token }}
+        </div>
+        <button class="btn btn-dark btn-block" type="submit">Verify and Sign In</button>
+      </form>
+
+      <div class="border-top mt-4 pt-3 small text-center">
+        <a href="{% url 'login' %}">Start again</a>
+      </div>
+    </section>
+  </main>
+{% endblock content %}

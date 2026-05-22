@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.management import call_command
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
+from django.db.models import Sum
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -20,6 +21,154 @@ from .forms import DonorForm, SponsorDepartForm, SponsorForm, SponsorUploadForm
 from .models import Donor, Sponsor, SponsorDeparture
 
 logger = logging.getLogger(__name__)
+
+
+def _get_request_sponsor(request):
+    profile = getattr(request.user, "profile", None)
+    sponsor = getattr(profile, "sponsor", None)
+    if sponsor is None and request.user.email:
+        sponsor = Sponsor.objects.filter(email__iexact=request.user.email).first()
+    return sponsor
+
+
+@login_required
+def sponsor_portal(request):
+    sponsor = _get_request_sponsor(request)
+
+    child_sponsorships = []
+    staff_sponsorships = []
+    active_child_count = 0
+    active_staff_count = 0
+    expected_amount = 0
+    child_payment_total = 0
+    staff_payment_total = 0
+    recent_child_payments = []
+    recent_staff_payments = []
+    if sponsor is not None:
+        from apps.finance.models import ChildPayments, StaffPayments
+        from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
+
+        child_sponsorships = (
+            ChildSponsorship.objects.select_related("child", "sponsor")
+            .filter(sponsor=sponsor)
+            .order_by("-is_active", "child__full_name")
+        )
+        staff_sponsorships = (
+            StaffSponsorship.objects.select_related("staff", "sponsor")
+            .filter(sponsor=sponsor)
+            .order_by("-is_active", "staff__first_name", "staff__last_name")
+        )
+        active_child_count = child_sponsorships.filter(is_active=True).count()
+        active_staff_count = staff_sponsorships.filter(is_active=True).count()
+        expected_amount = sponsor.expected_amt
+        child_payment_total = (
+            ChildPayments.objects.filter(sponsor=sponsor, is_valid=True).aggregate(
+                total=Sum("amount")
+            )["total"]
+            or 0
+        )
+        staff_payment_total = (
+            StaffPayments.objects.filter(sponsor=sponsor, is_valid=True).aggregate(
+                total=Sum("amount")
+            )["total"]
+            or 0
+        )
+        recent_child_payments = (
+            ChildPayments.objects.select_related("child")
+            .filter(sponsor=sponsor, is_valid=True)
+            .order_by("-payment_date", "-id")[:5]
+        )
+        recent_staff_payments = (
+            StaffPayments.objects.select_related("staff")
+            .filter(sponsor=sponsor, is_valid=True)
+            .order_by("-payment_date", "-id")[:5]
+        )
+
+    total_active_count = active_child_count + active_staff_count
+    total_payment_amount = child_payment_total + staff_payment_total
+
+    return render(
+        request,
+        "sponsor/sponsor_portal.html",
+        {
+            "sponsor": sponsor,
+            "child_sponsorships": child_sponsorships,
+            "staff_sponsorships": staff_sponsorships,
+            "active_child_count": active_child_count,
+            "active_staff_count": active_staff_count,
+            "active_count": total_active_count,
+            "expected_amount": expected_amount,
+            "child_payment_total": child_payment_total,
+            "staff_payment_total": staff_payment_total,
+            "total_payment_amount": total_payment_amount,
+            "recent_child_payments": recent_child_payments,
+            "recent_staff_payments": recent_staff_payments,
+        },
+    )
+
+
+def _sponsor_payment_report_context(sponsor, payment_model, beneficiary_type):
+    payments = payment_model.objects.none()
+    total_amount = 0
+    payment_count = 0
+    latest_payment = None
+    yearly_totals = []
+
+    if sponsor is not None:
+        payments = (
+            payment_model.objects.select_related(beneficiary_type, "sponsor")
+            .filter(sponsor=sponsor, is_valid=True)
+            .order_by("-payment_date", "-id")
+        )
+        total_amount = payments.aggregate(total=Sum("amount"))["total"] or 0
+        payment_count = payments.count()
+        latest_payment = payments.first()
+        yearly_totals = payments.values("payment_year").annotate(
+            total=Sum("amount")
+        ).order_by("-payment_year")
+
+    return {
+        "sponsor": sponsor,
+        "payments": payments,
+        "total_amount": total_amount,
+        "payment_count": payment_count,
+        "latest_payment": latest_payment,
+        "yearly_totals": yearly_totals,
+    }
+
+
+@login_required
+def sponsor_child_payment_report(request):
+    from apps.finance.models import ChildPayments
+
+    sponsor = _get_request_sponsor(request)
+    context = _sponsor_payment_report_context(sponsor, ChildPayments, "child")
+    context.update(
+        {
+            "report_title": "Child Sponsorship Payment Report",
+            "report_subtitle": "Validated child sponsorship payments linked to your sponsor account.",
+            "beneficiary_label": "Child",
+            "report_kind": "child",
+        }
+    )
+    return render(request, "sponsor/sponsor_payment_report.html", context)
+
+
+@login_required
+def sponsor_staff_payment_report(request):
+    from apps.finance.models import StaffPayments
+
+    sponsor = _get_request_sponsor(request)
+    context = _sponsor_payment_report_context(sponsor, StaffPayments, "staff")
+    context.update(
+        {
+            "report_title": "Staff Sponsorship Payment Report",
+            "report_subtitle": "Validated staff sponsorship payments linked to your sponsor account.",
+            "beneficiary_label": "Staff",
+            "report_kind": "staff",
+        }
+    )
+    return render(request, "sponsor/sponsor_payment_report.html", context)
 
 
 # =================================== Sponsors List ===================================

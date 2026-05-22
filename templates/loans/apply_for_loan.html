@@ -1,36 +1,375 @@
 {% extends '_partials/guest_base.html' %}
 {% load static %}
-{% load crispy_forms_tags %}
+{% load humanize %}
+
+{% block title %}Loan Application{% endblock %}
+
 {% block content %}
-  <!-- Loan Application Form -->
-  <div class="container mt-5 pt-5">
-    <div class="row mb-3">
-      <div class="col-md-10 d-flex justify-content-between align-items-center mx-auto">
-        <h2 class="text-center mb-4">{{ form_title|upper }}</h2>
-        <a href="{% url 'loans:loan_applications' %}" class="btn btn-info"><i class="mdi mdi-chart-bar"></i></a>
+  <style>
+    .loan-application-shell { max-width: 1220px; margin: 24px auto; padding: 0 14px; }
+    .loan-page-header {
+      background: #fff;
+      border: 1px solid #d9dee5;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .loan-page-title { color: #26384d; font-size: 1.45rem; font-weight: 800; margin: 0; letter-spacing: 0; }
+    .loan-page-subtitle { color: #667085; font-size: .88rem; margin-top: 4px; }
+    .loan-form-panel, .loan-side-panel {
+      background: #fff;
+      border: 1px solid #d9dee5;
+      border-radius: 6px;
+    }
+    .loan-form-panel { padding: 18px; }
+    .loan-side-panel { padding: 14px; }
+    .section-title {
+      color: #26384d;
+      font-size: .86rem;
+      font-weight: 800;
+      letter-spacing: .03em;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    .field-help { color: #667085; font-size: .78rem; margin-top: 4px; }
+    .metric-list { display: grid; gap: 8px; }
+    .metric-row {
+      border: 1px solid #e3e8ef;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 10px;
+    }
+    .metric-label { color: #667085; font-size: .76rem; font-weight: 700; text-transform: uppercase; }
+    .metric-value { color: #26384d; font-weight: 800; text-align: right; }
+    .workflow-step {
+      align-items: center;
+      border-bottom: 1px solid #edf1f5;
+      display: flex;
+      gap: 10px;
+      padding: 9px 0;
+    }
+    .workflow-step:last-child { border-bottom: 0; }
+    .step-number {
+      align-items: center;
+      background: #edf3f8;
+      border-radius: 50%;
+      color: #26384d;
+      display: inline-flex;
+      flex: 0 0 28px;
+      font-size: .78rem;
+      font-weight: 800;
+      height: 28px;
+      justify-content: center;
+      width: 28px;
+    }
+    .invalid-feedback.d-block ul { margin-bottom: 0; padding-left: 18px; }
+    .required-dot { color: #b42318; }
+    .form-control, .form-select, .chosen-container-single .chosen-single { border-radius: 6px; }
+    .loan-client-dropdown {
+      display: block !important;
+      min-height: 44px;
+      width: 100%;
+    }
+    .client-search-row {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      margin-bottom: 8px;
+    }
+    .client-result-count {
+      align-items: center;
+      border: 1px solid #d9dee5;
+      border-radius: 6px;
+      color: #667085;
+      display: inline-flex;
+      font-size: .78rem;
+      font-weight: 700;
+      padding: 0 10px;
+      white-space: nowrap;
+    }
+    @media (max-width: 768px) {
+      .loan-application-shell { margin: 12px auto; }
+      .loan-page-title { font-size: 1.22rem; }
+      .loan-form-panel { padding: 14px; }
+    }
+  </style>
+
+  <main class="loan-application-shell">
+    <header class="loan-page-header d-flex flex-wrap justify-content-between align-items-start gap-3">
+      <div>
+        <h1 class="loan-page-title">{{ form_title }}</h1>
+        <div class="loan-page-subtitle">Create a loan application for review and approval.</div>
       </div>
-    </div>
-    <div class="row justify-content-center">
-      <div class="col-md-10">
-        <div class="card p-4 shadow-sm">
-          <form method="post">
+      <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'loans:loan_applications' %}" class="btn btn-outline-secondary btn-sm">
+          <i class="mdi mdi-format-list-bulleted"></i> Applications
+        </a>
+        <a href="{% url 'loans:loan_reports_dashboard' %}" class="btn btn-outline-primary btn-sm">
+          <i class="mdi mdi-chart-box-outline"></i> Reports
+        </a>
+      </div>
+    </header>
+
+    <div class="row g-3">
+      <div class="col-lg-8">
+        <section class="loan-form-panel">
+          <form method="post" id="loanApplicationForm" novalidate>
             {% csrf_token %}
-            <div class="d-flex justify-content-center mb-3">
-              <select name="id" id="dropdown" class="chzn-select" required>
-                <option value="" selected disabled>Search client...</option>
-                {% for borrower in borrowers %}
-                  <option value="{{ borrower.id }}">{{ borrower.full_name }} → {{ borrower.reg_number }}</option>
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger py-2">
+                {{ form.non_field_errors }}
+              </div>
+            {% endif %}
+
+            <div class="section-title">Client</div>
+            <div class="mb-3">
+              <label class="form-label" for="id_client">
+                Client / Member <span class="required-dot">*</span>
+              </label>
+              <div class="client-search-row">
+                <input
+                  type="search"
+                  id="clientNameSearch"
+                  class="form-control"
+                  placeholder="Search client name, registration number, or phone"
+                  autocomplete="off"
+                />
+                <span class="client-result-count" id="clientResultCount">{{ clients|length|intcomma }} clients</span>
+              </div>
+              <select name="client" id="id_client" class="form-select loan-client-dropdown" required>
+                <option value="">Select client name</option>
+                {% for client in clients %}
+                  <option
+                    value="{{ client.id }}"
+                    data-search="{{ client.full_name|lower }} {{ client.reg_number|default:''|lower }} {{ client.mobile_telephone|default:'' }}"
+                    {% if selected_client_id|stringformat:'s' == client.id|stringformat:'s' %}selected{% endif %}
+                  >
+                    {{ client.full_name }}{% if client.reg_number %} - {{ client.reg_number }}{% endif %}{% if client.mobile_telephone %} - {{ client.mobile_telephone }}{% endif %}
+                  </option>
                 {% endfor %}
               </select>
+              {% if form.client.errors %}
+                <div class="invalid-feedback d-block">{{ form.client.errors }}</div>
+              {% endif %}
+              <div class="field-help">Staff must select the client/member they are applying on behalf of.</div>
             </div>
-            <hr />
-            {{ form|crispy }}
-            <div class="form-group mt-4 mb-0">
-              <button type="submit" class="btn btn-dark w-100 text-uppercase" onclick="return confirm('Are you sure you want to proceed?') && validateForm()">Submit Application</button>
+
+            <div class="section-title mt-4">Loan Terms</div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label" for="{{ form.principal_amount.id_for_label }}">
+                  Principal amount <span class="required-dot">*</span>
+                </label>
+                {{ form.principal_amount }}
+                <div class="field-help">Amount requested in UGX.</div>
+                {% if form.principal_amount.errors %}
+                  <div class="invalid-feedback d-block">{{ form.principal_amount.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="{{ form.loan_purpose.id_for_label }}">
+                  Loan product <span class="required-dot">*</span>
+                </label>
+                {{ form.loan_purpose }}
+                {% if form.loan_purpose.errors %}
+                  <div class="invalid-feedback d-block">{{ form.loan_purpose.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="{{ form.interest_rate.id_for_label }}">
+                  Interest rate (%) <span class="required-dot">*</span>
+                </label>
+                {{ form.interest_rate }}
+                {% if form.interest_rate.errors %}
+                  <div class="invalid-feedback d-block">{{ form.interest_rate.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="{{ form.loan_period_months.id_for_label }}">
+                  Period (months) <span class="required-dot">*</span>
+                </label>
+                {{ form.loan_period_months }}
+                {% if form.loan_period_months.errors %}
+                  <div class="invalid-feedback d-block">{{ form.loan_period_months.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="{{ form.start_date.id_for_label }}">
+                  Application date <span class="required-dot">*</span>
+                </label>
+                {{ form.start_date }}
+                {% if form.start_date.errors %}
+                  <div class="invalid-feedback d-block">{{ form.start_date.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="section-title mt-4">Assessment Notes</div>
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.reason_for_approval.id_for_label }}">Approval basis</label>
+              {{ form.reason_for_approval }}
+              {% if form.reason_for_approval.errors %}
+                <div class="invalid-feedback d-block">{{ form.reason_for_approval.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="d-flex flex-wrap justify-content-end gap-2 pt-2">
+              <a href="{% url 'loans:loan_applications' %}" class="btn btn-outline-secondary">Cancel</a>
+              <button type="submit" class="btn btn-dark" id="submitLoanApplication">
+                <i class="mdi mdi-send"></i> Submit Application
+              </button>
             </div>
           </form>
-        </div>
+        </section>
+      </div>
+
+      <div class="col-lg-4">
+        <aside class="loan-side-panel mb-3">
+          <div class="section-title">Estimate</div>
+          <div class="metric-list">
+            <div class="metric-row">
+              <span class="metric-label">Principal</span>
+              <span class="metric-value" id="previewPrincipal">UGX 0</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Interest</span>
+              <span class="metric-value" id="previewInterest">UGX 0</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Total repayable</span>
+              <span class="metric-value" id="previewTotal">UGX 0</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Monthly estimate</span>
+              <span class="metric-value" id="previewMonthly">UGX 0</span>
+            </div>
+          </div>
+        </aside>
+
+        <aside class="loan-side-panel mb-3">
+          <div class="section-title">Pipeline</div>
+          <div class="metric-list">
+            <div class="metric-row">
+              <span class="metric-label">Open applications</span>
+              <span class="metric-value">{{ open_applications|default:0|intcomma }}</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Active loans</span>
+              <span class="metric-value">{{ active_loans|default:0|intcomma }}</span>
+            </div>
+          </div>
+        </aside>
+
+        <aside class="loan-side-panel">
+          <div class="section-title">Workflow</div>
+          <div class="workflow-step">
+            <span class="step-number">1</span>
+            <div>
+              <div class="fw-bold">Application</div>
+              <div class="text-muted small">Loan request is captured.</div>
+            </div>
+          </div>
+          <div class="workflow-step">
+            <span class="step-number">2</span>
+            <div>
+              <div class="fw-bold">Approval</div>
+              <div class="text-muted small">BOO, HOF, and ED review.</div>
+            </div>
+          </div>
+          <div class="workflow-step">
+            <span class="step-number">3</span>
+            <div>
+              <div class="fw-bold">Disbursement</div>
+              <div class="text-muted small">Funds are released after approval.</div>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
-  </div>
+  </main>
+
+  <script>
+    (function () {
+      const principalInput = document.getElementById('{{ form.principal_amount.id_for_label }}');
+      const rateInput = document.getElementById('{{ form.interest_rate.id_for_label }}');
+      const monthsInput = document.getElementById('{{ form.loan_period_months.id_for_label }}');
+      const submitButton = document.getElementById('submitLoanApplication');
+      const clientInput = document.getElementById('id_client');
+      const clientSearch = document.getElementById('clientNameSearch');
+      const clientResultCount = document.getElementById('clientResultCount');
+      const money = new Intl.NumberFormat('en-UG', { maximumFractionDigits: 0 });
+
+      function numberValue(input) {
+        const value = parseFloat(input && input.value ? input.value : '0');
+        return Number.isFinite(value) ? value : 0;
+      }
+
+      function setText(id, value) {
+        const element = document.getElementById(id);
+        if (element) element.textContent = 'UGX ' + money.format(Math.max(value, 0));
+      }
+
+      function updatePreview() {
+        const principal = numberValue(principalInput);
+        const rate = numberValue(rateInput);
+        const months = Math.max(numberValue(monthsInput), 0);
+        const interest = principal * (rate / 100);
+        const total = principal + interest;
+        const monthly = months > 0 ? total / months : 0;
+        setText('previewPrincipal', principal);
+        setText('previewInterest', interest);
+        setText('previewTotal', total);
+        setText('previewMonthly', monthly);
+      }
+
+      [principalInput, rateInput, monthsInput].forEach(function (input) {
+        if (input) input.addEventListener('input', updatePreview);
+      });
+
+      function filterClients() {
+        if (!clientInput || !clientSearch) return;
+        const query = clientSearch.value.trim().toLowerCase();
+        let visibleCount = 0;
+        Array.from(clientInput.options).forEach(function (option, index) {
+          if (index === 0) {
+            option.hidden = false;
+            return;
+          }
+          const match = !query || (option.dataset.search || option.textContent.toLowerCase()).includes(query);
+          option.hidden = !match;
+          if (match) visibleCount += 1;
+        });
+        if (clientResultCount) {
+          clientResultCount.textContent = visibleCount + (visibleCount === 1 ? ' client' : ' clients');
+        }
+        const selected = clientInput.options[clientInput.selectedIndex];
+        if (selected && selected.hidden) {
+          clientInput.value = '';
+        }
+      }
+
+      if (clientSearch) {
+        clientSearch.addEventListener('input', filterClients);
+      }
+
+      const form = document.getElementById('loanApplicationForm');
+      if (form && submitButton) {
+        form.addEventListener('submit', function (event) {
+          if (clientInput && !clientInput.value) {
+            event.preventDefault();
+            clientInput.focus();
+            clientInput.classList.add('is-invalid');
+            return;
+          }
+          submitButton.disabled = true;
+          submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Submitting';
+        });
+      }
+
+      updatePreview();
+    })();
+  </script>
 {% endblock %}

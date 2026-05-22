@@ -71,6 +71,40 @@
           </div>
         </div>
 
+        <h5 class="fw-bold text-primary mb-3">Application Documents</h5>
+        <div class="table-responsive mb-5">
+          <table class="table table-striped table-bordered align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th scope="col">Document</th>
+                <th scope="col">Description</th>
+                <th scope="col">Uploaded By</th>
+                <th scope="col">Uploaded</th>
+                <th scope="col" class="text-center">File</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for document in documents %}
+                <tr>
+                  <td>{{ document.get_document_type_display }}</td>
+                  <td>{{ document.description|default:'-' }}</td>
+                  <td>{{ document.uploaded_by|default:'-' }}</td>
+                  <td>{{ document.created_at|date:'M d, Y' }}</td>
+                  <td class="text-center">
+                    {% if document.file %}
+                      <a href="{{ document.file.url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">Open</a>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-3">No application documents uploaded.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
         <!-- Repayment History Section -->
         <h5 class="fw-bold text-primary mb-3">Repayment History</h5>
         <div class="table-responsive">

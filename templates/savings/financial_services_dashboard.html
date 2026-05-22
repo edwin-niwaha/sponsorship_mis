@@ -1,0 +1,125 @@
+{% extends 'savings/base.html' %}
+{% load humanize %}
+
+{% block content %}
+  <div class="container-fluid">
+    <div class="row mb-3">
+      <div class="col-md-12 d-flex justify-content-between align-items-center">
+        <div>
+          <h3 class="mb-0">SAVINGS MANAGEMENT DASHBOARD</h3>
+          <small class="text-muted">Client savings, account opening, and transaction activity</small>
+        </div>
+        <div>
+          <a href="{% url 'savings_transaction_create' %}" class="btn btn-outline-primary"><i class="mdi mdi-cash-plus"></i> Record Transaction</a>
+          <a href="{% url 'savings_account_create' %}" class="btn btn-dark"><i class="mdi mdi-bank-plus"></i> Open Account</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-md-3">
+        <div class="card shadow-sm"><div class="card-body"><span class="text-muted">Savings Accounts</span><h4>{{ total_accounts|intcomma }}</h4></div></div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm"><div class="card-body"><span class="text-muted">Active Accounts</span><h4>{{ active_accounts|intcomma }}</h4></div></div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm"><div class="card-body"><span class="text-muted">Linked Clients</span><h4>{{ total_clients|intcomma }}</h4></div></div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm"><div class="card-body"><span class="text-muted">Pending Withdrawals</span><h4>{{ pending_withdrawals_count|intcomma }}</h4></div></div>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <div class="card shadow-sm"><div class="card-body"><span class="text-muted">Approved Credits</span><h4>{{ credits|floatformat:2|intcomma }}</h4></div></div>
+      </div>
+      <div class="col-md-6">
+        <div class="card shadow-sm"><div class="card-body"><span class="text-muted">Approved Debits</span><h4>{{ debits|floatformat:2|intcomma }}</h4></div></div>
+      </div>
+    </div>
+
+    <div class="card shadow mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">Pending Withdrawal Requests</h4>
+        <a href="{% url 'savings_account_list' %}" class="btn btn-sm btn-outline-secondary">Review Accounts</a>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="my-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Client</th>
+                <th>Account</th>
+                <th>Reference</th>
+                <th class="text-right">Amount</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for transaction in pending_withdrawals %}
+                <tr>
+                  <td>{{ transaction.transaction_date }}</td>
+                  <td>{{ transaction.account.client.full_name }}</td>
+                  <td>{{ transaction.account.account_number }}</td>
+                  <td>{{ transaction.reference|default:'-' }}</td>
+                  <td class="text-right">{{ transaction.amount|floatformat:2|intcomma }}</td>
+                  <td>
+                    <form method="post" action="{% url 'savings_transaction_approve' transaction.id %}" class="d-inline">
+                      {% csrf_token %}
+                      <button class="btn btn-success btn-sm" type="submit">Approve</button>
+                    </form>
+                    <form method="post" action="{% url 'savings_transaction_reject' transaction.id %}" class="d-inline">
+                      {% csrf_token %}
+                      <button class="btn btn-warning btn-sm" type="submit">Reject</button>
+                    </form>
+                    <a href="{% url 'savings_account_detail' transaction.account.id %}" class="btn btn-primary btn-sm">Review</a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="6" class="text-center text-muted">No pending withdrawal requests.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">Recent Savings Transactions</h4>
+        <a href="{% url 'savings_account_list' %}" class="btn btn-sm btn-outline-secondary">Savings Accounts</a>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="my-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Client</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th class="text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for transaction in recent_transactions %}
+                <tr>
+                  <td>{{ transaction.transaction_date }}</td>
+                  <td>{{ transaction.account.client.full_name }}</td>
+                  <td>{{ transaction.get_transaction_type_display }}</td>
+                  <td>{{ transaction.get_status_display }}</td>
+                  <td class="text-right">{{ transaction.amount|floatformat:2|intcomma }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="text-center text-muted">No savings transactions found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

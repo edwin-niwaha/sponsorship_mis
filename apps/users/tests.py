@@ -1,1 +1,210 @@
-# Create your tests here.
+from django.contrib.auth.models import User
+from django.core import mail
+from django.contrib.messages.storage.fallback import FallbackStorage
+from django.contrib.sessions.backends.db import SessionStore
+from django.test import TestCase, override_settings
+from django.test.client import RequestFactory
+from django.urls import reverse
+
+from apps.client.models import Client
+from apps.sponsor.models import Sponsor
+
+from .forms import LoginForm
+from .login_verification import LOGIN_VERIFICATION_SESSION_KEY
+from .models import Profile
+from .pipeline import require_google_login_token
+from .views import CustomLoginView
+
+
+class LoginFormTests(TestCase):
+    def test_login_accepts_email_address_as_username(self):
+        User.objects.create_user(
+            username="client-user",
+            email="client@example.com",
+            password="pass12345",
+        )
+
+        form = LoginForm(
+            request=None,
+            data={
+                "username": "client@example.com",
+                "password": "pass12345",
+            },
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.get_user().username, "client-user")
+
+
+class PublicLandingTests(TestCase):
+    def test_home_page_hides_client_portal_for_anonymous_visitors(self):
+        response = self.client.get(reverse("users-home"))
+
+        self.assertNotContains(response, "Client Portal")
+        self.assertNotContains(response, reverse("client_savings_dashboard"))
+
+    def test_home_page_shows_client_portal_for_authenticated_visitors(self):
+        client_record = Client.objects.create(
+            full_name="Client Member",
+            email="client@example.com",
+            reg_number="C101",
+        )
+        user = User.objects.create_user(username="member", password="pass12345")
+        Profile.objects.update_or_create(
+            user=user,
+            defaults={
+                "account_type": "client",
+                "role": "client",
+                "bio": "",
+                "client": client_record,
+            },
+        )
+
+        self.client.force_login(user)
+        response = self.client.get(reverse("users-home"))
+
+        self.assertContains(response, "Client Portal")
+        self.assertContains(response, reverse("client_savings_dashboard"))
+
+    def test_login_page_offers_google_and_password_login(self):
+        response = self.client.get(reverse("login"))
+
+        self.assertContains(response, "Continue with Google")
+        self.assertContains(response, "Email or username")
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_google_login_requires_email_token_before_session_login(self):
+        user = User.objects.create_user(
+            username="google-member",
+            email="google@example.com",
+        )
+        request = RequestFactory().get("/oauth/complete/google-oauth2/")
+        request.session = SessionStore()
+        request._messages = FallbackStorage(request)
+
+        class Strategy:
+            def __init__(self, request):
+                self.request = request
+
+            def session_get(self, key):
+                return None
+
+        class Backend:
+            name = "google-oauth2"
+
+        response = require_google_login_token(Strategy(request), Backend(), user=user)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], reverse("login_verify"))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("verification code", mail.outbox[0].body.lower())
+        self.assertIn(LOGIN_VERIFICATION_SESSION_KEY, request.session)
+        self.assertNotIn("_auth_user_id", request.session)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_email_login_sends_verification_code(self):
+        User.objects.create_user(
+            username="member",
+            email="member@example.com",
+            password="pass12345",
+        )
+
+        response = self.client.post(
+            reverse("login"),
+            {"username": "member@example.com", "password": "pass12345"},
+        )
+
+        self.assertRedirects(response, reverse("login_verify"))
+        verify_response = self.client.get(reverse("login_verify"))
+        self.assertContains(verify_response, "Verification code sent")
+        self.assertContains(verify_response, "member@example.com")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("verification code", mail.outbox[0].body.lower())
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_linked_client_completes_login_after_email_token(self):
+        client_record = Client.objects.create(
+            full_name="Client Member",
+            email="member@example.com",
+            reg_number="C100",
+        )
+        user = User.objects.create_user(
+            username="member",
+            email="member@example.com",
+            password="pass12345",
+        )
+        Profile.objects.update_or_create(
+            user=user,
+            defaults={"role": "guest", "bio": "", "client": client_record},
+        )
+
+        response = self.client.post(
+            reverse("login"),
+            {"username": "member@example.com", "password": "pass12345"},
+        )
+
+        self.assertRedirects(response, reverse("login_verify"))
+        token = mail.outbox[0].body.split("verification code is ")[1][:6]
+
+        response = self.client.post(reverse("login_verify"), {"token": token})
+
+        self.assertRedirects(response, reverse("client_savings_dashboard"))
+        self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
+
+    def test_login_redirects_staff_client_and_sponsor_by_profile_type(self):
+        login_view = CustomLoginView()
+        staff = User.objects.create_user(username="staff-member", password="pass12345")
+        client_user = User.objects.create_user(
+            username="client-member",
+            email="client2@example.com",
+            password="pass12345",
+        )
+        sponsor_user = User.objects.create_user(
+            username="sponsor-member",
+            email="sponsor@example.com",
+            password="pass12345",
+        )
+        client_record = Client.objects.create(
+            full_name="Client Two",
+            email="client2@example.com",
+            reg_number="C102",
+        )
+        sponsor_record = Sponsor.objects.create(
+            first_name="Sponsor",
+            last_name="Member",
+            gender="Male",
+            email="sponsor@example.com",
+        )
+        Profile.objects.update_or_create(
+            user=staff,
+            defaults={"account_type": "staff", "staff_role": "boo", "role": "boo", "bio": ""},
+        )
+        Profile.objects.update_or_create(
+            user=client_user,
+            defaults={
+                "account_type": "client",
+                "role": "client",
+                "client": client_record,
+                "bio": "",
+            },
+        )
+        Profile.objects.update_or_create(
+            user=sponsor_user,
+            defaults={
+                "account_type": "sponsor",
+                "role": "sponsor",
+                "sponsor": sponsor_record,
+                "bio": "",
+            },
+        )
+
+        self.assertEqual(login_view.get_success_url_for_user(staff), reverse("main-dashboard"))
+        self.assertEqual(
+            login_view.get_success_url_for_user(client_user),
+            reverse("client_savings_dashboard"),
+        )
+        self.assertEqual(
+            login_view.get_success_url_for_user(sponsor_user),
+            reverse("sponsor_portal"),
+        )

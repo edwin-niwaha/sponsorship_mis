@@ -4,7 +4,7 @@ import django.utils.timezone
 from django.db import models
 
 from apps.inventory.customers.models import Customer
-from apps.inventory.products.models import Product
+from apps.inventory.products.models import Product, ProductVariant
 
 PAYMENT_METHOD_CHOICES = [
     ("CREDIT_CARD", "Credit Card"),
@@ -69,6 +69,13 @@ class Sale(models.Model):
 class SaleDetail(models.Model):
     sale = models.ForeignKey(Sale, related_name="items", on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sale_details",
+    )
     price = models.FloatField()
     quantity = models.IntegerField()
     total_detail = models.FloatField()
@@ -80,7 +87,12 @@ class SaleDetail(models.Model):
 
     def calculate_profit(self):
         # Convert price to Decimal to ensure compatibility with cost, then calculate profit
-        return (Decimal(self.price) - self.product.cost) * self.quantity
+        cost = self.variant.effective_cost if self.variant else self.product.cost
+        return (Decimal(self.price) - cost) * self.quantity
+
+    @property
+    def item_name(self):
+        return self.variant.display_name if self.variant else self.product.name
 
     def __str__(self) -> str:
         return (

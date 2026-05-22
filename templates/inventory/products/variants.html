@@ -1,0 +1,138 @@
+{% extends 'inventory/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<style>
+  .inventory-page-head {
+    align-items: center;
+    display: flex;
+    gap: 14px;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .inventory-page-head h1 {
+    color: #1f2933;
+    font-size: 1.35rem;
+    font-weight: 900;
+    margin: 0;
+  }
+  .inventory-toolbar {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+  }
+  .inventory-card {
+    background: #fff;
+    border: 1px solid #dfe5ec;
+    border-radius: 8px;
+  }
+  .inventory-card .card-header {
+    background: #fff;
+    border-bottom: 1px solid #edf1f5;
+  }
+  .stock-pill {
+    border-radius: 999px;
+    display: inline-block;
+    font-size: .78rem;
+    font-weight: 800;
+    padding: 5px 9px;
+  }
+  .stock-ok { background: #e7f7ef; color: #13745d; }
+  .stock-low { background: #fff4db; color: #946200; }
+  .stock-out { background: #fde8e8; color: #b42318; }
+  @media (max-width: 768px) {
+    .inventory-page-head,
+    .inventory-toolbar { align-items: stretch; flex-direction: column; }
+    .inventory-toolbar .btn,
+    .inventory-toolbar form { width: 100%; }
+  }
+</style>
+
+<main class="container-fluid">
+  <header class="inventory-page-head">
+    <div>
+      <h1>{{ table_title }}</h1>
+      <p class="text-muted mb-0">Manage SKU-level product options, pricing, and stock.</p>
+    </div>
+    <div class="inventory-toolbar">
+      <form method="get" action="{% url 'products:variants_list' %}" class="input-group">
+        <input type="text" class="form-control" name="search" value="{{ search_query }}" placeholder="Search variant, SKU, product, or category" />
+        <div class="input-group-append">
+          <button class="btn btn-outline-secondary" type="submit"><i class="mdi mdi-magnify"></i></button>
+        </div>
+      </form>
+      <a href="{% url 'products:variant_add' %}" class="btn btn-dark">
+        <i class="mdi mdi-plus mr-1"></i>Add Variant
+      </a>
+    </div>
+  </header>
+
+  <section class="inventory-card">
+    <div class="card-header">
+      <strong>Variants</strong>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Variant</th>
+              <th>SKU</th>
+              <th>Category</th>
+              <th class="text-right">Cost</th>
+              <th class="text-right">Price</th>
+              <th class="text-right">Stock</th>
+              <th>Status</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for variant in variants %}
+              <tr>
+                <td>
+                  <strong>{{ variant.display_name }}</strong>
+                  {% if variant.option_value %}<div class="text-muted small">{{ variant.option_value }}</div>{% endif %}
+                </td>
+                <td>{{ variant.sku }}</td>
+                <td>{{ variant.product.category|default:'Uncategorized' }}</td>
+                <td class="text-right">{{ variant.effective_cost|floatformat:'2'|intcomma }}</td>
+                <td class="text-right">{{ variant.effective_price|floatformat:'2'|intcomma }}</td>
+                <td class="text-right">{{ variant.quantity|intcomma }}</td>
+                <td>
+                  {% if variant.is_out_of_stock %}
+                    <span class="stock-pill stock-out">Out of stock</span>
+                  {% elif variant.is_low_stock %}
+                    <span class="stock-pill stock-low">Low stock</span>
+                  {% else %}
+                    <span class="stock-pill stock-ok">In stock</span>
+                  {% endif %}
+                </td>
+                <td class="text-center">
+                  <a href="{% url 'products:variant_update' variant.id %}" class="btn btn-warning btn-sm" title="Update variant"><i class="bi bi-pencil"></i></a>
+                  <a href="{% url 'products:product_detail' variant.product.id %}" class="btn btn-info btn-sm" title="View product"><i class="bi bi-eye"></i></a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="8" class="text-center text-muted py-4">No product variants found.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <nav class="d-flex justify-content-center">
+        <ul class="pagination">
+          {% if variants.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ variants.previous_page_number }}&search={{ search_query }}">Previous</a></li>
+          {% endif %}
+          <li class="page-item disabled"><span class="page-link">Page {{ variants.number }} of {{ variants.paginator.num_pages }}</span></li>
+          {% if variants.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ variants.next_page_number }}&search={{ search_query }}">Next</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  </section>
+</main>
+{% endblock %}

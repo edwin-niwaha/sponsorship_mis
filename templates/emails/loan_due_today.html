@@ -2,36 +2,30 @@
 {% load humanize %}
 
 {% block content %}
-
 <p>Dear <strong>{{ borrower.full_name }}</strong>,</p>
 
-<p style="font-size:1.15em;">
-Your loan installment for <strong>Loan #{{ loan.id }}</strong> is due today
-(<strong>{{ today_str }}</strong>).
-</p>
+<p>Your loan payment is due today.</p>
 
 <table>
-<tr>
-<th>Amount Due Today</th>
-<td class="text-right amount">UGX {{ amount_due_today|floatformat:"0"|intcomma }}</td>
-</tr>
-<tr>
-<th>Total Outstanding</th>
-<td class="text-right amount">UGX {{ total_outstanding|floatformat:"0"|intcomma }}</td>
-</tr>
-<tr>
-<th>Penalty Balance</th>
-<td class="text-right amount text-danger">UGX {{ penalty_balance|floatformat:"0"|intcomma }}</td>
-</tr>
+  <tr>
+    <th>Loan</th>
+    <td>#{{ loan.id }}</td>
+  </tr>
+  <tr>
+    <th>Due date</th>
+    <td>{{ payment_due_date|date:"d M Y" }}</td>
+  </tr>
+  <tr>
+    <th>{{ action_label }}</th>
+    <td class="text-right amount">UGX {{ action_amount|floatformat:"0"|intcomma }}</td>
+  </tr>
+  <tr>
+    <th>Total outstanding</th>
+    <td class="text-right amount">UGX {{ total_outstanding|floatformat:"0"|intcomma }}</td>
+  </tr>
 </table>
 
-<p>
-Kindly complete your payment today to avoid late penalties.
-</p>
+<p>Please complete payment today to avoid penalties and follow-up action.</p>
 
-
-<p>Thank you for your continued partnership.</p>
-
-<p><strong>Pendeza Uganda</strong></p>
-
+<p><strong>Pendeza Uganda SACCO</strong></p>
 {% endblock %}

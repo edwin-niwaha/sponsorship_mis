@@ -8,6 +8,7 @@ from apps.users.forms import LoginForm
 from apps.users.views import (
     ChangePasswordView,
     CustomLoginView,
+    LoginVerificationView,
     ResetPasswordView,
 )
 
@@ -27,6 +28,11 @@ urlpatterns = [
         "logout/",
         auth_views.LogoutView.as_view(template_name="accounts/logout.html"),
         name="logout",
+    ),
+    path(
+        "login/verify/",
+        LoginVerificationView.as_view(),
+        name="login_verify",
     ),
     path("password-reset/", ResetPasswordView.as_view(), name="password_reset"),
     path(
@@ -50,6 +56,10 @@ urlpatterns = [
     path("sponsorship/", include("apps.sponsorship.urls")),
     path("staff/", include("apps.staff.urls")),
     path("finance/", include("apps.finance.urls")),
+    # Savings is isolated as its own app. It is also mounted under /finance/
+    # to preserve existing staff/client portal links on Railway deployments.
+    path("finance/", include("apps.savings.urls")),
+    path("savings/", include("apps.savings.urls")),
     path("client/", include("apps.client.urls")),
     path("reports/", include("apps.reports.urls")),
     path("dashboard/", include("apps.dashboard.urls")),
@@ -64,7 +74,8 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += [
         path("__reload__/", include("django_browser_reload.urls")),
-        path("__debug__/", include("debug_toolbar.urls")),
     ]
+    if getattr(settings, "ENABLE_DEBUG_TOOLBAR", False):
+        urlpatterns += [path("__debug__/", include("debug_toolbar.urls"))]
 
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

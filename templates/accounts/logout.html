@@ -1,37 +1,152 @@
-{% extends 'accounts/base.html' %}
-{% load static %}
+{% extends "accounts/base.html" %}
+{% block title %}Signed Out{% endblock title %}
 
 {% block content %}
-  <div class="container">
-    <div class="row">
-      <div class="col-md-6 m-auto">
-        <div class="p-4">
-          <img src="{% static 'images/hero.png' %}" class="img-fluid mx-auto" alt="Background Image" />
-        </div>
-      </div>
-      <div class="col-md-6 m-auto">
-        <div class="p-4">
-          <div class="d-flex justify-content-center align-items-center">
-            <div class="text-center">
-              <h3>Sponsorship Management System(SMS)</h3>
-              <hr class="my-4" style="height: 5px; background-color: #008080;" />
+  <style>
+    .logout-shell {
+      margin: 24px auto;
+      max-width: 920px;
+    }
 
-              <!-- Welcome Message -->
-              <div class="welcome-message">
-                <p>
-                  Dear <span style="color:#F79420;">{{ user.username.title|default:'Guest' }}</span>, You have been logged out! <a href="{% url 'contact_us' %}">contact us</a>
-                  for any comments or suggestions.
-                </p>
-                <hr class="my-4" style="height: 5px; background-color: #008080;" />
+    .logout-panel {
+      background: #fff;
+      border: 1px solid #d9dee5;
+      border-radius: 8px;
+      overflow: hidden;
+    }
 
-                <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Sign In</a>
-                <span class="mx-2">OR</span>
-                <a href="{% url 'users-register' %}" class="btn btn-primary btn-lg">Register</a>
-              </div>
+    .logout-status {
+      background: #123d35;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 100%;
+      padding: 34px;
+    }
+
+    .logout-icon {
+      align-items: center;
+      background: rgba(255, 255, 255, .1);
+      border: 1px solid rgba(255, 255, 255, .18);
+      border-radius: 8px;
+      display: flex;
+      font-size: 1.35rem;
+      height: 54px;
+      justify-content: center;
+      margin-bottom: 22px;
+      width: 54px;
+    }
+
+    .logout-status h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: 0;
+      margin-bottom: 10px;
+    }
+
+    .logout-status p {
+      color: rgba(255, 255, 255, .82);
+      margin: 0;
+    }
+
+    .logout-content {
+      padding: 34px;
+    }
+
+    .logout-title {
+      color: #26384d;
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .logout-note {
+      background: #f6f8fb;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      color: #516173;
+      padding: 14px 16px;
+    }
+
+    .logout-actions {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .logout-actions .btn {
+      align-items: center;
+      display: flex;
+      font-weight: 800;
+      justify-content: center;
+      min-height: 46px;
+    }
+
+    .logout-help {
+      border-top: 1px solid #e3e8ef;
+      color: #667085;
+      font-size: .9rem;
+      margin-top: 26px;
+      padding-top: 18px;
+    }
+
+    @media (max-width: 768px) {
+      .logout-status,
+      .logout-content {
+        padding: 22px;
+      }
+
+      .logout-status h1 {
+        font-size: 1.45rem;
+      }
+
+      .logout-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <main class="logout-shell">
+    <div class="logout-panel shadow-sm">
+      <div class="row no-gutters">
+        <div class="col-lg-5">
+          <section class="logout-status">
+            <div class="logout-icon" aria-hidden="true">
+              <i class="fas fa-check"></i>
             </div>
-          </div>
+            <h1>You are signed out</h1>
+            <p>Your session has ended securely. You can sign in again whenever you need to continue.</p>
+          </section>
+        </div>
+
+        <div class="col-lg-7">
+          <section class="logout-content">
+            <div class="mb-4">
+              <div class="logout-title">See you again, {{ user.username.title|default:'Guest' }}</div>
+              <div class="text-muted small">Thanks for using the Sponsorship Management System.</div>
+            </div>
+
+            <div class="logout-note mb-4">
+              For privacy, close this browser tab if you are using a shared computer.
+            </div>
+
+            <div class="logout-actions">
+              <a href="{% url 'login' %}" class="btn btn-dark">
+                <i class="fas fa-sign-in-alt mr-2"></i> Sign in
+              </a>
+              <a href="{% url 'users-register' %}" class="btn btn-outline-dark">
+                <i class="fas fa-user-plus mr-2"></i> Register
+              </a>
+            </div>
+
+            <div class="logout-help">
+              Need help or want to share feedback?
+              <a href="{% url 'contact_us' %}">Contact us</a>.
+            </div>
+          </section>
         </div>
       </div>
     </div>
-  </div>
-{% endblock %}
+  </main>
+{% endblock content %}

@@ -1,7 +1,6 @@
 import os
 from io import BytesIO
 
-import requests
 from cloudinary.models import CloudinaryField
 from cloudinary.uploader import upload
 from django.contrib.auth.models import User
@@ -10,47 +9,140 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models
 from PIL import Image
 
+from apps.client.models import Client
+from apps.sponsor.models import Sponsor
+
 # =================================== Profile Model  ===================================
 
 
 class Profile(models.Model):
+    ACCOUNT_TYPE_CHOICES = (
+        ("guest", "Guest / New User"),
+        ("client", "Client"),
+        ("sponsor", "Sponsor"),
+        ("staff", "Staff"),
+    )
+    STAFF_ROLE_CHOICES = (
+        ("", "No staff role"),
+        ("administrator", "Administrator"),
+        ("manager", "Manager"),
+        ("staff", "General Staff"),
+        ("boo", "Business Operations Officer"),
+        ("hof", "Head of Finance"),
+        ("accountant", "Accountant"),
+        ("ed", "Executive Director"),
+    )
     ROLE_CHOICES = (
         ("administrator", "Administrator"),
         ("manager", "Manager"),
         ("staff", "Staff"),
         ("guest", "Guest"),
+        ("client", "Client"),
+        ("sponsor", "Sponsor"),
         ("boo", "Business Operations Officer"),
         ("hof", "Head of Finance"),
+        ("accountant", "Accountant"),
         ("ed", "Executive Director"),
     )
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    client = models.OneToOneField(
+        Client,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="user_profile",
+        verbose_name="Linked Client Account",
+    )
+    sponsor = models.OneToOneField(
+        Sponsor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="user_profile",
+        verbose_name="Linked Sponsor Account",
+    )
+    account_type = models.CharField(
+        max_length=20,
+        choices=ACCOUNT_TYPE_CHOICES,
+        default="guest",
+        help_text="Primary workspace this user should enter after login.",
+    )
+    staff_role = models.CharField(
+        max_length=20,
+        choices=STAFF_ROLE_CHOICES,
+        blank=True,
+        default="",
+        help_text="Only used when account type is Staff.",
+    )
     role = models.CharField(max_length=15, choices=ROLE_CHOICES, default="guest")
     avatar = CloudinaryField("avatar", default="default.jpg")
     bio = models.TextField()
 
+    STAFF_LEGACY_ROLES = {
+        "administrator",
+        "manager",
+        "staff",
+        "boo",
+        "hof",
+        "accountant",
+        "ed",
+    }
+
     def __str__(self):
         return self.user.username
 
+    @property
+    def resolved_account_type(self):
+        if self.account_type and self.account_type != "guest":
+            return self.account_type
+        if self.role in self.STAFF_LEGACY_ROLES:
+            return "staff"
+        if self.client_id:
+            return "client"
+        if self.sponsor_id or self.role == "sponsor":
+            return "sponsor"
+        return "guest"
+
+    @property
+    def resolved_staff_role(self):
+        if self.staff_role:
+            return self.staff_role
+        if self.role in self.STAFF_LEGACY_ROLES:
+            return self.role
+        return ""
+
+    @property
+    def is_staff_account(self):
+        return self.resolved_account_type == "staff"
+
+    @property
+    def is_client_account(self):
+        return self.resolved_account_type == "client"
+
+    @property
+    def is_sponsor_account(self):
+        return self.resolved_account_type == "sponsor"
+
     def save(self, *args, **kwargs):
-        if isinstance(self.avatar, CloudinaryField):
-            # If the avatar is already a Cloudinary resource
-            response = requests.get(self.avatar.url)
-            if response.status_code == 200:
-                img = Image.open(BytesIO(response.content))
+        if self.client_id:
+            self.account_type = "client"
+        elif self.sponsor_id:
+            self.account_type = "sponsor"
+        elif self.staff_role or self.role in self.STAFF_LEGACY_ROLES:
+            self.account_type = "staff"
 
-                # Resize if necessary
-                if img.height > 100 or img.width > 100:
-                    output = BytesIO()
-                    img.thumbnail((100, 100))
-                    img.save(output, format=img.format)
-                    output.seek(0)
+        if self.account_type == "staff" and not self.staff_role:
+            self.staff_role = self.role if self.role in self.STAFF_LEGACY_ROLES else "staff"
+        elif self.account_type != "staff":
+            self.staff_role = ""
 
-                    # Re-upload resized image to Cloudinary
-                    upload_result = upload(output, folder="profile_images")
-                    self.avatar = upload_result["public_id"]
+        if self.account_type in {"client", "sponsor"}:
+            self.role = self.account_type
+        elif self.account_type == "staff" and self.staff_role:
+            self.role = self.staff_role
 
-        elif isinstance(self.avatar, InMemoryUploadedFile):
+        if isinstance(self.avatar, InMemoryUploadedFile):
             # If a new file is being uploaded
             img = Image.open(self.avatar)
 

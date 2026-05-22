@@ -8,6 +8,86 @@ from django.utils.html import strip_tags
 logger = logging.getLogger(__name__)
 
 
+def _valid_recipients(*recipients):
+    invalid_values = {"", "none", "null", "false"}
+    return [
+        email.strip()
+        for email in recipients
+        if email and email.strip().lower() not in invalid_values
+    ]
+
+
+def _loan_approval_payload(loan, new_status, approver_name, base_url):
+    borrower_name = getattr(loan.borrower, "full_name", str(loan.borrower))
+    amount = f"UGX {loan.principal_amount:,.2f}"
+    applications_url = f"{base_url.rstrip('/')}/loans/applications/"
+    disburse_url = f"{base_url.rstrip('/')}/loans/disburse/"
+
+    if new_status == "boo_approved":
+        return {
+            "subject": f"Loan {loan.id} Approved by BOO",
+            "recipients": _valid_recipients(getattr(settings, "HOF_EMAIL", "")),
+            "heading": "HOF approval required",
+            "message": (
+                f"Loan #{loan.id} for {borrower_name} ({amount}) was approved by "
+                f"{approver_name}. Please review it for HOF approval."
+            ),
+            "action_label": "Review Loan",
+            "action_url": applications_url,
+        }
+
+    if new_status == "hof_approved":
+        return {
+            "subject": f"Loan {loan.id} Approved by HOF",
+            "recipients": _valid_recipients(getattr(settings, "ED_EMAIL", "")),
+            "heading": "ED approval required",
+            "message": (
+                f"Loan #{loan.id} for {borrower_name} ({amount}) was approved by "
+                f"{approver_name}. Please review it for ED approval."
+            ),
+            "action_label": "Review Loan",
+            "action_url": applications_url,
+        }
+
+    if new_status == "approved":
+        return {
+            "subject": f"Loan {loan.id} Fully Approved",
+            "recipients": _valid_recipients(
+                getattr(settings, "BOO_EMAIL", ""),
+                getattr(settings, "HOF_EMAIL", ""),
+                getattr(settings, "ACCOUNTANT_EMAIL", ""),
+            ),
+            "heading": "Loan ready for disbursement",
+            "message": (
+                f"Loan #{loan.id} for {borrower_name} ({amount}) was fully approved by "
+                f"{approver_name}. Please proceed with disbursement."
+            ),
+            "action_label": "Disburse Loan",
+            "action_url": disburse_url,
+        }
+
+    return None
+
+
+def _approval_email_html(heading, message, action_label, action_url):
+    return f"""
+    <html>
+    <body style="font-family:Arial,sans-serif;background:#f5f7fb;padding:24px;color:#344054;">
+      <div style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #dfe5ef;border-radius:8px;padding:24px;">
+        <h2 style="margin:0 0 14px;color:#182230;">{heading}</h2>
+        <p style="font-size:15px;line-height:1.55;">{message}</p>
+        <p style="margin:24px 0;">
+          <a href="{action_url}" style="background:#175cd3;color:#ffffff;padding:11px 18px;text-decoration:none;border-radius:6px;font-weight:bold;">
+            {action_label}
+          </a>
+        </p>
+        <p style="font-size:12px;color:#667085;margin-top:24px;">Pendeza Uganda SACCO - Loan Management System</p>
+      </div>
+    </body>
+    </html>
+    """
+
+
 # Generic task to send an email
 def build_html_template(content: str, title: str) -> str:
     """
@@ -80,6 +160,53 @@ def send_email_task(subject, text_content, html_content, recipients):
     except Exception as e:
         logger.error(f"Failed to send email to {', '.join(recipients)}: {e}")
         return False
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 3})
+def send_loan_approval_notification_task(self, loan_id, new_status, approver_name, base_url):
+    from .models import Loan
+
+    loan = Loan.objects.select_related("borrower").get(id=loan_id)
+    payload = _loan_approval_payload(loan, new_status, approver_name, base_url)
+    if not payload:
+        logger.info("No approval notification configured for loan %s status %s.", loan_id, new_status)
+        return False
+
+    recipients = payload["recipients"]
+    if not recipients:
+        logger.warning(
+            "Loan %s approval notification skipped for status %s because no recipients are configured.",
+            loan_id,
+            new_status,
+        )
+        return False
+
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "") or getattr(settings, "EMAIL_HOST_USER", "")
+    if not from_email:
+        logger.warning("Loan %s approval notification skipped because DEFAULT_FROM_EMAIL is not configured.", loan_id)
+        return False
+
+    html_body = _approval_email_html(
+        payload["heading"],
+        payload["message"],
+        payload["action_label"],
+        payload["action_url"],
+    )
+    email = EmailMultiAlternatives(
+        subject=payload["subject"],
+        body=strip_tags(html_body),
+        from_email=from_email,
+        to=recipients,
+    )
+    email.attach_alternative(html_body, "text/html")
+    sent_count = email.send(fail_silently=False)
+    logger.info(
+        "Loan %s approval notification sent to %s for status %s.",
+        loan_id,
+        ", ".join(recipients),
+        new_status,
+    )
+    return sent_count
 
 
 # Task to send loan application email
