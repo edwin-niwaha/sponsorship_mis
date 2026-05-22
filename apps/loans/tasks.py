@@ -81,7 +81,7 @@ def _approval_email_html(heading, message, action_label, action_url):
             {action_label}
           </a>
         </p>
-        <p style="font-size:12px;color:#667085;margin-top:24px;">Pendeza Uganda SACCO - Loan Management System</p>
+        <p style="font-size:12px;color:#667085;margin-top:24px;">Pendeza Uganda - Loan Management System</p>
       </div>
     </body>
     </html>

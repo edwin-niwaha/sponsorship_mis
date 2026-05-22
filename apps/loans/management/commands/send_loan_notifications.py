@@ -17,13 +17,13 @@ logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     """
-    Send SACCO loan reminders on configured weekdays.
+    Send loan reminders on configured weekdays.
 
     Defaults to Monday and Thursday so borrower emails go out twice a week.
     The command can still be run manually with --force for urgent follow-up.
     """
 
-    help = "Send automated SACCO loan reminders and a management summary."
+    help = "Send automated loan reminders and a management summary."
 
     def add_arguments(self, parser):
         parser.add_argument(

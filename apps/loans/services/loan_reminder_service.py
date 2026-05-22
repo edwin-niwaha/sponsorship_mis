@@ -7,7 +7,7 @@ from apps.loans.models import Loan
 
 class LoanReminderService:
     """
-    Builds borrower-facing reminder data for active SACCO loans.
+    Builds borrower-facing reminder data for active loans.
 
     The service intentionally returns only actionable values needed by email,
     while the model remains the source of truth for balances and schedules.
