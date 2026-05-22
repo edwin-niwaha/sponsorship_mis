@@ -1,4 +1,4 @@
-(function ($) {
+﻿(function ($) {
   "use strict";
   $(function () {
     Chart.defaults.global.legend.labels.usePointStyle = true;
@@ -1360,3 +1360,6 @@
     });
   });
 })(jQuery);
+
+
+

@@ -1,4 +1,4 @@
-// CodeMirror, copyright (c) by Marijn Haverbeke and others
+﻿// CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: https://codemirror.net/LICENSE
 
 (function(mod) {
@@ -928,3 +928,6 @@ CodeMirror.defineMIME("text/typescript", { name: "javascript", typescript: true 
 CodeMirror.defineMIME("application/typescript", { name: "javascript", typescript: true });
 
 });
+
+
+

@@ -1,4 +1,4 @@
-function showNoPermissionMessage(action) {
+﻿function showNoPermissionMessage(action) {
   let message =
     action === "edit"
       ? "Oops! You do not have permission to edit this record."
@@ -25,3 +25,6 @@ function showMessageSettings(event) {
   // Display an alert message
   alert("Oops! You do not have access rights.");
 }
+
+
+

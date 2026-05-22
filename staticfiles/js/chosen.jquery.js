@@ -1,4 +1,4 @@
-// Chosen, a Select Box Enhancer for jQuery and Protoype
+﻿// Chosen, a Select Box Enhancer for jQuery and Protoype
 (function() {
     var SelectParser;
   
@@ -1081,3 +1081,5 @@
   
   }).call(this);
   
+
+

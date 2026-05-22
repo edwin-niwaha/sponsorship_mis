@@ -1,4 +1,4 @@
-.table-container {
+﻿.table-container {
     overflow-x: auto;
     max-width: 100%;
 }
@@ -24,3 +24,5 @@ button {
     display: flex;
     justify-content: center;
 }
+
+

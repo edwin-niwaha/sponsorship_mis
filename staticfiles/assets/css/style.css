@@ -1,4 +1,4 @@
-/*-------------------------------------------------------------------
+﻿/*-------------------------------------------------------------------
   ===== Table of Contents =====
 
   * Bootstrap functions
@@ -11189,7 +11189,6 @@ code {
   border-radius: 4px; }
 
 .content-wrapper .card-calender {
-  background-image: url("../../assets/images/dashboard/Group 4.jpg");
   background-repeat: no-repeat;
   background-size: cover;
   border-radius: 4px; }
@@ -15479,4 +15478,5 @@ dl {
   -ms-flex-positive: 1;
   flex-grow: 1; }
 
-/*# sourceMappingURL=style.css.map */
+
+

@@ -1,4 +1,4 @@
-const dashPalette = {
+﻿const dashPalette = {
   green: "#13745d",
   greenSoft: "rgba(19, 116, 93, 0.14)",
   blue: "#2563eb",
@@ -525,3 +525,6 @@ function renderStaffPaymentsChart(data) {
 
 // Call the function to fetch data and render the chart
 fetchPaymentsStaff();
+
+
+

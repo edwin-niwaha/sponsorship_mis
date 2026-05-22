@@ -1,4 +1,4 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 /* Flot plugin for automatically redrawing plots as the placeholder resizes.
 
 Copyright (c) 2007-2014 IOLA and Ole Laursen.
@@ -58,3 +58,6 @@ can just fix the size of their placeholders.
         version: '1.0'
     });
 })(jQuery);
+
+
+

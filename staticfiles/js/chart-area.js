@@ -1,4 +1,4 @@
-// =================================== Monthly sales for the current year ===================================
+﻿// =================================== Monthly sales for the current year ===================================
 document.addEventListener("DOMContentLoaded", async function () {
   await fetchData();
 });
@@ -106,3 +106,6 @@ function numberFormat(
     (decimal ? dec_point + decimal : "")
   );
 }
+
+
+

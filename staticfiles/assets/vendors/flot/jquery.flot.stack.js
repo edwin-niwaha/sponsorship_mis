@@ -1,4 +1,4 @@
-/* Flot plugin for stacking data sets rather than overlaying them.
+﻿/* Flot plugin for stacking data sets rather than overlaying them.
 
 Copyright (c) 2007-2014 IOLA and Ole Laursen.
 Licensed under the MIT license.
@@ -218,3 +218,6 @@ charts or filled areas).
         version: '1.2'
     });
 })(jQuery);
+
+
+

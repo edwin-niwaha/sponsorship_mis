@@ -1,4 +1,4 @@
-// Function to fetch the sales data asynchronously
+﻿// Function to fetch the sales data asynchronously
 async function fetchSalesData() {
   try {
     const response = await fetch("/dashboard/sales-data/"); // Make sure this matches your API endpoint
@@ -78,3 +78,6 @@ async function renderChart() {
 
 // Call the function to render the chart when the page loads
 renderChart();
+
+
+

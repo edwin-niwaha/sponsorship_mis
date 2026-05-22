@@ -1,4 +1,4 @@
-(function($) {
+﻿(function($) {
   'use strict';
 
   if ($(".js-example-basic-single").length) {
@@ -8,3 +8,5 @@
     $(".js-example-basic-multiple").select2();
   }
 })(jQuery);
+
+

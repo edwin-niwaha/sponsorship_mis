@@ -1,4 +1,4 @@
-(function($) {
+﻿(function($) {
   'use strict';
   $(function() {
     $(".nav-settings").click(function() {
@@ -77,3 +77,5 @@
 
   });
 })(jQuery);
+
+

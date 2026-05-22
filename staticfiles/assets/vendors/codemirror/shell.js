@@ -1,4 +1,4 @@
-// CodeMirror, copyright (c) by Marijn Haverbeke and others
+﻿// CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: https://codemirror.net/LICENSE
 
 (function(mod) {
@@ -150,3 +150,6 @@ CodeMirror.defineMIME('text/x-sh', 'shell');
 CodeMirror.defineMIME('application/x-sh', 'shell');
 
 });
+
+
+

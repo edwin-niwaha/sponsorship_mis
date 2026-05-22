@@ -1,4 +1,4 @@
-(function($) {
+﻿(function($) {
   'use strict';
   $(function() {
     if ($('.demo-tabs').length) {
@@ -46,3 +46,5 @@
 
   });
 })(jQuery);
+
+

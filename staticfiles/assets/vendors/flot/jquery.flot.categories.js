@@ -1,4 +1,4 @@
-/* Flot plugin for plotting textual data or categories.
+﻿/* Flot plugin for plotting textual data or categories.
 
 Copyright (c) 2007-2014 IOLA and Ole Laursen.
 Licensed under the MIT license.
@@ -200,3 +200,6 @@ as "categories" on the axis object, e.g. plot.getAxes().xaxis.categories.
         version: '1.0'
     });
 })(jQuery);
+
+
+

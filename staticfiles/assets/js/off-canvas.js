@@ -1,4 +1,4 @@
-(function($) {
+﻿(function($) {
   'use strict';
   $(function() {
     $('[data-toggle="offcanvas"]').on("click", function() {
@@ -6,3 +6,5 @@
     });
   });
 })(jQuery);
+
+

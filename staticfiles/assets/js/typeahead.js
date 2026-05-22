@@ -1,4 +1,4 @@
-(function($) {
+﻿(function($) {
   'use strict';
   var substringMatcher = function(strs) {
     return function findMatches(q, cb) {
@@ -58,3 +58,5 @@
     source: states
   });
 })(jQuery);
+
+

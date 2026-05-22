@@ -1,4 +1,4 @@
-.my-table {
+﻿.my-table {
   border-collapse: collapse;
   border: 1px solid #ddd;
   margin: 10px 0;
@@ -50,3 +50,5 @@
   flex-grow: 1;
   margin-right: 10px;
 }
+
+

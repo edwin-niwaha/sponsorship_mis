@@ -1,4 +1,4 @@
-function validateForm() {
+﻿function validateForm() {
   var selectedChild = document.getElementById("dropdown").value;
 
   if (selectedChild === "") {
@@ -30,3 +30,6 @@ function validateSTForm() {
 
   return true; // Allow form submission
 }
+
+
+

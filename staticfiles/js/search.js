@@ -1,4 +1,4 @@
-// serch table
+﻿// serch table
 $(document).ready(function () {
   $("#searchInput").on("keyup", function () {
     var value = $(this).val().toLowerCase();
@@ -32,3 +32,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 });
+
+
+

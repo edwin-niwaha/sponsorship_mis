@@ -1,4 +1,4 @@
-/* Flot plugin for computing bottoms for filled line and bar charts.
+﻿/* Flot plugin for computing bottoms for filled line and bar charts.
 
 Copyright (c) 2007-2014 IOLA and Ole Laursen.
 Licensed under the MIT license.
@@ -252,3 +252,6 @@ jquery.flot.stack.js plugin, possibly some code could be shared.
         version: "1.0"
     });
 })(jQuery);
+
+
+

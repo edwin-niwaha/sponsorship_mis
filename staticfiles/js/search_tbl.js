@@ -1,4 +1,4 @@
-$(document).ready(function(){
+﻿$(document).ready(function(){
     $("#searchInput").on("keyup", function() {
         var value = $(this).val().toLowerCase();
         $("#dataTable tr").filter(function() {
@@ -6,6 +6,9 @@ $(document).ready(function(){
         });
     });
 });
+
+
+
 
 
 

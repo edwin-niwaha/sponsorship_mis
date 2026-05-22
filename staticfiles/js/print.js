@@ -1,4 +1,4 @@
-// print div
+﻿// print div
 function printDiv(divName) {
   var printContents = document.getElementById(divName).innerHTML;
   var originalContents = document.body.innerHTML;
@@ -48,3 +48,5 @@ function Export2Doc(element, filename = '') {
   //Remove the a tag after donwload starts.
   document.body.removeChild(downloadLink);
 }
+
+

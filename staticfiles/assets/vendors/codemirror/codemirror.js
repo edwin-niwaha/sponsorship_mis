@@ -1,4 +1,4 @@
-// CodeMirror, copyright (c) by Marijn Haverbeke and others
+﻿// CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: https://codemirror.net/LICENSE
 
 // This is CodeMirror (https://codemirror.net), a code editor
@@ -9712,7 +9712,7 @@
   // Extra arguments are stored as the mode's dependencies, which is
   // used by (legacy) mechanisms like loadmode.js to automatically
   // load a mode. (Preferred mechanism is the require/define calls.)
-  CodeMirror.defineMode = function(name/*, mode, …*/) {
+  CodeMirror.defineMode = function(name/*, mode, â€¦*/) {
     if (!CodeMirror.defaults.mode && name != "null") { CodeMirror.defaults.mode = name; }
     defineMode.apply(this, arguments);
   };
@@ -9741,3 +9741,6 @@
   return CodeMirror;
 
 })));
+
+
+

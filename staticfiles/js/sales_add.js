@@ -1,4 +1,4 @@
-$(document).ready(function () {
+﻿$(document).ready(function () {
     // Initialize Select2 for the product select dropdown
     $('#searchbox_products').select2({
         placeholder: 'Search for a product...',
@@ -137,3 +137,6 @@ $(document).ready(function () {
     $amountPayedInput.on('keyup', updateTotals);
     $form.on('submit', addProductDataToForm);
 });
+
+
+
