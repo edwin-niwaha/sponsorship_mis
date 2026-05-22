@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
@@ -52,6 +54,8 @@ from .login_verification import (
     token_matches,
 )
 from .roles import get_login_redirect_url
+
+logger = logging.getLogger(__name__)
 
 
 # =================================== Home User  ===================================
@@ -128,6 +132,11 @@ class CustomLoginView(LoginView):
                 redirect_to=self.get_redirect_url(),
             )
         except Exception:
+            logger.exception(
+                "Failed to send login verification email for user_id=%s email=%s",
+                user.pk,
+                user.email,
+            )
             form.add_error(
                 None,
                 "We could not send the verification email. Please try again.",
