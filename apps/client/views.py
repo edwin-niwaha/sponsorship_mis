@@ -26,11 +26,17 @@ from .models import Client, SevenHillsRegistration
 @login_required
 @admin_or_manager_or_staff_required
 def client_list(request):
-    queryset = Client.objects.all().order_by("id")
+    base_queryset = Client.objects.prefetch_related("loans__documents").order_by("id")
+    queryset = base_queryset
 
-    search_query = request.GET.get("search")
+    search_query = request.GET.get("search", "").strip()
     if search_query:
-        queryset = queryset.filter(full_name__icontains=search_query)
+        queryset = queryset.filter(
+            Q(full_name__icontains=search_query)
+            | Q(reg_number__icontains=search_query)
+            | Q(mobile_telephone__icontains=search_query)
+            | Q(email__icontains=search_query)
+        )
 
     paginator = Paginator(queryset, 20)  # Show 20 records per page
     page = request.GET.get("page")
@@ -47,7 +53,19 @@ def client_list(request):
     return render(
         request,
         "client/client_list.html",
-        {"records": records, "table_title": "Clients List"},
+        {
+            "records": records,
+            "table_title": "Clients List",
+            "search_query": search_query,
+            "total_clients": base_queryset.count(),
+            "clients_with_phone": base_queryset.exclude(mobile_telephone__isnull=True)
+            .exclude(mobile_telephone="")
+            .count(),
+            "clients_with_email": base_queryset.exclude(email__isnull=True)
+            .exclude(email="")
+            .exclude(email="no-email@example.com")
+            .count(),
+        },
     )
 
 

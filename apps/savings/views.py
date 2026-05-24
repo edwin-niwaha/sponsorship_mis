@@ -211,7 +211,7 @@ def _notify_withdrawal_request(savings_transaction):
         f"Account: {savings_transaction.account.account_number}\n"
         f"Amount: {savings_transaction.amount}\n"
         f"Reference: {savings_transaction.reference or '-'}\n"
-        "Please review it in Savings Management."
+        "Please review it in Manage Savings."
     )
     from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None) or getattr(settings, "EMAIL_HOST_USER", None)
     try:

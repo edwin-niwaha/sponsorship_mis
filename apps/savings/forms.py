@@ -11,7 +11,13 @@ from .models import SavingsAccount, SavingsTransaction
 class SavingsAccountForm(forms.ModelForm):
     client = forms.ModelChoiceField(
         queryset=Client.objects.order_by("full_name", "reg_number"),
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs={
+                "class": "form-control",
+                "data-client-search-select": "true",
+            }
+        ),
+        empty_label="Select client",
     )
 
     class Meta:
@@ -30,7 +36,13 @@ class SavingsAccountForm(forms.ModelForm):
 class SavingsTransactionForm(forms.ModelForm):
     account = forms.ModelChoiceField(
         queryset=SavingsAccount.objects.select_related("client").filter(status="active"),
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs={
+                "class": "form-control",
+                "data-account-search-select": "true",
+            }
+        ),
+        empty_label="Select savings account",
     )
 
     class Meta:

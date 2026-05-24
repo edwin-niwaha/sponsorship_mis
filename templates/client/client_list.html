@@ -1,121 +1,757 @@
 {% extends 'loans/base.html' %}
+{% load humanize %}
 {% load static %}
 
 {% block content %}
-  <div class="container">
-    <div class="page-header flex-wrap">
-      <h3 class="mb-0">{{ table_title|upper }}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-      <div class="d-flex">
-        <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
+  <style>
+    .client-directory {
+      color: #233142;
+      padding-bottom: 28px;
+    }
 
-        <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success" onclick="ExportToExcel('xlsx')"><i class="mdi mdi-file-excel btn-icon-prepend"></i></button>
+    .client-header,
+    .client-stat,
+    .client-panel {
+      background: #fff;
+      border: 1px solid #d8dee6;
+      border-radius: 8px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .05);
+    }
 
-        <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success" onclick="Export2Doc('printMe');"><i class="mdi mdi-file-word btn-icon-prepend"></i></button>
+    .client-header {
+      align-items: center;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding: 18px;
+    }
 
-        <a title="Register Client" class="btn btn-sm ml-3 btn-success" href="{% url 'register_client' %}"><i class="mdi mdi-account-plus btn-icon-prepend"></i></a>
+    .client-eyebrow {
+      color: #247a6b;
+      display: block;
+      font-size: .75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
 
-        <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'client_list' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
-        <a title="Bulk Import" class="btn btn-sm ml-3 btn-success" href="{% url 'import_client_data' %}"><i class="mdi mdi-upload btn-icon-prepend"></i></a>
+    .client-title {
+      color: #1f344d;
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      line-height: 1.2;
+      margin: 0;
+    }
 
-        <form action="{% url 'delete_confirm' %}" method="post">
-          {% csrf_token %}
-          <button title="Delete All" class="btn btn-sm ml-3 btn-danger btn-sm" type="submit" onclick="return confirm('Are you sure about this? all records will be deleted permanently');"><i class="mdi mdi-cancel btn-icon-prepend"></i></button>
-        </form>
+    .client-subtitle,
+    .client-stat span,
+    .client-panel-head small,
+    .client-empty {
+      color: #667085;
+    }
+
+    .client-subtitle {
+      margin: 4px 0 0;
+    }
+
+    .client-actions,
+    .client-tools,
+    .client-row-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .client-actions {
+      justify-content: flex-end;
+    }
+
+    .client-actions form {
+      margin: 0;
+    }
+
+    .client-stats {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-bottom: 14px;
+    }
+
+    .client-stat {
+      align-items: center;
+      display: flex;
+      gap: 12px;
+      min-height: 92px;
+      padding: 14px;
+    }
+
+    .client-stat-icon {
+      align-items: center;
+      background: #edf7f4;
+      border-radius: 8px;
+      color: #13745d;
+      display: inline-flex;
+      flex: 0 0 42px;
+      font-size: 1.3rem;
+      height: 42px;
+      justify-content: center;
+      width: 42px;
+    }
+
+    .client-stat-icon.info {
+      background: #eef4ff;
+      color: #315fbb;
+    }
+
+    .client-stat-icon.warning {
+      background: #fff4de;
+      color: #946000;
+    }
+
+    .client-stat strong {
+      color: #1f344d;
+      display: block;
+      font-size: 1.45rem;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    .client-stat span {
+      display: block;
+      font-size: .76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .client-panel {
+      margin-bottom: 14px;
+      padding: 16px;
+    }
+
+    .client-panel-head {
+      align-items: center;
+      display: flex;
+      gap: 14px;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .client-panel-head h4 {
+      color: #1f344d;
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0;
+    }
+
+    .client-search {
+      display: flex;
+      gap: 8px;
+      margin: 0;
+      min-width: min(100%, 460px);
+    }
+
+    .client-search .form-control {
+      min-height: 38px;
+    }
+
+    .client-table {
+      margin-bottom: 0;
+    }
+
+    .client-table thead th {
+      border-top: 0;
+      color: #667085;
+      font-size: .76rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .client-table tbody td,
+    .client-table tbody th {
+      border-color: #edf0f4;
+      vertical-align: middle;
+    }
+
+    .client-index {
+      color: #98a2b3;
+      font-weight: 800;
+      width: 48px;
+    }
+
+    .client-profile {
+      align-items: center;
+      display: flex;
+      gap: 10px;
+      min-width: 230px;
+    }
+
+    .client-avatar {
+      align-items: center;
+      background: #eef4ff;
+      border: 1px solid #dbe5ff;
+      border-radius: 50%;
+      color: #315fbb;
+      display: inline-flex;
+      flex: 0 0 44px;
+      font-weight: 900;
+      height: 44px;
+      justify-content: center;
+      overflow: hidden;
+      width: 44px;
+    }
+
+    .client-avatar img {
+      height: 100%;
+      object-fit: cover;
+      width: 100%;
+    }
+
+    .client-name {
+      color: #1f344d;
+      display: block;
+      font-weight: 900;
+    }
+
+    .client-meta,
+    .client-muted {
+      color: #667085;
+      font-size: .82rem;
+    }
+
+    .client-badge {
+      background: #edf7f4;
+      border: 1px solid #d6eee8;
+      border-radius: 999px;
+      color: #13745d;
+      display: inline-flex;
+      font-size: .78rem;
+      font-weight: 900;
+      padding: 4px 10px;
+      white-space: nowrap;
+    }
+
+    .client-row-actions {
+      justify-content: flex-end;
+      min-width: 136px;
+    }
+
+    .client-row-actions .btn {
+      align-items: center;
+      display: inline-flex;
+      height: 32px;
+      justify-content: center;
+      padding: 0;
+      width: 34px;
+    }
+
+    .client-empty {
+      border: 1px dashed #cfd8e3;
+      border-radius: 8px;
+      padding: 28px;
+      text-align: center;
+    }
+
+    .client-report-modal .modal-dialog {
+      max-width: 920px;
+    }
+
+    .client-report {
+      color: #233142;
+    }
+
+    .client-report-cover {
+      align-items: center;
+      border-bottom: 1px solid #edf0f4;
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+    }
+
+    .client-report-photo {
+      align-items: center;
+      background: #eef4ff;
+      border: 1px solid #dbe5ff;
+      border-radius: 8px;
+      color: #315fbb;
+      display: inline-flex;
+      flex: 0 0 96px;
+      font-size: 2rem;
+      font-weight: 900;
+      height: 96px;
+      justify-content: center;
+      overflow: hidden;
+      width: 96px;
+    }
+
+    .client-report-photo img {
+      height: 100%;
+      object-fit: cover;
+      width: 100%;
+    }
+
+    .client-report-cover h4 {
+      color: #1f344d;
+      font-size: 1.3rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0 0 6px;
+    }
+
+    .client-report-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-bottom: 16px;
+    }
+
+    .client-report-field,
+    .client-document-card {
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .client-report-field span,
+    .client-document-card span {
+      color: #667085;
+      display: block;
+      font-size: .72rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .client-report-field strong,
+    .client-document-card strong {
+      color: #1f344d;
+      display: block;
+      font-weight: 900;
+      margin-top: 3px;
+      overflow-wrap: anywhere;
+    }
+
+    .client-report-section-title {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 12px 0 8px;
+    }
+
+    .client-report-section-title h5 {
+      color: #1f344d;
+      font-size: .98rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0;
+    }
+
+    .client-documents {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .client-document-card {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+    }
+
+    .client-document-card .btn {
+      flex: 0 0 auto;
+      height: 34px;
+    }
+
+    .client-document-empty {
+      border: 1px dashed #cfd8e3;
+      border-radius: 8px;
+      color: #667085;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .client-pagination {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      margin-top: 14px;
+    }
+
+    .client-pagination .pagination {
+      margin: 0;
+    }
+
+    @media print {
+      .print-hide {
+        display: none !important;
+      }
+
+      .client-header,
+      .client-stat,
+      .client-panel {
+        border: 0;
+        box-shadow: none;
+      }
+
+      .modal-header,
+      .modal-footer,
+      .print-hide {
+        display: none !important;
+      }
+    }
+
+    @media (max-width: 1199.98px) {
+      .client-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 767.98px) {
+      .client-header,
+      .client-panel-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .client-actions,
+      .client-tools,
+      .client-search {
+        width: 100%;
+      }
+
+      .client-actions .btn,
+      .client-actions form,
+      .client-actions form .btn,
+      .client-tools .btn {
+        flex: 1 1 auto;
+      }
+
+      .client-stats {
+        grid-template-columns: 1fr;
+      }
+
+      .client-report-cover {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .client-report-grid,
+      .client-documents {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <div class="container-fluid client-directory">
+    <section class="client-header">
+      <div>
+        <span class="client-eyebrow">Client Directory</span>
+        <h3 class="client-title">{{ table_title }}</h3>
+        <p class="client-subtitle">Browse registered clients, contact details, imports, and record actions.</p>
       </div>
-    </div>
-    <form method="GET" action="{% url 'client_list' %}">
-      <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..." style="border-radius: 5px; height: 35px;" />
-      <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
-    </form>
+      <div class="client-actions print-hide">
+        <a title="Register Client" class="btn btn-dark btn-sm" href="{% url 'register_client' %}">
+          <i class="mdi mdi-account-plus"></i> Register
+        </a>
+        <a title="Bulk Import" class="btn btn-outline-primary btn-sm" href="{% url 'import_client_data' %}">
+          <i class="mdi mdi-upload"></i> Import
+        </a>
+        <button title="Print" type="button" class="btn btn-outline-success btn-sm" onclick="printDiv('printMe')">
+          <i class="mdi mdi-printer"></i>
+        </button>
+        <button title="Export To Excel" type="button" class="btn btn-outline-success btn-sm" onclick="ExportToExcel('xlsx')">
+          <i class="mdi mdi-file-excel"></i>
+        </button>
+        <button title="Export To Word" type="button" class="btn btn-outline-success btn-sm" onclick="Export2Doc('printMe');">
+          <i class="mdi mdi-file-word"></i>
+        </button>
+        {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+          <form action="{% url 'delete_confirm' %}" method="post">
+            {% csrf_token %}
+            <button title="Delete All" class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm('Are you sure about this? all records will be deleted permanently');">
+              <i class="mdi mdi-delete-alert"></i>
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </section>
 
-    <div id="printMe" class="tab-pane show active">
-      <header style="text-align: center;"></header>
-      <hr class="bg-info" style="height: 3px;" />
-      <div class="table-responsive">
-        <table class="my-table" id="dataTable">
-          <thead>
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">Reg.No</th>
-              <th scope="col">Picture</th>
-              <th scope="col">Client Name</th>
-              <th scope="col">Telephone</th>
-              <th scope="col">Email</th>
-              <th scope="col" colspan="2">Action</th>
-            </tr>
-          </thead>
-          <tbody class="table-group-divider">
-            {% for client in records %}
-              <tr>
-                <th scope="row">{{ forloop.counter }}.</th>
-                <td>{{ client.reg_number }}</td>
-                <td>
-                  {% if client.picture %}
-                    <a title="Click to update picture" href="{% url 'update_picture' %}" onclick="return confirm('Are you sure you want to update client picture? ');"><img class="rounded-circle account-img" height="50" width="50" src="{{ client.picture.url }}" alt="" /></a>
-                  {% else %}
-                    No Picture!
-                  {% endif %}
-                </td>
-                <td>{{ client.full_name }}</td>
-                <td>{{ client.mobile_telephone }}</td>
-                <td>{{ client.email }}</td>
-                <td>
-                  {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
-                    <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_client' client.id %}"><i class="bi bi-pencil"></i></a>
-                  {% else %}
-                    <button class="btn btn-primary btn-sm" onclick="showNoPermissionMessage('edit')"><i class="bi bi-pencil"></i></button>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                    <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_client' client.id %}" onclick="return confirm('Are you sure about this? This record will be deleted permanently.');"><i class="bi bi-trash"></i></a>
-                  {% else %}
-                    <button class="btn btn-danger btn-sm disabled" onclick="showNoPermissionMessage('delete')"><i class="bi bi-trash"></i></button>
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        <hr class="bg-info" style="height: 3px;" />
-
-        <!-- Pagination links &raquo; -->
-        <div class="pagination">
-          <span class="step-links">
-            {% if records.has_previous %}
-              <a href="?page=1">
-                <!-- first -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
-                  <path fill="#2375e1" d="M14 3.002a1 1 0 0 0-1.578-.816l-7 4.963a1 1 0 0 0-.007 1.628l7 5.037A1 1 0 0 0 14 13.003zM2 2.5a.5.5 0 0 1 1 0v11a.5.5 0 0 1-1 0z" />
-                </svg>
-              </a>
-              <a href="?page={{ records.previous_page_number }}">
-                <!-- previous -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-                  <path fill="#2375e1" d="m4 10l9 9l1.4-1.5L7 10l7.4-7.5L13 1z" />
-                </svg>
-              </a>
-            {% endif %}
-
-            <span class="current">Page {{ records.number }} of {{ records.paginator.num_pages }}.</span>
-
-            {% if records.has_next %}
-              <a href="?page={{ records.next_page_number }}">
-                <!-- Next -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-                  <path fill="#2375e1" d="M7 1L5.6 2.5L13 10l-7.4 7.5L7 19l9-9z" />
-                </svg>
-              </a>
-              <a href="?page={{ records.paginator.num_pages }}">
-                <!-- last -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 28 28">
-                  <path fill="#2375e1" d="M23.5 3.75a.75.75 0 0 1 1.5 0v20.5a.75.75 0 0 1-1.5 0zM3 5.254C3 3.438 5.041 2.37 6.533 3.406l12.504 8.68a2.25 2.25 0 0 1 .013 3.688l-12.504 8.81C5.056 25.634 3 24.57 3 22.745z" />
-                </svg>
-              </a>
-            {% endif %}
-          </span>
+    <section class="client-stats">
+      <div class="client-stat">
+        <span class="client-stat-icon"><i class="mdi mdi-account-group"></i></span>
+        <div>
+          <strong>{{ total_clients|intcomma }}</strong>
+          <span>Total Clients</span>
         </div>
       </div>
-    </div>
+      <div class="client-stat">
+        <span class="client-stat-icon info"><i class="mdi mdi-table-search"></i></span>
+        <div>
+          <strong>{{ records.paginator.count|intcomma }}</strong>
+          <span>{% if search_query %}Search Results{% else %}Visible Records{% endif %}</span>
+        </div>
+      </div>
+      <div class="client-stat">
+        <span class="client-stat-icon"><i class="mdi mdi-phone"></i></span>
+        <div>
+          <strong>{{ clients_with_phone|intcomma }}</strong>
+          <span>With Phone</span>
+        </div>
+      </div>
+      <div class="client-stat">
+        <span class="client-stat-icon warning"><i class="mdi mdi-email-outline"></i></span>
+        <div>
+          <strong>{{ clients_with_email|intcomma }}</strong>
+          <span>With Email</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="printMe" class="client-panel">
+      <div class="client-panel-head print-hide">
+        <div>
+          <h4>Client Register</h4>
+          <small>Showing page {{ records.number }} of {{ records.paginator.num_pages }}</small>
+        </div>
+        <form method="get" action="{% url 'client_list' %}" class="client-search">
+          <input type="search" name="search" id="searchInput" value="{{ search_query }}" class="form-control form-control-sm" placeholder="Search name, reg no., phone, email" />
+          <button type="submit" class="btn btn-primary btn-sm" title="Search">
+            <i class="mdi mdi-magnify"></i>
+          </button>
+          {% if search_query %}
+            <a href="{% url 'client_list' %}" class="btn btn-outline-secondary btn-sm" title="Clear search">
+              <i class="mdi mdi-close"></i>
+            </a>
+          {% endif %}
+        </form>
+      </div>
+
+      <div class="table-responsive">
+        {% if records %}
+          <table class="table table-hover client-table" id="dataTable">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Client</th>
+                <th scope="col">Reg. No</th>
+                <th scope="col">Telephone</th>
+                <th scope="col">Email</th>
+                <th scope="col" class="text-right print-hide">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for client in records %}
+                <tr>
+                  <th scope="row" class="client-index">{{ records.start_index|add:forloop.counter0 }}</th>
+                  <td>
+                    <div class="client-profile">
+                      <a class="client-avatar" title="Click to update picture" href="{% url 'update_picture' %}" onclick="return confirm('Are you sure you want to update client picture? ');">
+                        {% if client.picture %}
+                          <img src="{{ client.picture.url }}" alt="{{ client.full_name }}" />
+                        {% else %}
+                          {{ client.full_name|first|upper }}
+                        {% endif %}
+                      </a>
+                      <div>
+                        <span class="client-name">{{ client.full_name }}</span>
+                        <span class="client-meta">Updated {{ client.updated_at|date:'M d, Y' }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="client-badge">{{ client.reg_number|default:'Not set' }}</span></td>
+                  <td>{% if client.mobile_telephone %}{{ client.mobile_telephone }}{% else %}<span class="client-muted">Not recorded</span>{% endif %}</td>
+                  <td>{% if client.email and client.email != 'no-email@example.com' %}{{ client.email }}{% else %}<span class="client-muted">Not recorded</span>{% endif %}</td>
+                  <td class="text-right print-hide">
+                    <div class="client-row-actions">
+                      <button type="button" class="btn btn-outline-info btn-sm" title="View details report" data-bs-toggle="modal" data-bs-target="#clientReportModal{{ client.id }}">
+                        <i class="mdi mdi-file-eye-outline"></i>
+                      </button>
+
+                      {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
+                        <a class="btn btn-outline-primary btn-sm" title="Edit" href="{% url 'update_client' client.id %}"><i class="bi bi-pencil"></i></a>
+                      {% else %}
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="showNoPermissionMessage('edit')"><i class="bi bi-pencil"></i></button>
+                      {% endif %}
+
+                      {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+                        <a class="btn btn-outline-danger btn-sm" title="Erase" href="{% url 'delete_client' client.id %}" onclick="return confirm('Are you sure about this? This record will be deleted permanently.');"><i class="bi bi-trash"></i></a>
+                      {% else %}
+                        <button type="button" class="btn btn-outline-danger btn-sm disabled" onclick="showNoPermissionMessage('delete')"><i class="bi bi-trash"></i></button>
+                      {% endif %}
+                    </div>
+
+                    <div class="modal fade client-report-modal" id="clientReportModal{{ client.id }}" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title">Client Details Report</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body">
+                            <div class="client-report" id="clientReport{{ client.id }}">
+                              <div class="client-report-cover">
+                                <div class="client-report-photo">
+                                  {% if client.picture %}
+                                    <img src="{{ client.picture.url }}" alt="{{ client.full_name }}" />
+                                  {% else %}
+                                    {{ client.full_name|first|upper }}
+                                  {% endif %}
+                                </div>
+                                <div>
+                                  <span class="client-eyebrow">Client Profile</span>
+                                  <h4>{{ client.full_name }}</h4>
+                                  <div class="client-muted">Registration No: {{ client.reg_number|default:'Not set' }}</div>
+                                  <div class="client-muted">Generated on {% now "M d, Y" %}</div>
+                                </div>
+                              </div>
+
+                              <div class="client-report-grid">
+                                <div class="client-report-field">
+                                  <span>Full Name</span>
+                                  <strong>{{ client.full_name }}</strong>
+                                </div>
+                                <div class="client-report-field">
+                                  <span>Registration No</span>
+                                  <strong>{{ client.reg_number|default:'Not set' }}</strong>
+                                </div>
+                                <div class="client-report-field">
+                                  <span>Telephone</span>
+                                  <strong>{{ client.mobile_telephone|default:'Not recorded' }}</strong>
+                                </div>
+                                <div class="client-report-field">
+                                  <span>Email</span>
+                                  <strong>{% if client.email and client.email != 'no-email@example.com' %}{{ client.email }}{% else %}Not recorded{% endif %}</strong>
+                                </div>
+                                <div class="client-report-field">
+                                  <span>Created</span>
+                                  <strong>{{ client.created_at|date:'M d, Y' }}</strong>
+                                </div>
+                                <div class="client-report-field">
+                                  <span>Last Updated</span>
+                                  <strong>{{ client.updated_at|date:'M d, Y' }}</strong>
+                                </div>
+                              </div>
+
+                              <div class="client-report-section-title">
+                                <h5>Linked Documents</h5>
+                                <span class="client-muted">Client image and loan application files</span>
+                              </div>
+
+                              <div class="client-documents">
+                                {% if client.picture %}
+                                  <div class="client-document-card">
+                                    <div>
+                                      <span>Client Profile</span>
+                                      <strong>Profile picture</strong>
+                                      <small class="client-muted">Uploaded on client record</small>
+                                    </div>
+                                    <a href="{{ client.picture.url }}" target="_blank" rel="noopener" download class="btn btn-outline-primary btn-sm">
+                                      <i class="mdi mdi-download"></i>
+                                    </a>
+                                  </div>
+                                {% endif %}
+
+                                {% for loan in client.loans.all %}
+                                  {% for document in loan.documents.all %}
+                                    <div class="client-document-card">
+                                      <div>
+                                        <span>Loan #{{ loan.id }}</span>
+                                        <strong>{{ document.get_document_type_display }}</strong>
+                                        <small class="client-muted">{{ document.description|default:'Loan application document' }} | {{ document.created_at|date:'M d, Y' }}</small>
+                                      </div>
+                                      {% if document.file %}
+                                        <a href="{{ document.file.url }}" target="_blank" rel="noopener" download class="btn btn-outline-primary btn-sm">
+                                          <i class="mdi mdi-download"></i>
+                                        </a>
+                                      {% endif %}
+                                    </div>
+                                  {% endfor %}
+                                {% endfor %}
+                              </div>
+
+                              <div class="client-document-empty client-document-empty-js" data-client-document-empty="{{ client.id }}">No linked documents found for this client.</div>
+                            </div>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-dark btn-sm" onclick="printClientReport('clientReport{{ client.id }}')">
+                              <i class="mdi mdi-printer"></i> Print
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="client-empty">
+            {% if search_query %}
+              No clients matched "{{ search_query }}".
+            {% else %}
+              No client records are available yet.
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+
+      {% if records.has_other_pages %}
+        <nav class="client-pagination print-hide" aria-label="Client pagination">
+          <span class="client-muted">
+            Showing {{ records.start_index|intcomma }}-{{ records.end_index|intcomma }} of {{ records.paginator.count|intcomma }}
+          </span>
+          <ul class="pagination pagination-sm">
+            {% if records.has_previous %}
+              <li class="page-item"><a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">First</a></li>
+              <li class="page-item"><a class="page-link" href="?page={{ records.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ records.number }} of {{ records.paginator.num_pages }}</span></li>
+            {% if records.has_next %}
+              <li class="page-item"><a class="page-link" href="?page={{ records.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a></li>
+              <li class="page-item"><a class="page-link" href="?page={{ records.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">Last</a></li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    </section>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.client-document-empty-js').forEach(function (emptyState) {
+        var report = emptyState.closest('.client-report');
+        var documentCount = report ? report.querySelectorAll('.client-document-card').length : 0;
+        emptyState.hidden = documentCount > 0;
+      });
+    });
+
+    function printClientReport(reportId) {
+      var report = document.getElementById(reportId);
+
+      if (!report) {
+        return;
+      }
+
+      var printWindow = window.open('', '_blank', 'width=900,height=700');
+      var styles = Array.prototype.slice.call(document.querySelectorAll('style')).map(function (style) {
+        return style.outerHTML;
+      }).join('');
+
+      printWindow.document.write('<html><head><title>Client Details Report</title>' + styles + '</head><body>');
+      printWindow.document.write(report.outerHTML);
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+    }
+  </script>
 {% endblock %}
