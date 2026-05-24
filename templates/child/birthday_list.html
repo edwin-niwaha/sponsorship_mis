@@ -1,61 +1,65 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block content %}
-  <div class="container my-2">
-    <div id="printMe" class="tab-pane show active">
-      <header class="text-center mb-4">
-        <h3 class="text-primary">{{ table_title|upper }}</h3>
-      </header>
-      <hr class="bg-info" style="height: 3px;" />
+{% include '_partials/operations_page_styles.html' %}
 
-      <div class="table-responsive">
-        {% if children_with_birthday %}
-          <!-- Group children by birth_month -->
-          {% regroup children_with_birthday by birth_month as month_list %}
-          <table class="my-table" id="dataTable">
-            <thead class="thead-dark">
-              <tr>
-                <th scope="col">#</th>
-                <th scope="col">Reg.No</th>
-                <th scope="col">Full Name</th>
-                <th scope="col">Gender</th>
-                <th scope="col">Date of Birth</th>
-                <th scope="col">Age</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for month in month_list %}
-                {% for child in month.list %}
-                  <tr>
-                    <th scope="row">{{ forloop.counter }}</th>
-                    <td>{{ child.prefixed_id }}</td>
-                    <td>{{ child.full_name }}</td>
-                    <td>{{ child.gender }}</td>
-                    <td>{{ child.date_of_birth|date:'d M, Y' }}</td>
-                    <td>
-                      {% if child.date_of_birth %}
-                        {{ child.calculate_age }}
-                      {% else %}
-                        <span class="text-muted">N/A</span>
-                      {% endif %}
-                    </td>
-                  </tr>
-                {% endfor %}
-
-                <!-- Month Footer with Total Count -->
-                <tr class="table-info">
-                  <td colspan="7" class="text-right font-italic">
-                    <strong>Total Children: {{ month.list|length }}</strong>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        {% else %}
-          <div class="alert alert-warning text-center" role="alert">No children are listed.</div>
-        {% endif %}
-      </div>
+<div class="container-fluid ops-page">
+  <div class="ops-hero">
+    <div>
+      <div class="ops-kicker">Sponsor Care</div>
+      <h3>{{ table_title|default:"Children's Birthdays" }}</h3>
+      <p>Sponsored children with recorded birthdays, grouped by birth month for easy planning.</p>
+    </div>
+    <div class="ops-actions">
+      <button title="Print" type="button" class="btn btn-outline-success" onclick="printDiv('printMe')"><i class="mdi mdi-printer"></i></button>
+      <button title="Export To Excel" type="button" class="btn btn-outline-success" onclick="ExportToExcel('xlsx')"><i class="mdi mdi-file-excel"></i></button>
     </div>
   </div>
+
+  <div class="ops-stats">
+    <div class="ops-stat">
+      <div class="ops-stat-label">Birthday Records</div>
+      <div class="ops-stat-value">{{ birthday_count|default:0 }}</div>
+    </div>
+  </div>
+
+  <div id="printMe" class="ops-card">
+    <div class="table-responsive">
+      {% if children_with_birthday %}
+        {% regroup children_with_birthday by birth_month as month_list %}
+        <table class="ops-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Reg.No</th>
+              <th>Full Name</th>
+              <th>Gender</th>
+              <th>Date of Birth</th>
+              <th>Age</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for month in month_list %}
+              <tr>
+                <td colspan="6"><span class="ops-pill">Month {{ month.grouper }} - {{ month.list|length }} children</span></td>
+              </tr>
+              {% for child in month.list %}
+                <tr>
+                  <th>{{ forloop.counter }}</th>
+                  <td><strong>{{ child.prefixed_id }}</strong></td>
+                  <td>{{ child.full_name }}</td>
+                  <td>{{ child.gender|default:"-" }}</td>
+                  <td>{{ child.date_of_birth|date:"d M Y" }}</td>
+                  <td>{{ child.calculate_age|default:"-" }}</td>
+                </tr>
+              {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="ops-empty">No sponsored child birthdays are listed.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
 {% endblock %}

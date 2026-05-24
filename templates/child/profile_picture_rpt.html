@@ -1,108 +1,74 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block content %}
+{% include '_partials/operations_page_styles.html' %}
 
-<div class="container">
-    <div class="page-header flex-wrap">
-        <h3 class="mb-0">
-            {{table_title|upper}}
-        </h3>
-        <div class="d-flex">
-
-            <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
-                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
-
-            <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success"
-                onclick="ExportToExcel('xlsx')">
-                <i class="mdi mdi-file-excel btn-icon-prepend"></i> </button>
-
-            <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success"
-                onclick="Export2Doc('printMe');">
-                <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
-
-            <a class="btn btn-sm ml-3 btn-success" href="{% url 'update_picture' %}"><i
-                    class="mdi mdi-folder-plus btn-icon-prepend"></i>
-            </a>
-            <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'profile_pictures' %}"><i
-                    class="mdi mdi-chart-line btn-icon-prepend"></i>
-            </a>
-        </div>
+<div class="container-fluid ops-page">
+  <div class="ops-hero">
+    <div>
+      <div class="ops-kicker">Child Media</div>
+      <h3>{{ table_title|default:"Profile Picture" }}</h3>
+      <p>{% if child_name %}Picture history for {{ child_name }} ({{ prefix_id }}).{% else %}Select a child to review uploaded profile pictures.{% endif %}</p>
     </div>
-    <hr class="bg-info" style="height: 3px;" />
-    <form method="POST" action="{% url 'profile_pictures' %}">
-        {% csrf_token %}
-        <select name="id" id="dropdown" class="chzn-select" required>
-            <option value="" selected disabled>Search child...</option>
-            {% for child in children %}
-            <option value="{{ child.id }}">{{ child.full_name }} - {{ child.prefixed_id }}
-            </option>
-            {% endfor %}
-        </select> &rarr;
-        <button type="submit" class="btn btn-sm ml-3 btn-success" onclick="return validateForm()"><i
-                class="mdi mdi-view-list btn-icon-prepend"></i></button>
-    </form>
-
-    <div id="printMe" class="tab-pane show active">
-        <hr class="bg-info" style="height: 3px;" />
-
-        {% if profile_picture %}
-        <header style="text-align: center;">
-            <h3 class="text-primary" style="font-family: 'Lucida Calligraphy', 'Lucida Sans Unicode', sans-serif;">
-                {{ child_name|upper}} ({{ prefix_id }})
-                {{table_title|upper}}</h3>
-        </header>
-        <hr class="bg-info" style="height: 3px;" />
-
-        <div class="table-responsive">
-            <table class="my-table">
-                <thead>
-                    <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Updated at</th>
-                        <th scope="col">Picture</th>
-                        <th colspan="2" scope="col">Action</th>
-
-                    </tr>
-                </thead>
-                <tbody class="table-group-divider">
-                    {% for child in profile_picture %}
-                    <tr>
-                        <th scope="row">{{forloop.counter}}.</th>
-                        <td>{{child.uploaded_at}}</td>
-                        <td>
-                            {% if child.picture %}
-                            <img class="rounded-circle account-img" height="100" width="100"
-                                src="{{ child.picture.url }}" alt="">
-                            <a href="{{ child.picture.url }}" download title="Download Picture"
-                                onclick="return confirm('Download Picture?');">
-                                <i class="bi bi-download"></i>
-                            </a>
-                            {% else %}
-                            No Picture!
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                            <a class="btn-danger btn-sm" title="Erase"
-                                href="{% url 'delete_profile_picture' child.id %}"
-                                onclick="return confirm('Are you sure about this? this record will be deleted permanently');"><i
-                                    class="bi bi-trash"></i></a>
-                            {% else %}
-                            <button class="btn btn-danger btn-sm" onclick="showNoPermissionMessage('delete')">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {%endfor%}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p class="alert alert-danger">No Profile picture found for the selected child.</p>
-        {% endif %}
+    <div class="ops-actions">
+      <button title="Print" type="button" class="btn btn-outline-success" onclick="printDiv('printMe')"><i class="mdi mdi-printer"></i></button>
+      <a class="btn btn-success" href="{% url 'update_picture' %}"><i class="mdi mdi-cloud-upload mr-1"></i>Upload Picture</a>
     </div>
+  </div>
+
+  <form method="get" action="{% url 'profile_pictures' %}" class="ops-filter">
+    <div class="flex-grow-1">
+      <label for="dropdown">Child</label>
+      <select name="id" id="dropdown" class="chzn-select" required>
+        <option value="" disabled {% if not selected_child_id %}selected{% endif %}>Search child...</option>
+        {% for child in children %}
+          <option value="{{ child.id }}" {% if selected_child_id == child.id %}selected{% endif %}>{{ child.full_name }} - {{ child.prefixed_id }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-success"><i class="mdi mdi-view-list mr-1"></i>View Pictures</button>
+  </form>
+
+  <div id="printMe" class="ops-card">
+    <div class="ops-card-header">
+      <h4>{% if child_name %}{{ child_name }} Pictures{% else %}Profile Pictures{% endif %}</h4>
+      <span class="ops-pill">{{ profile_picture|length|default:0 }} uploads</span>
+    </div>
+    <div class="table-responsive">
+      <table class="ops-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Uploaded At</th>
+            <th>Picture</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for picture in profile_picture %}
+            <tr>
+              <th>{{ forloop.counter }}</th>
+              <td>{{ picture.uploaded_at|date:"d M Y, H:i" }}</td>
+              <td>
+                {% if picture.picture %}
+                  <img class="ops-avatar" src="{{ picture.picture.url }}" alt="{{ child_name }}">
+                  <a class="btn btn-sm btn-outline-secondary ml-2" href="{{ picture.picture.url }}" download><i class="bi bi-download"></i></a>
+                {% else %}
+                  <span class="ops-muted">No picture</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+                  <a class="btn btn-danger btn-sm" href="{% url 'delete_profile_picture' picture.id %}" onclick="return confirm('Delete this picture permanently?')"><i class="bi bi-trash"></i></a>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4" class="ops-empty">{% if selected_child_id %}No profile pictures found for this child.{% else %}Select a child to view pictures.{% endif %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
-
-{% endblock content %}
+{% endblock %}

@@ -30,7 +30,6 @@ MONTH_CHOICES = (
     ("December", "December"),
 )
 
-
 class ChildPayments(models.Model):
     sponsor = models.ForeignKey(
         Sponsor,
@@ -38,6 +37,7 @@ class ChildPayments(models.Model):
         related_name="child_payments",
         verbose_name=_("Sponsor"),
     )
+
     child = models.ForeignKey(
         Child,
         on_delete=models.CASCADE,
@@ -77,6 +77,124 @@ class ChildPayments(models.Model):
         return f"{self.sponsor} - {self.child} - {self.month}"
 
 
+
+class SupportProgram(models.Model):
+    CHILD_SUPPORT = "child_support"
+    CHILD_CO_SUPPORT = "child_co_support"
+    FAMILY_SUPPORT = "family_support"
+    FAMILY_CO_SUPPORT = "family_co_support"
+    GENERAL_SUPPORT = "general_support"
+    STAFF_SUPPORT = "staff_support"
+    ONE_TIME_DONATION = "one_time_donation"
+
+    PROGRAM_CHOICES = (
+        (CHILD_SUPPORT, "Child Support"),
+        (CHILD_CO_SUPPORT, "Child Co-support"),
+        (FAMILY_SUPPORT, "Family Support"),
+        (FAMILY_CO_SUPPORT, "Family Co-support"),
+        (GENERAL_SUPPORT, "General Support"),
+        (STAFF_SUPPORT, "Staff Support"),
+        (ONE_TIME_DONATION, "One-time Donation"),
+    )
+    REAL_SUPPORT_CODES = (
+        CHILD_SUPPORT,
+        CHILD_CO_SUPPORT,
+        FAMILY_SUPPORT,
+        FAMILY_CO_SUPPORT,
+        GENERAL_SUPPORT,
+        STAFF_SUPPORT,
+    )
+
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=50, choices=PROGRAM_CHOICES, unique=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "support_programs"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class PaymentQuerySet(models.QuerySet):
+    def with_related(self):
+        return self.select_related("sponsor", "program", "child", "staff")
+
+    def for_real_support_programs(self):
+        return self.filter(program__code__in=SupportProgram.REAL_SUPPORT_CODES)
+
+    def real_support_payments(self):
+        return self.for_real_support_programs()
+
+    def one_time_donations(self):
+        return self.filter(program__code=SupportProgram.ONE_TIME_DONATION)
+
+    def one_time_only(self):
+        sponsor_ids = (
+            Payment.objects.for_real_support_programs()
+            .filter(sponsor=models.OuterRef("sponsor"))
+            .values("sponsor")
+        )
+        return self.one_time_donations().exclude(models.Exists(sponsor_ids))
+
+
+class Payment(models.Model):
+    sponsor = models.ForeignKey(
+        Sponsor,
+        on_delete=models.CASCADE,
+        related_name="payments",
+    )
+    program = models.ForeignKey(
+        SupportProgram,
+        on_delete=models.PROTECT,
+        related_name="payments",
+    )
+    child = models.ForeignKey(
+        Child,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="unified_payments",
+    )
+    staff = models.ForeignKey(
+        Staff,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="unified_payments",
+    )
+
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    payment_date = models.DateField()
+    reference = models.CharField(max_length=100, null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+
+    source_model = models.CharField(max_length=100, null=True, blank=True)
+    source_id = models.PositiveIntegerField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = PaymentQuerySet.as_manager()
+
+    class Meta:
+        db_table = "payments"
+        ordering = ["-payment_date", "-id"]
+        indexes = [
+            models.Index(fields=["sponsor", "program"]),
+            models.Index(fields=["payment_date"]),
+            models.Index(fields=["source_model", "source_id"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["source_model", "source_id"],
+                name="unique_legacy_payment_source",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.sponsor} - {self.program} - {self.amount}"
+      
 # =================================== DONOR PAYMENT MODEL ===================================
 
 

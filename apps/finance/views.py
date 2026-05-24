@@ -1,5 +1,4 @@
 from collections import defaultdict
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -11,15 +10,25 @@ from django.urls import reverse
 from apps.child.models import Child
 from apps.sponsor.models import Donor, Sponsor
 from apps.staff.models import Staff
+from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
 from apps.users.decorators import (
     admin_or_manager_or_staff_required,
     admin_or_manager_required,
+)
+from apps.finance.services import (
+    apply_sponsor_flags_for_program,
+    get_child_payment_sponsors,
+    get_staff_payment_sponsors,
+    sync_child_payment_to_unified,
+    sync_donor_payment_to_unified,
+    sync_staff_payment_to_unified,
 )
 
 from .forms import (
     ChildPaymentEditForm,
     ChildPaymentForm,
     DonorPaymentForm,
+    SponsorLevelPaymentForm,
     StaffPaymentEditForm,
     StaffPaymentForm,
 )
@@ -40,9 +49,34 @@ def child_sponsor_payment(request):
         if form.is_valid():
             sponsor_id = request.POST.get("sponsor_id")
             child_id = request.POST.get("child_id")
+            if not sponsor_id or not child_id:
+                messages.error(
+                    request,
+                    "Please select both a sponsor and a child.",
+                    extra_tags="bg-danger",
+                )
+                return redirect("child_sponsor_payment")
 
-            sponsor_instance = get_object_or_404(Sponsor, pk=sponsor_id)
-            child_instance = get_object_or_404(Child, pk=child_id)
+            sponsor_instance = get_object_or_404(
+                Sponsor.objects.active().child_sponsors(),
+                pk=sponsor_id,
+            )
+            child_instance = get_object_or_404(
+                Child.objects.filter(is_departed=False),
+                pk=child_id,
+            )
+
+            active_child_ids = ChildSponsorship.objects.filter(
+                sponsor=sponsor_instance,
+                is_active=True,
+            ).values_list("child_id", flat=True)
+            if active_child_ids.exists() and child_instance.id not in active_child_ids:
+                messages.error(
+                    request,
+                    "The selected child is not actively linked to this sponsor.",
+                    extra_tags="bg-danger",
+                )
+                return redirect("child_sponsor_payment")
 
             try:
                 # Create the payment instance
@@ -51,6 +85,8 @@ def child_sponsor_payment(request):
                     payment.sponsor = sponsor_instance
                     payment.child = child_instance
                     payment.save()
+                    sponsor_instance.is_child_sponsor = True
+                    sponsor_instance.save(update_fields=["is_child_sponsor", "updated_at"])
 
                 messages.success(
                     request, "Payment submitted successfully!", extra_tags="bg-success"
@@ -66,7 +102,12 @@ def child_sponsor_payment(request):
         form = ChildPaymentForm()
 
     children = Child.objects.filter(is_departed=False).order_by("id")
-    sponsors = Sponsor.objects.filter(is_departed=False).order_by("id")
+    sponsors = get_child_payment_sponsors()
+    sponsorships = (
+        ChildSponsorship.objects.select_related("sponsor", "child")
+        .filter(is_active=True, sponsor__is_departed=False, child__is_departed=False)
+        .order_by("sponsor__first_name", "sponsor__last_name", "child__full_name")
+    )
     return render(
         request,
         "finance/child_sponsor_payments.html",
@@ -75,6 +116,7 @@ def child_sponsor_payment(request):
             "form_name": "Child-Sponsor Payments",
             "sponsors": sponsors,
             "children": children,
+            "sponsorships": sponsorships,
         },
     )
 
@@ -85,22 +127,20 @@ def child_sponsor_payment(request):
 @transaction.atomic
 def sponsor_payment_without_child(request):
     if request.method == "POST":
-        form = ChildPaymentForm(request.POST, request.FILES)
+        form = SponsorLevelPaymentForm(request.POST, request.FILES)
         if form.is_valid():
             sponsor_id = request.POST.get("sponsor_id")
 
             sponsor_instance = get_object_or_404(Sponsor, pk=sponsor_id)
 
             try:
-                # Create the payment instance
                 with transaction.atomic():
                     payment = form.save(commit=False)
                     payment.sponsor = sponsor_instance
-
-                    # Since there is no child, don't set child in the payment
                     payment.child = None
-
+                    payment.staff = None
                     payment.save()
+                    apply_sponsor_flags_for_program(sponsor_instance, payment.program)
 
                 messages.success(
                     request, "Payment submitted successfully!", extra_tags="bg-success"
@@ -113,15 +153,15 @@ def sponsor_payment_without_child(request):
         else:
             messages.error(request, "Form is invalid.", extra_tags="bg-danger")
     else:
-        form = ChildPaymentForm()
+        form = SponsorLevelPaymentForm()
 
-    sponsors = Sponsor.objects.filter(is_departed=False).order_by("id")
+    sponsors = Sponsor.objects.active().order_by("id")
     return render(
         request,
         "finance/sponsor_payment_without_child.html",
         {
             "form": form,
-            "form_name": "Sponsor Payments (Without Child)",
+            "form_name": "Other Sponsor Payments",
             "sponsors": sponsors,
         },
     )
@@ -143,6 +183,23 @@ def donor_payment_view(request):
                 donor_payment = form.save(commit=False)
                 donor_payment.donor = donor_instance
                 donor_payment.save()
+                sponsor_instance = None
+                if donor_instance.email:
+                    sponsor_instance = Sponsor.objects.filter(
+                        email__iexact=donor_instance.email
+                    ).first()
+                if sponsor_instance is None:
+                    full_name = donor_instance.full_name or "Unknown"
+                    first_name, _, last_name = full_name.partition(" ")
+                    sponsor_instance = Sponsor.objects.create(
+                        first_name=first_name,
+                        last_name=last_name,
+                        email=donor_instance.email or "",
+                        gender="Male",
+                        expected_amt=0,
+                        is_one_time_donor=True,
+                    )
+                sync_donor_payment_to_unified(donor_payment, sponsor_instance)
 
                 messages.success(
                     request, "Payment submitted successfully!", extra_tags="bg-success"
@@ -220,9 +277,34 @@ def staff_sponsor_payment(request):
         if form.is_valid():
             sponsor_id = request.POST.get("sponsor_id")
             staff_id = request.POST.get("staff_id")
+            if not sponsor_id or not staff_id:
+                messages.error(
+                    request,
+                    "Please select both a sponsor and a staff member.",
+                    extra_tags="bg-danger",
+                )
+                return redirect("staff_sponsor_payment")
 
-            sponsor_instance = get_object_or_404(Sponsor, pk=sponsor_id)
-            staff_instance = get_object_or_404(Staff, pk=staff_id)
+            sponsor_instance = get_object_or_404(
+                Sponsor.objects.active().staff_sponsors(),
+                pk=sponsor_id,
+            )
+            staff_instance = get_object_or_404(
+                Staff.objects.filter(is_departed=False),
+                pk=staff_id,
+            )
+
+            active_staff_ids = StaffSponsorship.objects.filter(
+                sponsor=sponsor_instance,
+                is_active=True,
+            ).values_list("staff_id", flat=True)
+            if active_staff_ids.exists() and staff_instance.id not in active_staff_ids:
+                messages.error(
+                    request,
+                    "The selected staff member is not actively linked to this sponsor.",
+                    extra_tags="bg-danger",
+                )
+                return redirect("staff_sponsor_payment")
 
             try:
                 # Create the payment instance
@@ -231,6 +313,8 @@ def staff_sponsor_payment(request):
                     payment.sponsor = sponsor_instance
                     payment.staff = staff_instance
                     payment.save()
+                    sponsor_instance.is_staff_sponsor = True
+                    sponsor_instance.save(update_fields=["is_staff_sponsor", "updated_at"])
 
                 messages.success(
                     request, "Payment submitted successfully!", extra_tags="bg-success"
@@ -246,7 +330,12 @@ def staff_sponsor_payment(request):
         form = StaffPaymentForm()
 
     active_staff = Staff.objects.filter(is_departed=False).order_by("id")
-    sponsors = Sponsor.objects.filter(is_departed=False).order_by("id")
+    sponsors = get_staff_payment_sponsors()
+    sponsorships = (
+        StaffSponsorship.objects.select_related("sponsor", "staff")
+        .filter(is_active=True, sponsor__is_departed=False, staff__is_departed=False)
+        .order_by("sponsor__first_name", "sponsor__last_name", "staff__first_name")
+    )
     return render(
         request,
         "finance/staff_sponsor_payments.html",
@@ -255,6 +344,7 @@ def staff_sponsor_payment(request):
             "form_name": "Staff-Sponsor Payments",
             "sponsors": sponsors,
             "active_staff": active_staff,
+            "sponsorships": sponsorships,
         },
     )
 
@@ -270,6 +360,7 @@ def validate_child_payment(request, payment_id):
         if not sponsor_payments.is_valid:
             sponsor_payments.is_valid = True
             sponsor_payments.save()
+            sync_child_payment_to_unified(sponsor_payments)
 
             messages.success(
                 request, "Pyament validated successfully!", extra_tags="bg-success"
@@ -289,7 +380,9 @@ def edit_child_payment(request, payment_id):
     if request.method == "POST":
         form = ChildPaymentEditForm(request.POST, instance=sponsor_payments)
         if form.is_valid():
-            form.save()
+            payment = form.save()
+            if payment.is_valid:
+                sync_child_payment_to_unified(payment)
             messages.success(request, "Updated successfully!", extra_tags="bg-success")
             return redirect("child_sponsor_payments_report")
     else:
@@ -328,6 +421,7 @@ def validate_staff_payment(request, payment_id):
         if not sponsor_payments.is_valid:
             sponsor_payments.is_valid = True
             sponsor_payments.save()
+            sync_staff_payment_to_unified(sponsor_payments)
 
             messages.success(
                 request, "Pyament validated successfully!", extra_tags="bg-success"
@@ -347,11 +441,13 @@ def edit_staff_payment(request, payment_id):
     if request.method == "POST":
         form = StaffPaymentEditForm(request.POST, instance=sponsor_payments)
         if form.is_valid():
-            form.save()
+            payment = form.save()
+            if payment.is_valid:
+                sync_staff_payment_to_unified(payment)
             messages.success(request, "Updated successfully!", extra_tags="bg-success")
             return redirect("staff_sponsor_payments_report")
     else:
-        form = ChildPaymentEditForm(instance=sponsor_payments)
+        form = StaffPaymentEditForm(instance=sponsor_payments)
 
     return render(
         request,
@@ -393,27 +489,46 @@ def calculate_subtotals(payments_by_year):
 
 
 def generate_payments_report(request, report_title, template_name, payment_model):
-    sponsors = Sponsor.objects.all().order_by("id")
+    sponsors = Sponsor.objects.real_sponsors_only().order_by("id")
     context = {
         "table_title": report_title,
         "sponsors": sponsors,
+        "has_selected_sponsor": False,
     }
 
     if request.method == "POST":
         sponsor_id = request.POST.get("id")
         if sponsor_id:
             selected_sponsor = get_object_or_404(Sponsor, id=sponsor_id)
-            sponsor_payments = payment_model.objects.filter(
-                sponsor_id=sponsor_id
-            ).order_by("-payment_year", "-payment_date")
+            sponsor_payments = payment_model.objects.select_related(
+                "sponsor"
+            ).filter(sponsor_id=sponsor_id)
+            related_fields = {
+                field.name
+                for field in payment_model._meta.get_fields()
+                if getattr(field, "many_to_one", False)
+            }
+            if "child" in related_fields:
+                sponsor_payments = sponsor_payments.select_related("child")
+            if "staff" in related_fields:
+                sponsor_payments = sponsor_payments.select_related("staff")
+            sponsor_payments = sponsor_payments.order_by(
+                "-payment_year",
+                "-payment_date",
+                "-id",
+            )
 
             # Group payments by year and calculate subtotals
             payments_by_year = group_payments_by_year(sponsor_payments)
             subtotals = calculate_subtotals(payments_by_year)
             total_amount = sum(subtotals.values())
+            validated_count = sponsor_payments.filter(is_valid=True).count()
+            pending_count = sponsor_payments.filter(is_valid=False).count()
 
             context.update(
                 {
+                    "has_selected_sponsor": True,
+                    "selected_sponsor": selected_sponsor,
                     "first_name": selected_sponsor.first_name,
                     "last_name": selected_sponsor.last_name,
                     "prefix_id": selected_sponsor.prefixed_id,
@@ -421,6 +536,9 @@ def generate_payments_report(request, report_title, template_name, payment_model
                     "total_amount": total_amount,
                     "payments_by_year": payments_by_year,
                     "subtotals": subtotals,
+                    "payment_count": sponsor_payments.count(),
+                    "validated_count": validated_count,
+                    "pending_count": pending_count,
                 }
             )
 

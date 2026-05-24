@@ -43,9 +43,12 @@
                 {{ policy_name|upper}} &rarr;
 
                 {% if policy_name and policy_upload %}
-                <a href="{{ policy_upload.url }}" target="_blank">
+                <a href="{% url 'open_policy_document' selected_policy_id %}" target="_blank">
                     <i style="color:red" class="mdi mdi-file-pdf"></i>
                 </a>
+                {% if policy_needs_reupload %}
+                <small class="d-block text-muted mt-2">Old Cloudinary PDF. Re-upload if it does not open.</small>
+                {% endif %}
                 {% else %}
                 <p>Pending upload...</p>
                 {% endif %}

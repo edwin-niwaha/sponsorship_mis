@@ -5,8 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.management import call_command
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from django.db.models import Sum
-from django.http import HttpResponseRedirect
+from django.db.models import Q, Sum
+from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from openpyxl import load_workbook
@@ -16,9 +16,27 @@ from apps.users.decorators import (
     admin_or_manager_required,
     admin_required,
 )
+from apps.finance.services import (
+    empty_sponsor_portal_payment_summary,
+    get_sponsor_program_payment_report_context,
+    get_sponsor_portal_payment_summary,
+)
 
-from .forms import DonorForm, SponsorDepartForm, SponsorForm, SponsorUploadForm
-from .models import Donor, Sponsor, SponsorDeparture
+from .forms import (
+    DonorForm,
+    SponsorDepartForm,
+    SponsorFeedbackForm,
+    SponsorForm,
+    SponsorUploadForm,
+)
+from .models import (
+    Donor,
+    Sponsor,
+    SponsorDeparture,
+    SponsorFeedback,
+    sponsorship_type_flags,
+)
+from .services import send_sponsor_feedback_email
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +44,31 @@ logger = logging.getLogger(__name__)
 def _get_request_sponsor(request):
     profile = getattr(request.user, "profile", None)
     sponsor = getattr(profile, "sponsor", None)
+
     if sponsor is None and request.user.email:
-        sponsor = Sponsor.objects.filter(email__iexact=request.user.email).first()
+        sponsor = (
+            Sponsor.objects.active_real_supporters()
+            .filter(email__iexact=request.user.email)
+            .first()
+        )
+
     return sponsor
+
+
+def _sponsor_support_records(sponsor):
+    from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
+
+    child_sponsorships = (
+        ChildSponsorship.objects.select_related("child", "sponsor")
+        .filter(sponsor=sponsor)
+        .order_by("-is_active", "child__full_name")
+    )
+    staff_sponsorships = (
+        StaffSponsorship.objects.select_related("staff", "sponsor")
+        .filter(sponsor=sponsor)
+        .order_by("-is_active", "staff__first_name", "staff__last_name")
+    )
+    return child_sponsorships, staff_sponsorships
 
 
 @login_required
@@ -40,52 +80,16 @@ def sponsor_portal(request):
     active_child_count = 0
     active_staff_count = 0
     expected_amount = 0
-    child_payment_total = 0
-    staff_payment_total = 0
-    recent_child_payments = []
-    recent_staff_payments = []
+    payment_summary = empty_sponsor_portal_payment_summary()
+    feedback_form = SponsorFeedbackForm()
     if sponsor is not None:
-        from apps.finance.models import ChildPayments, StaffPayments
-        from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
-
-        child_sponsorships = (
-            ChildSponsorship.objects.select_related("child", "sponsor")
-            .filter(sponsor=sponsor)
-            .order_by("-is_active", "child__full_name")
-        )
-        staff_sponsorships = (
-            StaffSponsorship.objects.select_related("staff", "sponsor")
-            .filter(sponsor=sponsor)
-            .order_by("-is_active", "staff__first_name", "staff__last_name")
-        )
+        child_sponsorships, staff_sponsorships = _sponsor_support_records(sponsor)
         active_child_count = child_sponsorships.filter(is_active=True).count()
         active_staff_count = staff_sponsorships.filter(is_active=True).count()
         expected_amount = sponsor.expected_amt
-        child_payment_total = (
-            ChildPayments.objects.filter(sponsor=sponsor, is_valid=True).aggregate(
-                total=Sum("amount")
-            )["total"]
-            or 0
-        )
-        staff_payment_total = (
-            StaffPayments.objects.filter(sponsor=sponsor, is_valid=True).aggregate(
-                total=Sum("amount")
-            )["total"]
-            or 0
-        )
-        recent_child_payments = (
-            ChildPayments.objects.select_related("child")
-            .filter(sponsor=sponsor, is_valid=True)
-            .order_by("-payment_date", "-id")[:5]
-        )
-        recent_staff_payments = (
-            StaffPayments.objects.select_related("staff")
-            .filter(sponsor=sponsor, is_valid=True)
-            .order_by("-payment_date", "-id")[:5]
-        )
+        payment_summary = get_sponsor_portal_payment_summary(sponsor)
 
     total_active_count = active_child_count + active_staff_count
-    total_payment_amount = child_payment_total + staff_payment_total
 
     return render(
         request,
@@ -98,13 +102,88 @@ def sponsor_portal(request):
             "active_staff_count": active_staff_count,
             "active_count": total_active_count,
             "expected_amount": expected_amount,
-            "child_payment_total": child_payment_total,
-            "staff_payment_total": staff_payment_total,
-            "total_payment_amount": total_payment_amount,
-            "recent_child_payments": recent_child_payments,
-            "recent_staff_payments": recent_staff_payments,
+            "feedback_form": feedback_form,
+            **payment_summary,
         },
     )
+
+
+@login_required
+@transaction.atomic
+def submit_sponsor_feedback(request):
+    sponsor = _get_request_sponsor(request)
+    if sponsor is None:
+        messages.error(
+            request,
+            "Your user account is not linked to a sponsor profile yet.",
+            extra_tags="bg-danger",
+        )
+        return redirect("sponsor_portal")
+
+    if request.method != "POST":
+        return HttpResponseBadRequest("Invalid request")
+
+    form = SponsorFeedbackForm(request.POST)
+    if not form.is_valid():
+        messages.error(
+            request,
+            "Please check the feedback form and try again.",
+            extra_tags="bg-danger",
+        )
+        return redirect("sponsor_portal")
+
+    feedback = form.save(commit=False)
+    feedback.sponsor = sponsor
+    feedback.submitted_by = request.user
+    feedback.save()
+    transaction.on_commit(lambda: send_sponsor_feedback_email(feedback))
+
+    messages.success(
+        request,
+        "Thank you. Your feedback has been sent to the sponsorship team.",
+        extra_tags="bg-success",
+    )
+    return redirect("sponsor_portal")
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def sponsor_feedback_report(request):
+    feedback_list = SponsorFeedback.objects.with_related()
+    paginator = Paginator(feedback_list, 25)
+    page = request.GET.get("page")
+
+    try:
+        feedback = paginator.page(page)
+    except PageNotAnInteger:
+        feedback = paginator.page(1)
+    except EmptyPage:
+        feedback = paginator.page(paginator.num_pages)
+
+    return render(
+        request,
+        "sponsor/sponsor_feedback_report.html",
+        {
+            "table_title": "Sponsor Feedback",
+            "feedback": feedback,
+            "total_feedback": feedback_list.count(),
+        },
+    )
+
+
+@login_required
+@admin_or_manager_required
+@transaction.atomic
+def mark_sponsor_feedback_reviewed(request, feedback_id):
+    feedback = get_object_or_404(SponsorFeedback, id=feedback_id)
+
+    if request.method == "POST":
+        feedback.status = SponsorFeedback.Status.REVIEWED
+        feedback.save(update_fields=["status", "updated_at"])
+        messages.success(request, "Sponsor feedback marked as reviewed.", extra_tags="bg-success")
+        return redirect("sponsor_feedback_report")
+
+    return HttpResponseBadRequest("Invalid request")
 
 
 def _sponsor_payment_report_context(sponsor, payment_model, beneficiary_type):
@@ -171,17 +250,28 @@ def sponsor_staff_payment_report(request):
     return render(request, "sponsor/sponsor_payment_report.html", context)
 
 
+@login_required
+def sponsor_program_payment_report(request, program_group):
+    sponsor = _get_request_sponsor(request)
+    context = get_sponsor_program_payment_report_context(sponsor, program_group)
+    return render(request, "sponsor/sponsor_payment_report.html", context)
+
+
 # =================================== Sponsors List ===================================
 @login_required
 @admin_or_manager_or_staff_required
 def sponsor_list(request):
-    search_query = request.GET.get("search", "")
-    queryset = Sponsor.objects.filter(is_departed=False).order_by("id")
+    search_query = request.GET.get("search", "").strip()
+    queryset = Sponsor.objects.active_real_supporters().order_by("id")
 
     if search_query:
         queryset = queryset.filter(
-            first_name__icontains=search_query
-        ) | queryset.filter(last_name__icontains=search_query)
+            Q(first_name__icontains=search_query)
+            | Q(last_name__icontains=search_query)
+            | Q(email__icontains=search_query)
+            | Q(mobile_telephone__icontains=search_query)
+            | Q(business_telephone__icontains=search_query)
+        )
 
     paginator = Paginator(queryset, 50)
     page = request.GET.get("page")
@@ -200,6 +290,10 @@ def sponsor_list(request):
             "records": records,
             "table_title": "Sponsors List",
             "search_query": search_query,
+            "total_sponsors": Sponsor.objects.active_real_supporters().count(),
+            "child_sponsors": Sponsor.objects.active_real_supporters().filter(is_child_sponsor=True).count(),
+            "staff_sponsors": Sponsor.objects.active_real_supporters().filter(is_staff_sponsor=True).count(),
+            "family_supporters": Sponsor.objects.active_real_supporters().filter(is_family_supporter=True).count(),
         },
     )
 
@@ -381,6 +475,9 @@ def sponsor_departure(request):
         form = SponsorDepartForm(request.POST, request.FILES)
         if form.is_valid():
             sponsor_id = request.POST.get("id")
+            if not sponsor_id:
+                messages.error(request, "Please select a sponsor.", extra_tags="bg-danger")
+                return redirect("sponsor_departure")
             sponsor_instance = get_object_or_404(Sponsor, pk=sponsor_id)
 
             # Create a sponsorDepart instance
@@ -402,11 +499,17 @@ def sponsor_departure(request):
     else:
         form = SponsorDepartForm()
 
-    sponsors = Sponsor.objects.filter(is_departed=False).order_by("id")
+    sponsors = Sponsor.objects.active_real_supporters().order_by("first_name", "last_name", "id")
     return render(
         request,
         "sponsor/sponsor_depature.html",
-        {"form": form, "form_name": "Sponsors Depature Form", "sponsors": sponsors},
+        {
+            "form": form,
+            "form_name": "Sponsor Departure Form",
+            "sponsors": sponsors,
+            "active_sponsor_count": sponsors.count(),
+            "departed_sponsor_count": Sponsor.objects.departed_real_supporters().count(),
+        },
     )
 
 
@@ -415,16 +518,18 @@ def sponsor_departure(request):
 @admin_or_manager_or_staff_required
 def sponsor_depature_list(request):
     queryset = (
-        Sponsor.objects.all()
-        .filter(is_departed=True)
+        Sponsor.objects.departed_real_supporters()
         .order_by("id")
         .prefetch_related("departures")
     )
 
-    search_query = request.GET.get("search")
+    search_query = request.GET.get("search", "").strip()
     if search_query:
-        queryset = queryset.filter(first_name__icontains=search_query).filter(
-            last_name__icontains=search_query
+        queryset = queryset.filter(
+            Q(first_name__icontains=search_query)
+            | Q(last_name__icontains=search_query)
+            | Q(email__icontains=search_query)
+            | Q(mobile_telephone__icontains=search_query)
         )
 
     paginator = Paginator(queryset, 50)
@@ -442,7 +547,12 @@ def sponsor_depature_list(request):
     return render(
         request,
         "sponsor/sponsor_depature_list.html",
-        {"records": records, "table_title": "Departed Sponsors"},
+        {
+            "records": records,
+            "table_title": "Departed Sponsors",
+            "search_query": search_query,
+            "departed_sponsor_count": queryset.count(),
+        },
     )
 
 
@@ -530,6 +640,7 @@ def process_and_import_data(excel_file):
                 "is_departed": parse_boolean(row[17].value),
                 "comment": row[18].value,
             }
+            data.update(sponsorship_type_flags(data["sponsorship_type"]))
 
             # Validate and log data
             logger.debug(f"Processing data: {data}")
@@ -554,7 +665,7 @@ def process_and_import_data(excel_file):
 @admin_or_manager_required
 @transaction.atomic
 def imported_sponsors(request):
-    records = Sponsor.objects.all().filter(is_departed=False).order_by("id")
+    records = Sponsor.objects.active_real_supporters().order_by("id")
     return render(
         request,
         "sponsor/imported_sponsors_rpt.html",

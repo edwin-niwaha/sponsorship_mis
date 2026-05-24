@@ -1,58 +1,322 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
-
-{% block head %}
-
-{% endblock %}
 
 {% block content %}
-  <div class="container">
-    <div class="page-header flex-wrap">
-      <h3 class="mb-0">{{ form_name|upper }}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-      <div class="d-flex">
-        <a class="btn btn-sm ml-3 btn-success" href="{% url 'staff_sponsor_payment' %}"><i class="mdi mdi-folder-plus btn-icon-prepend"></i></a>
-        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'staff_sponsor_payments_report' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
+  <style>
+    .staff-payment-page {
+      color: #111827;
+    }
+
+    .staff-payment-header,
+    .staff-payment-card,
+    .staff-payment-help {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .staff-payment-header {
+      align-items: center;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      padding: 18px;
+    }
+
+    .staff-payment-header h3 {
+      color: #1f344d;
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0 0 4px;
+      text-transform: none;
+    }
+
+    .staff-payment-muted {
+      color: #64748b;
+      margin: 0;
+    }
+
+    .staff-payment-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .staff-payment-layout {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+      margin-top: 12px;
+    }
+
+    .staff-payment-card,
+    .staff-payment-help {
+      padding: 18px;
+    }
+
+    .section-title {
+      align-items: center;
+      border-bottom: 1px solid #edf1f5;
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+    }
+
+    .section-title i {
+      align-items: center;
+      background: #eef4ff;
+      border: 1px solid #d7e4fb;
+      border-radius: 8px;
+      color: #295caa;
+      display: inline-flex;
+      height: 38px;
+      justify-content: center;
+      width: 38px;
+    }
+
+    .section-title h5 {
+      color: #1f344d;
+      font-size: 1rem;
+      font-weight: 900;
+      margin: 0;
+    }
+
+    .staff-payment-form-shell {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .staff-payment-form-shell .chzn-container,
+    .staff-payment-form-shell .chzn-select {
+      width: 100% !important;
+    }
+
+    .field-label {
+      color: #374151;
+      font-size: 0.8rem;
+      font-weight: 900;
+      margin-bottom: 0.35rem;
+      text-transform: uppercase;
+    }
+
+    .field-help {
+      color: #64748b;
+      display: block;
+      font-size: 0.78rem;
+      margin-top: 0.3rem;
+    }
+
+    .link-list {
+      display: grid;
+      gap: 10px;
+      max-height: 360px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .link-item {
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .link-item strong,
+    .link-item span {
+      display: block;
+    }
+
+    .link-item strong {
+      color: #1f344d;
+      font-weight: 900;
+    }
+
+    .link-item span {
+      color: #64748b;
+      font-size: 0.82rem;
+    }
+
+    @media (max-width: 991.98px) {
+      .staff-payment-layout,
+      .staff-payment-header {
+        grid-template-columns: 1fr;
+      }
+
+      .staff-payment-header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+    }
+  </style>
+
+  <div class="container staff-payment-page">
+    <div class="staff-payment-header">
+      <div>
+        <h3>{{ form_name }}</h3>
+        <p class="staff-payment-muted">Record staff sponsorship payments against the correct active sponsor and staff member.</p>
+      </div>
+      <div class="staff-payment-actions">
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'staff_sponsor_payment' %}">
+          <i class="mdi mdi-refresh"></i> New entry
+        </a>
+        <a class="btn btn-sm btn-success" href="{% url 'staff_sponsor_payments_report' %}">
+          <i class="mdi mdi-chart-line"></i> View report
+        </a>
       </div>
     </div>
-    <hr />
 
-    <div class="form-content my-3 p-3">
-      <div class="row justify-content-center">
-        <div class="col-lg-12">
-          <div class="card shadow-lg border-0 rounded-lg mt-0 mb-5">
-            <div class="card-body">
-              <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="form-group">
-                  <select name="staff_id" id="st_dropdown" class="chzn-select" required style="width: 40%;">
-                    <option value="" selected disabled>Search staff...</option>
-                    {% for staff in active_staff %}
-                      <option value="{{ staff.id }}">{{ staff.last_name }} {{ staff.first_name }} &rarr;
-                        {{ staff.prefixed_id }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                <div class="form-group">
-                  <select name="sponsor_id" id="sp_dropdown" class="chzn-select" required style="width: 40%;">
-                    <option value="" selected disabled>Search sponsor...</option>
-                    {% for sponsor in sponsors %}
-                      <option value="{{ sponsor.id }}">{{ sponsor.first_name }}
-                        {{ sponsor.last_name }} &rarr;
-                        {{ sponsor.prefixed_id }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-
-                {{ form|crispy }}
-                <div class="form-group mt-4 mb-0">
-                  <button type="submit" class="col-md-12 btn btn-dark" onclick="return confirm('Are you sure you want to proceed?') && validateSTForm()">SUBMIT PAYMENT</button>
-                  <br />
-                </div>
-              </form>
-            </div>
+    <div class="staff-payment-layout">
+      <section class="staff-payment-card">
+        <div class="section-title">
+          <i class="mdi mdi-account-cash"></i>
+          <div>
+            <h5>Payment details</h5>
+            <p class="staff-payment-muted">Validated payments will sync into unified staff support reporting.</p>
           </div>
         </div>
-      </div>
+
+        <form method="post" enctype="multipart/form-data" class="staff-payment-form-shell">
+          {% csrf_token %}
+
+          <div class="form-group">
+            <label for="sp_dropdown" class="field-label">Staff sponsor</label>
+            <select name="sponsor_id" id="sp_dropdown" class="chzn-select" required data-placeholder="Search staff sponsor">
+              <option value="" selected disabled>Search staff sponsor...</option>
+              {% for sponsor in sponsors %}
+                <option value="{{ sponsor.id }}">{{ sponsor.first_name }} {{ sponsor.last_name }} &rarr; {{ sponsor.prefixed_id }}</option>
+              {% endfor %}
+            </select>
+            <small class="field-help">Choose the sponsor who made this staff support payment.</small>
+          </div>
+
+          <div class="form-group">
+            <label for="st_dropdown" class="field-label">Sponsored staff</label>
+            <select name="staff_id" id="st_dropdown" class="chzn-select" required data-placeholder="Search staff">
+              <option value="" selected disabled>Search staff...</option>
+              {% for staff in active_staff %}
+                <option value="{{ staff.id }}">{{ staff.first_name }} {{ staff.last_name }} &rarr; {{ staff.prefixed_id }}</option>
+              {% endfor %}
+            </select>
+            <small class="field-help" id="staffSelectionHelp">Select a sponsor first to narrow this list to their active staff sponsorships.</small>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.payment_date.id_for_label }}" class="field-label">Payment date</label>
+                {{ form.payment_date }}
+                {% if form.payment_date.errors %}
+                  <div class="text-danger small mt-2">{{ form.payment_date.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.amount.id_for_label }}" class="field-label">Amount</label>
+                {{ form.amount }}
+                {% if form.amount.errors %}
+                  <div class="text-danger small mt-2">{{ form.amount.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.month.id_for_label }}" class="field-label">Month covered</label>
+                {{ form.month }}
+                {% if form.month.errors %}
+                  <div class="text-danger small mt-2">{{ form.month.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.payment_year.id_for_label }}" class="field-label">Year covered</label>
+                {{ form.payment_year }}
+                {% if form.payment_year.errors %}
+                  <div class="text-danger small mt-2">{{ form.payment_year.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block mt-3" onclick="return confirm('Are you sure you want to submit this staff sponsorship payment?')">
+            <i class="mdi mdi-content-save mr-1"></i> Submit payment
+          </button>
+        </form>
+      </section>
+
+      <aside class="staff-payment-help">
+        <div class="section-title">
+          <i class="mdi mdi-link-variant"></i>
+          <div>
+            <h5>Active staff links</h5>
+            <p class="staff-payment-muted">Use these links as a quick cross-check before saving.</p>
+          </div>
+        </div>
+
+        <div class="link-list">
+          {% for sponsorship in sponsorships|slice:":12" %}
+            <div class="link-item">
+              <strong>{{ sponsorship.sponsor.first_name }} {{ sponsorship.sponsor.last_name }}</strong>
+              <span>{{ sponsorship.staff.first_name }} {{ sponsorship.staff.last_name }} &rarr; {{ sponsorship.staff.prefixed_id }}</span>
+            </div>
+          {% empty %}
+            <p class="staff-payment-muted">No active staff sponsorship links are available yet.</p>
+          {% endfor %}
+        </div>
+      </aside>
     </div>
   </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var sponsorStaffMap = {};
+      {% for sponsorship in sponsorships %}
+        sponsorStaffMap["{{ sponsorship.sponsor_id }}"] = sponsorStaffMap["{{ sponsorship.sponsor_id }}"] || [];
+        sponsorStaffMap["{{ sponsorship.sponsor_id }}"].push("{{ sponsorship.staff_id }}");
+      {% endfor %}
+
+      var sponsorSelect = document.getElementById("sp_dropdown");
+      var staffSelect = document.getElementById("st_dropdown");
+      var helpText = document.getElementById("staffSelectionHelp");
+
+      function refreshChosen(select) {
+        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.chosen) {
+          window.jQuery(select).trigger("chosen:updated");
+        }
+      }
+
+      function filterStaff() {
+        var sponsorId = sponsorSelect.value;
+        var allowedStaff = sponsorStaffMap[sponsorId] || [];
+        var shouldFilter = allowedStaff.length > 0;
+
+        Array.prototype.forEach.call(staffSelect.options, function (option) {
+          if (!option.value) {
+            option.hidden = false;
+            return;
+          }
+          option.hidden = shouldFilter && allowedStaff.indexOf(option.value) === -1;
+        });
+
+        if (shouldFilter && staffSelect.value && allowedStaff.indexOf(staffSelect.value) === -1) {
+          staffSelect.value = "";
+        }
+
+        helpText.textContent = shouldFilter
+          ? "Staff list narrowed to active sponsorships for the selected sponsor."
+          : "No active staff links were found for this sponsor, so all active staff remain selectable.";
+        refreshChosen(staffSelect);
+      }
+
+      sponsorSelect.addEventListener("change", filterStaff);
+    });
+  </script>
 {% endblock %}

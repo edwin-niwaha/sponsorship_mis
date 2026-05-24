@@ -1,53 +1,207 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
-
-{% block head %}
-{% endblock %}
 
 {% block content %}
+  <style>
+    .departure-page { color: #111827; }
+    .departure-header,
+    .departure-card,
+    .departure-side-card,
+    .departure-stat-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+    }
+    .departure-header {
+      align-items: center;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      padding: 18px;
+    }
+    .departure-header h3 {
+      color: #1f344d;
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0 0 4px;
+      text-transform: none;
+    }
+    .departure-muted { color: #64748b; margin: 0; }
+    .departure-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .departure-stats-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin: 12px 0;
+    }
+    .departure-stat-card { display: grid; gap: 7px; padding: 14px; }
+    .departure-stat-card i {
+      align-items: center;
+      background: #fff6e8;
+      border: 1px solid #f5dfb8;
+      border-radius: 8px;
+      color: #96620b;
+      display: inline-flex;
+      height: 36px;
+      justify-content: center;
+      width: 36px;
+    }
+    .departure-stat-card span {
+      color: #64748b;
+      font-size: .76rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .departure-stat-card strong { color: #1f344d; font-size: 1.2rem; font-weight: 900; }
+    .departure-layout {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
+    }
+    .departure-card,
+    .departure-side-card { padding: 18px; }
+    .section-title {
+      align-items: center;
+      border-bottom: 1px solid #edf1f5;
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+    }
+    .section-title i {
+      align-items: center;
+      background: #fff6e8;
+      border: 1px solid #f5dfb8;
+      border-radius: 8px;
+      color: #96620b;
+      display: inline-flex;
+      height: 38px;
+      justify-content: center;
+      width: 38px;
+    }
+    .section-title h5 { color: #1f344d; font-size: 1rem; font-weight: 900; margin: 0; }
+    .departure-form-shell .chzn-container,
+    .departure-form-shell .chzn-select { width: 100% !important; }
+    .field-label {
+      color: #374151;
+      font-size: .8rem;
+      font-weight: 900;
+      margin-bottom: .35rem;
+      text-transform: uppercase;
+    }
+    .staff-list {
+      display: grid;
+      gap: 10px;
+      max-height: 360px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .staff-list-item {
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .staff-list-item strong,
+    .staff-list-item span { display: block; }
+    .staff-list-item strong { color: #1f344d; font-weight: 900; }
+    .staff-list-item span { color: #64748b; font-size: .82rem; }
+    @media (max-width: 991.98px) {
+      .departure-header { align-items: stretch; flex-direction: column; }
+      .departure-layout,
+      .departure-stats-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 
-<div class="container">
-    <div class="page-header flex-wrap">
-        <h3 class="mb-0"> {{form_name|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-        <div class="d-flex">
-            <a class="btn btn-sm ml-3 btn-success" href="{% url 'register_staff' %}"><i
-                    class="mdi mdi-folder-plus btn-icon-prepend"></i>
-            </a>
-            <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'staff_depature_list' %}"><i
-                    class="mdi mdi-chart-line btn-icon-prepend"></i>
-            </a>
-        </div>
+  <div class="container departure-page">
+    <div class="departure-header">
+      <div>
+        <h3>{{ form_name }}</h3>
+        <p class="departure-muted">Record staff departures without deleting historical staff and sponsorship records.</p>
+      </div>
+      <div class="departure-actions">
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'staff_departure' %}">
+          <i class="mdi mdi-refresh"></i> New departure
+        </a>
+        <a class="btn btn-sm btn-success" href="{% url 'staff_depature_list' %}">
+          <i class="mdi mdi-format-list-bulleted"></i> Departed list
+        </a>
+      </div>
     </div>
-    <hr>
 
-    <div class="form-content my-3 p-3">
-        <div class="row justify-content-center">
-            <div class="col-lg-12">
-                <div class="card shadow-lg border-0 rounded-lg mt-0 mb-5">
-                    <div class="card-body">
-                        <form method="post" enctype="multipart/form-data">
-                            {% csrf_token %}
-                            <select name="id" id="dropdown" class="chzn-select" required>
-                                <option value="" selected disabled>Search staff...</option>
-                                {% for staff in records %}
-                                <option value="{{ staff.id }}">{{ staff.last_name }} {{ staff.first_name }} &rarr;
-                                    {{ staff.prefixed_id }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                            <br /><br />
-                            <!--  -->
-                            {{ form|crispy }}
-                            <div class="form-group mt-4 mb-0">
-                                <button type="submit" class="col-md-12 btn btn-dark"
-                                    onclick="return confirm('Are you sure you want to depart a staff? ');"
-                                    onclick="return validateSTForm()">SUBMIT</button><br>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+    <section class="departure-stats-grid">
+      <div class="departure-stat-card">
+        <i class="mdi mdi-account-tie"></i>
+        <span>Active Staff</span>
+        <strong>{{ active_staff_count }}</strong>
+      </div>
+      <div class="departure-stat-card">
+        <i class="mdi mdi-account-off"></i>
+        <span>Departed Staff</span>
+        <strong>{{ departed_staff_count }}</strong>
+      </div>
+    </section>
+
+    <div class="departure-layout">
+      <section class="departure-card">
+        <div class="section-title">
+          <i class="mdi mdi-account-arrow-right"></i>
+          <div>
+            <h5>Departure details</h5>
+            <p class="departure-muted">The staff member will move to departed reports and be removed from active lists.</p>
+          </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="departure-form-shell">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="staff_dropdown" class="field-label">Staff member</label>
+            <select name="id" id="staff_dropdown" class="chzn-select" required data-placeholder="Search active staff">
+              <option value="" selected disabled>Search active staff...</option>
+              {% for staff in records %}
+                <option value="{{ staff.id }}">{{ staff.first_name }} {{ staff.last_name }} &rarr; {{ staff.prefixed_id }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="field-label" for="{{ form.departure_date.id_for_label }}">Departure date</label>
+            {{ form.departure_date }}
+            {{ form.departure_date.errors }}
+          </div>
+
+          <div class="form-group">
+            <label class="field-label" for="{{ form.departure_reason.id_for_label }}">Departure reason</label>
+            {{ form.departure_reason }}
+            {{ form.departure_reason.errors }}
+          </div>
+
+          <button type="submit" class="btn btn-warning btn-block mt-3" onclick="return confirm('Record this staff member as departed?')">
+            <i class="mdi mdi-content-save mr-1"></i> Submit departure
+          </button>
+        </form>
+      </section>
+
+      <aside class="departure-side-card">
+        <div class="section-title">
+          <i class="mdi mdi-account-search"></i>
+          <div>
+            <h5>Active staff</h5>
+            <p class="departure-muted">Quick reference while selecting the staff member.</p>
+          </div>
+        </div>
+        <div class="staff-list">
+          {% for staff in records|slice:":14" %}
+            <div class="staff-list-item">
+              <strong>{{ staff.first_name }} {{ staff.last_name }}</strong>
+              <span>{{ staff.prefixed_id }} | {{ staff.job_title|default:"Job title not recorded" }}</span>
             </div>
+          {% empty %}
+            <p class="departure-muted">No active staff records are available.</p>
+          {% endfor %}
         </div>
+      </aside>
     </div>
-</div>
+  </div>
 {% endblock content %}

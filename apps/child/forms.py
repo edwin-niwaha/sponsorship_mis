@@ -11,6 +11,20 @@ from .models import (
 )
 
 
+def apply_standard_widgets(form):
+    for field in form.fields.values():
+        widget = field.widget
+        css_class = widget.attrs.get("class", "")
+        if isinstance(widget, forms.CheckboxInput):
+            widget.attrs["class"] = f"{css_class} form-check-input".strip()
+        elif isinstance(widget, forms.Select):
+            widget.attrs["class"] = f"{css_class} form-select".strip()
+        elif isinstance(widget, forms.FileInput):
+            widget.attrs["class"] = f"{css_class} form-control".strip()
+        else:
+            widget.attrs["class"] = f"{css_class} form-control".strip()
+
+
 class UploadForm(forms.Form):
     excel_file = forms.FileField()
     excel_file.widget.attrs["class"] = "form-control-file"
@@ -53,13 +67,17 @@ class ChildForm(forms.ModelForm):
             "is_child_in_school": forms.CheckboxInput(attrs={"class": "form-control"}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        apply_standard_widgets(self)
+
     # Form validation
     def clean(self):
         super(ChildForm, self).clean()
 
         full_name = self.cleaned_data.get("full_name")
 
-        if len(full_name) < 3:
+        if full_name and len(full_name) < 3:
             self.add_error(
                 "full_name", "Can not save first name less than 3 characters long"
             )
@@ -81,6 +99,7 @@ class ChildProfilePictureForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["picture"].widget = forms.FileInput(attrs={"accept": "image/*"})
+        apply_standard_widgets(self)
 
     def clean_picture(self):
         picture = self.cleaned_data.get("picture")
@@ -149,6 +168,10 @@ class ChildProgressForm(forms.ModelForm):
             ),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        apply_standard_widgets(self)
+
 
 # =================================== CHILD CORRESSPONDENCE ===================================
 class ChildCorrespondenceForm(forms.ModelForm):
@@ -162,6 +185,10 @@ class ChildCorrespondenceForm(forms.ModelForm):
             "comment": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
             # 'sponsor': forms.Select(attrs={'class': 'form-control'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        apply_standard_widgets(self)
 
     def clean_attachment(self):
         attachment = self.cleaned_data.get("attachment")
@@ -186,10 +213,14 @@ class ChildIncidentForm(forms.ModelForm):
             "attachment": forms.FileInput(attrs={"class": "form-control-file"}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        apply_standard_widgets(self)
+
     def clean_attachment(self):
         attachment = self.cleaned_data.get("attachment")
         if not attachment:
-            raise ValidationError("Attachment is required.")
+            return attachment
 
         # Check if the attachment is a PDF file
         if not attachment.name.lower().endswith(".pdf"):
@@ -209,3 +240,7 @@ class ChildDepartForm(forms.ModelForm):
                 attrs={"class": "form-control", "required": True, "rows": 2}
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        apply_standard_widgets(self)

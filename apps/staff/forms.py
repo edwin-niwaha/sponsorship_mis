@@ -10,9 +10,17 @@ class StaffForm(forms.ModelForm):
         model = Staff
         exclude = ("is_departed", "is_sponsored")
         widgets = {
-            "date_of_birth": forms.DateInput(attrs={"type": "date", "required": True}),
+            "first_name": forms.TextInput(attrs={"class": "form-control", "required": True}),
+            "last_name": forms.TextInput(attrs={"class": "form-control", "required": True}),
+            "picture": forms.FileInput(attrs={"class": "form-control-file", "accept": "image/*"}),
+            "date_of_birth": forms.DateInput(
+                attrs={"class": "form-control", "type": "date", "required": True}
+            ),
+            "email": forms.EmailInput(attrs={"class": "form-control", "required": True}),
+            "home_district": forms.TextInput(attrs={"class": "form-control"}),
+            "mobile_telephone": forms.TextInput(attrs={"class": "form-control"}),
             "date_started_work": forms.DateInput(
-                attrs={"type": "date", "required": True}
+                attrs={"class": "form-control", "type": "date", "required": True}
             ),
             "gender": forms.Select(attrs={"class": "form-control", "required": True}),
             "marital_status": forms.Select(
@@ -21,6 +29,7 @@ class StaffForm(forms.ModelForm):
             "department": forms.Select(
                 attrs={"class": "form-control", "required": True}
             ),
+            "job_title": forms.TextInput(attrs={"class": "form-control"}),
         }
 
     # Form validation
@@ -30,7 +39,7 @@ class StaffForm(forms.ModelForm):
         first_name = self.cleaned_data.get("first_name")
         last_name = self.cleaned_data.get("last_name")
 
-        if len(first_name) < 3:
+        if first_name and len(first_name) < 3:
             self.add_error(
                 "first_name", "Can not save first name less than 3 characters long"
             )
@@ -38,7 +47,7 @@ class StaffForm(forms.ModelForm):
                 {"class": "form-control  is-invalid"}
             )
 
-        if len(last_name) < 3:
+        if last_name and len(last_name) < 3:
             self.add_error(
                 "last_name", "Can not save last name less than 3 characters long"
             )
@@ -95,8 +104,15 @@ class StaffDepartureForm(forms.ModelForm):
         model = StaffDeparture
         exclude = ("staff",)
         widgets = {
-            "departure_date": forms.DateInput(attrs={"type": "date"}),
+            "departure_date": forms.DateInput(
+                attrs={"class": "form-control", "type": "date", "required": True}
+            ),
             "departure_reason": forms.Textarea(
-                attrs={"class": "form-control", "rows": 2}
+                attrs={
+                    "class": "form-control",
+                    "rows": 4,
+                    "placeholder": "Record the reason for departure",
+                    "required": True,
+                }
             ),
         }

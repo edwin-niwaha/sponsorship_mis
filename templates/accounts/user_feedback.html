@@ -1,90 +1,196 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}Pendeza MIS | User Feedback{% endblock %}
+
 {% block content %}
+{% include '_partials/reports_layout_styles.html' %}
+<style>
+    .feedback-page .feedback-meta {
+        color: #667085;
+        display: block;
+        font-size: .78rem;
+        font-weight: 700;
+        margin-top: 2px;
+    }
 
-<div class="container">
+    .feedback-page .feedback-message {
+        max-width: 500px;
+        min-width: 280px;
+        white-space: normal;
+    }
+
+    .feedback-page .feedback-table-wrap {
+        overflow-x: auto;
+        scrollbar-gutter: stable;
+    }
+
+    .feedback-page .feedback-table-wrap .my-table {
+        min-width: 980px;
+    }
+
+    .feedback-page .feedback-pill {
+        border-radius: 999px;
+        display: inline-flex;
+        font-size: .72rem;
+        font-weight: 900;
+        padding: .35rem .65rem;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .feedback-page .feedback-pill-success {
+        background: #e8f7ef;
+        color: #177245;
+    }
+
+    .feedback-page .feedback-pill-warning {
+        background: #fff6df;
+        color: #946200;
+    }
+
+    .feedback-page .feedback-actions {
+        display: flex;
+        gap: .5rem;
+        white-space: nowrap;
+    }
+
+    .feedback-page .feedback-empty {
+        color: #667085;
+        padding: 38px 16px;
+        text-align: center;
+    }
+
+    .feedback-page .feedback-pagination {
+        align-items: center;
+        background: #fff;
+        border-top: 1px solid #e3e8ef;
+        display: flex;
+        flex-wrap: wrap;
+        gap: .75rem;
+        justify-content: space-between;
+        padding: 12px 14px;
+    }
+
+    .feedback-page .feedback-pagination .pagination {
+        margin: 0;
+    }
+
+    .feedback-page .feedback-page-summary {
+        color: #667085;
+        font-size: .84rem;
+        font-weight: 700;
+    }
+</style>
+
+<div class="container-fluid reports-standard-page feedback-page">
     <div class="page-header flex-wrap">
-        <h3 class="mb-0"> {{table_title|upper}} <span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
+        <div>
+            <h3 class="mb-0">{{ table_title|default:"User Feedback"|upper }}</h3>
+            <span class="feedback-meta">Review support messages submitted through the public contact form.</span>
+        </div>
         <div class="d-flex">
-            <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
-                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
+            <button title="Print" type="button" class="btn btn-sm btn-success" onclick="printDiv('printMe')">
+                <i class="mdi mdi-printer btn-icon-prepend"></i>
+            </button>
 
-            <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success"
-                onclick="ExportToExcel('xlsx')">
-                <i class="mdi mdi-file-excel btn-icon-prepend"></i> </button>
+            <button title="Export To Excel" type="button" class="btn btn-sm btn-success" onclick="ExportToExcel('xlsx')">
+                <i class="mdi mdi-file-excel btn-icon-prepend"></i>
+            </button>
 
-            <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success"
-                onclick="Export2Doc('printMe');">
-                <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
+            <button title="Export To Word" type="button" class="btn btn-sm btn-success" onclick="Export2Doc('printMe');">
+                <i class="mdi mdi-file-word btn-icon-prepend"></i>
+            </button>
         </div>
     </div>
-    <hr>
-    <div id="printMe" class="tab-pane show active">
-        <header style="text-align: center;">
-            <hr class="bg-info" style="height: 5px;" />
-        </header>
-        <table class="my-table">
-            <thead>
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Name</th>
-                    <th scope="col">Email</th>
-                    <th scope="col">Message</th>
-                    <th scope="col">Submitted on</th>
-                    <th colspan="3" scope="col">Action</th>
-                </tr>
-            </thead>
-            <tbody class="table-group-divider">
-                {%for feed in feedback%}
-                <tr>
-                    <th scope="row">{{forloop.counter}}.</th>
-                    <td>{{feed.name}}</td>
-                    <td>{{feed.email}}</td>
-                    <td>{{feed.message}}</td>
-                    <td>{{feed.created_at}}</td>
-                    <td class="{% if feed.is_valid %}valid-feed{% else %}invalid-feed{% endif %}">
-                        {% if feed.is_valid %}
-                        &#10004;
-                        <!-- Check mark (✔) indicating the feed is valid -->
-                        {% else %}
-                        &#10007;
-                        <!-- Cross mark (❌) indicating the feed is invalid -->
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                        <form action="{% url 'validate_user_feedback' feed.id %}" method="post"
-                            onsubmit="return confirm('Are you sure you want to validate?');">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-warning btn-sm" title="Validate"
-                                {% if feed.is_valid %}hidden{% endif %}>
-                                Validate
-                            </button>
-                        </form>
-                        {% else %}
-                        <button class="btn btn-warning btn-sm" onclick="showNoPermissionMessage('edit')"
-                            {% if feed.is_valid %}hidden{% endif %}>
-                            Validate
-                        </button>
-                        {% endif %}
-                    </td>
 
-                    <td>
-                        {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                        <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_feedback' feed.id %}"
-                            onclick="return confirm('Are you sure about this? This record will be deleted permanently.');">
-                            <i class="bi bi-trash"></i>
-                        </a>
-                        {% else %}
-                        <button class="btn btn-danger btn-sm disabled" onclick="showNoPermissionMessage('delete')">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                        {% endif %}
-                    </td>
-                    {%endfor%}
-            </tbody>
-        </table>
+    <div id="printMe" class="tab-pane show active">
+        <div class="table-responsive feedback-table-wrap">
+            <table class="my-table">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Sender</th>
+                        <th scope="col">Contact</th>
+                        <th scope="col">Message</th>
+                        <th scope="col">Submitted</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="table-group-divider">
+                    {% for feed in feedback %}
+                    <tr>
+                        <th scope="row">{{ forloop.counter }}.</th>
+                        <td><strong>{{ feed.name }}</strong></td>
+                        <td>{{ feed.email }}</td>
+                        <td class="feedback-message">{{ feed.message }}</td>
+                        <td>{{ feed.created_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            {% if feed.is_valid %}
+                            <span class="feedback-pill feedback-pill-success">Validated</span>
+                            {% else %}
+                            <span class="feedback-pill feedback-pill-warning">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="feedback-actions">
+                                {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+                                    {% if not feed.is_valid %}
+                                    <form action="{% url 'validate_user_feedback' feed.id %}" method="post" onsubmit="return confirm('Are you sure you want to validate?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-warning btn-sm" title="Validate">Validate</button>
+                                    </form>
+                                    {% endif %}
+                                    <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_feedback' feed.id %}" onclick="return confirm('Are you sure about this? This record will be deleted permanently.');">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                {% else %}
+                                    {% if not feed.is_valid %}
+                                    <button class="btn btn-warning btn-sm" onclick="showNoPermissionMessage('edit')">Validate</button>
+                                    {% endif %}
+                                    <button class="btn btn-danger btn-sm disabled" onclick="showNoPermissionMessage('delete')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td class="feedback-empty" colspan="7">No user feedback has been submitted yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if feedback.has_other_pages %}
+        <div class="feedback-pagination">
+            <span class="feedback-page-summary">
+                Page {{ feedback.number }} of {{ feedback.paginator.num_pages }} · {{ total_feedback }} records
+            </span>
+            <ul class="pagination pagination-sm">
+                {% if feedback.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page=1">First</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ feedback.previous_page_number }}">Previous</a></li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">First</span></li>
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                {% endif %}
+
+                <li class="page-item active"><span class="page-link">{{ feedback.number }}</span></li>
+
+                {% if feedback.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ feedback.next_page_number }}">Next</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ feedback.paginator.num_pages }}">Last</a></li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                <li class="page-item disabled"><span class="page-link">Last</span></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
     </div>
 </div>
 

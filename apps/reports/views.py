@@ -6,6 +6,7 @@ from django.db.models import Sum
 from django.shortcuts import render
 
 from apps.child.models import Child
+from apps.finance.services import get_active_sponsors_count, get_departed_sponsors_count
 from apps.finance.models import ChildPayments, StaffPayments
 from apps.sponsor.models import Sponsor
 from apps.sponsorship.models import StaffSponsorship
@@ -53,8 +54,8 @@ def reports_dash(request):
     Render the reports dashboard with counts of sponsors, children, and staff.
     """
     # Sponsors
-    sponsors_count = Sponsor.objects.filter(is_departed=False).count()
-    sponsors_departed_count = Sponsor.objects.filter(is_departed=True).count()
+    sponsors_count = get_active_sponsors_count()
+    sponsors_departed_count = get_departed_sponsors_count()
 
     # Children
     children_count = Child.objects.count()
@@ -237,7 +238,7 @@ def departed_sponsors(request):
     """
     Render a paginated list of all departed sponsors.
     """
-    queryset = Sponsor.objects.filter(is_departed=True).order_by("id")
+    queryset = Sponsor.objects.departed_real_supporters().order_by("id")
     search_query = request.GET.get("search")
     queryset = filter_by_search(queryset, search_query, ["first_name", "last_name"])
 
@@ -258,9 +259,11 @@ def sponsor_payments_child(request):
     """
     Render a paginated list of all sponsor payments for children.
     """
-    queryset = ChildPayments.objects.filter(is_valid=True).order_by("id")
+    queryset = ChildPayments.objects.filter(is_valid=True).select_related(
+        "sponsor", "child"
+    ).order_by("id")
     search_query = request.GET.get("search")
-    queryset = filter_by_search(queryset, search_query, ["first_name", "last_name"])
+    queryset = filter_by_search(queryset, search_query, ["sponsor__first_name"])
 
     # Calculate the total amount
     total_amount = queryset.aggregate(total_amount=Sum("amount"))["total_amount"] or 0
@@ -288,9 +291,11 @@ def sponsor_payments_staff(request):
     """
     Render a paginated list of all sponsor payments for staff.
     """
-    queryset = StaffPayments.objects.filter(is_valid=True).order_by("id")
+    queryset = StaffPayments.objects.filter(is_valid=True).select_related(
+        "sponsor", "staff"
+    ).order_by("id")
     search_query = request.GET.get("search")
-    queryset = filter_by_search(queryset, search_query, ["first_name", "last_name"])
+    queryset = filter_by_search(queryset, search_query, ["sponsor__first_name"])
 
     # Calculate the total amount
     total_amount = queryset.aggregate(total_amount=Sum("amount"))["total_amount"] or 0

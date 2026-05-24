@@ -69,16 +69,12 @@
   <div class="container-fluid">
     <a class="navbar-brand d-flex align-items-center" href="/">
       <img src="{% static 'images/file.png' %}" alt="Pendeza logo" class="brand-mark mr-2" />
-      <span>Pendeza SMS</span>
+      <span>Pendeza MIS</span>
     </a>
 
     <button
       class="navbar-toggler"
       type="button"
-      data-toggle="collapse"
-      data-target="#publicNavbar"
-      data-bs-toggle="collapse"
-      data-bs-target="#publicNavbar"
       aria-controls="publicNavbar"
       aria-expanded="false"
       aria-label="Toggle navigation"
@@ -131,3 +127,37 @@
     </div>
   </div>
 </nav>
+
+<script>
+  (function () {
+    var navbar = document.getElementById('publicNavbar')
+    var toggler = document.querySelector('.app-public-navbar .navbar-toggler')
+
+    if (!navbar || !toggler) {
+      return
+    }
+
+    function setExpanded(isExpanded) {
+      navbar.classList.toggle('show', isExpanded)
+      toggler.setAttribute('aria-expanded', isExpanded ? 'true' : 'false')
+    }
+
+    toggler.addEventListener('click', function () {
+      setExpanded(!navbar.classList.contains('show'))
+    })
+
+    navbar.querySelectorAll('.nav-link').forEach(function (link) {
+      link.addEventListener('click', function () {
+        if (window.innerWidth < 992) {
+          setExpanded(false)
+        }
+      })
+    })
+
+    window.addEventListener('resize', function () {
+      if (window.innerWidth >= 992) {
+        setExpanded(false)
+      }
+    })
+  })()
+</script>

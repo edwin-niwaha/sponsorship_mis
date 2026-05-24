@@ -1,129 +1,126 @@
-{% extends '_partials/guest_base.html' %}
+{% extends 'base.html' %}
 {% load humanize %}
-{% load crispy_forms_tags %}
 
 {% block content %}
-  {% include '_partials/sponsor_report_styles.html' %}
-  <div class="container-fluid sponsor-report-page">
-    <div class="row justify-content-center">
-      <div class="col-md-12">
-        <div class="report-hero">
-          <div>
-            <h2>{{ table_title|default:'Sponsors List'|upper }}</h2>
-            <p class="report-subtitle">Manage sponsor profiles, contact details, sponsorship type, and expected support.</p>
-          </div>
-          <div class="report-toolbar">
-            <a href="{% url 'register_sponsor' %}" class="btn btn-dark"><i class="mdi mdi-plus mr-2"></i>Add Sponsor</a>
-            <button title="Print" type="button" class="btn btn-outline-success" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
-          </div>
-        </div>
+{% include '_partials/operations_page_styles.html' %}
 
-        <div id="printMe" class="card shadow mb-4">
-          <div class="card-header py-3 d-flex flex-wrap justify-content-between align-items-center">
-            <h3 class="m-0">Sponsor Records</h3>
-            <!-- Filters and Sorting -->
-            <form method="get" action="{% url 'sponsor_list' %}" class="report-filter py-0 mb-0">
-              <div class="d-flex">
-                <input type="text" name="search" id="searchInput" value="{{ request.GET.search }}" placeholder="Search by name, email, ID, or phone..." class="form-control" />
-                <button type="submit" class="btn btn-primary ml-2"><i class="mdi mdi-magnify"></i></button>
-              </div>
-            </form>
-          </div>
-
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-striped table-bordered" id="dataTable">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Reg.No</th>
-                    <th>First_Name</th>
-                    <th>Last_Name</th>
-                    <th>Gender</th>
-                    <th>D.O.B</th>
-                    <th>Email</th>
-                    <th>Sponsorship_Type</th>
-                    <th>Expected</th>
-                    <th>Job_Title</th>
-                    <th>Region</th>
-                    <th>Town</th>
-                    <th>Origin</th>
-                    <th>Business_Tel</th>
-                    <th>Mobile_Tel</th>
-                    <th>City</th>
-                    <th>Start_Date</th>
-                    <th>Address1</th>
-                    <th>Address2</th>
-                    <th>Zip_Code</th>
-                    <th colspan="2">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for sponsor in records %}
-                    <tr>
-                      <th>{{ forloop.counter }}.</th>
-                      <td>{{ sponsor.prefixed_id }}</td>
-                      <td>{{ sponsor.first_name }}</td>
-                      <td>{{ sponsor.last_name }}</td>
-                      <td>{{ sponsor.gender }}</td>
-                      <td>{{ sponsor.date_of_birth|date:'d/m/Y' }}</td>
-                      <td>{{ sponsor.email }}</td>
-                      <td><span class="badge-soft">{{ sponsor.sponsorship_type|default:'-' }}</span></td>
-                      <td>{{ sponsor.expected_amt|floatformat:'2'|intcomma }}</td>
-                      <td>{{ sponsor.job_title }}</td>
-                      <td>{{ sponsor.region }}</td>
-                      <td>{{ sponsor.town }}</td>
-                      <td>{{ sponsor.origin }}</td>
-                      <td>{{ sponsor.business_telephone }}</td>
-                      <td>{{ sponsor.mobile_telephone }}</td>
-                      <td>{{ sponsor.city }}</td>
-                      <td>{{ sponsor.start_date|date:'d/m/Y' }}</td>
-                      <td>{{ sponsor.first_street_address }}</td>
-                      <td>{{ sponsor.second_street_address }}</td>
-                      <td>{{ sponsor.zip_code }}</td>
-                      <td>
-                        {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
-                          <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_sponsor' sponsor.id %}"><i class="mdi mdi-pencil"></i></a>
-                        {% else %}
-                          <button class="btn btn-primary btn-sm" onclick="showNoPermissionMessage('edit')"><i class="mdi mdi-trash"></i></button>
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                          <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_sponsor' sponsor.id %}" onclick="return confirm('Are you sure about this? This record will be deleted permanently');"><i class="bi bi-trash"></i></a>
-                        {% else %}
-                          <button class="btn btn-danger btn-sm" onclick="showNoPermissionMessage('delete')"><i class="mdi mdi-trash"></i></button>
-                        {% endif %}
-                      </td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pagination Links -->
-      <div class="pagination">
-        <span class="step-links">
-          {% if records.has_previous %}
-            <a href="?page=1"><i class="mdi mdi-chevron-double-left"></i></a>
-            <a href="?page={{ records.previous_page_number }}"><i class="mdi mdi-chevron-left"></i></a>
-          {% endif %}
-          <span class="current">Page {{ records.number }} of {{ records.paginator.num_pages }}.</span>
-          {% if records.has_next %}
-            <a href="?page={{ records.next_page_number }}"><i class="mdi mdi-chevron-right"></i></a>
-            <a href="?page={{ records.paginator.num_pages }}"><i class="mdi mdi-chevron-double-right"></i></a>
-          {% endif %}
-        </span>
-      </div>
+<div class="container-fluid ops-page">
+  <div class="ops-hero">
+    <div>
+      <div class="ops-kicker">Sponsor Management</div>
+      <h3>{{ table_title|default:"Sponsors List" }}</h3>
+      <p>Real supporters only. One-time-only donors are excluded from this sponsor workspace.</p>
+    </div>
+    <div class="ops-actions">
+      <button title="Print" type="button" class="btn btn-outline-success" onclick="printDiv('printMe')"><i class="mdi mdi-printer"></i></button>
+      <a href="{% url 'register_sponsor' %}" class="btn btn-success"><i class="mdi mdi-plus mr-1"></i>Add Sponsor</a>
+      <a href="{% url 'sponsor_departure' %}" class="btn btn-outline-secondary"><i class="mdi mdi-account-off mr-1"></i>Depart</a>
     </div>
   </div>
 
-  <script>
-    function showNoPermissionMessage(action) {
-      alert(`You do not have permission to ${action} this sponsor.`)
-    }
-  </script>
+  <div class="ops-stats">
+    <div class="ops-stat">
+      <div class="ops-stat-label">Active Supporters</div>
+      <div class="ops-stat-value">{{ total_sponsors|default:0 }}</div>
+    </div>
+    <div class="ops-stat">
+      <div class="ops-stat-label">Child Sponsors</div>
+      <div class="ops-stat-value">{{ child_sponsors|default:0 }}</div>
+    </div>
+    <div class="ops-stat">
+      <div class="ops-stat-label">Staff Sponsors</div>
+      <div class="ops-stat-value">{{ staff_sponsors|default:0 }}</div>
+    </div>
+    <div class="ops-stat">
+      <div class="ops-stat-label">Family Supporters</div>
+      <div class="ops-stat-value">{{ family_supporters|default:0 }}</div>
+    </div>
+  </div>
+
+  <form method="get" action="{% url 'sponsor_list' %}" class="ops-filter">
+    <input type="text" name="search" value="{{ search_query }}" placeholder="Search sponsor, email, or phone..." class="form-control flex-grow-1">
+    <button type="submit" class="btn btn-success"><i class="mdi mdi-magnify mr-1"></i>Search</button>
+    {% if search_query %}
+      <a class="btn btn-outline-secondary" href="{% url 'sponsor_list' %}">Clear</a>
+    {% endif %}
+  </form>
+
+  <div id="printMe" class="ops-card">
+    <div class="table-responsive">
+      <table class="ops-table">
+        <thead>
+          <tr>
+            <th>Reg.No</th>
+            <th>Sponsor</th>
+            <th>Contact</th>
+            <th>Support Type</th>
+            <th>Expected</th>
+            <th>Location</th>
+            <th>Start Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sponsor in records %}
+            <tr>
+              <td><strong>{{ sponsor.prefixed_id }}</strong></td>
+              <td>
+                <div class="ops-person-cell">
+                  <span class="ops-avatar">{{ sponsor.first_name|first }}</span>
+                  <div>
+                    <strong>{{ sponsor.first_name }} {{ sponsor.last_name }}</strong>
+                    <div class="ops-muted">{{ sponsor.gender|default:"Gender not recorded" }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <strong>{{ sponsor.email|default:"No email" }}</strong>
+                <div class="ops-muted">{{ sponsor.mobile_telephone|default:sponsor.business_telephone|default:"No phone" }}</div>
+              </td>
+              <td>
+                {% if sponsor.is_child_sponsor %}<span class="ops-pill">Child</span>{% endif %}
+                {% if sponsor.is_staff_sponsor %}<span class="ops-pill">Staff</span>{% endif %}
+                {% if sponsor.is_family_supporter %}<span class="ops-pill">Family</span>{% endif %}
+                {% if sponsor.is_general_donor %}<span class="ops-pill">General</span>{% endif %}
+                {% if not sponsor.is_child_sponsor and not sponsor.is_staff_sponsor and not sponsor.is_family_supporter and not sponsor.is_general_donor %}
+                  <span class="ops-muted">{{ sponsor.sponsorship_type|default:"Unclassified" }}</span>
+                {% endif %}
+              </td>
+              <td>{{ sponsor.expected_amt|floatformat:"2"|intcomma }}</td>
+              <td>
+                <strong>{{ sponsor.city|default:sponsor.town|default:"-" }}</strong>
+                <div class="ops-muted">{{ sponsor.region|default:"Region not recorded" }}</div>
+              </td>
+              <td>{{ sponsor.start_date|date:"d M Y"|default:"-" }}</td>
+              <td>
+                <div class="ops-row-actions">
+                  {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
+                    <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_sponsor' sponsor.id %}"><i class="mdi mdi-pencil"></i></a>
+                  {% endif %}
+                  {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+                    <a class="btn btn-danger btn-sm" title="Delete" href="{% url 'delete_sponsor' sponsor.id %}" onclick="return confirm('Delete this sponsor permanently?')"><i class="bi bi-trash"></i></a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="8" class="ops-empty">No sponsors found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="ops-pagination">
+    {% if records.has_previous %}
+      <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}"><i class="mdi mdi-page-first"></i></a>
+      <a href="?page={{ records.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}"><i class="mdi mdi-chevron-left"></i></a>
+    {% endif %}
+    <span class="current">Page {{ records.number }} of {{ records.paginator.num_pages }}.</span>
+    {% if records.has_next %}
+      <a href="?page={{ records.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}"><i class="mdi mdi-chevron-right"></i></a>
+      <a href="?page={{ records.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}"><i class="mdi mdi-page-last"></i></a>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}

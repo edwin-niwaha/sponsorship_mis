@@ -20,9 +20,9 @@ from .models import Staff, StaffDeparture
 @admin_or_manager_or_staff_required
 def staff_list(request):
     active_staff = Staff.objects.filter(is_departed=False)
-    queryset = active_staff.order_by("id")
+    queryset = active_staff.order_by("first_name", "last_name", "id")
 
-    search_query = request.GET.get("search")
+    search_query = request.GET.get("search", "").strip()
     if search_query:
         queryset = queryset.filter(
             Q(first_name__icontains=search_query)
@@ -32,7 +32,7 @@ def staff_list(request):
             | Q(job_title__icontains=search_query)
         )
 
-    paginator = Paginator(queryset, 50)
+    paginator = Paginator(queryset, 25)
     page = request.GET.get("page")
 
     try:
@@ -87,7 +87,16 @@ def register_staff(request):
     return render(
         request,
         "staff/staff_register.html",
-        {"form_name": "Staff Registration", "form": form},
+        {
+            "form_name": "Staff Registration",
+            "form": form,
+            "active_staff_count": Staff.objects.filter(is_departed=False).count(),
+            "departed_staff_count": Staff.objects.filter(is_departed=True).count(),
+            "sponsored_staff_count": Staff.objects.filter(
+                is_departed=False,
+                is_sponsored=True,
+            ).count(),
+        },
     )
 
 
@@ -144,7 +153,18 @@ def staff_departure(request):
         form = StaffDepartureForm(request.POST, request.FILES)
         if form.is_valid():
             staff_id = request.POST.get("id")
-            staff_instance = get_object_or_404(Staff, pk=staff_id)
+            if not staff_id:
+                messages.error(
+                    request,
+                    "Please select a staff member to depart.",
+                    extra_tags="bg-danger",
+                )
+                return redirect("staff_departure")
+
+            staff_instance = get_object_or_404(
+                Staff.objects.filter(is_departed=False),
+                pk=staff_id,
+            )
 
             # Create a StaffDeparture instance
             staff_depart = StaffDeparture.objects.create(staff=staff_instance)
@@ -154,7 +174,8 @@ def staff_departure(request):
 
             # Update Staff status to "departed"
             staff_instance.is_departed = True
-            staff_instance.save()
+            staff_instance.is_sponsored = False
+            staff_instance.save(update_fields=["is_departed", "is_sponsored", "updated_at"])
 
             messages.success(
                 request, "Staff departed successfully!", extra_tags="bg-success"
@@ -169,7 +190,13 @@ def staff_departure(request):
     return render(
         request,
         "staff/staff_depature.html",
-        {"form": form, "form_name": "Staff Depature Form", "records": records},
+        {
+            "form": form,
+            "form_name": "Staff Departure Form",
+            "records": records,
+            "active_staff_count": records.count(),
+            "departed_staff_count": Staff.objects.filter(is_departed=True).count(),
+        },
     )
 
 
@@ -178,19 +205,22 @@ def staff_departure(request):
 @admin_or_manager_required
 def staff_depature_list(request):
     queryset = (
-        Staff.objects.all()
-        .filter(is_departed=True)
-        .order_by("id")
+        Staff.objects.filter(is_departed=True)
+        .order_by("first_name", "last_name", "id")
         .prefetch_related("departures")
     )
 
-    search_query = request.GET.get("search")
+    search_query = request.GET.get("search", "").strip()
     if search_query:
-        queryset = queryset.filter(first_name__icontains=search_query).filter(
-            last_name__icontains=search_query
+        queryset = queryset.filter(
+            Q(first_name__icontains=search_query)
+            | Q(last_name__icontains=search_query)
+            | Q(email__icontains=search_query)
+            | Q(department__icontains=search_query)
+            | Q(job_title__icontains=search_query)
         )
 
-    paginator = Paginator(queryset, 50)
+    paginator = Paginator(queryset, 25)
     page = request.GET.get("page")
 
     try:
@@ -205,7 +235,13 @@ def staff_depature_list(request):
     return render(
         request,
         "staff/staff_depature_list.html",
-        {"records": records, "table_title": "Departed Staff"},
+        {
+            "records": records,
+            "table_title": "Departed Staff",
+            "search_query": search_query,
+            "departed_staff_count": queryset.count(),
+            "active_staff_count": Staff.objects.filter(is_departed=False).count(),
+        },
     )
 
 
@@ -218,7 +254,7 @@ def reinstate_staff(request, pk):
 
     if request.method == "POST":
         staff.is_departed = False
-        staff.save()
+        staff.save(update_fields=["is_departed", "updated_at"])
         messages.success(
             request, "staff reinstated successfully!", extra_tags="bg-success"
         )

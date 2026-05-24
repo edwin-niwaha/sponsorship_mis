@@ -2,7 +2,7 @@
 {% load humanize %}
 {% load crispy_forms_tags %}
 
-{% block title %}Staff List{% endblock %}
+{% block title %}Pendeza MIS | Staff List{% endblock %}
 
 {% block content %}
 {% include '_partials/reports_layout_styles.html' %}
@@ -176,7 +176,7 @@
 
 <style>
   .staff-report-page {
-    padding-top: 6px;
+    padding-top: 0;
   }
 
   .staff-report-hero,
@@ -193,8 +193,8 @@
     display: flex;
     gap: 16px;
     justify-content: space-between;
-    margin-bottom: 14px;
-    padding: 18px 20px;
+    margin-bottom: 12px;
+    padding: 16px 18px;
   }
 
   .staff-report-kicker {
@@ -231,15 +231,15 @@
     display: grid;
     gap: 12px;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    margin-bottom: 14px;
+    margin-bottom: 12px;
   }
 
   .staff-stat-card {
     align-items: center;
     display: grid;
     gap: 6px;
-    min-height: 118px;
-    padding: 15px;
+    min-height: 104px;
+    padding: 13px;
   }
 
   .staff-stat-card i {
@@ -249,10 +249,10 @@
     border-radius: 8px;
     color: #13745d;
     display: inline-flex;
-    font-size: 1.35rem;
-    height: 42px;
+    font-size: 1.2rem;
+    height: 38px;
     justify-content: center;
-    width: 42px;
+    width: 38px;
   }
 
   .staff-stat-card span {

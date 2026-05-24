@@ -31,7 +31,9 @@ class ChildSponsorshipForm(forms.ModelForm):
         model = ChildSponsorship
         exclude = ("sponsor", "child", "is_active", "end_date")
         widgets = {
-            "start_date": forms.DateInput(attrs={"type": "date", "required": True}),
+            "start_date": forms.DateInput(
+                attrs={"class": "form-control", "type": "date", "required": True}
+            ),
             "sponsorship_type": forms.Select(
                 attrs={"class": "form-control", "required": True}
             ),
@@ -64,7 +66,9 @@ class StaffSponsorshipForm(forms.ModelForm):
         model = StaffSponsorship
         exclude = ("sponsor", "staff", "is_active", "end_date")
         widgets = {
-            "start_date": forms.DateInput(attrs={"type": "date", "required": True}),
+            "start_date": forms.DateInput(
+                attrs={"class": "form-control", "type": "date", "required": True}
+            ),
             "sponsorship_type": forms.Select(
                 attrs={"class": "form-control", "required": True}
             ),  #

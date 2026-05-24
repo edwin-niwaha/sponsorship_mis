@@ -1,6 +1,5 @@
 import json
 import logging
-from collections import defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
@@ -18,11 +17,7 @@ from apps.inventory.products.models import Category, Product
 from apps.inventory.sales.models import Sale
 from apps.loans.models import Loan, LoanDisbursement, LoanRepayment
 from apps.sponsor.models import Sponsor
-from apps.sponsorship.models import (
-    SPONSORSHIP_TYPE_CHOICES,
-    ChildSponsorship,
-    StaffSponsorship,
-)
+from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
 from apps.users.decorators import admin_or_manager_or_staff_required
 from apps.loans.services.reporting import loan_financial_row, portfolio_at_risk_summary
 
@@ -124,46 +119,6 @@ def get_loan_dashboard_summary(force_refresh=False):
 
 
 # =================================== The dashboard ===================================
-# @login_required
-# @admin_or_manager_or_staff_required
-# def dashboard(request):
-#     # Retrieve counts using annotations
-#     sponsors_count = Sponsor.objects.filter(is_departed=False).count()
-#     children_count = Child.objects.count()
-#     sponsored_count = Child.objects.filter(is_departed=False, is_sponsored=True).count()
-#     non_sponsored_count = Child.objects.filter(
-#         is_departed=False, is_sponsored=False
-#     ).count()
-#     children_departed_count = Child.objects.filter(is_departed=True).count()
-
-#     # Get top sponsors and children
-#     top_sponsors_data = get_top_sponsors()
-#     top_children_data = get_top_children_sponsored()
-#     top_staff_data = get_top_staff_sponsored()
-
-#     # Combine sponsors and counts into a list of tuples
-#     top_sponsors_with_counts = list(
-#         zip(top_sponsors_data["sponsors"], top_sponsors_data["counts"])
-#     )
-#     top_children_with_counts = list(
-#         zip(top_children_data["children"], top_children_data["counts"])
-#     )
-#     top_staff_with_counts = list(
-#         zip(top_staff_data["staff_active"], top_staff_data["counts"])
-#     )
-#     context = {
-#         "sponsors_count": sponsors_count,
-#         "children_count": children_count,
-#         "children_departed_count": children_departed_count,
-#         "sponsored_count": sponsored_count,
-#         "non_sponsored_count": non_sponsored_count,
-#         "top_sponsors_with_counts": top_sponsors_with_counts,
-#         "top_children_with_counts": top_children_with_counts,
-#         "top_staff_with_counts": top_staff_with_counts,
-#     }
-
-#     return render(request, "main/main_dashboard.html", context)
-
 
 @login_required
 @admin_or_manager_or_staff_required
@@ -174,7 +129,7 @@ def dashboard(request):
         top_children = get_top_children_sponsored()
         top_staff = get_top_staff_sponsored()
         context = {
-            "sponsors_count": Sponsor.objects.filter(is_departed=False).count(),
+            "sponsors_count": Sponsor.objects.active_real_supporters().count(),
             "children_count": Child.objects.count(),
             "children_departed_count": Child.objects.filter(is_departed=True).count(),
             "sponsored_count": Child.objects.filter(
@@ -265,42 +220,16 @@ def get_top_staff_sponsored():
 
 
 def sponsorship_chart(request):
-    category_counts = defaultdict(int)
-    sponsorship_categories = [
-        choice_value for choice_value, _ in SPONSORSHIP_TYPE_CHOICES if choice_value
-    ]
-
-    child_categories = ChildSponsorship.objects.exclude(
-        sponsorship_type__isnull=True
-    ).exclude(
-        sponsorship_type=""
-    ).values(
-        "sponsorship_type"
-    ).annotate(
-        count=Count("id")
+    categories = (
+        ("Child Sponsors", Sponsor.objects.child_sponsors()),
+        ("Staff Sponsors", Sponsor.objects.staff_sponsors()),
+        ("Family Supporters", Sponsor.objects.family_supporters()),
+        ("General Donors", Sponsor.objects.general_donors()),
+        ("One-time Donors", Sponsor.objects.one_time_donors()),
     )
-    staff_categories = StaffSponsorship.objects.exclude(
-        sponsorship_type__isnull=True
-    ).exclude(
-        sponsorship_type=""
-    ).values(
-        "sponsorship_type"
-    ).annotate(
-        count=Count("id")
-    )
-
-    for item in child_categories:
-        category_counts[item["sponsorship_type"]] += item["count"]
-
-    for item in staff_categories:
-        category_counts[item["sponsorship_type"]] += item["count"]
-
     data = [
-        {
-            "sponsorship_type": sponsorship_type,
-            "count": category_counts[sponsorship_type],
-        }
-        for sponsorship_type in sponsorship_categories
+        {"sponsorship_type": label, "count": queryset.active().count()}
+        for label, queryset in categories
     ]
     return JsonResponse(data, safe=False)
 
@@ -311,7 +240,7 @@ def sponsorship_chart(request):
 def get_sponsors_data(request):
     try:
         sponsors_per_year = (
-            Sponsor.objects.annotate(year=ExtractYear("start_date"))
+            Sponsor.objects.real_sponsors_only().annotate(year=ExtractYear("start_date"))
             .values("year")
             .annotate(count=Count("id"))
             .order_by("year")
@@ -363,7 +292,7 @@ def get_children_data(request):
 def get_combined_data(request):
     try:
         sponsors_per_year = (
-            Sponsor.objects.annotate(year=ExtractYear("start_date"))
+            Sponsor.objects.real_sponsors_only().annotate(year=ExtractYear("start_date"))
             .values("year")
             .annotate(count=Count("id"))
             .order_by("year")

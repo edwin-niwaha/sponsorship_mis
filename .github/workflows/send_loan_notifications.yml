@@ -25,10 +25,10 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: "pip"
@@ -38,13 +38,14 @@ jobs:
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
           EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
           EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
           BOO_EMAIL: ${{ secrets.BOO_EMAIL }}
           HOF_EMAIL: ${{ secrets.HOF_EMAIL }}
         run: |
           missing=0
-          for name in SECRET_KEY DATABASE_URL EMAIL_HOST_USER EMAIL_HOST_PASSWORD BOO_EMAIL HOF_EMAIL; do
+          for name in SECRET_KEY DATABASE_URL REDIS_URL EMAIL_HOST_USER EMAIL_HOST_PASSWORD BOO_EMAIL HOF_EMAIL; do
             if [ -z "${!name}" ]; then
               echo "::error title=Missing secret::$name is required for loan notifications"
               missing=1
@@ -91,6 +92,7 @@ jobs:
           EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
           EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
           BOO_EMAIL: ${{ secrets.BOO_EMAIL }}
           HOF_EMAIL: ${{ secrets.HOF_EMAIL }}
           PROGS_ADMIN_EMAIL: ${{ secrets.PROGS_ADMIN_EMAIL }}
@@ -107,6 +109,7 @@ jobs:
           EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
           EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
           BOO_EMAIL: ${{ secrets.BOO_EMAIL }}
           HOF_EMAIL: ${{ secrets.HOF_EMAIL }}
           PROGS_ADMIN_EMAIL: ${{ secrets.PROGS_ADMIN_EMAIL }}

@@ -1,4 +1,5 @@
 from apps.inventory.products.models import Product
+from apps.sponsor.models import SponsorFeedback
 from apps.users.models import Contact, Profile
 
 
@@ -10,9 +11,13 @@ def guest_profiles_context(request):
 
 
 def guest_user_feedback_context(request):
+    sponsor_feedback = SponsorFeedback.objects.unread().with_related()[:5]
+    sponsor_feedback_count = SponsorFeedback.objects.unread().count()
     return {
         "user_feedback": Contact.objects.none(),
-        "feedback_count": 0,
+        "feedback_count": sponsor_feedback_count,
+        "sponsor_feedback": sponsor_feedback,
+        "sponsor_feedback_count": sponsor_feedback_count,
     }
 
 

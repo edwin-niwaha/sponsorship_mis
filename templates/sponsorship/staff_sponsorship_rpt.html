@@ -2,152 +2,337 @@
 {% load static %}
 
 {% block content %}
+  <style>
+    .staff-sponsor-report { color: #111827; }
+    .report-header,
+    .selector-panel,
+    .report-shell,
+    .empty-state {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+    }
+    .report-header {
+      align-items: center;
+      display: flex;
+      gap: 14px;
+      justify-content: space-between;
+      padding: 16px 18px;
+    }
+    .report-header h3 {
+      color: #1f344d;
+      font-size: 1.28rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0 0 3px;
+      text-transform: none;
+    }
+    .report-muted { color: #64748b; margin: 0; }
+    .report-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+    .selector-panel { margin: 12px 0; padding: 14px; }
+    .selector-form {
+      align-items: end;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(260px, 1fr) auto auto auto;
+    }
+    .selector-panel .chzn-container,
+    .selector-panel .chzn-select { width: 100% !important; }
+    .field-label {
+      color: #374151;
+      display: block;
+      font-size: .8rem;
+      font-weight: 900;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+    .report-shell { overflow: hidden; }
+    .statement-hero {
+      background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
+      border-bottom: 1px solid #dfe8ef;
+      display: grid;
+      gap: 14px;
+      grid-template-columns: minmax(0, 1fr) minmax(250px, auto);
+      padding: 18px;
+    }
+    .statement-hero h4 {
+      color: #1f344d;
+      font-size: 1.26rem;
+      font-weight: 900;
+      margin: 0 0 5px;
+    }
+    .staff-box {
+      background: #fff;
+      border: 1px solid #d7e4fb;
+      border-radius: 8px;
+      display: grid;
+      gap: 5px;
+      padding: 12px;
+    }
+    .staff-box span,
+    .stat-card span {
+      color: #64748b;
+      font-size: .76rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .staff-box strong,
+    .stat-card strong { color: #1f344d; font-weight: 900; }
+    .stats-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      padding: 14px 18px;
+    }
+    .stat-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      display: grid;
+      gap: 7px;
+      padding: 12px;
+    }
+    .stat-card i {
+      align-items: center;
+      background: #eef4ff;
+      border: 1px solid #d7e4fb;
+      border-radius: 8px;
+      color: #295caa;
+      display: inline-flex;
+      height: 36px;
+      justify-content: center;
+      width: 36px;
+    }
+    .report-section {
+      border-top: 1px solid #edf1f5;
+      padding: 16px 18px;
+    }
+    .section-head {
+      align-items: baseline;
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .section-head h5 {
+      color: #1f344d;
+      font-size: 1rem;
+      font-weight: 900;
+      margin: 0;
+    }
+    .table-wrap {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    .smart-table {
+      border-collapse: collapse;
+      margin: 0;
+      min-width: 900px;
+      width: 100%;
+    }
+    .smart-table th,
+    .smart-table td {
+      border-bottom: 1px solid #edf1f5;
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .smart-table th {
+      background: #f8fafc;
+      color: #334155;
+      font-size: .74rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .smart-table tr:last-child td { border-bottom: 0; }
+    .status-pill {
+      border-radius: 999px;
+      display: inline-flex;
+      font-size: .74rem;
+      font-weight: 900;
+      padding: 5px 9px;
+    }
+    .status-active { background: #e8f7ef; color: #13745d; }
+    .status-inactive { background: #fff3d8; color: #8a5b00; }
+    .action-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .empty-state {
+      color: #64748b;
+      margin-top: 12px;
+      padding: 18px;
+      text-align: center;
+    }
+    @media (max-width: 991.98px) {
+      .report-header,
+      .statement-hero { align-items: stretch; grid-template-columns: 1fr; }
+      .report-header { flex-direction: column; }
+      .selector-form,
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+    @media print {
+      .navbar,
+      .sidebar,
+      .report-actions,
+      .selector-panel,
+      .print-hide,
+      footer { display: none !important; }
+      .report-shell { border: 0; box-shadow: none; }
+    }
+  </style>
 
-{% include '_partials/sponsor_report_styles.html' %}
-<div class="container sponsor-report-page">
-    <div class="page-header flex-wrap">
-        <h3 class="mb-0">
-            {{table_title|upper}}
-        </h3>
-        <div class="d-flex">
-
-            <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
-                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
-
-            <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success"
-                onclick="ExportToExcel('xlsx')">
-                <i class="mdi mdi-file-excel btn-icon-prepend"></i> </button>
-
-            <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success"
-                onclick="Export2Doc('printMe');">
-                <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
-
-            <a class="btn btn-sm ml-3 btn-success" href="{% url 'staff_sponsorship_create' %}"><i
-                    class="mdi mdi-folder-plus btn-icon-prepend"></i>
-            </a>
-            <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'staff_sponsorship_report' %}"><i
-                    class="mdi mdi-chart-line btn-icon-prepend"></i>
-            </a>
-        </div>
+  <div class="container staff-sponsor-report">
+    <div class="report-header">
+      <div>
+        <h3>{{ table_title }}</h3>
+        <p class="report-muted">Select a staff member to review linked sponsors, status, and sponsorship dates.</p>
+      </div>
+      <div class="report-actions">
+        <button title="Print" type="button" class="btn btn-sm btn-outline-success" onclick="printDiv('printMe')">
+          <i class="mdi mdi-printer"></i> Print
+        </button>
+        <button title="Export To Excel" type="button" class="btn btn-sm btn-outline-success" onclick="ExportToExcel('xlsx')">
+          <i class="mdi mdi-file-excel"></i> Excel
+        </button>
+        <button title="Export To Word" type="button" class="btn btn-sm btn-outline-success" onclick="Export2Doc('printMe')">
+          <i class="mdi mdi-file-word"></i> Word
+        </button>
+        <a class="btn btn-sm btn-success" href="{% url 'staff_sponsorship_create' %}">
+          <i class="mdi mdi-folder-plus"></i> Add assignment
+        </a>
+      </div>
     </div>
-    <hr class="bg-info" style="height: 3px;" />
-    <form method="POST" action="{% url 'staff_sponsorship_report' %}" class="report-filter">
+
+    <section class="selector-panel">
+      <form method="POST" action="{% url 'staff_sponsorship_report' %}" class="selector-form">
         {% csrf_token %}
-        <select name="id" id="dropdown" class="chzn-select" required style="width: 40%;">
+        <div>
+          <label for="staff_dropdown" class="field-label">Staff</label>
+          <select name="id" id="staff_dropdown" class="chzn-select" required>
             <option value="" selected disabled>Search staff...</option>
             {% for staff in active_staff %}
-            <option value="{{ staff.id }}">{{ staff.last_name }} {{ staff.first_name }} &rarr;
-                {{ staff.prefixed_id }}
-            </option>
+              <option value="{{ staff.id }}" {% if selected_staff and staff.id == selected_staff.id %}selected{% endif %}>
+                {{ staff.first_name }} {{ staff.last_name }} &rarr; {{ staff.prefixed_id }}
+              </option>
             {% endfor %}
-        </select> &rarr;
-        <button title="View Sponsorship Report" type="submit" class="btn btn-sm ml-3 btn-success"
-            onclick="return validateForm()"><i class="mdi mdi-view-list btn-icon-prepend"></i></button>
-        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'staff_sponsorship_report' %}">STAFF
-        </a>
-        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'sponsor_to_staff_rpt' %}">
-            SPONSOR
-        </a>
-    </form>
-
-    <div id="printMe" class="tab-pane show active">
-        <hr class="bg-info" style="height: 3px;" />
-
-        {% if staff_sponsorship %}
-        <header style="text-align: center;">
-            <h3 class="text-primary" style="font-family:'Lucida Sans Unicode', sans-serif;">
-                {{ prefix_id }} - {{ last_name|upper}} {{ first_name|upper}} -
-                Sponsorship Report</h3>
-        </header>
-        <hr class="bg-info" style="height: 3px;" />
-
-        <div class="table-responsive">
-            <table class="my-table">
-                <thead>
-                    <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">SP ID</th>
-                        <th scope="col">Last Name</th>
-                        <th scope="col">First Name</th>
-                        <th scope="col">Sponsorship Type</th>
-                        <th scope="col">Start Date</th>
-                        <th scope="col">End Date</th>
-                        <th scope="col">Status</th>
-                        <th colspan="2" scope="col">Action</th>
-
-                    </tr>
-                </thead>
-                <tbody class="table-group-divider">
-                    {% for sponsorship in staff_sponsorship %}
-                    <tr {% if not sponsorship.is_active %}style="background-color: #f2dede; color: red" {% endif %}>
-                        <th scope="row">{{forloop.counter}}.</th>
-                        <td>{{sponsorship.sponsor.prefixed_id}}</td>
-                        <td>{{sponsorship.sponsor.first_name}}</td>
-                        <td>{{sponsorship.sponsor.last_name}}</td>
-                        <td>{{sponsorship.sponsorship_type}}</td>
-                        <td>{{sponsorship.start_date}}</td>
-                        <td>{{sponsorship.end_date}}</td>
-                        <td>
-                            {% if sponsorship.is_active %}
-                            Active
-                            {% else %}
-                            Inactive
-                            {% endif %}
-                        </td>
-
-                        <td>
-                            <form action="{% url 'terminate_staff_sponsorship' sponsorship.id %}" method="post"
-                                onsubmit="return confirm('Are you sure you want to end this sponsorship');">
-                                {% csrf_token %}
-                                {% if sponsorship.is_active %}
-                                <button type="submit" class="btn btn-warning btn-sm"
-                                    title="End Sponsorship">End</button>
-                                {% else %}
-                                <button type="submit" class="btn btn-warning btn-sm" title="End Sponsorship"
-                                    disabled>End</button>
-                                {% endif %}
-                            </form>
-                        </td>
-
-                        <td>
-                            {% if sponsorship.is_active %}
-                            {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
-                            <a class="btn btn-danger btn-sm" title="Edit"
-                                href="{% url 'edit_staff_sponsorship' sponsorship.id %}"
-                                onclick="return confirm('Are you sure you want to edit this sponsorship?');">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            {% else %}
-                            <button class="btn btn-primary btn-sm" onclick="showNoPermissionMessage('edit')">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            {% endif %}
-                            {% endif %}
-                        </td>
-
-                        <td>
-                            {% if sponsorship.is_active %}
-                            {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                            <a class="btn btn-danger btn-sm" title="Erase"
-                                href="{% url 'delete_staff_sponsorship' sponsorship.id %}"
-                                onclick="return confirm('Are you sure you want to delete this sponsorship?');"><i
-                                    class="bi bi-trash"></i></a>
-                            {% else %}
-                            <button class="btn btn-danger btn-sm" onclick="showNoPermissionMessage('delete')">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                            {% endif %}
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {%endfor%}
-                </tbody>
-            </table>
+          </select>
         </div>
-        {% else %}
-        <p class="alert alert-danger">No sponsorship records found for the selected staff.</p>
-        {% endif %}
-    </div>
-</div>
+        <button title="View Sponsorship Report" type="submit" class="btn btn-primary">
+          <i class="mdi mdi-view-list"></i> View report
+        </button>
+        <a class="btn btn-outline-secondary" href="{% url 'staff_sponsorship_report' %}">Staff view</a>
+        <a class="btn btn-outline-secondary" href="{% url 'sponsor_to_staff_rpt' %}">Sponsor view</a>
+      </form>
+    </section>
 
+    {% if has_selected_staff and staff_sponsorship %}
+      <article id="printMe" class="report-shell">
+        <section class="statement-hero">
+          <div>
+            <h4>{{ selected_staff.first_name }} {{ selected_staff.last_name }} Sponsorship Report</h4>
+            <p class="report-muted">Sponsors linked to this staff member, including active and ended sponsorships.</p>
+          </div>
+          <div class="staff-box">
+            <span>Staff Account</span>
+            <strong>{{ selected_staff.prefixed_id }}</strong>
+            <p class="report-muted">{{ selected_staff.job_title|default:"Job title not recorded" }}</p>
+            <p class="report-muted">{{ selected_staff.department|default:"Department not recorded" }}</p>
+          </div>
+        </section>
+
+        <section class="stats-grid">
+          <div class="stat-card">
+            <i class="mdi mdi-account-group"></i>
+            <span>Total Links</span>
+            <strong>{{ record_count|default:0 }}</strong>
+          </div>
+          <div class="stat-card">
+            <i class="mdi mdi-check-circle-outline"></i>
+            <span>Active</span>
+            <strong>{{ active_count|default:0 }}</strong>
+          </div>
+          <div class="stat-card">
+            <i class="mdi mdi-timer-off-outline"></i>
+            <span>Inactive</span>
+            <strong>{{ inactive_count|default:0 }}</strong>
+          </div>
+        </section>
+
+        <section class="report-section">
+          <div class="section-head">
+            <h5>Sponsorship Ledger</h5>
+            <span class="report-muted">Detailed staff-to-sponsor links</span>
+          </div>
+          <div class="table-wrap">
+            <table class="smart-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Sponsor</th>
+                  <th>Sponsorship Type</th>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                  <th>Status</th>
+                  <th class="print-hide">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for sponsorship in staff_sponsorship %}
+                  <tr>
+                    <td>{{ forloop.counter }}.</td>
+                    <td>
+                      <strong>{{ sponsorship.sponsor.first_name }} {{ sponsorship.sponsor.last_name }}</strong>
+                      <div class="report-muted">{{ sponsorship.sponsor.prefixed_id }} | {{ sponsorship.sponsor.email|default:"Email not recorded" }}</div>
+                    </td>
+                    <td>{{ sponsorship.sponsorship_type|default:"Sponsorship" }}</td>
+                    <td>{{ sponsorship.start_date|default:"Not recorded" }}</td>
+                    <td>{{ sponsorship.end_date|default:"-" }}</td>
+                    <td>
+                      {% if sponsorship.is_active %}
+                        <span class="status-pill status-active">Active</span>
+                      {% else %}
+                        <span class="status-pill status-inactive">Inactive</span>
+                      {% endif %}
+                    </td>
+                    <td class="print-hide">
+                      <div class="action-row">
+                        <form action="{% url 'terminate_staff_sponsorship' sponsorship.id %}" method="post" onsubmit="return confirm('Are you sure you want to end this sponsorship?');">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-warning btn-sm" title="End Sponsorship" {% if not sponsorship.is_active %}disabled{% endif %}>End</button>
+                        </form>
+                        {% if sponsorship.is_active %}
+                          {% if user.profile.role == 'administrator' or user.profile.role == 'manager' or user.profile.role == 'staff' %}
+                            <a class="btn btn-outline-primary btn-sm" title="Edit" href="{% url 'edit_staff_sponsorship' sponsorship.id %}" onclick="return confirm('Are you sure you want to edit this sponsorship?');">
+                              <i class="bi bi-pencil"></i>
+                            </a>
+                          {% else %}
+                            <button class="btn btn-outline-primary btn-sm" onclick="showNoPermissionMessage('edit')">
+                              <i class="bi bi-pencil"></i>
+                            </button>
+                          {% endif %}
+                          {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+                            <a class="btn btn-outline-danger btn-sm" title="Erase" href="{% url 'delete_staff_sponsorship' sponsorship.id %}" onclick="return confirm('Are you sure you want to delete this sponsorship?');">
+                              <i class="bi bi-trash"></i>
+                            </a>
+                          {% else %}
+                            <button class="btn btn-outline-danger btn-sm" onclick="showNoPermissionMessage('delete')">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          {% endif %}
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </article>
+    {% elif has_selected_staff %}
+      <div class="empty-state">No sponsorship records found for {{ selected_staff.first_name }} {{ selected_staff.last_name }}.</div>
+    {% else %}
+      <div class="empty-state">Select a staff member above to generate a staff sponsorship report.</div>
+    {% endif %}
+  </div>
 {% endblock content %}

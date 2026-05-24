@@ -1,10 +1,12 @@
 import datetime
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 # Third-party Imports
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -27,9 +29,100 @@ SPONSORSHIP_TYPE_CHOICES = (
     (SponsorshipType.GENERAL_SUPPORT, "General support"),
 )
 
+REAL_SUPPORT_PROGRAM_CODES = (
+    "child_support",
+    "child_co_support",
+    "family_support",
+    "family_co_support",
+    "general_support",
+    "staff_support",
+)
+
+
+def sponsorship_type_flags(sponsorship_type):
+    return {
+        "is_child_sponsor": sponsorship_type
+        in (SponsorshipType.CHILD_FULL_SUPPORT, SponsorshipType.CHILD_CO_SUPPORT),
+        "is_family_supporter": sponsorship_type
+        in (SponsorshipType.FAMILY_FULL_SUPPORT, SponsorshipType.FAMILY_CO_SUPPORT),
+        "is_general_donor": sponsorship_type == SponsorshipType.GENERAL_SUPPORT,
+    }
+
+
+class SponsorQuerySet(models.QuerySet):
+    def with_report_related(self):
+        return self.prefetch_related(
+            "payments__program",
+            "sponsored_children",
+            "sponsored_staff",
+        )
+
+    def active(self):
+        return self.filter(is_departed=False)
+
+    def departed(self):
+        return self.filter(is_departed=True)
+
+    def child_sponsors(self):
+        return self.filter(is_child_sponsor=True)
+
+    def staff_sponsors(self):
+        return self.filter(is_staff_sponsor=True)
+
+    def family_supporters(self):
+        return self.filter(is_family_supporter=True)
+
+    def general_donors(self):
+        return self.filter(is_general_donor=True)
+
+    def one_time_donors(self):
+        return self.filter(is_one_time_donor=True)
+
+    def real_supporters(self):
+        """
+        Excludes one-time-only donors.
+
+        Includes:
+        - child sponsors
+        - family supporters
+        - general supporters
+        - staff supporters
+        """
+        return self.filter(
+            Q(is_child_sponsor=True)
+            | Q(is_staff_sponsor=True)
+            | Q(is_family_supporter=True)
+            | Q(is_general_donor=True)
+        ).distinct()
+
+    def exclude_one_time_only_donors(self):
+        return self.real_supporters()
+
+    def real_sponsors_only(self):
+        return self.real_supporters()
+
+    def one_time_only_donors(self):
+        return (
+            self.one_time_donors()
+            .exclude(
+                Q(is_child_sponsor=True)
+                | Q(is_staff_sponsor=True)
+                | Q(is_family_supporter=True)
+                | Q(is_general_donor=True)
+            )
+            .distinct()
+        )
+
+    def active_real_supporters(self):
+        return self.active().real_supporters()
+
+    def departed_real_supporters(self):
+        return self.departed().real_supporters()
+    
 
 # =================================== SPONSOR MODEL ===================================
 class Sponsor(models.Model):
+    objects = SponsorQuerySet.as_manager()
     DEPARTURE_CHOICES = (
         ("Yes", "Yes"),
         ("No", "No"),
@@ -86,7 +179,7 @@ class Sponsor(models.Model):
         verbose_name="Start Date",
         validators=[
             MinValueValidator(limit_value=datetime.date(year=2013, month=1, day=1)),
-            MaxValueValidator(limit_value=datetime.date.today()),
+            MaxValueValidator(limit_value=datetime.date.today),
         ],
     )
     first_street_address = models.CharField(
@@ -102,6 +195,11 @@ class Sponsor(models.Model):
         default=False,
         verbose_name="Departed?",
     )
+    is_child_sponsor = models.BooleanField(default=False)
+    is_staff_sponsor = models.BooleanField(default=False)
+    is_family_supporter = models.BooleanField(default=False)
+    is_general_donor = models.BooleanField(default=False)
+    is_one_time_donor = models.BooleanField(default=False)
     comment = models.CharField(
         max_length=100, null=True, blank=True, verbose_name="Comment"
     )
@@ -124,6 +222,12 @@ class Sponsor(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+    def save(self, *args, **kwargs):
+        for field, value in sponsorship_type_flags(self.sponsorship_type).items():
+            if value:
+                setattr(self, field, True)
+        super().save(*args, **kwargs)
 
     @property
     def prefixed_id(self):
@@ -164,3 +268,56 @@ class SponsorDeparture(models.Model):
     class Meta:
         verbose_name = "Sponsor Departure"
         verbose_name_plural = "Sponsor Departures"
+
+
+class SponsorFeedbackQuerySet(models.QuerySet):
+    def unread(self):
+        return self.filter(status=SponsorFeedback.Status.NEW)
+
+    def with_related(self):
+        return self.select_related("sponsor", "submitted_by")
+
+
+class SponsorFeedback(models.Model):
+    class Status(models.TextChoices):
+        NEW = "new", "New"
+        REVIEWED = "reviewed", "Reviewed"
+        RESOLVED = "resolved", "Resolved"
+
+    sponsor = models.ForeignKey(
+        Sponsor,
+        on_delete=models.CASCADE,
+        related_name="feedback",
+    )
+    submitted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sponsor_feedback_submissions",
+    )
+    subject = models.CharField(max_length=150)
+    message = models.TextField()
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.NEW,
+    )
+    admin_notes = models.TextField(blank=True)
+    email_sent_at = models.DateTimeField(null=True, blank=True)
+    email_error = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = SponsorFeedbackQuerySet.as_manager()
+
+    class Meta:
+        db_table = "sponsor_feedback"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status", "created_at"]),
+            models.Index(fields=["sponsor", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.sponsor} - {self.subject}"

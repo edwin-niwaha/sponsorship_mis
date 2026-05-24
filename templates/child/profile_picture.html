@@ -1,52 +1,53 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
-{% block head %}
-{% endblock %}
-
 {% block content %}
+{% include '_partials/operations_page_styles.html' %}
 
-<div class="container">
-    <div class="page-header flex-wrap">
-        <h3 class="mb-0"> {{form_name|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-        <div class="d-flex">
-            <a title="View Uploads..." class="btn btn-sm ml-3 btn-success" href="{% url 'update_picture' %}"><i
-                    class="mdi mdi-cloud-upload btn-icon-prepend"></i>
-            </a>
-            <a title="Download Picture..." class="btn btn-sm ml-3 btn-success" href="{% url 'profile_pictures' %}"><i
-                    class="mdi mdi-cloud-download btn-icon-prepend"></i>
-            </a>
-        </div>
+<div class="container-fluid ops-page">
+  <div class="ops-hero">
+    <div>
+      <div class="ops-kicker">Child Media</div>
+      <h3>{{ form_name|default:"Upload Child Profile Picture" }}</h3>
+      <p>Upload a current child photo for reports, lists, and sponsor-facing communication.</p>
     </div>
-    <hr>
+    <div class="ops-actions">
+      <a class="btn btn-outline-secondary" href="{% url 'update_picture' %}">
+        <i class="mdi mdi-cloud-upload mr-1"></i>Upload
+      </a>
+      <a class="btn btn-success" href="{% url 'profile_pictures' %}">
+        <i class="mdi mdi-image-multiple mr-1"></i>Picture List
+      </a>
+    </div>
+  </div>
 
-    <div class="form-content my-3 p-3">
-        <div class="row justify-content-center">
-            <div class="col-lg-12">
-                <div class="card shadow-lg border-0 rounded-lg mt-0 mb-5">
-                    <div class="card-body">
-                        <form method="post" enctype="multipart/form-data">
-                            {% csrf_token %}
-                            <select name="id" id="dropdown" class="chzn-select" required>
-                                <option value="" selected disabled>Search child...</option>
-                                {% for child in children %}
-                                <option value="{{ child.id }}">{{ child.full_name }} - {{ child.prefixed_id }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                            <br /><br />
-                            <!--  -->
-                            {{ form|crispy }}
-                            <div class="form-group mt-4 mb-0">
-                                <button type="submit" class="col-md-12 btn btn-dark"
-                                    onclick="return confirm('Are you sure you want to proceed?') && validateForm()">
-                                    UPLOAD PICTURE</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="ops-card">
+    <div class="ops-card-header">
+      <h4>Profile Picture</h4>
+      <span class="ops-muted">Images up to 10 MB are accepted</span>
     </div>
+    <div class="ops-card-body">
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <div class="ops-form-grid">
+          <div class="ops-select-panel">
+            <label for="dropdown">Child</label>
+            <select name="id" id="dropdown" class="chzn-select" required>
+              <option value="" selected disabled>Search child...</option>
+              {% for child in children %}
+                <option value="{{ child.id }}">{{ child.full_name }} - {{ child.prefixed_id }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {{ form|crispy }}
+        </div>
+        <div class="ops-submit-row">
+          <button type="submit" class="btn btn-dark" onclick="return confirm('Upload this profile picture?')">
+            Upload Picture
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
-{% endblock content %}
+{% endblock %}

@@ -180,7 +180,7 @@ class Contact(models.Model):
 class Policy(models.Model):
     title = models.CharField(max_length=50)
     # upload = models.FileField(upload_to="policies/", blank=True, null=True)
-    upload = CloudinaryField("policies", resource_type="auto", null=True, blank=True)
+    upload = CloudinaryField("policies", resource_type="raw", null=True, blank=True)
 
     is_valid = models.BooleanField(
         default=False,
@@ -189,6 +189,21 @@ class Policy(models.Model):
     date_reviewed = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created at")
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def document_url(self):
+        if not self.upload:
+            return ""
+
+        return self.upload.url
+
+    @property
+    def needs_document_reupload(self):
+        return bool(
+            self.upload
+            and "/image/upload/" in self.upload.url
+            and self.upload.url.lower().endswith(".pdf")
+        )
 
     def __str__(self):
         return self.title
@@ -218,6 +233,12 @@ class Ebook(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @property
+    def document_url(self):
+        if not self.ebook_file:
+            return ""
+        return self.ebook_file.url
+
     def __str__(self):
         return self.title
 
@@ -245,6 +266,12 @@ class DocumentUpload(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def document_url(self):
+        if not self.file:
+            return ""
+        return self.file.url
 
     class Meta:
         verbose_name = "Document Upload"

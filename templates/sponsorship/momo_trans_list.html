@@ -1,92 +1,425 @@
 {% extends 'base.html' %}
-{% load static %}
-{% block content %}
-  {% include '_partials/sponsor_report_styles.html' %}
-  <div class="container sponsor-report-page">
-    <div class="page-header flex-wrap">
-      <h3 class="mb-0">{{ table_title|upper }}</h3>
-      <div class="d-flex">
-        <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick="printDiv('printMe')"><i class="mdi mdi-printer btn-icon-prepend"></i></button>
+{% load humanize static %}
 
-        <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success" onclick="ExportToExcel('xlsx')"><i class="mdi mdi-file-excel btn-icon-prepend"></i></button>
+{% block content %}
+  <style>
+    .momo-page {
+      color: #111827;
+    }
+
+    .momo-header,
+    .momo-filter,
+    .momo-card,
+    .momo-table-shell {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .momo-header {
+      align-items: center;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      padding: 16px 18px;
+    }
+
+    .momo-header h3 {
+      color: #1f344d;
+      font-size: 1.3rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0 0 4px;
+      text-transform: none;
+    }
+
+    .momo-muted {
+      color: #64748b;
+      margin: 0;
+    }
+
+    .momo-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .momo-stats {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin: 12px 0;
+    }
+
+    .momo-card {
+      display: grid;
+      gap: 8px;
+      padding: 14px;
+    }
+
+    .momo-card i {
+      align-items: center;
+      border-radius: 8px;
+      display: inline-flex;
+      height: 36px;
+      justify-content: center;
+      width: 36px;
+    }
+
+    .momo-card span {
+      color: #64748b;
+      font-size: .75rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .momo-card strong {
+      color: #1f344d;
+      font-size: 1.12rem;
+      font-weight: 900;
+    }
+
+    .stat-total i {
+      background: #edf7f4;
+      border: 1px solid #cfe8e0;
+      color: #13745d;
+    }
+
+    .stat-success i {
+      background: #e8f7ef;
+      border: 1px solid #cdeedd;
+      color: #13745d;
+    }
+
+    .stat-pending i {
+      background: #fff6e8;
+      border: 1px solid #f5dfb8;
+      color: #96620b;
+    }
+
+    .stat-failed i {
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      color: #be123c;
+    }
+
+    .stat-count i {
+      background: #eef4ff;
+      border: 1px solid #d7e4fb;
+      color: #295caa;
+    }
+
+    .momo-filter {
+      margin-bottom: 12px;
+      padding: 14px;
+    }
+
+    .filter-grid {
+      align-items: end;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(260px, 1fr) minmax(190px, 260px) auto auto;
+    }
+
+    .field-label {
+      color: #374151;
+      display: block;
+      font-size: .78rem;
+      font-weight: 900;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .momo-table-shell {
+      overflow: hidden;
+    }
+
+    .table-tools {
+      align-items: center;
+      border-bottom: 1px solid #edf1f5;
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 14px;
+    }
+
+    .table-tools strong {
+      color: #1f344d;
+      font-weight: 900;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    .momo-table {
+      border-collapse: collapse;
+      margin: 0;
+      min-width: 980px;
+      width: 100%;
+    }
+
+    .momo-table th,
+    .momo-table td {
+      border-bottom: 1px solid #edf1f5;
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .momo-table th {
+      background: #f8fafc;
+      color: #334155;
+      font-size: .74rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .momo-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .amount-cell {
+      color: #1f344d;
+      font-weight: 900;
+      text-align: right !important;
+    }
+
+    .reference-cell {
+      color: #475569;
+      font-family: Consolas, monospace;
+      font-size: .82rem;
+    }
+
+    .status-pill {
+      border-radius: 999px;
+      display: inline-flex;
+      font-size: .73rem;
+      font-weight: 900;
+      padding: 5px 9px;
+    }
+
+    .status-successful {
+      background: #e8f7ef;
+      color: #13745d;
+    }
+
+    .status-pending {
+      background: #fff3d8;
+      color: #8a5b00;
+    }
+
+    .status-failed {
+      background: #fff1f2;
+      color: #be123c;
+    }
+
+    .pagination-shell {
+      align-items: center;
+      border-top: 1px solid #edf1f5;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .empty-row {
+      color: #64748b;
+      padding: 24px !important;
+      text-align: center !important;
+    }
+
+    @media (max-width: 991.98px) {
+      .momo-header,
+      .filter-grid {
+        align-items: stretch;
+        grid-template-columns: 1fr;
+      }
+
+      .momo-header {
+        flex-direction: column;
+      }
+
+      .momo-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575.98px) {
+      .momo-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      .navbar,
+      .sidebar,
+      .momo-actions,
+      .momo-filter,
+      .pagination-shell,
+      .print-hide,
+      footer {
+        display: none !important;
+      }
+
+      .momo-table-shell,
+      .momo-header,
+      .momo-card {
+        border: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+
+  <div class="container momo-page">
+    <div class="momo-header">
+      <div>
+        <h3>{{ table_title }}</h3>
+        <p class="momo-muted">Review mobile money collections by donor, phone, reference, amount, and status.</p>
+      </div>
+      <div class="momo-actions">
+        <button title="Print" type="button" class="btn btn-sm btn-outline-success" onclick="printDiv('printMe')">
+          <i class="mdi mdi-printer"></i> Print
+        </button>
+        <button title="Export To Excel" type="button" class="btn btn-sm btn-outline-success" onclick="ExportToExcel('xlsx')">
+          <i class="mdi mdi-file-excel"></i> Excel
+        </button>
       </div>
     </div>
 
-    <form method="GET" action="{% url 'momo_transaction_list' %}" class="report-filter">
-      <input type="text" name="search" id="searchInput" placeholder="Search..." style="border-radius:5px;height:35px;" value="{{ request.GET.search }}" />
-      <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
+    <section class="momo-stats" aria-label="MoMo transaction summary">
+      <div class="momo-card stat-total">
+        <i class="mdi mdi-cash-multiple"></i>
+        <span>Total Amount</span>
+        <strong>UGX {{ total_amount|default:0|floatformat:0|intcomma }}</strong>
+      </div>
+      <div class="momo-card stat-count">
+        <i class="mdi mdi-receipt"></i>
+        <span>Transactions</span>
+        <strong>{{ total_count|default:0|intcomma }}</strong>
+      </div>
+      <div class="momo-card stat-success">
+        <i class="mdi mdi-check-circle-outline"></i>
+        <span>Successful</span>
+        <strong>{{ successful_count|default:0|intcomma }}</strong>
+      </div>
+      <div class="momo-card stat-pending">
+        <i class="mdi mdi-timer-sand"></i>
+        <span>Pending</span>
+        <strong>{{ pending_count|default:0|intcomma }}</strong>
+      </div>
+      <div class="momo-card stat-failed">
+        <i class="mdi mdi-alert-circle-outline"></i>
+        <span>Failed</span>
+        <strong>{{ failed_count|default:0|intcomma }}</strong>
+      </div>
+    </section>
+
+    <form method="GET" action="{% url 'momo_transaction_list' %}" class="momo-filter">
+      <div class="filter-grid">
+        <div>
+          <label for="searchInput" class="field-label">Search</label>
+          <input class="form-control" type="text" name="search" id="searchInput" placeholder="Donor, email, phone, reference..." value="{{ search_query }}" />
+        </div>
+        <div>
+          <label for="statusFilter" class="field-label">Status</label>
+          <select class="form-control" name="status" id="statusFilter">
+            <option value="">All statuses</option>
+            {% for value, label in status_choices %}
+              <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <i class="mdi mdi-magnify"></i> Search
+        </button>
+        <a class="btn btn-outline-secondary" href="{% url 'momo_transaction_list' %}">
+          Clear
+        </a>
+      </div>
     </form>
 
-    <div id="printMe" class="tab-pane show active mt-3">
-      <div class="table-responsive">
-        <table class="my-table" id="dataTable">
+    <div id="printMe" class="momo-table-shell">
+      <div class="table-tools">
+        <strong>Transaction Ledger</strong>
+        <span class="momo-muted">Page {{ records.number }} of {{ records.paginator.num_pages }}</span>
+      </div>
+      <div class="table-wrap">
+        <table class="momo-table" id="dataTable">
           <thead>
             <tr>
               <th>#</th>
-              {% comment %} <th>Reference ID</th> {% endcomment %}
-              <th>Donor Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Amount(UGX)</th>
+              <th>Donor</th>
+              <th>Contact</th>
+              <th>Reference</th>
+              <th class="amount-cell">Amount</th>
               <th>Status</th>
               <th>Date</th>
-              <th colspan="1">Action</th>
+              <th class="print-hide">Action</th>
             </tr>
           </thead>
           <tbody>
             {% for tx in records %}
               <tr>
-                <td>{{ forloop.counter }}.</td>
-                {% comment %} <td>{{ tx.reference_id }}</td> {% endcomment %}
-                <td>{{ tx.donor_name|default:'Anonymous' }}</td>
+                <td>{{ records.start_index|add:forloop.counter0 }}.</td>
                 <td>
+                  <strong>{{ tx.donor_name|default:'Anonymous' }}</strong>
                   {% if tx.donor_email %}
-                    <span class="badge bg-info text-dark" title="{{ tx.donor_email }}">{{ tx.donor_email|truncatechars:25 }}</span>
+                    <div class="momo-muted">{{ tx.donor_email }}</div>
                   {% else %}
-                    <span class="badge bg-secondary">No email</span>
+                    <div class="momo-muted">No email recorded</div>
                   {% endif %}
                 </td>
-                <td class="text-right">{{ tx.phone_number }}</td>
-                <td class="text-right">{{ tx.amount }}</td>
+                <td>{{ tx.phone_number|default:"Not recorded" }}</td>
+                <td>
+                  <div class="reference-cell">{{ tx.reference_id|default:"No reference" }}</div>
+                  {% if tx.external_id %}
+                    <div class="momo-muted">External: {{ tx.external_id|truncatechars:24 }}</div>
+                  {% endif %}
+                </td>
+                <td class="amount-cell">UGX {{ tx.amount|floatformat:0|intcomma }}</td>
                 <td>
                   {% if tx.status == 'SUCCESSFUL' %}
-                    <span class="badge bg-success">{{ tx.status }}</span>
+                    <span class="status-pill status-successful">Successful</span>
                   {% elif tx.status == 'FAILED' %}
-                    <span class="badge bg-danger">{{ tx.status }}</span>
+                    <span class="status-pill status-failed">Failed</span>
                   {% else %}
-                    <span class="badge bg-warning text-dark">{{ tx.status }}</span>
+                    <span class="status-pill status-pending">Pending</span>
                   {% endif %}
                 </td>
-                <td>{{ tx.created_at|date:'d/m/Y' }}</td>
                 <td>
-                  <a class="btn btn-danger btn-sm" title="Delete" href="{% url 'delete_momo_transaction' tx.id %}" onclick="return confirm('Are you sure you want to delete this transaction?');"><i class="bi bi-trash"></i></a>
+                  {{ tx.created_at|date:'d/m/Y' }}
+                  <div class="momo-muted">{{ tx.created_at|date:'H:i' }}</div>
+                </td>
+                <td class="print-hide">
+                  <a class="btn btn-outline-danger btn-sm" title="Delete" href="{% url 'delete_momo_transaction' tx.id %}" onclick="return confirm('Are you sure you want to delete this transaction?');">
+                    <i class="bi bi-trash"></i>
+                  </a>
                 </td>
               </tr>
             {% empty %}
               <tr>
-                <td colspan="8" class="text-center text-muted">No transactions found.</td>
+                <td colspan="8" class="empty-row">No transactions found for the selected filters.</td>
               </tr>
             {% endfor %}
           </tbody>
         </table>
-
-        <!-- Pagination -->
-        <div class="pagination mt-3">
-          <span class="step-links">
-            {% if records.has_previous %}
-              <a href="?page=1">&laquo; first</a>
-              <a href="?page={{ records.previous_page_number }}">previous</a>
-            {% endif %}
-
-            <span class="current">Page {{ records.number }} of {{ records.paginator.num_pages }}</span>
-
-            {% if records.has_next %}
-              <a href="?page={{ records.next_page_number }}">next</a>
-              <a href="?page={{ records.paginator.num_pages }}">last &raquo;</a>
-            {% endif %}
-          </span>
-        </div>
       </div>
+
+      {% if records.has_other_pages %}
+        <div class="pagination-shell">
+          {% if records.has_previous %}
+            <a class="btn btn-sm btn-outline-secondary" href="?{% if query_string %}{{ query_string }}&{% endif %}page=1">First</a>
+            <a class="btn btn-sm btn-outline-secondary" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ records.previous_page_number }}">Previous</a>
+          {% endif %}
+          <span class="momo-muted">Page {{ records.number }} of {{ records.paginator.num_pages }}</span>
+          {% if records.has_next %}
+            <a class="btn btn-sm btn-outline-secondary" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ records.next_page_number }}">Next</a>
+            <a class="btn btn-sm btn-outline-secondary" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ records.paginator.num_pages }}">Last</a>
+          {% endif %}
+        </div>
+      {% endif %}
     </div>
   </div>
 {% endblock %}

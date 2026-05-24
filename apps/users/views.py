@@ -10,7 +10,7 @@ from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Exists, OuterRef, Q
 from django.http import (
     HttpResponseBadRequest,
     HttpResponseRedirect,
@@ -382,11 +382,25 @@ def delete_profile(request, pk):
 @login_required
 @admin_or_manager_or_staff_required
 def policy_list(request):
-    queryset = Policy.objects.all().order_by("id")
+    read_by_user = PolicyRead.objects.filter(policy=OuterRef("pk"), user=request.user)
+    queryset = (
+        Policy.objects.annotate(
+            read_count=Count("policyread", distinct=True),
+            is_read_by_user=Exists(read_by_user),
+        )
+        .order_by("-created_at", "title")
+    )
 
-    search_query = request.GET.get("search")
+    search_query = request.GET.get("search", "").strip()
     if search_query:
         queryset = queryset.filter(title__icontains=search_query)
+
+    total_policies = Policy.objects.count()
+    valid_policies = Policy.objects.filter(is_valid=True).count()
+    pending_validation = Policy.objects.filter(is_valid=False).count()
+    unread_policies = (
+        Policy.objects.exclude(policyread__user=request.user).distinct().count()
+    )
 
     paginator = Paginator(queryset, 50)
     page = request.GET.get("page")
@@ -403,7 +417,15 @@ def policy_list(request):
     return render(
         request,
         "accounts/policy_list.html",
-        {"records": records, "table_title": "Policies"},
+        {
+            "records": records,
+            "table_title": "Policies",
+            "search_query": search_query,
+            "total_policies": total_policies,
+            "valid_policies": valid_policies,
+            "pending_validation": pending_validation,
+            "unread_policies": unread_policies,
+        },
     )
 
 
@@ -479,6 +501,22 @@ def delete_policy(request, pk):
     return HttpResponseRedirect(reverse("policy_list"))
 
 
+@login_required
+@admin_or_manager_or_staff_required
+def open_policy_document(request, pk):
+    policy = get_object_or_404(Policy, pk=pk)
+    if not policy.upload:
+        messages.error(request, "This policy does not have an uploaded document.", extra_tags="bg-danger")
+        return redirect("policy_list")
+
+    candidate_url = policy.document_url
+    if not candidate_url:
+        messages.error(request, "Could not build a document link for this policy.", extra_tags="bg-danger")
+        return redirect("policy_list")
+
+    return redirect(candidate_url)
+
+
 # =================================== Validate Policy  ===================================
 @login_required
 @admin_required
@@ -539,8 +577,11 @@ def policy_report(request):
                 {
                     "table_title": "policies read",
                     "policies": policies,
+                    "selected_policy_id": selected_policy.id,
                     "policy_name": selected_policy.title,
                     "policy_upload": selected_policy.upload,
+                    "policy_document_url": selected_policy.document_url,
+                    "policy_needs_reupload": selected_policy.needs_document_reupload,
                     "policy_read": policy_read,
                 },
             )
@@ -593,11 +634,13 @@ def upload_ebook(request):
 @login_required
 @admin_or_manager_or_staff_required
 def ebook_list(request):
-    queryset = Ebook.objects.all().order_by("id")
+    queryset = Ebook.objects.all().order_by("-created_at", "title")
 
-    search_query = request.GET.get("search")
+    search_query = request.GET.get("search", "").strip()
     if search_query:
-        queryset = queryset.filter(title__icontains=search_query)
+        queryset = queryset.filter(
+            Q(title__icontains=search_query) | Q(author__icontains=search_query)
+        )
 
     paginator = Paginator(queryset, 50)
     page = request.GET.get("page")
@@ -609,14 +652,19 @@ def ebook_list(request):
     except EmptyPage:
         records = paginator.page(paginator.num_pages)
 
-    # Check if ebook_file exists and is a valid file (Cloudinary URL)
     for record in records:
-        record.file_exists = bool(record.ebook_file and record.ebook_file.url)
+        record.file_exists = bool(record.document_url)
 
     return render(
         request,
         "accounts/ebook_list.html",
-        {"records": records, "table_title": "Books List"},
+        {
+            "records": records,
+            "table_title": "Books List",
+            "search_query": search_query,
+            "total_books": Ebook.objects.count(),
+            "books_with_files": Ebook.objects.exclude(ebook_file="").count(),
+        },
     )
 
 
@@ -709,11 +757,25 @@ message. Please try again later.",
 @admin_or_manager_required
 @transaction.atomic
 def user_feedback(request):
-    feedback = Contact.objects.all()
+    feedback_list = Contact.objects.all().order_by("-created_at")
+    paginator = Paginator(feedback_list, 25)
+    page = request.GET.get("page")
+
+    try:
+        feedback = paginator.page(page)
+    except PageNotAnInteger:
+        feedback = paginator.page(1)
+    except EmptyPage:
+        feedback = paginator.page(paginator.num_pages)
+
     return render(
         request,
         "accounts/user_feedback.html",
-        {"table_title": "User Feedback", "feedback": feedback},
+        {
+            "table_title": "User Feedback",
+            "feedback": feedback,
+            "total_feedback": feedback_list.count(),
+        },
     )
 
 
@@ -752,9 +814,9 @@ def validate_user_feedback(request, contact_id):
 @login_required
 @admin_or_manager_or_staff_required
 def doc_list(request):
-    queryset = DocumentUpload.objects.all().order_by("id")
+    queryset = DocumentUpload.objects.all().order_by("-created_at", "title")
 
-    search_query = request.GET.get("search")
+    search_query = request.GET.get("search", "").strip()
     if search_query:
         queryset = queryset.filter(title__icontains=search_query)
 
@@ -768,17 +830,19 @@ def doc_list(request):
     except EmptyPage:
         records = paginator.page(paginator.num_pages)
 
-    # Add file existence information to each record
     for record in records:
-        file_path = (
-            record.file.name
-        )  # Ensure 'file' is used if 'file' is the correct field
-        record.file_exists = default_storage.exists(file_path)
+        record.file_exists = bool(record.document_url)
 
     return render(
         request,
         "accounts/default_upload_list.html",
-        {"records": records, "table_title": "Documents List"},
+        {
+            "records": records,
+            "table_title": "Documents List",
+            "search_query": search_query,
+            "total_documents": DocumentUpload.objects.count(),
+            "documents_with_files": DocumentUpload.objects.exclude(file="").count(),
+        },
     )
 
 

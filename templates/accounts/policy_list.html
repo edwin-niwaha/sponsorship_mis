@@ -1,163 +1,165 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block content %}
+{% include '_partials/operations_page_styles.html' %}
 
-<div class="container">
-    <!-- Page Header -->
-    <div class="page-header flex-wrap">
-        <h3 class="mb-0">{{ table_title|upper }}</h3>
-        <div class="d-flex">
-            <a title="Upload Policy" class="btn btn-sm ml-3 btn-success" href="{% url 'upload_policy' %}">
-                <i class="mdi mdi-upload btn-icon-prepend"></i> Upload Policy
-            </a>
-            <a title="View List" class="btn btn-sm ml-3 btn-success" href="{% url 'policy_list' %}">
-                <i class="mdi mdi-chart-line btn-icon-prepend"></i> View List
-            </a>
-            <a title="View read policies list" class="btn btn-sm ml-3 btn-success" href="{% url 'policy_report' %}">
-                <i class="mdi mdi-chart-line btn-icon-prepend"></i> View Read Policies
-            </a>
-        </div>
+<div class="container-fluid ops-page">
+  <div class="ops-hero">
+    <div>
+      <div class="ops-kicker">Policy Library</div>
+      <h3>{{ table_title|default:"Policies" }}</h3>
+      <p>Upload, validate, read, and monitor policy acknowledgements from one tidy workspace.</p>
     </div>
-
-    <!-- Search Form -->
-    <form method="GET" action="{% url 'policy_list' %}">
-        <div class="input-group mb-3">
-            <input type="text" class="form-control" name="search" id="searchInput" onkeyup="searchTable()"
-                placeholder="Search...">
-            <div class="input-group-append">
-                <button class="btn btn-success" type="submit">
-                    <i class="mdi mdi-magnify"></i>
-                </button>
-            </div>
-        </div>
-    </form>
-
-    <!-- Policy Table -->
-    <div id="printMe" class="tab-pane show active">
-        <header style="text-align: center;"></header>
-        <hr class="bg-info" style="height: 3px;" />
-        <div class="table-responsive">
-            <table class="my-table" id="dataTable">
-                <thead>
-                    <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Title</th>
-                        <th scope="col">Date Reviewed</th>
-                        <th scope="col">Doc</th>
-                        <th scope="col">Clr</th>
-                        <th scope="col" colspan="4">Action</th>
-                    </tr>
-                </thead>
-                <tbody class="table-group-divider">
-                    {% for policy in records %}
-                    <tr {% if not policy.is_valid %}style="background-color: #f2dede; color: red" {% endif %}>
-                        <th scope="row">{{ forloop.counter }}.</th>
-                        <td>{{ policy.title }}</td>
-                        <td>{{ policy.date_reviewed }}</td>
-                        <td>
-                            {% if policy.upload %}
-                            <a target="_blank" href="{{ policy.upload.url }}">
-                                <i style="color:red; font-size: 24px;" class="mdi mdi-file-pdf btn-icon-prepend"></i>
-                            </a>
-                            {% else %}
-                            <p>Pending upload...</p>
-                            {% endif %}
-                        </td>
-                        <td class="{% if policy.is_valid %}valid-policy{% else %}invalid-policy{% endif %}">
-                            {% if policy.is_valid %}
-                            &#10004;
-                            {% else %}
-                            &#10007;
-                            {% endif %}
-                        </td>
-                        <td>
-                            <form action="{% url 'validate_policy' policy.id %}" method="post"
-                                onsubmit="return confirm('Are you sure you want to validate?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-warning btn-sm" title="Validate"
-                                    {% if policy.is_valid %}hidden{% endif %}>
-                                    Validate
-                                </button>
-                            </form>
-                        </td>
-                        <td>
-                            <form action="{% url 'read_policy' policy.id %}" method="post"
-                                onsubmit="return confirm('Have you read this policy?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-warning btn-sm" title="Mark as Read"
-                                    {% if policy.is_read %}hidden{% endif %}>
-                                    Mark as Read
-                                </button>
-                            </form>
-                        </td>
-                        <td>
-                            {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                            <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_policy' policy.id %}">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            {% else %}
-                            <button class="btn btn-primary btn-sm" onclick="showNoPermissionMessage('edit')">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
-                            <a class="btn btn-danger btn-sm" title="Erase" href="{% url 'delete_policy' policy.id %}"
-                                onclick="return confirm('Are you sure about this? This record will be deleted permanently.');">
-                                <i class="bi bi-trash"></i>
-                            </a>
-                            {% else %}
-                            <button class="btn btn-danger btn-sm" onclick="showNoPermissionMessage('delete')">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <hr class="bg-info" style="height: 3px;" />
-
-            <!-- Pagination -->
-            <div class="pagination">
-                <span class="step-links">
-                    {% if records.has_previous %}
-                    <a href="?page=1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
-                            <path fill="#2375e1"
-                                d="M14 3.002a1 1 0 0 0-1.578-.816l-7 4.963a1 1 0 0 0-.007 1.628l7 5.037A1 1 0 0 0 14 13.003zM2 2.5a.5.5 0 0 1 1 0v11a.5.5 0 0 1-1 0z" />
-                        </svg>
-                    </a>
-                    <a href="?page={{ records.previous_page_number }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-                            <path fill="#2375e1" d="M4 10l9 9l1.4-1.5L7 10l7.4-7.5L13 1z" />
-                        </svg>
-                    </a>
-                    {% endif %}
-
-                    <span class="current">
-                        Page {{ records.number }} of {{ records.paginator.num_pages }}.
-                    </span>
-
-                    {% if records.has_next %}
-                    <a href="?page={{ records.next_page_number }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-                            <path fill="#2375e1" d="M7 1L5.6 2.5L13 10l-7.4 7.5L7 19l9-9z" />
-                        </svg>
-                    </a>
-                    <a href="?page={{ records.paginator.num_pages }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 28 28">
-                            <path fill="#2375e1"
-                                d="M23.5 3.75a.75.75 0 0 1 1.5 0v20.5a.75.75 0 0 1-1.5 0zM3 5.254C3 3.438 5.041 2.37 6.533 3.406l12.504 8.68a2.25 2.25 0 0 1 .013 3.688l-12.504 8.81C5.056 25.634 3 24.57 3 22.745z" />
-                        </svg>
-                    </a>
-                    {% endif %}
-                </span>
-            </div>
-        </div>
+    <div class="ops-actions">
+      {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+        <a title="Upload Policy" class="btn btn-success" href="{% url 'upload_policy' %}">
+          <i class="mdi mdi-upload mr-1"></i>Upload Policy
+        </a>
+      {% endif %}
+      <a title="View Read Policies" class="btn btn-outline-secondary" href="{% url 'policy_report' %}">
+        <i class="mdi mdi-file-check-outline mr-1"></i>Read Report
+      </a>
+      <button title="Print" type="button" class="btn btn-outline-success" onclick="printDiv('printMe')">
+        <i class="mdi mdi-printer"></i>
+      </button>
     </div>
+  </div>
+
+  <div class="ops-stats">
+    <div class="ops-stat">
+      <div class="ops-stat-label">Total Policies</div>
+      <div class="ops-stat-value">{{ total_policies|default:0 }}</div>
+    </div>
+    <div class="ops-stat">
+      <div class="ops-stat-label">Validated</div>
+      <div class="ops-stat-value">{{ valid_policies|default:0 }}</div>
+    </div>
+    <div class="ops-stat">
+      <div class="ops-stat-label">Pending Validation</div>
+      <div class="ops-stat-value">{{ pending_validation|default:0 }}</div>
+    </div>
+    <div class="ops-stat">
+      <div class="ops-stat-label">Unread By You</div>
+      <div class="ops-stat-value">{{ unread_policies|default:0 }}</div>
+    </div>
+  </div>
+
+  <form method="get" action="{% url 'policy_list' %}" class="ops-filter">
+    <input type="text" class="form-control flex-grow-1" name="search" value="{{ search_query }}" placeholder="Search policy title...">
+    <button class="btn btn-success" type="submit">
+      <i class="mdi mdi-magnify mr-1"></i>Search
+    </button>
+    {% if search_query %}
+      <a class="btn btn-outline-secondary" href="{% url 'policy_list' %}">Clear</a>
+    {% endif %}
+  </form>
+
+  <div id="printMe" class="ops-card">
+    <div class="ops-card-header">
+      <h4>Policy Records</h4>
+      <span class="ops-muted">Showing {{ records|length }} on this page</span>
+    </div>
+    <div class="table-responsive">
+      <table class="ops-table" id="dataTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Policy</th>
+            <th>Review Date</th>
+            <th>Document</th>
+            <th>Status</th>
+            <th>My Reading</th>
+            <th>Readers</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for policy in records %}
+            <tr>
+              <th>{{ forloop.counter }}</th>
+              <td>
+                <strong>{{ policy.title }}</strong>
+                <div class="ops-muted">Created {{ policy.created_at|date:"d M Y" }}</div>
+              </td>
+              <td>{{ policy.date_reviewed|date:"d M Y"|default:"Not reviewed" }}</td>
+              <td>
+                {% if policy.upload %}
+                  <a class="btn btn-sm btn-outline-danger" target="_blank" href="{% url 'open_policy_document' policy.id %}">
+                    <i class="mdi mdi-file-pdf-box mr-1"></i>Open PDF
+                  </a>
+                  {% if policy.needs_document_reupload %}
+                    <div class="ops-muted mt-1">Old Cloudinary PDF. Re-upload if it does not open.</div>
+                  {% endif %}
+                {% else %}
+                  <span class="ops-muted">Pending upload</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if policy.is_valid %}
+                  <span class="ops-pill">Validated</span>
+                {% else %}
+                  <span class="ops-pill" style="background:#fff7ed;border-color:#fed7aa;color:#b45309;">Pending</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if policy.is_read_by_user %}
+                  <span class="ops-pill">Read</span>
+                {% else %}
+                  <span class="ops-pill" style="background:#eef2f6;border-color:#d9dee5;color:#526171;">Unread</span>
+                {% endif %}
+              </td>
+              <td>{{ policy.read_count|default:0 }}</td>
+              <td>
+                <div class="ops-row-actions">
+                  {% if user.profile.role == 'administrator' and not policy.is_valid %}
+                    <form action="{% url 'validate_policy' policy.id %}" method="post">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('Validate this policy?')">
+                        Validate
+                      </button>
+                    </form>
+                  {% endif %}
+
+                  {% if not policy.is_read_by_user %}
+                    <form action="{% url 'read_policy' policy.id %}" method="post">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Mark this policy as read?')">
+                        Mark Read
+                      </button>
+                    </form>
+                  {% endif %}
+
+                  {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+                    <a class="btn btn-primary btn-sm" title="Edit" href="{% url 'update_policy' policy.id %}">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <a class="btn btn-danger btn-sm" title="Delete" href="{% url 'delete_policy' policy.id %}" onclick="return confirm('Delete this policy permanently?')">
+                      <i class="bi bi-trash"></i>
+                    </a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="8" class="ops-empty">No policies found.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="ops-pagination">
+    {% if records.has_previous %}
+      <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}" title="First page"><i class="mdi mdi-page-first"></i></a>
+      <a href="?page={{ records.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" title="Previous page"><i class="mdi mdi-chevron-left"></i></a>
+    {% endif %}
+    <span class="current">Page {{ records.number }} of {{ records.paginator.num_pages }}.</span>
+    {% if records.has_next %}
+      <a href="?page={{ records.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" title="Next page"><i class="mdi mdi-chevron-right"></i></a>
+      <a href="?page={{ records.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}" title="Last page"><i class="mdi mdi-page-last"></i></a>
+    {% endif %}
+  </div>
 </div>
-
-{% endblock content %}
+{% endblock %}

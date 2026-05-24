@@ -1,7 +1,7 @@
 {% extends "accounts/base.html" %}
 {% load humanize %}
 
-{% block title %}Sponsor Portal{% endblock title %}
+{% block title %}Pendeza MIS | Sponsor Portal{% endblock %}
 
 {% block content %}
 <style>
@@ -64,6 +64,31 @@
     gap: 12px;
     min-width: 260px;
     padding: 12px;
+  }
+
+  .portal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 12px;
+  }
+
+  .portal-feedback-btn {
+    align-items: center;
+    background: #13745d;
+    border: 1px solid #13745d;
+    border-radius: 8px;
+    color: #fff;
+    display: inline-flex;
+    font-weight: 900;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+
+  .portal-feedback-btn:hover {
+    background: #0f5f4d;
+    color: #fff;
+    text-decoration: none;
   }
 
   .portal-avatar {
@@ -141,6 +166,144 @@
     grid-template-columns: minmax(0, 1.4fr) minmax(320px, .8fr);
   }
 
+  .portal-quick-row {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 16px;
+  }
+
+  .payment-breakdown {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    margin: 0 0 14px;
+  }
+
+  .payment-overall-row {
+    display: flex;
+    justify-content: center;
+    margin: 0 0 16px;
+  }
+
+  .payment-category,
+  .payment-overall {
+    background: #fff;
+    border: 1px solid #dfe5ec;
+    border-radius: 8px;
+    box-shadow: 0 10px 24px rgba(31, 41, 51, .06);
+    display: grid;
+    gap: 10px;
+    min-height: 132px;
+    padding: 16px;
+  }
+
+  .payment-category-head {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+  }
+
+  .payment-category i,
+  .payment-overall i {
+    align-items: center;
+    border-radius: 8px;
+    display: inline-flex;
+    height: 38px;
+    justify-content: center;
+    width: 38px;
+  }
+
+  .payment-category i {
+    background: #eef6ff;
+    border: 1px solid #d8e9fb;
+    color: #1f5f99;
+  }
+
+  .payment-category.child-support i {
+    background: #edf7f4;
+    border-color: #cfe8e0;
+    color: #13745d;
+  }
+
+  .payment-category.family-support i {
+    background: #fff6e8;
+    border-color: #f5dfb8;
+    color: #96620b;
+  }
+
+  .payment-category.general-support i {
+    background: #eef4ff;
+    border-color: #d7e4fb;
+    color: #295caa;
+  }
+
+  .payment-category.one-time-donation i {
+    background: #f7efff;
+    border-color: #e6d6fa;
+    color: #7144a1;
+  }
+
+  .payment-overall {
+    background: #123a32;
+    border-color: #123a32;
+    color: #fff;
+    max-width: 420px;
+    min-width: min(100%, 320px);
+    width: 100%;
+  }
+
+  .payment-overall i {
+    background: rgba(255, 255, 255, .12);
+    border: 1px solid rgba(255, 255, 255, .2);
+    color: #fff;
+  }
+
+  .payment-category span,
+  .payment-overall span {
+    color: #667085;
+    font-size: .76rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .payment-overall span {
+    color: #bde7dc;
+  }
+
+  .payment-category strong,
+  .payment-overall strong {
+    color: #1f344d;
+    font-size: 1.22rem;
+    font-weight: 900;
+  }
+
+  .payment-overall strong {
+    color: #fff;
+    font-size: 1.36rem;
+  }
+
+  .payment-category p,
+  .payment-overall p {
+    color: #667085;
+    font-size: .82rem;
+    margin: 0;
+  }
+
+  .payment-overall p {
+    color: #d9f3ed;
+  }
+
+  .payment-category.is-empty {
+    background: #fbfcfe;
+    box-shadow: none;
+  }
+
+  .payment-category.is-empty strong,
+  .payment-category.is-empty p {
+    color: #8a96a8;
+  }
+
   .portal-stack {
     display: grid;
     gap: 16px;
@@ -159,6 +322,25 @@
     justify-content: space-between;
     margin-bottom: 12px;
     padding-bottom: 12px;
+  }
+
+  .portal-collapse-toggle {
+    background: #f8fafc;
+    border: 1px solid #dfe5ec;
+    border-radius: 8px;
+    color: #334155;
+    font-size: .78rem;
+    font-weight: 900;
+    padding: 6px 10px;
+  }
+
+  .portal-collapse-toggle:hover {
+    border-color: #13745d;
+    color: #13745d;
+  }
+
+  .portal-collapsible[hidden] {
+    display: none;
   }
 
   .portal-panel h2 {
@@ -354,7 +536,9 @@
 
   @media (max-width: 991.98px) {
     .portal-hero,
-    .portal-layout {
+    .portal-layout,
+    .portal-quick-row,
+    .payment-breakdown {
       grid-template-columns: 1fr;
     }
 
@@ -374,6 +558,8 @@
     }
 
     .portal-stats,
+    .payment-breakdown,
+    .portal-quick-row,
     .sponsored-row,
     .payment-row {
       grid-template-columns: 1fr;
@@ -393,6 +579,11 @@
         <h1>{% if sponsor %}Welcome, {{ sponsor.first_name }}{% else %}Sponsor Portal{% endif %}</h1>
         {% if sponsor %}
           <p>Track the children, staff, payments, and support records connected to your sponsorship.</p>
+          <div class="portal-actions">
+            <button type="button" class="portal-feedback-btn" data-toggle="modal" data-target="#sponsorFeedbackModal">
+              <i class="fas fa-comment-dots"></i> Send feedback
+            </button>
+          </div>
         {% else %}
           <p>Your sponsor profile is not linked yet. Contact staff to connect your login to your sponsorship record.</p>
         {% endif %}
@@ -425,9 +616,103 @@
       </div>
       <div class="portal-card">
         <i class="fas fa-money-bill-wave"></i>
-        <span>Total Valid Payments</span>
+        <span>Total Payments</span>
         <strong>UGX {{ total_payment_amount|default:0|floatformat:0|intcomma }}</strong>
       </div>
+    </section>
+
+    <section class="payment-breakdown" aria-label="Payment summary by program">
+      {% for category in payment_categories %}
+        {% if category.key != 'staff-support' or active_staff_count or category.has_payments %}
+        <div class="payment-category {{ category.key }}{% if not category.has_payments %} is-empty{% endif %}">
+          <div class="payment-category-head">
+            <i class="{{ category.icon }}"></i>
+            <span>{{ category.label }}</span>
+          </div>
+          <strong>UGX {{ category.amount|default:0|floatformat:0|intcomma }}</strong>
+          <p>{{ category.description }}</p>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </section>
+
+    <section class="payment-overall-row" aria-label="Overall payment total">
+      <div class="payment-overall">
+        <div class="payment-category-head">
+          <i class="fas fa-calculator"></i>
+          <span>Overall Total</span>
+        </div>
+        <strong>UGX {{ total_payment_amount|default:0|floatformat:0|intcomma }}</strong>
+        <p>All visible payment records connected to this sponsor account.</p>
+      </div>
+    </section>
+
+    <section class="portal-quick-row">
+      <section class="portal-panel">
+        <div class="portal-panel-head">
+          <div>
+            <h2>Recent Payments</h2>
+            <span>{% if has_unified_payments %}All programs{% else %}Validated records{% endif %}</span>
+          </div>
+          <button class="portal-collapse-toggle" type="button" data-portal-toggle="recentPaymentsPanel" aria-expanded="true" aria-controls="recentPaymentsPanel">
+            Show / hide
+          </button>
+        </div>
+        <div class="portal-collapsible" id="recentPaymentsPanel">
+          {% if recent_payments %}
+            {% for payment in recent_payments %}
+              <div class="payment-row">
+                <div>
+                  {% if payment.program %}
+                    <strong>{{ payment.program.name }}</strong>
+                    <span>
+                      {% if payment.child %}{{ payment.child.full_name }}{% elif payment.staff %}{{ payment.staff.first_name }} {{ payment.staff.last_name }}{% else %}General support{% endif %}
+                      | {{ payment.payment_date }}
+                    </span>
+                  {% else %}
+                    <strong>{% if payment.child %}{{ payment.child.full_name }}{% elif payment.staff %}{{ payment.staff.first_name }} {{ payment.staff.last_name }}{% else %}Support payment{% endif %}</strong>
+                    <span>{{ payment.month }} {{ payment.payment_year }} | {{ payment.payment_date }}</span>
+                  {% endif %}
+                </div>
+                <strong>UGX {{ payment.amount|floatformat:0|intcomma }}</strong>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="portal-empty">No payment records are visible yet.</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="portal-panel">
+        <div class="portal-panel-head">
+          <div>
+            <h2>Payment Reports</h2>
+            <span>Printable program ledgers</span>
+          </div>
+          <button class="portal-collapse-toggle" type="button" data-portal-toggle="paymentReportsPanel" aria-expanded="false" aria-controls="paymentReportsPanel">
+            Show / hide
+          </button>
+        </div>
+        <div class="portal-collapsible" id="paymentReportsPanel" hidden>
+          <div class="report-link-grid">
+            {% for category in payment_categories %}
+              {% if category.has_payments %}
+                <a class="report-link-card" href="{% if category.key == 'child-support' and category.has_legacy_payments %}{% url 'sponsor_child_payment_report' %}{% elif category.key == 'staff-support' and category.has_legacy_payments %}{% url 'sponsor_staff_payment_report' %}{% else %}{% url 'sponsor_program_payment_report' category.key %}{% endif %}">
+                  <i class="{{ category.icon }}"></i>
+                  <span>
+                    <strong>{{ category.label }} Report</strong>
+                    <span>{{ category.description }}</span>
+                  </span>
+                  <i class="fas fa-chevron-right"></i>
+                </a>
+              {% endif %}
+            {% endfor %}
+            {% if not total_payment_amount %}
+              <p class="portal-empty">No payment reports are available yet.</p>
+            {% endif %}
+          </div>
+        </div>
+      </section>
     </section>
 
     <section class="portal-layout">
@@ -522,60 +807,6 @@
 
         <section class="portal-panel">
           <div class="portal-panel-head">
-            <h2>Recent Payments</h2>
-            <span>Validated records</span>
-          </div>
-          {% if recent_child_payments or recent_staff_payments %}
-            {% for payment in recent_child_payments %}
-              <div class="payment-row">
-                <div>
-                  <strong>{{ payment.child.full_name|default:"Child support" }}</strong>
-                  <span>{{ payment.month }} {{ payment.payment_year }} | {{ payment.payment_date }}</span>
-                </div>
-                <strong>UGX {{ payment.amount|floatformat:0|intcomma }}</strong>
-              </div>
-            {% endfor %}
-            {% for payment in recent_staff_payments %}
-              <div class="payment-row">
-                <div>
-                  <strong>{{ payment.staff.first_name }} {{ payment.staff.last_name }}</strong>
-                  <span>{{ payment.month }} {{ payment.payment_year }} | {{ payment.payment_date }}</span>
-                </div>
-                <strong>UGX {{ payment.amount|floatformat:0|intcomma }}</strong>
-              </div>
-            {% endfor %}
-          {% else %}
-            <p class="portal-empty">No validated payment records are visible yet.</p>
-          {% endif %}
-        </section>
-
-        <section class="portal-panel">
-          <div class="portal-panel-head">
-            <h2>Payment Reports</h2>
-            <span>Printable sponsor records</span>
-          </div>
-          <div class="report-link-grid">
-            <a class="report-link-card" href="{% url 'sponsor_child_payment_report' %}">
-              <i class="fas fa-child"></i>
-              <span>
-                <strong>Child Payment Report</strong>
-                <span>Validated payments for children you sponsor.</span>
-              </span>
-              <i class="fas fa-chevron-right"></i>
-            </a>
-            <a class="report-link-card" href="{% url 'sponsor_staff_payment_report' %}">
-              <i class="fas fa-user-tie"></i>
-              <span>
-                <strong>Staff Payment Report</strong>
-                <span>Validated payments for staff you sponsor.</span>
-              </span>
-              <i class="fas fa-chevron-right"></i>
-            </a>
-          </div>
-        </section>
-
-        <section class="portal-panel">
-          <div class="portal-panel-head">
             <h2>Recommended Actions</h2>
           </div>
           <ul class="recommendation-list">
@@ -588,4 +819,58 @@
     </section>
   </div>
 </main>
+
+{% if sponsor %}
+<div class="modal fade" id="sponsorFeedbackModal" tabindex="-1" role="dialog" aria-labelledby="sponsorFeedbackModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <form method="post" action="{% url 'submit_sponsor_feedback' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="sponsorFeedbackModalLabel">Send feedback to the sponsorship team</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="{{ feedback_form.subject.id_for_label }}">Subject</label>
+            {{ feedback_form.subject }}
+          </div>
+          <div class="form-group">
+            <label for="{{ feedback_form.message.id_for_label }}">Message</label>
+            {{ feedback_form.message }}
+          </div>
+          <p class="portal-muted">Your message will be stored securely and sent to the sponsorship team for review.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success">
+            <i class="fas fa-paper-plane"></i> Send feedback
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("[data-portal-toggle]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var target = document.getElementById(button.getAttribute("data-portal-toggle"));
+        if (!target) {
+          return;
+        }
+        var isHidden = target.hasAttribute("hidden");
+        if (isHidden) {
+          target.removeAttribute("hidden");
+        } else {
+          target.setAttribute("hidden", "hidden");
+        }
+        button.setAttribute("aria-expanded", isHidden ? "true" : "false");
+      });
+    });
+  });
+</script>
 {% endblock content %}

@@ -58,7 +58,7 @@
         <ul class="nav flex-column sub-menu">
           <li class="nav-item"><a class="nav-link" href="{% url 'register_sponsor' %}">Register Sponsor</a></li>
           <li class="nav-item"><a class="nav-link" href="{% url 'sponsor_list' %}">Sponsor Directory</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'donor_list' %}">Donors</a></li>
+          {% comment %} <li class="nav-item"><a class="nav-link" href="{% url 'donor_list' %}">Donors</a></li> {% endcomment %}
           <li class="nav-item"><a class="nav-link" href="{% url 'sponsor_departure' %}">Departures</a></li>
         </ul>
       </div>
@@ -105,7 +105,6 @@
           <li class="nav-item"><a class="nav-link" href="{% url 'child_sponsor_payment' %}">Child Contributions</a></li>
           <li class="nav-item"><a class="nav-link" href="{% url 'staff_sponsor_payment' %}">Staff Contributions</a></li>
           <li class="nav-item"><a class="nav-link" href="{% url 'sponsor_payment_without_child' %}">Other Contributions</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'donor_payment' %}">One-time Contributions</a></li>
         </ul>
       </div>
     </li>
@@ -136,7 +135,8 @@
         <div class="collapse" id="sponsorshipSettingsMenu">
           <ul class="nav flex-column sub-menu">
             <li class="nav-item"><a class="nav-link" href="{% url 'profile_list' %}">User Profiles</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'user_feedback' %}">Feedback</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'user_feedback' %}">User Feedback</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'sponsor_feedback_report' %}">Sponsor Feedback</a></li>
             <li class="nav-item"><a class="nav-link" href="{% url 'import_child_data' %}">Import Children</a></li>
             <li class="nav-item"><a class="nav-link" href="{% url 'import_sponsor_data' %}">Import Sponsors</a></li>
           </ul>

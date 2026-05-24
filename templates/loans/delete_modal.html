@@ -1,0 +1,469 @@
+{% extends '_partials/guest_base.html' %}
+{% load humanize %}
+
+{% block title %}Pendeza MIS | Loan Application {{ loan.id }}{% endblock %}
+
+{% block content %}
+  <style>
+    .loan-detail-page {
+      background: #f6f8fb;
+      color: #243447;
+      min-height: calc(100vh - 120px);
+      padding: 28px 0 44px;
+    }
+    .loan-detail-shell {
+      margin: 0 auto;
+      max-width: 1180px;
+      padding: 0 16px;
+    }
+    .loan-hero {
+      align-items: flex-start;
+      background: #fff;
+      border: 1px solid #dfe5ec;
+      border-radius: 8px;
+      display: flex;
+      gap: 18px;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding: 20px;
+    }
+    .loan-kicker {
+      color: #667085;
+      font-size: .76rem;
+      font-weight: 900;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+    .loan-hero h1 {
+      color: #1f2933;
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0 0 6px;
+    }
+    .loan-hero p {
+      color: #667085;
+      margin: 0;
+    }
+    .loan-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .status-card {
+      align-items: center;
+      background: #102a43;
+      border-radius: 8px;
+      color: #fff;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding: 16px 18px;
+    }
+    .status-card span {
+      color: #bcccdc;
+      display: block;
+      font-size: .76rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .status-card strong {
+      display: block;
+      font-size: 1.1rem;
+      margin-top: 3px;
+    }
+    .status-pill {
+      background: #e0f2fe;
+      border-radius: 999px;
+      color: #075985;
+      font-size: .78rem;
+      font-weight: 900;
+      padding: 7px 12px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .detail-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+    }
+    .panel {
+      background: #fff;
+      border: 1px solid #dfe5ec;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .panel-head {
+      align-items: center;
+      border-bottom: 1px solid #e8eef5;
+      display: flex;
+      justify-content: space-between;
+      padding: 14px 16px;
+    }
+    .panel-head h2 {
+      color: #26384d;
+      font-size: .96rem;
+      font-weight: 900;
+      margin: 0;
+      text-transform: uppercase;
+    }
+    .panel-head span {
+      color: #8792a2;
+      font-size: .78rem;
+      font-weight: 800;
+    }
+    .panel-body {
+      padding: 16px;
+    }
+    .info-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .info-tile {
+      border: 1px solid #edf1f5;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .info-tile span {
+      color: #667085;
+      display: block;
+      font-size: .74rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .info-tile strong,
+    .info-tile p {
+      color: #1f2933;
+      display: block;
+      font-size: .95rem;
+      font-weight: 800;
+      margin: 5px 0 0;
+      overflow-wrap: anywhere;
+    }
+    .info-tile.wide {
+      grid-column: 1 / -1;
+    }
+    .notes-box {
+      background: #f8fafc;
+      border: 1px solid #e5eaf0;
+      border-radius: 8px;
+      color: #425466;
+      margin: 0;
+      padding: 12px;
+      white-space: pre-wrap;
+    }
+    .approval-stepper {
+      display: grid;
+      gap: 0;
+    }
+    .approval-step {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 38px 1fr;
+      min-height: 74px;
+      position: relative;
+    }
+    .approval-step:not(:last-child)::before {
+      background: #dbe3ea;
+      bottom: 0;
+      content: "";
+      left: 18px;
+      position: absolute;
+      top: 38px;
+      width: 2px;
+    }
+    .approval-step.is-complete:not(:last-child)::before {
+      background: #22a06b;
+    }
+    .approval-icon {
+      align-items: center;
+      background: #f1f5f9;
+      border: 2px solid #dbe3ea;
+      border-radius: 999px;
+      color: #64748b;
+      display: inline-flex;
+      font-size: 1.05rem;
+      height: 38px;
+      justify-content: center;
+      position: relative;
+      width: 38px;
+      z-index: 1;
+    }
+    .approval-step.is-complete .approval-icon {
+      background: #ecfdf3;
+      border-color: #22a06b;
+      color: #147a50;
+    }
+    .approval-step.is-pending .approval-icon {
+      background: #fff7ed;
+      border-color: #fdba74;
+      color: #c2410c;
+    }
+    .approval-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .approval-card strong {
+      color: #1f2937;
+      display: block;
+      font-size: .92rem;
+    }
+    .approval-card span {
+      color: #667085;
+      display: block;
+      font-size: .78rem;
+      margin-top: 2px;
+    }
+    .approval-state {
+      border-radius: 999px;
+      display: inline-flex !important;
+      font-size: .72rem !important;
+      font-weight: 900;
+      margin-top: 8px !important;
+      padding: 4px 9px;
+      text-transform: uppercase;
+    }
+    .approval-step.is-complete .approval-state {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .approval-step.is-pending .approval-state {
+      background: #ffedd5;
+      color: #9a3412;
+    }
+    .balance-list {
+      display: grid;
+      gap: 10px;
+    }
+    .balance-row {
+      align-items: center;
+      border: 1px solid #edf1f5;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      padding: 11px 12px;
+    }
+    .balance-row span {
+      color: #667085;
+      font-weight: 800;
+    }
+    .balance-row strong {
+      color: #1f2933;
+      font-size: .98rem;
+      font-weight: 900;
+    }
+    .documents-table {
+      margin-bottom: 0;
+    }
+    .documents-table thead th {
+      color: #667085;
+      font-size: .72rem;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .empty-docs {
+      color: #8792a2;
+      padding: 22px !important;
+      text-align: center;
+    }
+    @media (max-width: 992px) {
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 640px) {
+      .loan-hero {
+        display: block;
+      }
+      .loan-actions {
+        justify-content: flex-start;
+        margin-top: 14px;
+      }
+      .status-card {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <main class="loan-detail-page">
+    <div class="loan-detail-shell">
+      <section class="loan-hero">
+        <div>
+          <div class="loan-kicker">Loan self-service</div>
+          <h1>{{ form_title }}</h1>
+          <p>{{ client.full_name }}{% if client.reg_number %} - {{ client.reg_number }}{% endif %}</p>
+        </div>
+        <div class="loan-actions">
+          <a href="{% url 'loans:client_loan_applications' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="mdi mdi-arrow-left"></i> My Applications
+          </a>
+        </div>
+      </section>
+
+      <section class="status-card">
+        <div>
+          <span>Current status</span>
+          <strong>{{ loan.get_status_display }}</strong>
+        </div>
+        <div class="status-pill">{{ loan.get_status_display }}</div>
+      </section>
+
+      <div class="detail-grid">
+        <div>
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Application Details</h2>
+              <span>Submitted {{ loan.created_at|date:'M d, Y' }}</span>
+            </div>
+            <div class="panel-body">
+              <div class="info-grid">
+                <div class="info-tile">
+                  <span>Principal</span>
+                  <strong>UGX {{ loan.principal_amount|floatformat:2|intcomma }}</strong>
+                </div>
+                <div class="info-tile">
+                  <span>Product</span>
+                  <strong>{{ loan.get_loan_purpose_display }}</strong>
+                </div>
+                <div class="info-tile">
+                  <span>Period</span>
+                  <strong>{{ loan.loan_period_months }} months</strong>
+                </div>
+                <div class="info-tile">
+                  <span>Application date</span>
+                  <strong>{{ loan.start_date }}</strong>
+                </div>
+                {% if loan.reason_for_rejection %}
+                  <div class="info-tile wide">
+                    <span>Rejection reason</span>
+                    <p>{{ loan.reason_for_rejection }}</p>
+                  </div>
+                {% endif %}
+                <div class="info-tile wide">
+                  <span>Notes</span>
+                  <p class="notes-box">{{ loan.reason_for_approval|default:'No notes provided.' }}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Uploaded Documents</h2>
+              <span>{{ documents|length }} file{{ documents|length|pluralize }}</span>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle documents-table">
+                <thead class="table-light">
+                  <tr>
+                    <th>Document</th>
+                    <th>Description</th>
+                    <th>Uploaded</th>
+                    <th class="text-end">File</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for document in documents %}
+                    <tr>
+                      <td class="fw-bold">{{ document.get_document_type_display }}</td>
+                      <td>{{ document.description|default:'-' }}</td>
+                      <td>{{ document.created_at|date:'M d, Y' }}</td>
+                      <td class="text-end">
+                        {% if document.file %}
+                          <a href="{{ document.file.url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
+                            <i class="mdi mdi-open-in-new"></i> Open
+                          </a>
+                        {% else %}
+                          <span class="text-muted">-</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% empty %}
+                    <tr>
+                      <td colspan="4" class="empty-docs">No documents uploaded.</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <aside>
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Approval Workflow</h2>
+              <span>Three-stage review</span>
+            </div>
+            <div class="panel-body">
+              <div class="approval-stepper">
+                <div class="approval-step {% if loan.approved_by_boo %}is-complete{% else %}is-pending{% endif %}">
+                  <div class="approval-icon">
+                    <i class="mdi {% if loan.approved_by_boo %}mdi-check-bold{% else %}mdi-clock-outline{% endif %}"></i>
+                  </div>
+                  <div class="approval-card">
+                    <strong>BOO review</strong>
+                    <span>Business Operations Officer assessment</span>
+                    <span class="approval-state">{% if loan.approved_by_boo %}Complete{% else %}Pending{% endif %}</span>
+                  </div>
+                </div>
+                <div class="approval-step {% if loan.approved_by_hof %}is-complete{% else %}is-pending{% endif %}">
+                  <div class="approval-icon">
+                    <i class="mdi {% if loan.approved_by_hof %}mdi-check-bold{% else %}mdi-clock-outline{% endif %}"></i>
+                  </div>
+                  <div class="approval-card">
+                    <strong>HOF review</strong>
+                    <span>Head of Finance verification</span>
+                    <span class="approval-state">{% if loan.approved_by_hof %}Complete{% else %}Pending{% endif %}</span>
+                  </div>
+                </div>
+                <div class="approval-step {% if loan.approved_by_ed %}is-complete{% else %}is-pending{% endif %}">
+                  <div class="approval-icon">
+                    <i class="mdi {% if loan.approved_by_ed %}mdi-check-bold{% else %}mdi-clock-outline{% endif %}"></i>
+                  </div>
+                  <div class="approval-card">
+                    <strong>ED review</strong>
+                    <span>Executive Director final approval</span>
+                    <span class="approval-state">{% if loan.approved_by_ed %}Complete{% else %}Pending{% endif %}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Balance</h2>
+              <span>Live account view</span>
+            </div>
+            <div class="panel-body">
+              <div class="balance-list">
+                <div class="balance-row">
+                  <span>Principal balance</span>
+                  <strong>UGX {{ remaining_principal|floatformat:2|intcomma }}</strong>
+                </div>
+                <div class="balance-row">
+                  <span>Interest balance</span>
+                  <strong>UGX {{ remaining_interest|floatformat:2|intcomma }}</strong>
+                </div>
+                <div class="balance-row">
+                  <span>Penalty balance</span>
+                  <strong>UGX {{ remaining_penalty|floatformat:2|intcomma }}</strong>
+                </div>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </main>
+{% endblock %}

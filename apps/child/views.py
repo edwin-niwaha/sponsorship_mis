@@ -245,6 +245,9 @@ def update_picture(request):
         form = ChildProfilePictureForm(request.POST, request.FILES)
         if form.is_valid():
             child_id = request.POST.get("id")
+            if not child_id:
+                messages.error(request, "Please select a child.", extra_tags="bg-danger")
+                return redirect("update_picture")
             try:
                 # Attempt to retrieve the child profile
                 child_profile = Child.objects.get(id=child_id)
@@ -280,7 +283,7 @@ def update_picture(request):
         form = ChildProfilePictureForm()
 
     # Retrieve all child objects
-    children = Child.objects.all().filter(is_departed=False).order_by("id")
+    children = Child.objects.filter(is_departed=False).order_by("full_name", "id")
 
     return render(
         request,
@@ -297,32 +300,28 @@ def update_picture(request):
 @login_required
 @admin_or_manager_or_staff_required
 def profile_pictures(request):
-    if request.method == "POST":
-        child_id = request.POST.get("id")
-        if child_id:
-            selected_child = get_object_or_404(Child, id=child_id)
-            profile_picture = ChildProfilePicture.objects.filter(child_id=child_id)
-            children = Child.objects.all().filter(is_departed=False).order_by("id")
-            return render(
-                request,
-                "child/profile_picture_rpt.html",
-                {
-                    "table_title": "Profile Picture",
-                    "children": children,
-                    "child_name": selected_child.full_name,
-                    "prefix_id": selected_child.prefixed_id,
-                    "profile_picture": profile_picture,
-                },
-            )
-        else:
-            messages.error(request, "No child selected.", extra_tags="bg-danger")
-    else:
-        # Handle the GET request, show the form without results
-        children = Child.objects.all().filter(is_departed=False).order_by("id")
+    children = Child.objects.filter(is_departed=False).order_by("full_name", "id")
+    child_id = request.POST.get("id") or request.GET.get("id")
+    selected_child = None
+    profile_picture = None
+
+    if child_id:
+        selected_child = get_object_or_404(Child, id=child_id)
+        profile_picture = ChildProfilePicture.objects.filter(child_id=child_id).order_by("-uploaded_at", "-id")
+    elif request.method == "POST":
+        messages.error(request, "No child selected.", extra_tags="bg-danger")
+
     return render(
         request,
         "child/profile_picture_rpt.html",
-        {"table_title": "Profile Picture", "children": children},
+        {
+            "table_title": "Profile Picture",
+            "children": children,
+            "selected_child_id": int(child_id) if child_id else None,
+            "child_name": selected_child.full_name if selected_child else None,
+            "prefix_id": selected_child.prefixed_id if selected_child else None,
+            "profile_picture": profile_picture,
+        },
     )
 
 
@@ -346,6 +345,9 @@ def child_progress(request):
         form = ChildProgressForm(request.POST)
         if form.is_valid():
             child_id = request.POST.get("id")
+            if not child_id:
+                messages.error(request, "Please select a child.", extra_tags="bg-danger")
+                return redirect("child_progress")
             child_instance = get_object_or_404(Child, pk=child_id)
 
             # Always create a new progress record explicitly
@@ -384,7 +386,7 @@ def child_progress(request):
     else:
         form = ChildProgressForm()
 
-    children = Child.objects.all().filter(is_departed=False).order_by("id")
+    children = Child.objects.filter(is_departed=False).order_by("full_name", "id")
     return render(
         request,
         "child/progress.html",
@@ -491,7 +493,7 @@ def update_progress(request, pk):
     else:
         form = ChildProgressForm(instance=progress_record)
 
-    children = Child.objects.filter(is_departed=False).order_by("id")
+    children = Child.objects.filter(is_departed=False).order_by("full_name", "id")
     return render(
         request,
         "child/progress.html",
@@ -529,6 +531,9 @@ def child_correspondence(request):
         form = ChildCorrespondenceForm(request.POST, request.FILES)
         if form.is_valid():
             child_id = request.POST.get("id")
+            if not child_id:
+                messages.error(request, "Please select a child.", extra_tags="bg-danger")
+                return redirect("child_correspondence")
             child_instance = get_object_or_404(Child, pk=child_id)
 
             # Always create a new correspondence record explicitly
@@ -556,7 +561,7 @@ def child_correspondence(request):
     else:
         form = ChildCorrespondenceForm()
 
-    children = Child.objects.all().filter(is_departed=False).order_by("id")
+    children = Child.objects.filter(is_departed=False).order_by("full_name", "id")
     return render(
         request,
         "child/correspondence.html",
@@ -568,32 +573,28 @@ def child_correspondence(request):
 @login_required
 @admin_or_manager_or_staff_required
 def child_correspondence_report(request):
-    if request.method == "POST":
-        child_id = request.POST.get("id")
-        if child_id:
-            selected_child = get_object_or_404(Child, id=child_id)
-            child_correspondence = ChildCorrespondence.objects.filter(child_id=child_id)
-            children = Child.objects.all().filter(is_departed=False).order_by("id")
-            return render(
-                request,
-                "child/correspondence_rpt.html",
-                {
-                    "table_title": "Correspondence Report",
-                    "children": children,
-                    "child_name": selected_child.full_name,
-                    "prefix_id": selected_child.prefixed_id,
-                    "child_correspondence": child_correspondence,
-                },
-            )
-        else:
-            messages.error(request, "No child selected.", extra_tags="bg-danger")
-    else:
-        # Handle the GET request, show the form without results
-        children = Child.objects.all().filter(is_departed=False).order_by("id")
+    children = Child.objects.filter(is_departed=False).order_by("full_name", "id")
+    child_id = request.POST.get("id") or request.GET.get("id")
+    selected_child = None
+    child_correspondence = None
+
+    if child_id:
+        selected_child = get_object_or_404(Child, id=child_id)
+        child_correspondence = ChildCorrespondence.objects.filter(child_id=child_id).order_by("-created_at", "-id")
+    elif request.method == "POST":
+        messages.error(request, "No child selected.", extra_tags="bg-danger")
+
     return render(
         request,
         "child/correspondence_rpt.html",
-        {"table_title": "Correspondence Report", "children": children},
+        {
+            "table_title": "Correspondence Report",
+            "children": children,
+            "selected_child_id": int(child_id) if child_id else None,
+            "child_name": selected_child.full_name if selected_child else None,
+            "prefix_id": selected_child.prefixed_id if selected_child else None,
+            "child_correspondence": child_correspondence,
+        },
     )
 
 
@@ -619,6 +620,9 @@ def child_incident(request):
         form = ChildIncidentForm(request.POST, request.FILES)
         if form.is_valid():
             child_id = request.POST.get("id")
+            if not child_id:
+                messages.error(request, "Please select a child.", extra_tags="bg-danger")
+                return redirect("child_incident")
             child_instance = get_object_or_404(Child, pk=child_id)
 
             # Always create a new incidence record explicitly
@@ -645,7 +649,7 @@ def child_incident(request):
     else:
         form = ChildIncidentForm()
 
-    children = Child.objects.all().filter(is_departed=False).order_by("id")
+    children = Child.objects.filter(is_departed=False).order_by("full_name", "id")
     return render(
         request,
         "child/incident.html",
@@ -657,32 +661,28 @@ def child_incident(request):
 @login_required
 @admin_or_manager_or_staff_required
 def child_incident_report(request):
-    if request.method == "POST":
-        child_id = request.POST.get("id")
-        if child_id:
-            selected_child = get_object_or_404(Child, id=child_id)
-            child_incident = ChildIncident.objects.filter(child_id=child_id)
-            children = Child.objects.all().filter(is_departed=False).order_by("id")
-            return render(
-                request,
-                "child/incident_rpt.html",
-                {
-                    "table_title": "Incident Report",
-                    "children": children,
-                    "child_name": selected_child.full_name,
-                    "prefix_id": selected_child.prefixed_id,
-                    "child_incident": child_incident,
-                },
-            )
-        else:
-            messages.error(request, "No child selected.", extra_tags="bg-danger")
-    else:
-        # Handle the GET request, show the form without results
-        children = Child.objects.all().filter(is_departed=False).order_by("id")
+    children = Child.objects.filter(is_departed=False).order_by("full_name", "id")
+    child_id = request.POST.get("id") or request.GET.get("id")
+    selected_child = None
+    child_incident = None
+
+    if child_id:
+        selected_child = get_object_or_404(Child, id=child_id)
+        child_incident = ChildIncident.objects.filter(child_id=child_id).order_by("-incident_date", "-id")
+    elif request.method == "POST":
+        messages.error(request, "No child selected.", extra_tags="bg-danger")
+
     return render(
         request,
         "child/incident_rpt.html",
-        {"table_title": "Incident Report", "children": children},
+        {
+            "table_title": "Incident Report",
+            "children": children,
+            "selected_child_id": int(child_id) if child_id else None,
+            "child_name": selected_child.full_name if selected_child else None,
+            "prefix_id": selected_child.prefixed_id if selected_child else None,
+            "child_incident": child_incident,
+        },
     )
 
 
@@ -709,6 +709,9 @@ def child_departure(request):
         form = ChildDepartForm(request.POST, request.FILES)
         if form.is_valid():
             child_id = request.POST.get("id")
+            if not child_id:
+                messages.error(request, "Please select a child.", extra_tags="bg-danger")
+                return redirect("child_departure")
             child_instance = get_object_or_404(Child, pk=child_id)
 
             # Create a ChildDepart instance
@@ -736,11 +739,17 @@ def child_departure(request):
     else:
         form = ChildDepartForm()
 
-    children = Child.objects.filter(is_departed=False).order_by("id")
+    children = Child.objects.filter(is_departed=False).order_by("full_name", "id")
     return render(
         request,
         "child/child_depature.html",
-        {"form": form, "form_name": "Child Depature Form", "children": children},
+        {
+            "form": form,
+            "form_name": "Child Departure Form",
+            "children": children,
+            "active_child_count": children.count(),
+            "departed_child_count": Child.objects.filter(is_departed=True).count(),
+        },
     )
 
 
@@ -755,9 +764,14 @@ def child_depature_list(request):
         .prefetch_related("departures")
     )
 
-    search_query = request.GET.get("search")
+    search_query = request.GET.get("search", "").strip()
     if search_query:
-        queryset = queryset.filter(full_name__icontains=search_query)
+        queryset = queryset.filter(
+            Q(full_name__icontains=search_query)
+            | Q(preferred_name__icontains=search_query)
+            | Q(guardian__icontains=search_query)
+            | Q(residence__icontains=search_query)
+        )
 
     paginator = Paginator(queryset, 50)
     page = request.GET.get("page")
@@ -774,7 +788,12 @@ def child_depature_list(request):
     return render(
         request,
         "child/child_depature_list.html",
-        {"records": records, "table_title": "Departed Children"},
+        {
+            "records": records,
+            "table_title": "Departed Children",
+            "search_query": search_query,
+            "departed_child_count": queryset.count(),
+        },
     )
 
 
@@ -971,7 +990,7 @@ def delete_confirmation(request):
 def birthday_list(request):
     # Annotate the queryset with the birth month
     children_with_birthday = (
-        Child.objects.filter(is_sponsored=True)
+        Child.objects.filter(is_sponsored=True, is_departed=False, date_of_birth__isnull=False)
         .annotate(
             birth_month=ExtractMonth("date_of_birth"),
             month_name=Concat(
@@ -984,5 +1003,6 @@ def birthday_list(request):
     context = {
         "table_title": "Children's Birthdays",
         "children_with_birthday": children_with_birthday,
+        "birthday_count": children_with_birthday.count(),
     }
     return render(request, "child/birthday_list.html", context)

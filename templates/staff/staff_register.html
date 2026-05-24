@@ -1,45 +1,278 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
-
-{% block head %}
-{% endblock %}
 
 {% block content %}
+  <style>
+    .staff-form-page { color: #111827; }
+    .staff-form-header,
+    .staff-form-card,
+    .staff-side-card,
+    .staff-stat-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+    }
+    .staff-form-header {
+      align-items: center;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      padding: 18px;
+    }
+    .staff-form-header h3 {
+      color: #1f344d;
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0 0 4px;
+      text-transform: none;
+    }
+    .staff-muted { color: #64748b; margin: 0; }
+    .staff-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .staff-stats-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin: 12px 0;
+    }
+    .staff-stat-card { display: grid; gap: 7px; padding: 14px; }
+    .staff-stat-card i {
+      align-items: center;
+      background: #eef4ff;
+      border: 1px solid #d7e4fb;
+      border-radius: 8px;
+      color: #295caa;
+      display: inline-flex;
+      height: 36px;
+      justify-content: center;
+      width: 36px;
+    }
+    .staff-stat-card span {
+      color: #64748b;
+      font-size: .76rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .staff-stat-card strong { color: #1f344d; font-size: 1.2rem; font-weight: 900; }
+    .staff-form-layout {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: minmax(0, 1.45fr) minmax(280px, .55fr);
+    }
+    .staff-form-card,
+    .staff-side-card { padding: 18px; }
+    .section-title {
+      align-items: center;
+      border-bottom: 1px solid #edf1f5;
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+    }
+    .section-title i {
+      align-items: center;
+      background: #edf7f4;
+      border: 1px solid #cfe8e0;
+      border-radius: 8px;
+      color: #13745d;
+      display: inline-flex;
+      height: 38px;
+      justify-content: center;
+      width: 38px;
+    }
+    .section-title h5 {
+      color: #1f344d;
+      font-size: 1rem;
+      font-weight: 900;
+      margin: 0;
+    }
+    .field-label {
+      color: #374151;
+      font-size: .8rem;
+      font-weight: 900;
+      margin-bottom: .35rem;
+      text-transform: uppercase;
+    }
+    .staff-tip-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+    }
+    .staff-tip-list li {
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      color: #475569;
+      list-style: none;
+      padding: 11px;
+    }
+    @media (max-width: 991.98px) {
+      .staff-form-header { align-items: stretch; flex-direction: column; }
+      .staff-form-layout,
+      .staff-stats-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 
-<div class="container">
-    <div class="page-header flex-wrap">
-        <h3 class="mb-0"> {{form_name|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-        <div class="d-flex">
-            <a title="Register Child" class="btn btn-sm ml-3 btn-success" href="{% url 'register_staff' %}"><i
-                    class="mdi mdi-account-plus btn-icon-prepend"></i></a>
-            <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'staff_list' %}"><i
-                    class="mdi mdi-chart-line btn-icon-prepend"></i>
-            </a>
-        </div>
+  <div class="container staff-form-page">
+    <div class="staff-form-header">
+      <div>
+        <h3>{{ form_name }}</h3>
+        <p class="staff-muted">Create a clean staff profile for sponsorship, reporting, and internal records.</p>
+      </div>
+      <div class="staff-actions">
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'register_staff' %}">
+          <i class="mdi mdi-refresh"></i> New record
+        </a>
+        <a class="btn btn-sm btn-success" href="{% url 'staff_list' %}">
+          <i class="mdi mdi-format-list-bulleted"></i> Staff list
+        </a>
+      </div>
     </div>
-    <hr>
 
-    <div class="form-content my-3 p-3">
-        <div class="row justify-content-center">
-            <div class="col-lg-12">
-                <div class="card shadow-lg border-0 rounded-lg mt-0 mb-5">
-                    <div class="card-body">
-                        <form method="post" enctype="multipart/form-data">
-                            {% csrf_token %}
-                            <!--  -->
-                            {{ form|crispy }}
-                            <div class="form-group mt-4 mb-0">
-                                <button type="submit" class="col-md-12 btn btn-dark"
-                                    onclick="return confirm('Are you sure you want to proceed?') && validateForm()">
-                                    REGISTER STAFF</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+    <section class="staff-stats-grid">
+      <div class="staff-stat-card">
+        <i class="mdi mdi-account-tie"></i>
+        <span>Active Staff</span>
+        <strong>{{ active_staff_count }}</strong>
+      </div>
+      <div class="staff-stat-card">
+        <i class="mdi mdi-account-heart"></i>
+        <span>Sponsored Staff</span>
+        <strong>{{ sponsored_staff_count }}</strong>
+      </div>
+      <div class="staff-stat-card">
+        <i class="mdi mdi-account-off"></i>
+        <span>Departed Staff</span>
+        <strong>{{ departed_staff_count }}</strong>
+      </div>
+    </section>
+
+    <div class="staff-form-layout">
+      <section class="staff-form-card">
+        <div class="section-title">
+          <i class="mdi mdi-account-plus"></i>
+          <div>
+            <h5>Staff details</h5>
+            <p class="staff-muted">Use complete names and current contact details.</p>
+          </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="field-label" for="{{ form.first_name.id_for_label }}">First name</label>
+                {{ form.first_name }}
+                {{ form.first_name.errors }}
+              </div>
             </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="field-label" for="{{ form.last_name.id_for_label }}">Last name</label>
+                {{ form.last_name }}
+                {{ form.last_name.errors }}
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="field-label" for="{{ form.gender.id_for_label }}">Gender</label>
+                {{ form.gender }}
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="field-label" for="{{ form.date_of_birth.id_for_label }}">Date of birth</label>
+                {{ form.date_of_birth }}
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="field-label" for="{{ form.marital_status.id_for_label }}">Marital status</label>
+                {{ form.marital_status }}
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="field-label" for="{{ form.email.id_for_label }}">Email</label>
+                {{ form.email }}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="field-label" for="{{ form.mobile_telephone.id_for_label }}">Mobile telephone</label>
+                {{ form.mobile_telephone }}
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="field-label" for="{{ form.home_district.id_for_label }}">Home district</label>
+                {{ form.home_district }}
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="field-label" for="{{ form.department.id_for_label }}">Department</label>
+                {{ form.department }}
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="field-label" for="{{ form.job_title.id_for_label }}">Job title</label>
+                {{ form.job_title }}
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="field-label" for="{{ form.date_started_work.id_for_label }}">Start date</label>
+                {{ form.date_started_work }}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="field-label" for="{{ form.picture.id_for_label }}">Photo</label>
+                {{ form.picture }}
+              </div>
+            </div>
+          </div>
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <button type="submit" class="btn btn-primary btn-block mt-3" onclick="return confirm('Register this staff member?')">
+            <i class="mdi mdi-content-save mr-1"></i> Register staff
+          </button>
+        </form>
+      </section>
+
+      <aside class="staff-side-card">
+        <div class="section-title">
+          <i class="mdi mdi-lightbulb-outline"></i>
+          <div>
+            <h5>Good records help reports</h5>
+            <p class="staff-muted">Keep profiles tidy before sponsorship begins.</p>
+          </div>
         </div>
+        <ul class="staff-tip-list">
+          <li>Use the staff member's current work email where available.</li>
+          <li>Department and job title improve staff sponsorship reporting.</li>
+          <li>Photos are optional, but useful for staff directories.</li>
+        </ul>
+      </aside>
     </div>
-</div>
-
-
+  </div>
 {% endblock content %}

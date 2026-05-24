@@ -1,58 +1,327 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
-
-{% block head %}
-
-{% endblock %}
 
 {% block content %}
-  <div class="container">
-    <div class="page-header flex-wrap">
-      <h3 class="mb-0">{{ form_name|upper }}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-      <div class="d-flex">
-        <a class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsor_payment' %}"><i class="mdi mdi-folder-plus btn-icon-prepend"></i></a>
-        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsor_payments_report' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
+  <style>
+    .child-payment-page {
+      color: #111827;
+    }
+
+    .child-payment-header,
+    .child-payment-card,
+    .child-payment-help {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .child-payment-header {
+      align-items: center;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      padding: 18px;
+    }
+
+    .child-payment-header h3 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 0;
+      margin: 0 0 4px;
+      text-transform: none;
+    }
+
+    .child-payment-header p,
+    .child-payment-muted {
+      color: #64748b;
+      margin: 0;
+    }
+
+    .child-payment-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .child-payment-layout {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+      margin-top: 12px;
+    }
+
+    .child-payment-card {
+      padding: 18px;
+    }
+
+    .child-payment-card h5,
+    .child-payment-help h5 {
+      color: #1f344d;
+      font-size: 1rem;
+      font-weight: 800;
+      margin: 0;
+    }
+
+    .child-payment-section-title {
+      align-items: center;
+      border-bottom: 1px solid #edf1f5;
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+    }
+
+    .child-payment-section-title i {
+      align-items: center;
+      background: #edf7f4;
+      border: 1px solid #cfe8e0;
+      border-radius: 8px;
+      color: #13745d;
+      display: inline-flex;
+      height: 38px;
+      justify-content: center;
+      width: 38px;
+    }
+
+    .child-payment-form-shell {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .child-payment-form-shell .chzn-container,
+    .child-payment-form-shell .chzn-select {
+      width: 100% !important;
+    }
+
+    .field-label {
+      color: #374151;
+      font-size: 0.8rem;
+      font-weight: 800;
+      margin-bottom: 0.35rem;
+      text-transform: uppercase;
+    }
+
+    .field-help {
+      color: #64748b;
+      display: block;
+      font-size: 0.78rem;
+      margin-top: 0.3rem;
+    }
+
+    .child-payment-help {
+      padding: 16px;
+    }
+
+    .link-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+      max-height: 360px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .link-item {
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .link-item strong,
+    .link-item span {
+      display: block;
+    }
+
+    .link-item strong {
+      color: #1f344d;
+      font-weight: 800;
+    }
+
+    .link-item span {
+      color: #64748b;
+      font-size: 0.82rem;
+    }
+
+    @media (max-width: 991.98px) {
+      .child-payment-layout,
+      .child-payment-header {
+        grid-template-columns: 1fr;
+      }
+
+      .child-payment-header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+    }
+  </style>
+
+  <div class="container child-payment-page">
+    <div class="child-payment-header">
+      <div>
+        <h3>{{ form_name }}</h3>
+        <p>Record child sponsorship payments against the correct active sponsor and child.</p>
+      </div>
+      <div class="child-payment-actions">
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'child_sponsor_payment' %}">
+          <i class="mdi mdi-refresh"></i> New entry
+        </a>
+        <a class="btn btn-sm btn-success" href="{% url 'child_sponsor_payments_report' %}">
+          <i class="mdi mdi-chart-line"></i> View report
+        </a>
       </div>
     </div>
-    <hr />
 
-    <div class="form-content my-3 p-3">
-      <div class="row justify-content-center">
-        <div class="col-lg-12">
-          <div class="card shadow-lg border-0 rounded-lg mt-0 mb-5">
-            <div class="card-body">
-              <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="form-group">
-                  <select name="child_id" id="dropdown" class="chzn-select" style="width: 40%;">
-                    <option value="" selected disabled>Search child...</option>
-                    {% for child in children %}
-                      <option value="{{ child.id }}">{{ child.full_name }} &rarr;
-                        {{ child.prefixed_id }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                <div class="form-group">
-                  <select name="sponsor_id" id="sponsor_dropdown" class="chzn-select" required style="width: 40%;">
-                    <option value="" selected disabled>Search sponsor...</option>
-                    {% for sponsor in sponsors %}
-                      <option value="{{ sponsor.id }}">{{ sponsor.first_name }}
-                        {{ sponsor.last_name }} &rarr;
-                        {{ sponsor.prefixed_id }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-
-                {{ form|crispy }}
-                <div class="form-group mt-4 mb-0">
-                  <button type="submit" class="col-md-12 btn btn-dark" onclick="return confirm('Are you sure you want to proceed?') && validateForm()">SUBMIT PAYMENT</button>
-                  <br />
-                </div>
-              </form>
-            </div>
+    <div class="child-payment-layout">
+      <section class="child-payment-card">
+        <div class="child-payment-section-title">
+          <i class="mdi mdi-cash-plus"></i>
+          <div>
+            <h5>Payment details</h5>
+            <p class="child-payment-muted">Validated payments will sync into unified payment reports.</p>
           </div>
         </div>
-      </div>
+
+        <form method="post" enctype="multipart/form-data" class="child-payment-form-shell" id="childPaymentForm">
+          {% csrf_token %}
+
+          <div class="form-group">
+            <label for="sponsor_dropdown" class="field-label">Child sponsor</label>
+            <select name="sponsor_id" id="sponsor_dropdown" class="chzn-select" required data-placeholder="Search child sponsor">
+              <option value="" selected disabled>Search child sponsor...</option>
+              {% for sponsor in sponsors %}
+                <option value="{{ sponsor.id }}">{{ sponsor.first_name }} {{ sponsor.last_name }} &rarr; {{ sponsor.prefixed_id }}</option>
+              {% endfor %}
+            </select>
+            <small class="field-help">Choose the sponsor who made this child support payment.</small>
+          </div>
+
+          <div class="form-group">
+            <label for="child_dropdown" class="field-label">Sponsored child</label>
+            <select name="child_id" id="child_dropdown" class="chzn-select" required data-placeholder="Search child">
+              <option value="" selected disabled>Search child...</option>
+              {% for child in children %}
+                <option value="{{ child.id }}">{{ child.full_name }} &rarr; {{ child.prefixed_id }}</option>
+              {% endfor %}
+            </select>
+            <small class="field-help" id="childSelectionHelp">Select a sponsor first to narrow this list to their active child sponsorships.</small>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.payment_date.id_for_label }}" class="field-label">Payment date</label>
+                {{ form.payment_date }}
+                {% if form.payment_date.errors %}
+                  <div class="text-danger small mt-2">{{ form.payment_date.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.amount.id_for_label }}" class="field-label">Amount</label>
+                {{ form.amount }}
+                {% if form.amount.errors %}
+                  <div class="text-danger small mt-2">{{ form.amount.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.month.id_for_label }}" class="field-label">Month covered</label>
+                {{ form.month }}
+                {% if form.month.errors %}
+                  <div class="text-danger small mt-2">{{ form.month.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.payment_year.id_for_label }}" class="field-label">Year covered</label>
+                {{ form.payment_year }}
+                {% if form.payment_year.errors %}
+                  <div class="text-danger small mt-2">{{ form.payment_year.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block mt-3" onclick="return confirm('Are you sure you want to submit this child sponsorship payment?')">
+            <i class="mdi mdi-content-save mr-1"></i> Submit payment
+          </button>
+        </form>
+      </section>
+
+      <aside class="child-payment-help">
+        <div class="child-payment-section-title">
+          <i class="mdi mdi-link-variant"></i>
+          <div>
+            <h5>Active child links</h5>
+            <p class="child-payment-muted">Use these links as a quick cross-check before saving.</p>
+          </div>
+        </div>
+
+        <div class="link-list">
+          {% for sponsorship in sponsorships|slice:":12" %}
+            <div class="link-item">
+              <strong>{{ sponsorship.sponsor.first_name }} {{ sponsorship.sponsor.last_name }}</strong>
+              <span>{{ sponsorship.child.full_name }} &rarr; {{ sponsorship.child.prefixed_id }}</span>
+            </div>
+          {% empty %}
+            <p class="child-payment-muted">No active child sponsorship links are available yet.</p>
+          {% endfor %}
+        </div>
+      </aside>
     </div>
   </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var sponsorChildMap = {};
+      {% for sponsorship in sponsorships %}
+        sponsorChildMap["{{ sponsorship.sponsor_id }}"] = sponsorChildMap["{{ sponsorship.sponsor_id }}"] || [];
+        sponsorChildMap["{{ sponsorship.sponsor_id }}"].push("{{ sponsorship.child_id }}");
+      {% endfor %}
+
+      var sponsorSelect = document.getElementById("sponsor_dropdown");
+      var childSelect = document.getElementById("child_dropdown");
+      var helpText = document.getElementById("childSelectionHelp");
+
+      function refreshChosen(select) {
+        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.chosen) {
+          window.jQuery(select).trigger("chosen:updated");
+        }
+      }
+
+      function filterChildren() {
+        var sponsorId = sponsorSelect.value;
+        var allowedChildren = sponsorChildMap[sponsorId] || [];
+        var shouldFilter = allowedChildren.length > 0;
+
+        Array.prototype.forEach.call(childSelect.options, function (option) {
+          if (!option.value) {
+            option.hidden = false;
+            return;
+          }
+          option.hidden = shouldFilter && allowedChildren.indexOf(option.value) === -1;
+        });
+
+        if (shouldFilter && childSelect.value && allowedChildren.indexOf(childSelect.value) === -1) {
+          childSelect.value = "";
+        }
+
+        helpText.textContent = shouldFilter
+          ? "Child list narrowed to active sponsorships for the selected sponsor."
+          : "No active child links were found for this sponsor, so all active children remain selectable.";
+        refreshChosen(childSelect);
+      }
+
+      sponsorSelect.addEventListener("change", filterChildren);
+    });
+  </script>
 {% endblock %}

@@ -244,13 +244,28 @@ class PolicyForm(forms.ModelForm):
         exclude = ("is_valid",)
 
         widgets = {
-            "date_reviewed": forms.DateInput(attrs={"type": "date"}),
+            "title": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Policy title",
+                    "required": True,
+                }
+            ),
+            "upload": forms.FileInput(
+                attrs={
+                    "class": "form-control",
+                    "accept": "application/pdf,.pdf",
+                }
+            ),
+            "date_reviewed": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
         }
 
     def clean_upload(self):
         upload = self.cleaned_data.get("upload")
         if upload:
-            if not upload.name.endswith(".pdf"):
+            if not upload.name.lower().endswith(".pdf"):
                 raise forms.ValidationError("Only PDF files are allowed.")
             if upload.size > 10 * 1024 * 1024:  # 10 MB limit
                 raise forms.ValidationError(
@@ -266,6 +281,23 @@ class EbookUploadForm(forms.ModelForm):
     class Meta:
         model = Ebook
         fields = ["title", "author", "ebook_file"]
+        widgets = {
+            "title": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Book title"}
+            ),
+            "author": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Author"}
+            ),
+            "ebook_file": forms.FileInput(
+                attrs={"class": "form-control", "accept": "application/pdf,.pdf"}
+            ),
+        }
+
+    def clean_ebook_file(self):
+        ebook_file = self.cleaned_data.get("ebook_file")
+        if ebook_file and not ebook_file.name.lower().endswith(".pdf"):
+            raise forms.ValidationError("Only PDF ebook files are allowed.")
+        return ebook_file
 
 
 # =================================== Document Form  ===================================
@@ -275,3 +307,14 @@ class DocumentForm(forms.ModelForm):
     class Meta:
         model = DocumentUpload
         fields = "__all__"
+        widgets = {
+            "title": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Document title"}
+            ),
+            "file": forms.FileInput(
+                attrs={
+                    "class": "form-control",
+                    "accept": "application/pdf,.pdf,.xls,.xlsx",
+                }
+            ),
+        }

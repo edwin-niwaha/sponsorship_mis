@@ -46,7 +46,21 @@
                 </a>
                 <div class="dropdown-menu navbar-dropdown navbar-dropdown-large preview-list"
                     aria-labelledby="messageDropdown">
-                    <h6 class="p-3 mb-0">User Feedback</h6>
+                    <h6 class="p-3 mb-0">Feedback Notifications</h6>
+                    {% if sponsor_feedback %}
+                    {% for feedback in sponsor_feedback %}
+                    <a class="dropdown-item preview-item" href="{% url 'sponsor_feedback_report' %}"
+                        onclick="return confirm('You will be redirected to the sponsor feedback report.');">
+                        <div class="preview-item-content flex-grow">
+                            <span class="badge badge-pill badge-info">Sponsor</span>
+                            <p class="text-small text-muted ellipsis mb-0">
+                                {{ feedback.subject }} from <b>{{ feedback.sponsor.first_name }} {{ feedback.sponsor.last_name }}</b>
+                            </p>
+                        </div>
+                        <p class="text-small text-muted align-self-start">{{ feedback.created_at|date:"g:i A" }}</p>
+                    </a>
+                    {% endfor %}
+                    {% endif %}
                     {% if user_feedback %}
                     {% for feedback in user_feedback %}
                     <a class="dropdown-item preview-item" href="{% url 'user_feedback' %}"
@@ -59,7 +73,8 @@
                         <p class="text-small text-muted align-self-start">{{ feedback.created_at|date:"g:i A" }}</p>
                     </a>
                     {% endfor %}
-                    {% else %}
+                    {% endif %}
+                    {% if not sponsor_feedback and not user_feedback %}
                     <p class="dropdown-item">No feedback available.</p>
                     {% endif %}
                 </div>

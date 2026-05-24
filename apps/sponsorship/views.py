@@ -1,7 +1,7 @@
 import json
 import logging
 import re
-
+from django.db.models import Count, Q, Sum
 import requests
 from django.conf import settings
 from django.contrib import messages
@@ -41,14 +41,28 @@ def child_sponsorship(request):
         if form.is_valid():
             sponsor_id = request.POST.get("sponsor_id")
             child_id = request.POST.get("child_id")
-            sponsor_instance = get_object_or_404(Sponsor, pk=sponsor_id)
-            child_instance = get_object_or_404(Child, pk=child_id)
+            if not sponsor_id or not child_id:
+                messages.error(
+                    request,
+                    "Please select both a sponsor and a child.",
+                    extra_tags="bg-danger",
+                )
+                return redirect("child_sponsorship")
+
+            sponsor_instance = get_object_or_404(
+                Sponsor.objects.active_real_supporters(),
+                pk=sponsor_id,
+            )
+            child_instance = get_object_or_404(
+                Child.objects.filter(is_departed=False),
+                pk=child_id,
+            )
 
             # Check if sponsorship already exists
             existing_sponsorship = ChildSponsorship.objects.filter(
                 sponsor=sponsor_instance, child=child_instance
-            ).exists()
-            if existing_sponsorship:
+            ).first()
+            if existing_sponsorship and existing_sponsorship.is_active:
                 messages.error(
                     request,
                     "Sponsorship already exists for this child and sponsor.",
@@ -58,18 +72,23 @@ def child_sponsorship(request):
                 try:
                     # Create the sponsorship instance
                     with transaction.atomic():
-                        sponsorship = ChildSponsorship.objects.create(
-                            sponsor=sponsor_instance, child=child_instance
+                        sponsorship = existing_sponsorship or ChildSponsorship(
+                            sponsor=sponsor_instance,
+                            child=child_instance,
                         )
                         sponsorship.sponsorship_type = form.cleaned_data[
                             "sponsorship_type"
                         ]
                         sponsorship.start_date = form.cleaned_data["start_date"]
+                        sponsorship.end_date = None
+                        sponsorship.is_active = True
                         sponsorship.save()
 
                         # Update sponsor status to "departed"
                         child_instance.is_sponsored = True
-                        child_instance.save()
+                        child_instance.save(update_fields=["is_sponsored", "updated_at"])
+                        sponsor_instance.is_child_sponsor = True
+                        sponsor_instance.save(update_fields=["is_child_sponsor", "updated_at"])
 
                     messages.success(
                         request, "Assigned successfully!", extra_tags="bg-success"
@@ -86,7 +105,21 @@ def child_sponsorship(request):
         form = ChildSponsorshipForm()
 
     children = Child.objects.filter(is_departed=False).order_by("id")
-    sponsors = Sponsor.objects.filter(is_departed=False).order_by("id")
+    sponsors = (
+        Sponsor.objects.active()
+        .filter(
+            Q(is_child_sponsor=True)
+            | Q(payments__program__code="child_support")
+            | Q(payments__program__code="child_co_support")
+        )
+        .distinct()
+        .order_by("id")
+    )
+    active_sponsorships = (
+        ChildSponsorship.objects.select_related("sponsor", "child")
+        .filter(is_active=True, sponsor__is_departed=False, child__is_departed=False)
+        .order_by("child__full_name", "sponsor__first_name", "sponsor__last_name")
+    )
     return render(
         request,
         "sponsorship/child_sponsorship.html",
@@ -95,6 +128,7 @@ def child_sponsorship(request):
             "form_name": "Child Sponsorship",
             "sponsors": sponsors,
             "children": children,
+            "active_sponsorships": active_sponsorships,
         },
     )
 
@@ -103,32 +137,41 @@ def child_sponsorship(request):
 @login_required
 @admin_or_manager_or_staff_required
 def child_sponsorship_report(request):
+    children = Child.objects.filter(is_departed=False).order_by("id")
+    context = {
+        "table_title": "Sponsorship Report - Child",
+        "children": children,
+        "has_selected_child": False,
+    }
     if request.method == "POST":
         child_id = request.POST.get("id")
         if child_id:
             selected_child = get_object_or_404(Child, id=child_id)
-            child_sponsorship = ChildSponsorship.objects.filter(child_id=child_id)
-            children = Child.objects.all().filter(is_departed=False).order_by("id")
-            return render(
-                request,
-                "sponsorship/child_sponsorship_rpt.html",
+            child_sponsorship = (
+                ChildSponsorship.objects.select_related("child", "sponsor")
+                .filter(child_id=child_id)
+                .order_by("-is_active", "-start_date", "sponsor__first_name")
+            )
+            active_count = child_sponsorship.filter(is_active=True).count()
+            inactive_count = child_sponsorship.filter(is_active=False).count()
+            context.update(
                 {
-                    "table_title": "child-to-sponsor report",
-                    "children": children,
+                    "table_title": "Child-to-Sponsor Report",
+                    "has_selected_child": True,
+                    "selected_child": selected_child,
                     "child_name": selected_child.full_name,
                     "prefix_id": selected_child.prefixed_id,
                     "child_sponsorship": child_sponsorship,
-                },
+                    "active_count": active_count,
+                    "inactive_count": inactive_count,
+                    "record_count": child_sponsorship.count(),
+                }
             )
+            return render(request, "sponsorship/child_sponsorship_rpt.html", context)
         else:
             messages.error(request, "No child selected.", extra_tags="bg-danger")
-    else:
-        children = Child.objects.all().filter(is_departed=False).order_by("id")
-    return render(
-        request,
-        "sponsorship/child_sponsorship_rpt.html",
-        {"table_title": "sponsorship report - child", "children": children},
-    )
+
+    return render(request, "sponsorship/child_sponsorship_rpt.html", context)
 
 
 # =================================== sponsor_to_child_rpt ===================================
@@ -246,15 +289,28 @@ def staff_sponsorship_create(request):
         if form.is_valid():
             sponsor_id = request.POST.get("sponsor_id")
             staff_id = request.POST.get("id")
+            if not sponsor_id or not staff_id:
+                messages.error(
+                    request,
+                    "Please select both a sponsor and a staff member.",
+                    extra_tags="bg-danger",
+                )
+                return redirect("staff_sponsorship_create")
 
-            sponsor_instance = get_object_or_404(Sponsor, pk=sponsor_id)
-            staff_instance = get_object_or_404(Staff, pk=staff_id)
+            sponsor_instance = get_object_or_404(
+                Sponsor.objects.active_real_supporters(),
+                pk=sponsor_id,
+            )
+            staff_instance = get_object_or_404(
+                Staff.objects.filter(is_departed=False),
+                pk=staff_id,
+            )
 
             # Check if sponsorship already exists
             existing_sponsorship = StaffSponsorship.objects.filter(
                 sponsor=sponsor_instance, staff=staff_instance
-            ).exists()
-            if existing_sponsorship:
+            ).first()
+            if existing_sponsorship and existing_sponsorship.is_active:
                 messages.error(
                     request, "Sponsorship already exists for this staff and sponsor."
                 )
@@ -262,18 +318,23 @@ def staff_sponsorship_create(request):
                 try:
                     # Create the sponsorship instance
                     with transaction.atomic():
-                        sponsorship = StaffSponsorship.objects.create(
-                            sponsor=sponsor_instance, staff=staff_instance
+                        sponsorship = existing_sponsorship or StaffSponsorship(
+                            sponsor=sponsor_instance,
+                            staff=staff_instance,
                         )
                         sponsorship.sponsorship_type = form.cleaned_data[
                             "sponsorship_type"
                         ]
                         sponsorship.start_date = form.cleaned_data["start_date"]
+                        sponsorship.end_date = None
+                        sponsorship.is_active = True
                         sponsorship.save()
 
                         # Update sponsorship status
                         staff_instance.is_sponsored = True
-                        staff_instance.save()
+                        staff_instance.save(update_fields=["is_sponsored", "updated_at"])
+                        sponsor_instance.is_staff_sponsor = True
+                        sponsor_instance.save(update_fields=["is_staff_sponsor", "updated_at"])
 
                     messages.success(
                         request, "Assigned successfully!", extra_tags="bg-success"
@@ -290,7 +351,17 @@ def staff_sponsorship_create(request):
         form = StaffSponsorshipForm()
 
     active_staff = Staff.objects.filter(is_departed=False).order_by("id")
-    sponsors = Sponsor.objects.filter(is_departed=False).order_by("id")
+    sponsors = (
+        Sponsor.objects.active()
+        .filter(Q(is_staff_sponsor=True) | Q(payments__program__code="staff_support"))
+        .distinct()
+        .order_by("id")
+    )
+    active_sponsorships = (
+        StaffSponsorship.objects.select_related("sponsor", "staff")
+        .filter(is_active=True, sponsor__is_departed=False, staff__is_departed=False)
+        .order_by("staff__first_name", "staff__last_name", "sponsor__first_name")
+    )
     return render(
         request,
         "sponsorship/staff_sponsorship.html",
@@ -299,6 +370,7 @@ def staff_sponsorship_create(request):
             "form_name": "Staff Sponsorship",
             "sponsors": sponsors,
             "active_staff": active_staff,
+            "active_sponsorships": active_sponsorships,
         },
     )
 
@@ -307,33 +379,41 @@ def staff_sponsorship_create(request):
 @login_required
 @admin_or_manager_or_staff_required
 def staff_sponsorship_report(request):
+    active_staff = Staff.objects.filter(is_departed=False).order_by("id")
+    context = {
+        "table_title": "Sponsorship Report - Staff",
+        "active_staff": active_staff,
+        "has_selected_staff": False,
+    }
     if request.method == "POST":
         staff_id = request.POST.get("id")
         if staff_id:
             selected_staff = get_object_or_404(Staff, id=staff_id)
-            staff_sponsorship = StaffSponsorship.objects.filter(staff_id=staff_id)
-            active_staff = Staff.objects.all().filter(is_departed=False).order_by("id")
-            return render(
-                request,
-                "sponsorship/staff_sponsorship_rpt.html",
+            staff_sponsorship = (
+                StaffSponsorship.objects.select_related("staff", "sponsor")
+                .filter(staff_id=staff_id)
+                .order_by("-is_active", "-start_date", "sponsor__first_name")
+            )
+            active_count = staff_sponsorship.filter(is_active=True).count()
+            inactive_count = staff_sponsorship.filter(is_active=False).count()
+            context.update(
                 {
                     "table_title": "Staff Sponsorship Report",
-                    "active_staff": active_staff,
+                    "has_selected_staff": True,
+                    "selected_staff": selected_staff,
                     "first_name": selected_staff.first_name,
                     "last_name": selected_staff.last_name,
                     "prefix_id": selected_staff.prefixed_id,
                     "staff_sponsorship": staff_sponsorship,
-                },
+                    "active_count": active_count,
+                    "inactive_count": inactive_count,
+                    "record_count": staff_sponsorship.count(),
+                }
             )
+            return render(request, "sponsorship/staff_sponsorship_rpt.html", context)
         else:
             messages.error(request, "No Staff selected.", extra_tags="bg-danger")
-    else:
-        active_staff = Staff.objects.all().filter(is_departed=False).order_by("id")
-    return render(
-        request,
-        "sponsorship/staff_sponsorship_rpt.html",
-        {"table_title": "sponsorship report - Staff", "active_staff": active_staff},
-    )
+    return render(request, "sponsorship/staff_sponsorship_rpt.html", context)
 
 
 # =================================== sponsor_to_staff_rpt ===================================
@@ -656,23 +736,47 @@ def thank_you(request):
 @admin_or_manager_required
 @transaction.atomic
 def momo_transaction_list(request):
-    search_query = request.GET.get("search", "")
-    transactions = MoMoTransaction.objects.all()
+    search_query = request.GET.get("search", "").strip()
+    status_filter = request.GET.get("status", "").strip()
+    transactions = MoMoTransaction.objects.all().order_by("-created_at")
 
     if search_query:
-        transactions = (
-            transactions.filter(donor_name__icontains=search_query)
-            | transactions.filter(phone_number__icontains=search_query)
-            | transactions.filter(reference_id__icontains=search_query)
+        transactions = transactions.filter(
+            Q(donor_name__icontains=search_query)
+            | Q(donor_email__icontains=search_query)
+            | Q(phone_number__icontains=search_query)
+            | Q(reference_id__icontains=search_query)
+            | Q(external_id__icontains=search_query)
         )
+    if status_filter:
+        transactions = transactions.filter(status=status_filter)
 
-    paginator = Paginator(transactions, 50)
+    summary = transactions.aggregate(
+        total_amount=Sum("amount"),
+        total_count=Count("id"),
+        successful_count=Count("id", filter=Q(status="SUCCESSFUL")),
+        pending_count=Count("id", filter=Q(status="PENDING")),
+        failed_count=Count("id", filter=Q(status="FAILED")),
+    )
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
+
+    paginator = Paginator(transactions, 25)
     page_number = request.GET.get("page")
     records = paginator.get_page(page_number)
 
     context = {
         "records": records,
         "table_title": "MoMo Transactions",
+        "search_query": search_query,
+        "status_filter": status_filter,
+        "status_choices": MoMoTransaction.STATUS_CHOICES,
+        "total_amount": summary["total_amount"] or 0,
+        "total_count": summary["total_count"],
+        "successful_count": summary["successful_count"],
+        "pending_count": summary["pending_count"],
+        "failed_count": summary["failed_count"],
+        "query_string": query_params.urlencode(),
     }
     return render(request, "sponsorship/momo_trans_list.html", context)
 

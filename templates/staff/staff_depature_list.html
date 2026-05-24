@@ -2,133 +2,270 @@
 {% load static %}
 
 {% block content %}
+  <style>
+    .departed-page { color: #111827; }
+    .departed-header,
+    .departed-card,
+    .departed-filter,
+    .departed-table-shell {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+    }
+    .departed-header {
+      align-items: center;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      padding: 16px 18px;
+    }
+    .departed-header h3 {
+      color: #1f344d;
+      font-size: 1.3rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0 0 4px;
+      text-transform: none;
+    }
+    .departed-muted { color: #64748b; margin: 0; }
+    .departed-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+    .departed-stats {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin: 12px 0;
+    }
+    .departed-card { display: grid; gap: 7px; padding: 14px; }
+    .departed-card i {
+      align-items: center;
+      background: #fff6e8;
+      border: 1px solid #f5dfb8;
+      border-radius: 8px;
+      color: #96620b;
+      display: inline-flex;
+      height: 36px;
+      justify-content: center;
+      width: 36px;
+    }
+    .departed-card span {
+      color: #64748b;
+      font-size: .76rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .departed-card strong { color: #1f344d; font-size: 1.2rem; font-weight: 900; }
+    .departed-filter {
+      margin-bottom: 12px;
+      padding: 14px;
+    }
+    .filter-grid {
+      align-items: end;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(260px, 1fr) auto auto;
+    }
+    .field-label {
+      color: #374151;
+      display: block;
+      font-size: .78rem;
+      font-weight: 900;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+    .departed-table-shell { overflow: hidden; }
+    .table-tools {
+      align-items: center;
+      border-bottom: 1px solid #edf1f5;
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 14px;
+    }
+    .table-wrap { overflow-x: auto; }
+    .departed-table {
+      border-collapse: collapse;
+      margin: 0;
+      min-width: 900px;
+      width: 100%;
+    }
+    .departed-table th,
+    .departed-table td {
+      border-bottom: 1px solid #edf1f5;
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .departed-table th {
+      background: #f8fafc;
+      color: #334155;
+      font-size: .74rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .departed-table tr:last-child td { border-bottom: 0; }
+    .staff-identity strong,
+    .staff-identity span { display: block; }
+    .staff-identity strong { color: #1f344d; font-weight: 900; }
+    .staff-identity span { color: #64748b; font-size: .82rem; }
+    .departure-history {
+      display: grid;
+      gap: 6px;
+      margin: 0;
+      padding: 0;
+    }
+    .departure-history li {
+      list-style: none;
+    }
+    .pagination-shell {
+      align-items: center;
+      border-top: 1px solid #edf1f5;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      padding: 12px;
+    }
+    .empty-row {
+      color: #64748b;
+      padding: 24px !important;
+      text-align: center !important;
+    }
+    @media (max-width: 991.98px) {
+      .departed-header { align-items: stretch; flex-direction: column; }
+      .filter-grid,
+      .departed-stats { grid-template-columns: 1fr; }
+    }
+    @media print {
+      .navbar,
+      .sidebar,
+      .departed-actions,
+      .departed-filter,
+      .pagination-shell,
+      .print-hide,
+      footer { display: none !important; }
+      .departed-header,
+      .departed-card,
+      .departed-table-shell { border: 0; box-shadow: none; }
+    }
+  </style>
 
-<div class="container">
-    <div class="page-header flex-wrap">
-        <h3 class="mb-0">{{table_title|upper}}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-        <div class="d-flex">
-            <button title="Print" type="button" class="btn btn-sm ml-3 btn-success" onclick=" printDiv('printMe')">
-                <i class="mdi mdi-printer btn-icon-prepend"></i> </button>
-
-            <button title="Export To Excel" type="button" class="btn btn-sm ml-3 btn-success"
-                onclick="ExportToExcel('xlsx')">
-                <i class="mdi mdi-file-excel btn-icon-prepend"></i> </button>
-
-            <button title="Export To Word" type="button" class="btn btn-sm ml-3 btn-success"
-                onclick="Export2Doc('printMe');">
-                <i class="mdi mdi-file-word btn-icon-prepend"></i> </button>
-
-            <a title="Register Child" class="btn btn-sm ml-3 btn-success" href="{% url 'staff_departure' %}"><i
-                    class="mdi mdi-account-plus btn-icon-prepend"></i>
-            </a>
-
-            <a title="View List..." class="btn btn-sm ml-3 btn-success" href="{% url 'staff_depature_list' %}"><i
-                    class="mdi mdi-chart-line btn-icon-prepend"></i>
-            </a>
-        </div>
-    </div>
-    <form method="GET" action="{% url 'staff_depature_list' %}">
-        <input type="text" name="search" id="searchInput" onkeyup="searchTable()" placeholder="Search..."
-            style="border-radius: 5px; height: 35px;">
-        <button type="submit" class="btn btn-sm ml-3 btn-success"><i class="mdi mdi-magnify"></i></button>
+  <div class="container departed-page">
+    <div class="departed-header">
+      <div>
+        <h3>{{ table_title }}</h3>
+        <p class="departed-muted">Review departed staff records and reinstate staff when needed.</p>
+      </div>
+      <div class="departed-actions">
+        <button title="Print" type="button" class="btn btn-sm btn-outline-success" onclick="printDiv('printMe')">
+          <i class="mdi mdi-printer"></i> Print
+        </button>
+        <button title="Export To Excel" type="button" class="btn btn-sm btn-outline-success" onclick="ExportToExcel('xlsx')">
+          <i class="mdi mdi-file-excel"></i> Excel
+        </button>
+        <button title="Export To Word" type="button" class="btn btn-sm btn-outline-success" onclick="Export2Doc('printMe')">
+          <i class="mdi mdi-file-word"></i> Word
+        </button>
+        <a class="btn btn-sm btn-success" href="{% url 'staff_departure' %}">
+          <i class="mdi mdi-account-arrow-right"></i> Add departure
         </a>
-    </form>
-    <div id="printMe" class="tab-pane show active">
-        <header style="text-align: center;">
-            <!-- <h1 class="text-primary">{{table_title|upper}}</h1> -->
-        </header>
-        <hr class="bg-info" style="height: 3px;" />
-        <div class="table-responsive">
-
-            <table class="my-table" id="dataTable">
-                <thead>
-                    <tr>
-                        <!-- <th scope="col">#</th> -->
-                        <th scope="col">Reg.No</th>
-                        <th scope="col">First_Name</th>
-                        <th scope="col">Last_Name</th>
-                        <th scope="col">Gender</th>
-                        <th scope="col">Departure Date</th>
-                        <th scope="col">Departure Reason</th>
-                        <th scope="col" colspan="2">Action</th>
-                    </tr>
-                </thead>
-                <tbody class="table-group-divider">
-                    {% for staff in records %}
-                    <tr>
-                        <td>{{ staff.prefixed_id }}</td>
-                        <td>{{ staff.first_name }}</td>
-                        <td>{{ staff.last_name }}</td>
-                        <td>{{ staff.gender }}</td>
-                        <td>
-                            <ul>
-                                {% for departure in staff.departures.all %}
-                                <li>{{ departure.departure_date }}</li>
-                                {% endfor %}
-                            </ul>
-                        </td>
-                        <td>
-                            <ul>
-                                {% for departure in staff.departures.all %}
-                                <li>{{ departure.departure_reason }}</li>
-                                {% endfor %}
-                            </ul>
-                        </td>
-                        <td>
-                            <form action="{% url 'reinstate_staff' staff.id %}" method="post">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-warning btn-sm"
-                                    onclick="return confirm('Are you sure you want to reinstate this staff? ');">REINSTATE</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <hr class="bg-info" style="height: 3px;" />
-
-            <!-- Pagination links &raquo;  -->
-            <div class="pagination">
-                <span class="step-links">
-                    {% if records.has_previous %}
-                    <a href="?page=1">
-                        <!-- first -->
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16">
-                            <path fill="#2375e1"
-                                d="M14 3.002a1 1 0 0 0-1.578-.816l-7 4.963a1 1 0 0 0-.007 1.628l7 5.037A1 1 0 0 0 14 13.003zM2 2.5a.5.5 0 0 1 1 0v11a.5.5 0 0 1-1 0z" />
-                        </svg> </a>
-                    <a href="?page={{ records.previous_page_number }}">
-                        <!-- previous -->
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-                            <path fill="#2375e1" d="m4 10l9 9l1.4-1.5L7 10l7.4-7.5L13 1z" /></svg>
-                    </a>
-                    {% endif %}
-
-                    <span class="current">
-                        Page {{ records.number }} of {{ records.paginator.num_pages }}.
-                    </span>
-
-                    {% if records.has_next %}
-                    <a href="?page={{ records.next_page_number }}">
-                        <!-- Next -->
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 20 20">
-                            <path fill="#2375e1" d="M7 1L5.6 2.5L13 10l-7.4 7.5L7 19l9-9z" /></svg>
-                    </a>
-                    <a href="?page={{ records.paginator.num_pages }}">
-                        <!-- last  -->
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 28 28">
-                            <path fill="#2375e1"
-                                d="M23.5 3.75a.75.75 0 0 1 1.5 0v20.5a.75.75 0 0 1-1.5 0zM3 5.254C3 3.438 5.041 2.37 6.533 3.406l12.504 8.68a2.25 2.25 0 0 1 .013 3.688l-12.504 8.81C5.056 25.634 3 24.57 3 22.745z" />
-                        </svg>
-                        </svg>
-                    </a>
-                    {% endif %}
-                </span>
-            </div>
-        </div>
+      </div>
     </div>
-</div>
 
+    <section class="departed-stats">
+      <div class="departed-card">
+        <i class="mdi mdi-account-off"></i>
+        <span>Departed Staff</span>
+        <strong>{{ departed_staff_count }}</strong>
+      </div>
+      <div class="departed-card">
+        <i class="mdi mdi-account-tie"></i>
+        <span>Active Staff</span>
+        <strong>{{ active_staff_count }}</strong>
+      </div>
+    </section>
 
+    <form method="GET" action="{% url 'staff_depature_list' %}" class="departed-filter">
+      <div class="filter-grid">
+        <div>
+          <label for="searchInput" class="field-label">Search</label>
+          <input class="form-control" type="text" name="search" id="searchInput" placeholder="Name, email, department, job title..." value="{{ search_query }}" />
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <i class="mdi mdi-magnify"></i> Search
+        </button>
+        <a class="btn btn-outline-secondary" href="{% url 'staff_depature_list' %}">Clear</a>
+      </div>
+    </form>
+
+    <div id="printMe" class="departed-table-shell">
+      <div class="table-tools">
+        <strong>Departed Staff Ledger</strong>
+        <span class="departed-muted">Page {{ records.number }} of {{ records.paginator.num_pages }}</span>
+      </div>
+      <div class="table-wrap">
+        <table class="departed-table" id="dataTable">
+          <thead>
+            <tr>
+              <th>Staff</th>
+              <th>Gender</th>
+              <th>Department</th>
+              <th>Job Title</th>
+              <th>Departure History</th>
+              <th class="print-hide">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for staff in records %}
+              <tr>
+                <td>
+                  <div class="staff-identity">
+                    <strong>{{ staff.first_name }} {{ staff.last_name }}</strong>
+                    <span>{{ staff.prefixed_id }} | {{ staff.email|default:"Email not recorded" }}</span>
+                  </div>
+                </td>
+                <td>{{ staff.gender|default:"-" }}</td>
+                <td>{{ staff.department|default:"-" }}</td>
+                <td>{{ staff.job_title|default:"-" }}</td>
+                <td>
+                  <ul class="departure-history">
+                    {% for departure in staff.departures.all %}
+                      <li>
+                        <strong>{{ departure.departure_date|default:"Date not recorded" }}</strong>
+                        <div class="departed-muted">{{ departure.departure_reason|default:"Reason not recorded" }}</div>
+                      </li>
+                    {% empty %}
+                      <li class="departed-muted">No departure detail recorded.</li>
+                    {% endfor %}
+                  </ul>
+                </td>
+                <td class="print-hide">
+                  <form action="{% url 'reinstate_staff' staff.id %}" method="post" onsubmit="return confirm('Are you sure you want to reinstate this staff member?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning btn-sm">Reinstate</button>
+                  </form>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6" class="empty-row">No departed staff records found.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if records.has_other_pages %}
+        <div class="pagination-shell">
+          {% if records.has_previous %}
+            <a class="btn btn-sm btn-outline-secondary" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">First</a>
+            <a class="btn btn-sm btn-outline-secondary" href="?page={{ records.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a>
+          {% endif %}
+          <span class="departed-muted">Page {{ records.number }} of {{ records.paginator.num_pages }}</span>
+          {% if records.has_next %}
+            <a class="btn btn-sm btn-outline-secondary" href="?page={{ records.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a>
+            <a class="btn btn-sm btn-outline-secondary" href="?page={{ records.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">Last</a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
 {% endblock content %}

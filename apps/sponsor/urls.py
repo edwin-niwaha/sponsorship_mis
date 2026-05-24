@@ -5,6 +5,11 @@ from . import views
 urlpatterns = [
     path("portal/", views.sponsor_portal, name="sponsor_portal"),
     path(
+        "portal/feedback/",
+        views.submit_sponsor_feedback,
+        name="submit_sponsor_feedback",
+    ),
+    path(
         "portal/payments/children/",
         views.sponsor_child_payment_report,
         name="sponsor_child_payment_report",
@@ -13,6 +18,11 @@ urlpatterns = [
         "portal/payments/staff/",
         views.sponsor_staff_payment_report,
         name="sponsor_staff_payment_report",
+    ),
+    path(
+        "portal/payments/<slug:program_group>/",
+        views.sponsor_program_payment_report,
+        name="sponsor_program_payment_report",
     ),
     path("add/", views.register_sponsor, name="register_sponsor"),
     path("donors/add/", views.add_donor_view, name="add_donor"),
@@ -24,6 +34,12 @@ urlpatterns = [
     path("delete/<int:pk>/", views.delete_sponsor, name="delete_sponsor"),
     path("departure/", views.sponsor_departure, name="sponsor_departure"),
     path("departure/list/", views.sponsor_depature_list, name="sponsor_depature_list"),
+    path("feedback/", views.sponsor_feedback_report, name="sponsor_feedback_report"),
+    path(
+        "feedback/<int:feedback_id>/reviewed/",
+        views.mark_sponsor_feedback_reviewed,
+        name="mark_sponsor_feedback_reviewed",
+    ),
     path("reinstate/<int:pk>/", views.reinstate_sponsor, name="reinstate_sponsor"),
     path("import/", views.import_sponsor_data, name="import_sponsor_data"),
     path("delete-all-records/", views.delete_sponsors, name="delete_sponsors"),

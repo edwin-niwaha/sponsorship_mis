@@ -1,58 +1,206 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
-
-{% block head %}
-
-{% endblock %}
 
 {% block content %}
-  <div class="container">
-    <div class="page-header flex-wrap">
-      <h3 class="mb-0">{{ form_name|upper }}<span class="pl-0 h6 pl-sm-2 text-muted d-inline-block"></span></h3>
-      <div class="d-flex">
-        <a class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsorship' %}"><i class="mdi mdi-folder-plus btn-icon-prepend"></i></a>
-        <a title="View Report" class="btn btn-sm ml-3 btn-success" href="{% url 'child_sponsorship_report' %}"><i class="mdi mdi-chart-line btn-icon-prepend"></i></a>
+  <style>
+    .assign-page { color: #111827; }
+    .assign-header,
+    .assign-card,
+    .assign-help {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+    }
+    .assign-header {
+      align-items: center;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      padding: 18px;
+    }
+    .assign-header h3 {
+      color: #1f344d;
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0 0 4px;
+      text-transform: none;
+    }
+    .assign-muted { color: #64748b; margin: 0; }
+    .assign-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .assign-layout {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
+      margin-top: 12px;
+    }
+    .assign-card,
+    .assign-help { padding: 18px; }
+    .section-title {
+      align-items: center;
+      border-bottom: 1px solid #edf1f5;
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+    }
+    .section-title i {
+      align-items: center;
+      background: #edf7f4;
+      border: 1px solid #cfe8e0;
+      border-radius: 8px;
+      color: #13745d;
+      display: inline-flex;
+      height: 38px;
+      justify-content: center;
+      width: 38px;
+    }
+    .section-title h5 {
+      color: #1f344d;
+      font-size: 1rem;
+      font-weight: 900;
+      margin: 0;
+    }
+    .assign-form-shell {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .assign-form-shell .chzn-container,
+    .assign-form-shell .chzn-select { width: 100% !important; }
+    .field-label {
+      color: #374151;
+      font-size: .8rem;
+      font-weight: 900;
+      margin-bottom: .35rem;
+      text-transform: uppercase;
+    }
+    .field-help {
+      color: #64748b;
+      display: block;
+      font-size: .78rem;
+      margin-top: .3rem;
+    }
+    .link-list {
+      display: grid;
+      gap: 10px;
+      max-height: 380px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .link-item {
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .link-item strong,
+    .link-item span { display: block; }
+    .link-item strong { color: #1f344d; font-weight: 900; }
+    .link-item span { color: #64748b; font-size: .82rem; }
+    @media (max-width: 991.98px) {
+      .assign-layout { grid-template-columns: 1fr; }
+      .assign-header { align-items: stretch; flex-direction: column; }
+    }
+  </style>
+
+  <div class="container assign-page">
+    <div class="assign-header">
+      <div>
+        <h3>{{ form_name }}</h3>
+        <p class="assign-muted">Assign a child to an active sponsor and record the sponsorship start details.</p>
+      </div>
+      <div class="assign-actions">
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'child_sponsorship' %}">
+          <i class="mdi mdi-refresh"></i> New assignment
+        </a>
+        <a class="btn btn-sm btn-success" href="{% url 'child_sponsorship_report' %}">
+          <i class="mdi mdi-chart-line"></i> View report
+        </a>
       </div>
     </div>
-    <hr />
 
-    <div class="form-content my-3 p-3">
-      <div class="row justify-content-center">
-        <div class="col-lg-12">
-          <div class="card shadow-lg border-0 rounded-lg mt-0 mb-5">
-            <div class="card-body">
-              <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="form-group">
-                  <select name="child_id" id="dropdown" class="chzn-select" required style="width: 40%;">
-                    <option value="" selected disabled>Search child...</option>
-                    {% for child in children %}
-                      <option value="{{ child.id }}">{{ child.full_name }} &rarr;
-                        {{ child.prefixed_id }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                <div class="form-group">
-                  <select name="sponsor_id" id="sponsor_dropdown" class="chzn-select" required style="width: 40%;">
-                    <option value="" selected disabled>Search sponsor...</option>
-                    {% for sponsor in sponsors %}
-                      <option value="{{ sponsor.id }}">{{ sponsor.first_name }}
-                        {{ sponsor.last_name }} &rarr;
-                        {{ sponsor.prefixed_id }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-
-                {{ form|crispy }}
-                <div class="form-group mt-4 mb-0">
-                  <button type="submit" class="col-md-12 btn btn-dark" onclick="return confirm('Are you sure you want to asign this child to the selected sponsor?') && validateForm()">ASSIGN CHILD TO SPONSOR</button>
-                  <br />
-                </div>
-              </form>
-            </div>
+    <div class="assign-layout">
+      <section class="assign-card">
+        <div class="section-title">
+          <i class="mdi mdi-account-child"></i>
+          <div>
+            <h5>Assignment details</h5>
+            <p class="assign-muted">Existing inactive links are safely reactivated instead of creating duplicates.</p>
           </div>
         </div>
-      </div>
+
+        <form method="post" enctype="multipart/form-data" class="assign-form-shell">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="sponsor_dropdown" class="field-label">Sponsor</label>
+            <select name="sponsor_id" id="sponsor_dropdown" class="chzn-select" required data-placeholder="Search sponsor">
+              <option value="" selected disabled>Search sponsor...</option>
+              {% for sponsor in sponsors %}
+                <option value="{{ sponsor.id }}">{{ sponsor.first_name }} {{ sponsor.last_name }} &rarr; {{ sponsor.prefixed_id }}</option>
+              {% endfor %}
+            </select>
+            <small class="field-help">Only active child sponsors are listed.</small>
+          </div>
+
+          <div class="form-group">
+            <label for="child_dropdown" class="field-label">Child</label>
+            <select name="child_id" id="child_dropdown" class="chzn-select" required data-placeholder="Search child">
+              <option value="" selected disabled>Search child...</option>
+              {% for child in children %}
+                <option value="{{ child.id }}">{{ child.full_name }} &rarr; {{ child.prefixed_id }}</option>
+              {% endfor %}
+            </select>
+            <small class="field-help">Choose an active child who should be linked to this sponsor.</small>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.sponsorship_type.id_for_label }}" class="field-label">Sponsorship type</label>
+                {{ form.sponsorship_type }}
+                {% if form.sponsorship_type.errors %}
+                  <div class="text-danger small mt-2">{{ form.sponsorship_type.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="{{ form.start_date.id_for_label }}" class="field-label">Start date</label>
+                {{ form.start_date }}
+                {% if form.start_date.errors %}
+                  <div class="text-danger small mt-2">{{ form.start_date.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block mt-3" onclick="return confirm('Assign this child to the selected sponsor?')">
+            <i class="mdi mdi-link-variant mr-1"></i> Assign child to sponsor
+          </button>
+        </form>
+      </section>
+
+      <aside class="assign-help">
+        <div class="section-title">
+          <i class="mdi mdi-format-list-checks"></i>
+          <div>
+            <h5>Active assignments</h5>
+            <p class="assign-muted">A quick check of current child sponsorship links.</p>
+          </div>
+        </div>
+        <div class="link-list">
+          {% for sponsorship in active_sponsorships|slice:":14" %}
+            <div class="link-item">
+              <strong>{{ sponsorship.child.full_name }} &rarr; {{ sponsorship.child.prefixed_id }}</strong>
+              <span>{{ sponsorship.sponsor.first_name }} {{ sponsorship.sponsor.last_name }} | {{ sponsorship.sponsorship_type|default:"Sponsorship" }}</span>
+            </div>
+          {% empty %}
+            <p class="assign-muted">No active child sponsorships are recorded yet.</p>
+          {% endfor %}
+        </div>
+      </aside>
     </div>
   </div>
 {% endblock %}
