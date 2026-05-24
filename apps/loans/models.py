@@ -8,8 +8,7 @@ from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.core.validators import FileExtensionValidator
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import FileExtensionValidator, MaxValueValidator, MinValueValidator
 from django.db import models, transaction
 from django.db.models import Sum
 from django.utils import timezone
@@ -360,6 +359,9 @@ class Loan(models.Model):
             return current_balance * monthly_rate
 
     def generate_payment_schedule(self):
+        if not self.disbursement_date or not self.loan_period_months or self.loan_period_months <= 0:
+            return []
+
         schedule        = []
         monthly_principal = self.principal_amount / self.loan_period_months
         current_balance   = self.principal_amount

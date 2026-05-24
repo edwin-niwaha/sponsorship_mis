@@ -43,7 +43,9 @@
                 <td>{{ loan.created_at|date:'M d, Y' }}</td>
                 <td class="text-center">{{ loan.document_count }}</td>
                 <td class="text-end">
-                  <a href="{% url 'loans:client_loan_application_detail' loan.id %}" class="btn btn-outline-primary btn-sm">View</a>
+                  <a href="{% url 'loans:client_loan_application_detail' loan.id %}" class="btn btn-outline-primary btn-sm">
+                    <i class="mdi mdi-calendar-text"></i> View Schedule
+                  </a>
                 </td>
               </tr>
             {% empty %}

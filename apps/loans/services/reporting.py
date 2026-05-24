@@ -6,13 +6,11 @@ from typing import Iterable
 
 from dateutil.relativedelta import relativedelta
 from django.core.paginator import Paginator
-from django.db.models import Q
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 from django.http import HttpResponse
 from django.utils import timezone
 
 from apps.loans.models import Loan, LoanRepayment
-
 
 STANDARD_AGING_BUCKETS = (
     "Current",

@@ -1,17 +1,11 @@
-import json
-from unittest.mock import patch
-from django.test import TestCase, Client
-from django.urls import reverse
-from django.contrib.auth.models import User
-from django.contrib.messages import get_messages
 import responses
-from apps.sponsorship.models import MoMoTransaction
+from django.test import TestCase
+
 from apps.sponsorship.momo_prod import (
     create_access_token,
-    request_to_pay,
     generate_uuid,
-)  # Adjust for your helpers
-from django.conf import settings
+    request_to_pay,
+)
 
 
 class HelperFunctionTests(TestCase):

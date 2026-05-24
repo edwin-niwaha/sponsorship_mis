@@ -1,27 +1,347 @@
 {% extends '_partials/guest_base.html' %}
-{% load static %}
-{% load crispy_forms_tags %}
+{% load humanize %}
+
 {% block content %}
-  <!-- Loan Application Form -->
-  <div class="container mt-5 pt-5">
-    <div class="row mb-3">
-      <div class="col-md-12 d-flex justify-content-between align-items-center">
-        <h2 class="text-center mb-4">{{ form_title|upper }}</h2>
-        <a href="{% url 'loans:loan_applications' %}" class="btn btn-info"><i class="mdi mdi-chart-bar"></i></a>
+  <style>
+    .loan-update-page {
+      color: #233142;
+      margin: 16px auto 32px;
+      max-width: 1180px;
+      padding: 0 14px;
+    }
+
+    .loan-update-header,
+    .loan-update-panel,
+    .loan-update-summary {
+      background: #fff;
+      border: 1px solid #d8dee6;
+      border-radius: 8px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .05);
+    }
+
+    .loan-update-header {
+      align-items: center;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding: 16px 18px;
+    }
+
+    .loan-eyebrow {
+      color: #247a6b;
+      display: block;
+      font-size: .74rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .loan-update-header h2 {
+      color: #1f344d;
+      font-size: 1.32rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      line-height: 1.25;
+      margin: 0;
+    }
+
+    .loan-muted {
+      color: #667085;
+      font-size: .86rem;
+    }
+
+    .loan-update-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .loan-update-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, .38fr);
+    }
+
+    .loan-update-panel {
+      overflow: hidden;
+    }
+
+    .loan-panel-head {
+      border-bottom: 1px solid #edf0f4;
+      padding: 13px 15px;
+    }
+
+    .loan-panel-head h5 {
+      color: #1f344d;
+      font-size: .98rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0;
+    }
+
+    .loan-panel-head span {
+      color: #667085;
+      display: block;
+      font-size: .82rem;
+      margin-top: 2px;
+    }
+
+    .loan-panel-body {
+      padding: 15px;
+    }
+
+    .loan-form-grid {
+      display: grid;
+      gap: 13px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .loan-form-field.wide {
+      grid-column: 1 / -1;
+    }
+
+    .loan-form-field label {
+      color: #344054;
+      font-size: .78rem;
+      font-weight: 900;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .loan-form-field .form-control,
+    .loan-form-field select,
+    .loan-form-field textarea {
+      border-color: #d8dee6;
+      border-radius: 7px;
+      min-height: 42px;
+    }
+
+    .locked-field {
+      align-items: center;
+      background: #f8fafc;
+      border: 1px solid #d8dee6;
+      border-radius: 7px;
+      color: #1f344d;
+      display: flex;
+      font-weight: 900;
+      min-height: 42px;
+      padding: 8px 12px;
+    }
+
+    .locked-field small {
+      color: #667085;
+      display: block;
+      font-size: .76rem;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .loan-form-field textarea {
+      min-height: 96px;
+    }
+
+    .loan-error {
+      color: #b42318;
+      font-size: .8rem;
+      margin-top: 5px;
+    }
+
+    .loan-submit-bar {
+      align-items: center;
+      border-top: 1px solid #edf0f4;
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding-top: 14px;
+    }
+
+    .loan-update-summary {
+      padding: 14px;
+    }
+
+    .summary-title {
+      color: #1f344d;
+      font-size: .98rem;
+      font-weight: 900;
+      margin: 0 0 10px;
+    }
+
+    .summary-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .summary-item {
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .summary-item.primary {
+      background: #102a43;
+      border-color: #102a43;
+      color: #fff;
+    }
+
+    .summary-item span {
+      color: #667085;
+      display: block;
+      font-size: .72rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .summary-item.primary span {
+      color: #bcccdc;
+    }
+
+    .summary-item strong {
+      color: #1f344d;
+      display: block;
+      font-weight: 900;
+      margin-top: 4px;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-item.primary strong {
+      color: #fff;
+    }
+
+    @media (max-width: 991.98px) {
+      .loan-update-grid,
+      .loan-form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 767.98px) {
+      .loan-update-header,
+      .loan-submit-bar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .loan-update-actions,
+      .loan-submit-bar .btn {
+        width: 100%;
+      }
+
+      .loan-update-actions .btn {
+        flex: 1 1 auto;
+      }
+    }
+  </style>
+
+  <main class="loan-update-page">
+    <section class="loan-update-header">
+      <div>
+        <span class="loan-eyebrow">Loan Administration</span>
+        <h2>{{ form_title }}</h2>
+        <div class="loan-muted">{{ loan.borrower.full_name }}{% if loan.borrower.reg_number %} | {{ loan.borrower.reg_number }}{% endif %}</div>
       </div>
-    </div>
-    <div class="row justify-content-center">
-      <div class="col-md-12">
-        <div class="card p-4 shadow-sm">
+      <div class="loan-update-actions">
+        <a href="{% url 'loans:loan_applications' %}" class="btn btn-outline-secondary btn-sm">
+          <i class="mdi mdi-arrow-left"></i> Applications
+        </a>
+        <a href="{% url 'loans:loan_detail' loan.id %}" class="btn btn-outline-primary btn-sm">
+          <i class="mdi mdi-information-outline"></i> Details
+        </a>
+      </div>
+    </section>
+
+    <div class="loan-update-grid">
+      <section class="loan-update-panel">
+        <div class="loan-panel-head">
+          <h5>Edit Loan Terms</h5>
+          <span>Review the borrower, principal, interest, dates, and approval notes before saving.</span>
+        </div>
+        <div class="loan-panel-body">
           <form method="post">
             {% csrf_token %}
-            {{ form|crispy }}
-            <div class="form-group mt-4 mb-0">
-              <button type="submit" class="btn btn-dark w-100 text-uppercase" onclick="return confirm('Are you sure you want to proceed?') && validateForm()">Update Loan Application</button>
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="loan-form-grid">
+              <div class="loan-form-field">
+                <label>Borrower</label>
+                <div class="locked-field">
+                  <div>
+                    {{ loan.borrower.full_name }}
+                    <small>Locked to prevent accidental reassignment{% if loan.borrower.reg_number %} | {{ loan.borrower.reg_number }}{% endif %}</small>
+                  </div>
+                </div>
+              </div>
+              <div class="loan-form-field">
+                <label for="{{ form.principal_amount.id_for_label }}">Principal Amount</label>
+                {{ form.principal_amount }}
+                {% if form.principal_amount.errors %}<div class="loan-error">{{ form.principal_amount.errors }}</div>{% endif %}
+              </div>
+              <div class="loan-form-field">
+                <label for="{{ form.interest_rate.id_for_label }}">Interest Rate</label>
+                {{ form.interest_rate }}
+                {% if form.interest_rate.errors %}<div class="loan-error">{{ form.interest_rate.errors }}</div>{% endif %}
+              </div>
+              <div class="loan-form-field">
+                <label for="{{ form.interest_method.id_for_label }}">Interest Method</label>
+                {{ form.interest_method }}
+                {% if form.interest_method.errors %}<div class="loan-error">{{ form.interest_method.errors }}</div>{% endif %}
+              </div>
+              <div class="loan-form-field">
+                <label for="{{ form.start_date.id_for_label }}">Application Date</label>
+                {{ form.start_date }}
+                {% if form.start_date.errors %}<div class="loan-error">{{ form.start_date.errors }}</div>{% endif %}
+              </div>
+              <div class="loan-form-field">
+                <label for="{{ form.loan_period_months.id_for_label }}">Loan Period</label>
+                {{ form.loan_period_months }}
+                {% if form.loan_period_months.errors %}<div class="loan-error">{{ form.loan_period_months.errors }}</div>{% endif %}
+              </div>
+              <div class="loan-form-field wide">
+                <label for="{{ form.reason_for_approval.id_for_label }}">Approval Notes</label>
+                {{ form.reason_for_approval }}
+                {% if form.reason_for_approval.errors %}<div class="loan-error">{{ form.reason_for_approval.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="loan-submit-bar">
+              <span class="loan-muted">Changes apply to this loan application record.</span>
+              <button type="submit" class="btn btn-dark" onclick="return confirm('Update this loan application?')">
+                <i class="mdi mdi-content-save"></i> Update Loan Application
+              </button>
             </div>
           </form>
         </div>
-      </div>
+      </section>
+
+      <aside class="loan-update-summary">
+        <h5 class="summary-title">Current Snapshot</h5>
+        <div class="summary-list">
+          <div class="summary-item primary">
+            <span>Loan</span>
+            <strong>#{{ loan.id }} | {{ loan.get_status_display }}</strong>
+          </div>
+          <div class="summary-item">
+            <span>Principal</span>
+            <strong>UGX {{ loan.principal_amount|floatformat:2|intcomma }}</strong>
+          </div>
+          <div class="summary-item">
+            <span>Rate / Method</span>
+            <strong>{{ loan.interest_rate|floatformat:1 }}% | {{ loan.interest_method }}</strong>
+          </div>
+          <div class="summary-item">
+            <span>Period</span>
+            <strong>{{ loan.loan_period_months }} month{{ loan.loan_period_months|pluralize }}</strong>
+          </div>
+          <div class="summary-item">
+            <span>Application Date</span>
+            <strong>{{ loan.start_date|date:'M d, Y' }}</strong>
+          </div>
+        </div>
+      </aside>
     </div>
-  </div>
+  </main>
 {% endblock %}

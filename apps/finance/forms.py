@@ -11,7 +11,6 @@ from .models import (
     SupportProgram,
 )
 
-
 SPONSOR_LEVEL_PROGRAM_LABELS = {
     SupportProgram.FAMILY_SUPPORT: "Family Full Support",
     SupportProgram.FAMILY_CO_SUPPORT: "Family Co-support",

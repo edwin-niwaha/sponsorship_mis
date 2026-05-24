@@ -3,9 +3,8 @@ from secrets import randbelow
 from django.conf import settings
 from django.core import signing
 from django.core.mail import send_mail
-from django.utils.crypto import constant_time_compare
 from django.utils import timezone
-
+from django.utils.crypto import constant_time_compare
 
 LOGIN_VERIFICATION_SESSION_KEY = "pending_login_verification"
 LOGIN_VERIFICATION_TIMEOUT_SECONDS = 10 * 60

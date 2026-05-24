@@ -1,5 +1,6 @@
 {% extends '_partials/guest_base.html' %}
 {% load humanize %}
+{% load static %}
 
 {% block title %}Pendeza MIS | Loan Application {{ loan.id }}{% endblock %}
 
@@ -17,13 +18,12 @@
       padding: 0 16px;
     }
     .loan-hero {
-      align-items: flex-start;
       background: #fff;
       border: 1px solid #dfe5ec;
       border-radius: 8px;
-      display: flex;
-      gap: 18px;
-      justify-content: space-between;
+      display: grid;
+      gap: 16px;
+      grid-template-columns: minmax(0, 1.35fr) minmax(360px, .65fr);
       margin-bottom: 16px;
       padding: 20px;
     }
@@ -51,28 +51,48 @@
       gap: 8px;
       justify-content: flex-end;
     }
-    .status-card {
-      align-items: center;
-      background: #102a43;
-      border-radius: 8px;
-      color: #fff;
-      display: flex;
-      gap: 12px;
-      justify-content: space-between;
-      margin-bottom: 16px;
-      padding: 16px 18px;
+    .loan-hero-side {
+      display: grid;
+      gap: 10px;
     }
-    .status-card span {
-      color: #bcccdc;
+    .loan-header-metrics {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .loan-header-metric {
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .loan-header-metric.primary {
+      background: #102a43;
+      border-color: #102a43;
+      color: #fff;
+    }
+    .loan-header-metric span {
+      color: #667085;
       display: block;
-      font-size: .76rem;
+      font-size: .72rem;
       font-weight: 900;
       text-transform: uppercase;
     }
-    .status-card strong {
+    .loan-header-metric.primary span {
+      color: #bcccdc;
+    }
+    .loan-header-metric strong {
+      color: #1f2933;
       display: block;
+      font-size: 1rem;
+      font-weight: 900;
+      line-height: 1.2;
+      margin-top: 4px;
+      overflow-wrap: anywhere;
+    }
+    .loan-header-metric.primary strong {
+      color: #fff;
       font-size: 1.1rem;
-      margin-top: 3px;
     }
     .status-pill {
       background: #e0f2fe;
@@ -257,14 +277,169 @@
       font-size: .98rem;
       font-weight: 900;
     }
+    .balance-row.total {
+      background: #102a43;
+      border-color: #102a43;
+    }
+    .balance-row.total span {
+      color: #bcccdc;
+    }
+    .balance-row.total strong {
+      color: #fff;
+      font-size: 1.08rem;
+    }
     .documents-table {
       margin-bottom: 0;
     }
-    .documents-table thead th {
+    .documents-table thead th,
+    .schedule-table thead th {
       color: #667085;
       font-size: .72rem;
       text-transform: uppercase;
       white-space: nowrap;
+    }
+    .schedule-table {
+      margin-bottom: 0;
+      min-width: 760px;
+    }
+    .schedule-table td,
+    .schedule-table th {
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .schedule-report {
+      background: #fff;
+      color: #1f2933;
+      overflow: hidden;
+      padding: 22px;
+      position: relative;
+    }
+    .schedule-report::before {
+      background: url("{% static 'images/file.png' %}") center 48% / 260px auto no-repeat;
+      bottom: 0;
+      content: "";
+      left: 0;
+      opacity: .06;
+      pointer-events: none;
+      position: absolute;
+      right: 0;
+      top: 0;
+      z-index: 0;
+    }
+    .schedule-report > * {
+      position: relative;
+      z-index: 1;
+    }
+    .schedule-report-header {
+      align-items: center;
+      border-bottom: 3px solid #127d61;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+    }
+    .schedule-report-brand {
+      align-items: center;
+      display: flex;
+      gap: 12px;
+      min-width: 0;
+    }
+    .schedule-report-brand img {
+      height: 58px;
+      object-fit: contain;
+      width: 58px;
+    }
+    .schedule-report-brand h3 {
+      color: #173b34;
+      font-size: 1.2rem;
+      font-weight: 900;
+      margin: 0;
+    }
+    .schedule-report-brand span,
+    .schedule-report-stamp span {
+      color: #667085;
+      display: block;
+      font-size: .78rem;
+      font-weight: 800;
+    }
+    .schedule-report-stamp {
+      text-align: right;
+    }
+    .schedule-report-stamp strong {
+      color: #102a43;
+      display: block;
+      font-size: 1rem;
+      font-weight: 900;
+    }
+    .schedule-section-title {
+      color: #102a43;
+      font-size: .82rem;
+      font-weight: 900;
+      margin: 16px 0 8px;
+      text-transform: uppercase;
+    }
+    .schedule-report-meta {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-bottom: 14px;
+    }
+    .schedule-report-meta div {
+      background: #f8fafc;
+      border: 1px solid #e5eaf0;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .schedule-report-meta span {
+      color: #667085;
+      display: block;
+      font-size: .72rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .schedule-report-meta strong {
+      color: #1f2933;
+      display: block;
+      font-size: .9rem;
+      font-weight: 900;
+      margin-top: 4px;
+      overflow-wrap: anywhere;
+    }
+    .schedule-summary-strip {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin: 14px 0;
+    }
+    .schedule-summary-strip div {
+      background: #102a43;
+      border-radius: 8px;
+      color: #fff;
+      padding: 12px;
+    }
+    .schedule-summary-strip span {
+      color: #bcccdc;
+      display: block;
+      font-size: .72rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .schedule-summary-strip strong {
+      display: block;
+      font-size: .95rem;
+      font-weight: 900;
+      margin-top: 5px;
+    }
+    .schedule-report-note {
+      border-top: 1px solid #e5eaf0;
+      color: #667085;
+      font-size: .78rem;
+      margin-top: 14px;
+      padding-top: 10px;
+    }
+    .print-schedule-document {
+      display: none;
     }
     .empty-docs {
       color: #8792a2;
@@ -272,24 +447,164 @@
       text-align: center;
     }
     @media (max-width: 992px) {
+      .loan-hero,
       .detail-grid {
         grid-template-columns: 1fr;
       }
-    }
-    @media (max-width: 640px) {
-      .loan-hero {
-        display: block;
-      }
       .loan-actions {
         justify-content: flex-start;
-        margin-top: 14px;
       }
-      .status-card {
+    }
+    @media (max-width: 640px) {
+      .loan-header-metrics,
+      .info-grid,
+      .schedule-report-meta,
+      .schedule-summary-strip {
+        grid-template-columns: 1fr;
+      }
+      .schedule-report-header {
         align-items: flex-start;
         flex-direction: column;
       }
-      .info-grid {
-        grid-template-columns: 1fr;
+      .schedule-report-stamp {
+        text-align: left;
+      }
+    }
+    @media print {
+      @page {
+        margin: 10mm;
+        size: A4 portrait;
+      }
+      body * {
+        visibility: hidden !important;
+      }
+      .print-schedule-document,
+      .print-schedule-document * {
+        visibility: visible !important;
+      }
+      .print-schedule-document {
+        background: #fff !important;
+        color: #111827 !important;
+        display: block !important;
+        font-size: 10px;
+        left: 0;
+        line-height: 1.25;
+        margin: 0;
+        min-height: 100%;
+        overflow: visible !important;
+        padding: 0;
+        position: absolute;
+        top: 0 !important;
+        width: 100% !important;
+      }
+      .modal-backdrop,
+      .modal,
+      .modal-footer,
+      .modal-header .btn-close {
+        display: none !important;
+      }
+      .schedule-report {
+        border: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+      }
+      .schedule-report::before {
+        background-size: 210px auto;
+        opacity: .055;
+      }
+      .schedule-report-header {
+        border-bottom: 2px solid #127d61;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        page-break-inside: avoid;
+      }
+      .schedule-report-brand img {
+        height: 42px;
+        width: 42px;
+      }
+      .schedule-report-brand h3 {
+        font-size: 16px;
+      }
+      .schedule-report-brand span,
+      .schedule-report-stamp span {
+        font-size: 9px;
+      }
+      .schedule-report-stamp strong {
+        font-size: 11px;
+      }
+      .schedule-section-title {
+        border-bottom: 1px solid #cbd5e1;
+        color: #0f172a !important;
+        font-size: 10px;
+        margin: 8px 0 5px;
+        padding-bottom: 2px;
+        page-break-after: avoid;
+      }
+      .schedule-report-meta {
+        gap: 4px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-bottom: 6px;
+      }
+      .schedule-report-meta div {
+        background: #fff !important;
+        border: 1px solid #d8dee8;
+        border-radius: 0;
+        padding: 5px 6px;
+      }
+      .schedule-report-meta span,
+      .schedule-summary-strip span {
+        color: #64748b !important;
+        font-size: 8px;
+      }
+      .schedule-report-meta strong,
+      .schedule-summary-strip strong {
+        color: #111827 !important;
+        font-size: 9px;
+        margin-top: 2px;
+      }
+      .schedule-summary-strip {
+        gap: 4px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin: 6px 0;
+      }
+      .schedule-summary-strip div {
+        background: #eef6f2 !important;
+        border: 1px solid #b7d6c8;
+        border-radius: 0;
+        color: #111827 !important;
+        padding: 6px;
+      }
+      .table-responsive {
+        overflow: visible !important;
+      }
+      .schedule-table {
+        border-collapse: collapse !important;
+        font-size: 8.5px;
+        min-width: 0;
+        page-break-inside: auto;
+        width: 100% !important;
+      }
+      .schedule-table th,
+      .schedule-table td {
+        border: 1px solid #d8dee8 !important;
+        padding: 3px 4px;
+        white-space: normal;
+      }
+      .schedule-table thead {
+        display: table-header-group;
+      }
+      .schedule-table tr {
+        page-break-inside: avoid;
+      }
+      .schedule-table thead th {
+        background: #eef6f2 !important;
+        color: #111827 !important;
+        font-size: 8px;
+      }
+      .schedule-report-note {
+        font-size: 8px;
+        margin-top: 8px;
+        padding-top: 6px;
       }
     }
   </style>
@@ -302,19 +617,27 @@
           <h1>{{ form_title }}</h1>
           <p>{{ client.full_name }}{% if client.reg_number %} - {{ client.reg_number }}{% endif %}</p>
         </div>
-        <div class="loan-actions">
-          <a href="{% url 'loans:client_loan_applications' %}" class="btn btn-outline-secondary btn-sm">
-            <i class="mdi mdi-arrow-left"></i> My Applications
-          </a>
+        <div class="loan-hero-side">
+          <div class="loan-header-metrics">
+            <div class="loan-header-metric">
+              <span>Current Status</span>
+              <strong>{{ loan.get_status_display }}</strong>
+            </div>
+            <div class="loan-header-metric primary">
+              <span>Total Outstanding</span>
+              <strong>UGX {{ total_outstanding_balance|floatformat:2|intcomma }}</strong>
+            </div>
+          </div>
+          <div class="loan-actions">
+            <span class="status-pill">{{ loan.get_status_display }}</span>
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#clientScheduleModal">
+              <i class="mdi mdi-calendar-text"></i> View Schedule
+            </button>
+            <a href="{% url 'loans:client_loan_applications' %}" class="btn btn-outline-secondary btn-sm">
+              <i class="mdi mdi-arrow-left"></i> My Applications
+            </a>
+          </div>
         </div>
-      </section>
-
-      <section class="status-card">
-        <div>
-          <span>Current status</span>
-          <strong>{{ loan.get_status_display }}</strong>
-        </div>
-        <div class="status-pill">{{ loan.get_status_display }}</div>
       </section>
 
       <div class="detail-grid">
@@ -447,6 +770,10 @@
             </div>
             <div class="panel-body">
               <div class="balance-list">
+                <div class="balance-row total">
+                  <span>Total outstanding</span>
+                  <strong>UGX {{ total_outstanding_balance|floatformat:2|intcomma }}</strong>
+                </div>
                 <div class="balance-row">
                   <span>Principal balance</span>
                   <strong>UGX {{ remaining_principal|floatformat:2|intcomma }}</strong>
@@ -466,4 +793,31 @@
       </div>
     </div>
   </main>
+
+  <div class="modal fade" id="clientScheduleModal" tabindex="-1" aria-labelledby="clientScheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title fw-bold" id="clientScheduleModalLabel">Repayment Schedule Report</h5>
+            <div class="text-muted small">Loan #{{ loan.id }} | {{ client.full_name }}</div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body schedule-report" id="clientScheduleReport">
+          {% include "loans/partials/client_repayment_schedule_report.html" %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-success" onclick="window.print()">
+            <i class="mdi mdi-printer"></i> Print
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="print-schedule-document schedule-report" aria-hidden="true">
+    {% include "loans/partials/client_repayment_schedule_report.html" %}
+  </div>
 {% endblock %}

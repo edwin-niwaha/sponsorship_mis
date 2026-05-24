@@ -2,13 +2,12 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordResetView
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Count, Exists, OuterRef, Q
 from django.http import (
@@ -37,6 +36,11 @@ from .forms import (
     UpdateProfileForm,
     UpdateUserForm,
 )
+from .login_verification import (
+    LOGIN_VERIFICATION_SESSION_KEY,
+    LOGIN_VERIFICATION_TIMEOUT_SECONDS,
+    token_matches,
+)
 from .models import (
     Contact,
     DocumentUpload,
@@ -44,11 +48,6 @@ from .models import (
     Policy,
     PolicyRead,
     Profile,
-)
-from .login_verification import (
-    LOGIN_VERIFICATION_SESSION_KEY,
-    LOGIN_VERIFICATION_TIMEOUT_SECONDS,
-    token_matches,
 )
 from .roles import get_login_redirect_url
 

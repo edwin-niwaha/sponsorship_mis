@@ -16,10 +16,10 @@ from apps.finance.models import ChildPayments, StaffPayments
 from apps.inventory.products.models import Category, Product
 from apps.inventory.sales.models import Sale
 from apps.loans.models import Loan, LoanDisbursement, LoanRepayment
+from apps.loans.services.reporting import loan_financial_row, portfolio_at_risk_summary
 from apps.sponsor.models import Sponsor
 from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
 from apps.users.decorators import admin_or_manager_or_staff_required
-from apps.loans.services.reporting import loan_financial_row, portfolio_at_risk_summary
 
 logger = logging.getLogger(__name__)
 
@@ -105,11 +105,11 @@ def get_loan_dashboard_summary(force_refresh=False):
         "due_loans_count": len(due_loans),
         "overdue_loans_count": len(overdue_loans),
         "due_loans_total": sum(
-            (l["amount_due"] for l in due_loans),
+            (loan_info["amount_due"] for loan_info in due_loans),
             Decimal("0.00"),
         ),
         "overdue_loans_total": sum(
-            (l["total_balance"] for l in overdue_loans),
+            (loan_info["total_balance"] for loan_info in overdue_loans),
             Decimal("0.00"),
         ),
     }

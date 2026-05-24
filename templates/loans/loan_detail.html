@@ -1,162 +1,580 @@
 {% extends 'loans/base.html' %}
-{% load static %}
 {% load humanize %}
 
 {% block content %}
-  <div class="container-fluid py-4">
-    <!-- Action Buttons -->
-    <div class="row mb-4">
-      <div class="col-12 d-flex justify-content-between align-items-center">
-        <div class="d-flex gap-2">
-          <a href="{% url 'loans:disburse_loan' %}" class="btn btn-primary shadow-sm"><i class="mdi mdi-plus me-2"></i> Disburse Loan</a>
-          <a href="{% url 'loans:loan_repayment_create' %}" class="btn btn-primary shadow-sm"><i class="mdi mdi-plus me-2"></i> Loan Repayment</a>
-        </div>
-        <button title="Print" type="button" class="btn btn-success shadow-sm" onclick="printDiv('printMe')"><i class="mdi mdi-printer me-2"></i> Print</button>
+  <style>
+    .loan-detail-page {
+      color: #233142;
+      margin-top: -18px;
+      padding: 0 0 24px;
+    }
+
+    .loan-detail-header,
+    .loan-detail-panel,
+    .loan-metric {
+      background: #fff;
+      border: 1px solid #d8dee6;
+      border-radius: 8px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .05);
+    }
+
+    .loan-detail-header {
+      align-items: center;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding: 16px 18px;
+    }
+
+    .loan-eyebrow {
+      color: #247a6b;
+      display: block;
+      font-size: .74rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .loan-detail-header h3 {
+      color: #1f344d;
+      font-size: 1.28rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      line-height: 1.25;
+      margin: 0;
+    }
+
+    .loan-muted,
+    .loan-panel-head span,
+    .loan-metric span,
+    .loan-info-tile span {
+      color: #667085;
+    }
+
+    .loan-muted {
+      font-size: .86rem;
+    }
+
+    .loan-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .loan-metrics {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin-bottom: 12px;
+    }
+
+    .loan-metric {
+      min-height: 88px;
+      padding: 13px;
+    }
+
+    .loan-metric.primary {
+      background: #102a43;
+      border-color: #102a43;
+      color: #fff;
+    }
+
+    .loan-metric span {
+      display: block;
+      font-size: .72rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .loan-metric.primary span {
+      color: #bcccdc;
+    }
+
+    .loan-metric strong {
+      color: #1f344d;
+      display: block;
+      font-size: 1.02rem;
+      font-weight: 900;
+      line-height: 1.18;
+      margin-top: 6px;
+      overflow-wrap: anywhere;
+    }
+
+    .loan-metric.primary strong {
+      color: #fff;
+      font-size: 1.12rem;
+    }
+
+    .loan-status-pill {
+      background: #eaf7ef;
+      border-radius: 999px;
+      color: #247a43;
+      display: inline-flex;
+      font-size: .78rem;
+      font-weight: 900;
+      margin-top: 6px;
+      padding: 4px 10px;
+      text-transform: uppercase;
+    }
+
+    .loan-detail-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(0, 1fr) minmax(340px, .55fr);
+    }
+
+    .loan-detail-panel {
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .loan-panel-head {
+      align-items: center;
+      border-bottom: 1px solid #edf0f4;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      padding: 13px 15px;
+    }
+
+    .loan-panel-head h5 {
+      color: #1f344d;
+      font-size: .98rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0;
+    }
+
+    .loan-panel-body {
+      padding: 14px;
+    }
+
+    .loan-info-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .loan-info-tile {
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      padding: 11px;
+    }
+
+    .loan-info-tile span {
+      display: block;
+      font-size: .72rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .loan-info-tile strong {
+      color: #1f344d;
+      display: block;
+      font-weight: 900;
+      margin-top: 4px;
+      overflow-wrap: anywhere;
+    }
+
+    .loan-upload-form {
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      padding: 12px;
+    }
+
+    .loan-upload-form .form-label {
+      color: #344054;
+      font-size: .78rem;
+      font-weight: 900;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+
+    .loan-upload-form .form-control {
+      min-height: 39px;
+    }
+
+    .loan-table {
+      margin-bottom: 0;
+      min-width: 760px;
+      table-layout: fixed;
+    }
+
+    .loan-table thead th {
+      background: #f8fafc;
+      border-top: 0;
+      color: #667085;
+      font-size: .74rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .loan-table tbody td,
+    .loan-table tfoot th {
+      border-color: #edf0f4;
+      overflow-wrap: anywhere;
+      vertical-align: middle;
+    }
+
+    .loan-table-scroll {
+      border: 1px solid #edf0f4;
+      border-radius: 8px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .loan-table-scroll .loan-table {
+      border: 0;
+    }
+
+    .loan-table-scroll::-webkit-scrollbar {
+      height: 10px;
+    }
+
+    .loan-table-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 999px;
+    }
+
+    .loan-table-scroll::-webkit-scrollbar-thumb {
+      background: #b8c4d2;
+      border-radius: 999px;
+    }
+
+    .loan-pagination {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .loan-pagination .pagination {
+      margin: 0;
+    }
+
+    .loan-pagination-note {
+      color: #667085;
+      font-size: .82rem;
+      font-weight: 700;
+    }
+
+    .loan-balance-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .loan-balance-row {
+      align-items: center;
+      background: #f8fafc;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      padding: 11px;
+    }
+
+    .loan-balance-row.total {
+      background: #102a43;
+      border-color: #102a43;
+    }
+
+    .loan-balance-row span {
+      color: #667085;
+      font-weight: 900;
+    }
+
+    .loan-balance-row.total span {
+      color: #bcccdc;
+    }
+
+    .loan-balance-row strong {
+      color: #1f344d;
+      font-weight: 900;
+      text-align: right;
+    }
+
+    .loan-balance-row.total strong {
+      color: #fff;
+    }
+
+    @media print {
+      .print-hide {
+        display: none !important;
+      }
+
+      .loan-detail-page {
+        margin-top: 0;
+      }
+    }
+
+    @media (max-width: 1199.98px) {
+      .loan-metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .loan-detail-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 767.98px) {
+      .loan-detail-header,
+      .loan-panel-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .loan-actions {
+        justify-content: flex-start;
+        width: 100%;
+      }
+
+      .loan-actions .btn {
+        flex: 1 1 auto;
+      }
+
+      .loan-metrics,
+      .loan-info-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <div class="container-fluid loan-detail-page">
+    <div class="loan-detail-header print-hide">
+      <div>
+        <span class="loan-eyebrow">Loan Details</span>
+        <h3>{{ borrower_name }} | Loan #{{ loan.id }}</h3>
+        <div class="loan-muted">Reg No: {{ loan.borrower.reg_number|default:'Not recorded' }}</div>
+      </div>
+      <div class="loan-actions">
+        <a href="{% url 'loans:disburse_loan' %}" class="btn btn-outline-primary btn-sm"><i class="mdi mdi-bank-transfer"></i> Disburse</a>
+        <a href="{% url 'loans:loan_repayment_create' %}" class="btn btn-outline-primary btn-sm"><i class="mdi mdi-cash-plus"></i> Repayment</a>
+        <button title="Print" type="button" class="btn btn-dark btn-sm" onclick="printDiv('printMe')"><i class="mdi mdi-printer"></i> Print</button>
       </div>
     </div>
 
-    <!-- Loan Details Card -->
-    <div id="printMe" class="card shadow border-0 rounded-3 overflow-hidden">
-      <div class="card-header bg-primary text-white py-3">
-        <h3 class="mb-0 text-uppercase fw-bold">{{ form_title }}</h3>
-      </div>
-      <div class="card-body p-4">
-        <!-- Loan Information Section -->
-        <div class="mb-5">
-          <h5 class="fw-bold text-primary mb-3">Loan Information</h5>
-          <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle">
-              <tbody>
-                <tr>
-                  <th scope="row" class="bg-light">Loan Amount Disbursed</th>
-                  <td class="text-right">{{ loan.principal_amount|floatformat:'2'|intcomma }}</td>
-                  <td colspan="4" class="ps-4">
-                    <span class="fw-semibold">Rate:</span> {{ loan.interest_rate|floatformat:1 }}% |
-                    <span class="fw-semibold">Period:</span> {{ loan.loan_period_months }} months |
-                    <span class="fw-semibold">Method:</span> {{ loan.interest_method }}
-                  </td>
-                </tr>
-                <tr>
-                  <th scope="row" class="bg-light">Disbursement Date</th>
-                  <td class="text-right">{{ loan.disbursement_date }}</td>
-                  <th scope="row" class="bg-light">Due Date</th>
-                  <td class="text-right">{{ loan.due_date }}</td>
-                </tr>
-                <tr>
-                  <th scope="row" class="bg-light">Principal Bal</th>
-                  <td class="text-right">{{ loan.calculate_remaining_balances.principal_balance|floatformat:'2'|intcomma }}</td>
-                  <th scope="row" class="bg-light">Interest Bal</th>
-                  <td class="text-right">{{ loan.calculate_remaining_balances.interest_balance|floatformat:'2'|intcomma }}</td>
-                  <th scope="row" class="bg-light">Penalty Bal</th>
-                  <td class="text-right">{{ loan.calculate_remaining_balances.penalty_balance|floatformat:'2'|intcomma }}</td>
-                </tr>
-                <tr>
-                  <th scope="row" class="bg-light">Total Remaining Balance</th>
-                  <td class="text-right">{{ loan.calculate_remaining_balances.principal_balance|add:loan.calculate_remaining_balances.interest_balance|add:loan.calculate_remaining_balances.penalty_balance|floatformat:'2'|intcomma }}</td>
-                  <th scope="row" class="bg-light te">Loan Status</th>
-                  <td colspan="3" class="text-left">
-                    {% if loan.status == 'Repaid' %}
-                      <span class="badge bg-light text-dark">{{ loan.status }}</span>
-                    {% elif loan.status == 'Overdue' %}
-                      <span class="badge bg-danger">{{ loan.status }}</span>
-                    {% elif loan.status == 'Closed' %}
-                      <span class="badge bg-secondary">{{ loan.status }}</span>
-                    {% else %}
-                      <span class="badge bg-success">{{ loan.status }}</span>
+    <div id="printMe">
+      <section class="loan-metrics">
+        <div class="loan-metric primary">
+          <span>Total Remaining</span>
+          <strong>UGX {{ total_remaining_balance|floatformat:'2'|intcomma }}</strong>
+        </div>
+        <div class="loan-metric">
+          <span>Principal</span>
+          <strong>UGX {{ loan.principal_amount|floatformat:'2'|intcomma }}</strong>
+        </div>
+        <div class="loan-metric">
+          <span>Rate / Period</span>
+          <strong>{{ loan.interest_rate|floatformat:1 }}% | {{ loan.loan_period_months }} months</strong>
+        </div>
+        <div class="loan-metric">
+          <span>Due Date</span>
+          <strong>{{ loan.due_date|default:'Not set' }}</strong>
+        </div>
+        <div class="loan-metric">
+          <span>Status</span>
+          <strong>{{ loan.get_status_display|default:loan.status }}</strong>
+          <span class="loan-status-pill">{{ loan.status }}</span>
+        </div>
+      </section>
+
+      <div class="loan-detail-grid">
+        <div>
+          <section class="loan-detail-panel">
+            <div class="loan-panel-head">
+              <div>
+                <h5>Loan Information</h5>
+                <span>Terms, dates, and accounting method</span>
+              </div>
+            </div>
+            <div class="loan-panel-body">
+              <div class="loan-info-grid">
+                <div class="loan-info-tile"><span>Disbursement date</span><strong>{{ loan.disbursement_date|default:'Not disbursed' }}</strong></div>
+                <div class="loan-info-tile"><span>Interest method</span><strong>{{ loan.interest_method }}</strong></div>
+                <div class="loan-info-tile"><span>Principal balance</span><strong>UGX {{ remaining_principal|floatformat:'2'|intcomma }}</strong></div>
+                <div class="loan-info-tile"><span>Interest balance</span><strong>UGX {{ remaining_interest|floatformat:'2'|intcomma }}</strong></div>
+                <div class="loan-info-tile"><span>Penalty balance</span><strong>UGX {{ remaining_penalty|floatformat:'2'|intcomma }}</strong></div>
+                <div class="loan-info-tile"><span>Account</span><strong>{{ loan.account|default:'Not assigned' }}</strong></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="loan-detail-panel">
+            <div class="loan-panel-head">
+              <div>
+                <h5>Application Documents</h5>
+                <span>PDF uploads linked to this client loan</span>
+              </div>
+            </div>
+            <div class="loan-panel-body">
+              <form method="post" action="{% url 'loans:upload_loan_application_document' loan.id %}" enctype="multipart/form-data" class="loan-upload-form print-hide">
+                {% csrf_token %}
+                <div class="row g-3 align-items-end">
+                  <div class="col-md-3">
+                    <label class="form-label" for="{{ document_upload_form.document_type.id_for_label }}">Document type</label>
+                    {{ document_upload_form.document_type }}
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label" for="{{ document_upload_form.file.id_for_label }}">PDF file</label>
+                    {{ document_upload_form.file }}
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label" for="{{ document_upload_form.description.id_for_label }}">Note</label>
+                    {{ document_upload_form.description }}
+                  </div>
+                  <div class="col-md-2">
+                    <button type="submit" class="btn btn-dark w-100"><i class="mdi mdi-upload"></i> Upload</button>
+                  </div>
+                </div>
+                <div class="loan-muted mt-2">Only PDF documents up to 10 MB are accepted.</div>
+              </form>
+
+              <div class="loan-table-scroll">
+                <table class="table table-hover align-middle loan-table">
+                  <thead>
+                    <tr>
+                      <th>Document</th>
+                      <th>Description</th>
+                      <th>Uploaded By</th>
+                      <th>Uploaded</th>
+                      <th class="text-end">File</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for document in documents %}
+                      <tr>
+                        <td>{{ document.get_document_type_display }}</td>
+                        <td>{{ document.description|default:'-' }}</td>
+                        <td>{{ document.uploaded_by|default:'-' }}</td>
+                        <td>{{ document.created_at|date:'M d, Y' }}</td>
+                        <td class="text-end">
+                          {% if document.file %}
+                            <a href="{{ document.file.url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">Open</a>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {% empty %}
+                      <tr><td colspan="5" class="text-center text-muted py-3">No application documents uploaded.</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% if documents_page.paginator.count %}
+                <nav class="loan-pagination print-hide" aria-label="Loan documents pagination">
+                  <span class="loan-pagination-note">
+                    Showing {{ documents_page.start_index }}-{{ documents_page.end_index }} of {{ documents_page.paginator.count }}
+                  </span>
+                  <ul class="pagination pagination-sm">
+                    {% if documents_page.has_previous %}
+                      <li class="page-item"><a class="page-link" href="?documents_page={{ documents_page.previous_page_number }}{% if repayments_page.number %}&repayments_page={{ repayments_page.number }}{% endif %}">Previous</a></li>
                     {% endif %}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <h5 class="fw-bold text-primary mb-3">Application Documents</h5>
-        <div class="table-responsive mb-5">
-          <table class="table table-striped table-bordered align-middle">
-            <thead class="table-dark">
-              <tr>
-                <th scope="col">Document</th>
-                <th scope="col">Description</th>
-                <th scope="col">Uploaded By</th>
-                <th scope="col">Uploaded</th>
-                <th scope="col" class="text-center">File</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for document in documents %}
-                <tr>
-                  <td>{{ document.get_document_type_display }}</td>
-                  <td>{{ document.description|default:'-' }}</td>
-                  <td>{{ document.uploaded_by|default:'-' }}</td>
-                  <td>{{ document.created_at|date:'M d, Y' }}</td>
-                  <td class="text-center">
-                    {% if document.file %}
-                      <a href="{{ document.file.url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">Open</a>
+                    <li class="page-item active"><span class="page-link">{{ documents_page.number }} of {{ documents_page.paginator.num_pages }}</span></li>
+                    {% if documents_page.has_next %}
+                      <li class="page-item"><a class="page-link" href="?documents_page={{ documents_page.next_page_number }}{% if repayments_page.number %}&repayments_page={{ repayments_page.number }}{% endif %}">Next</a></li>
                     {% endif %}
-                  </td>
-                </tr>
-              {% empty %}
-                <tr>
-                  <td colspan="5" class="text-center text-muted py-3">No application documents uploaded.</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+                  </ul>
+                </nav>
+              {% endif %}
+            </div>
+          </section>
         </div>
 
-        <!-- Repayment History Section -->
-        <h5 class="fw-bold text-primary mb-3">Repayment History</h5>
-        <div class="table-responsive">
-          <table class="table table-striped table-bordered align-middle">
-            <thead class="table-dark">
-              <tr>
-                <th scope="col">Date</th>
-                <th scope="col" class="text-end">Principal</th>
-                <th scope="col" class="text-end">Interest</th>
-                <th scope="col" class="text-end">Penalty</th>
-                <th scope="col">Account</th>
-                <th scope="col" class="text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for repayment in repayments %}
-                <tr>
-                  <td>{{ repayment.repayment_date }}</td>
-                  <td class="text-right">{{ repayment.principal_payment|floatformat:'2'|intcomma }}</td>
-                  <td class="text-right">{{ repayment.interest_payment|floatformat:'2'|intcomma }}</td>
-                  <td class="text-right">{{ repayment.penalty_payment|floatformat:'2'|intcomma }}</td>
+        <aside>
+          <section class="loan-detail-panel">
+            <div class="loan-panel-head">
+              <div>
+                <h5>Balance Snapshot</h5>
+                <span>Current outstanding components</span>
+              </div>
+            </div>
+            <div class="loan-panel-body">
+              <div class="loan-balance-list">
+                <div class="loan-balance-row total"><span>Total remaining</span><strong>UGX {{ total_remaining_balance|floatformat:'2'|intcomma }}</strong></div>
+                <div class="loan-balance-row"><span>Principal</span><strong>UGX {{ remaining_principal|floatformat:'2'|intcomma }}</strong></div>
+                <div class="loan-balance-row"><span>Interest</span><strong>UGX {{ remaining_interest|floatformat:'2'|intcomma }}</strong></div>
+                <div class="loan-balance-row"><span>Penalty</span><strong>UGX {{ remaining_penalty|floatformat:'2'|intcomma }}</strong></div>
+              </div>
+            </div>
+          </section>
 
-                  <td>{{ repayment.account }}</td>
-                  <td class="text-center">
-                    <form method="POST" action="{% url 'loans:delete_repayment' repayment.id %}" class="d-inline" onsubmit="return confirm('Are you sure you want to DELETE this repayment of {{ repayment.total_payment|floatformat:2|intcomma }} UGX?\n\nThis action CANNOT be undone.');">
-                      {% csrf_token %}
-                      <button type="submit" class="btn btn-danger btn-sm shadow-sm" title="Delete"><i class="mdi mdi-trash-can"></i></button>
-                    </form>
-                  </td>
-                </tr>
-              {% empty %}
-                <tr>
-                  <td colspan="5" class="text-center text-muted py-3">No repayments recorded.</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-            <tfoot class="table-light">
-              <tr>
-                <th scope="row">Total</th>
-                <th class="text-right">{{ total_principal|floatformat:'2'|intcomma }}</th>
-                <th class="text-right">{{ total_interest|floatformat:'2'|intcomma }}</th>
-                <th class="text-right">{{ total_penalty|floatformat:'2'|intcomma }}</th>
-                <th colspan="2"></th>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+          <section class="loan-detail-panel">
+            <div class="loan-panel-head">
+              <div>
+                <h5>Repayment History</h5>
+                <span>{{ repayments|length }} repayment{{ repayments|length|pluralize }}</span>
+              </div>
+            </div>
+            <div class="loan-table-scroll">
+              <table class="table table-hover align-middle loan-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th class="text-end">Principal</th>
+                    <th class="text-end">Interest</th>
+                    <th class="text-end">Penalty</th>
+                    <th class="text-end print-hide">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for repayment in repayments %}
+                    <tr>
+                      <td>{{ repayment.repayment_date }}</td>
+                      <td class="text-end">{{ repayment.principal_payment|floatformat:'2'|intcomma }}</td>
+                      <td class="text-end">{{ repayment.interest_payment|floatformat:'2'|intcomma }}</td>
+                      <td class="text-end">{{ repayment.penalty_payment|floatformat:'2'|intcomma }}</td>
+                      <td class="text-end print-hide">
+                        <form method="POST" action="{% url 'loans:delete_repayment' repayment.id %}" class="d-inline" onsubmit="return confirm('Are you sure you want to DELETE this repayment of {{ repayment.total_payment|floatformat:2|intcomma }} UGX?\n\nThis action CANNOT be undone.');">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete"><i class="mdi mdi-trash-can"></i></button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted py-3">No repayments recorded.</td></tr>
+                  {% endfor %}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <th>Total</th>
+                    <th class="text-end">{{ total_principal|floatformat:'2'|intcomma }}</th>
+                    <th class="text-end">{{ total_interest|floatformat:'2'|intcomma }}</th>
+                    <th class="text-end">{{ total_penalty|floatformat:'2'|intcomma }}</th>
+                    <th class="print-hide"></th>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            {% if repayments_page.paginator.count %}
+              <nav class="loan-pagination print-hide px-3 pb-3" aria-label="Loan repayments pagination">
+                <span class="loan-pagination-note">
+                  Showing {{ repayments_page.start_index }}-{{ repayments_page.end_index }} of {{ repayments_page.paginator.count }}
+                </span>
+                <ul class="pagination pagination-sm">
+                  {% if repayments_page.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?repayments_page={{ repayments_page.previous_page_number }}{% if documents_page.number %}&documents_page={{ documents_page.number }}{% endif %}">Previous</a></li>
+                  {% endif %}
+                  <li class="page-item active"><span class="page-link">{{ repayments_page.number }} of {{ repayments_page.paginator.num_pages }}</span></li>
+                  {% if repayments_page.has_next %}
+                    <li class="page-item"><a class="page-link" href="?repayments_page={{ repayments_page.next_page_number }}{% if documents_page.number %}&documents_page={{ documents_page.number }}{% endif %}">Next</a></li>
+                  {% endif %}
+                </ul>
+              </nav>
+            {% endif %}
+          </section>
+        </aside>
       </div>
     </div>
   </div>
 
-  <!-- Print Function -->
   <script>
     function printDiv(divId) {
       var printContents = document.getElementById(divId).outerHTML

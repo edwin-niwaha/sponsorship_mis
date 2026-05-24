@@ -1,0 +1,154 @@
+{% load humanize %}
+{% load static %}
+
+<div class="schedule-report-header">
+  <div class="schedule-report-brand">
+    <img src="{% static 'images/file.png' %}" alt="Pendeza Uganda">
+    <div>
+      <h3>Pendeza Uganda</h3>
+      <span>Client Loan Repayment Schedule</span>
+    </div>
+  </div>
+  <div class="schedule-report-stamp">
+    <span>Report Reference</span>
+    <strong>LOAN-{{ loan.id }}</strong>
+    <span>Generated {% now "M d, Y" %}</span>
+  </div>
+</div>
+
+<div class="schedule-section-title">Client Details</div>
+<div class="schedule-report-meta">
+  <div>
+    <span>Client Name</span>
+    <strong>{{ client.full_name }}</strong>
+  </div>
+  <div>
+    <span>Client Number</span>
+    <strong>{{ client.reg_number|default:'-' }}</strong>
+  </div>
+  <div>
+    <span>Phone</span>
+    <strong>{{ client.phone|default:'-' }}</strong>
+  </div>
+</div>
+
+<div class="schedule-section-title">Loan Details</div>
+<div class="schedule-report-meta">
+  <div>
+    <span>Loan ID</span>
+    <strong>#{{ loan.id }}</strong>
+  </div>
+  <div>
+    <span>Loan Purpose</span>
+    <strong>{{ loan.get_loan_purpose_display }}</strong>
+  </div>
+  <div>
+    <span>Status</span>
+    <strong>{{ loan.get_status_display }}</strong>
+  </div>
+  <div>
+    <span>Principal</span>
+    <strong>UGX {{ loan.principal_amount|floatformat:2|intcomma }}</strong>
+  </div>
+  <div>
+    <span>Loan Period</span>
+    <strong>{{ loan.loan_period_months }} months</strong>
+  </div>
+  <div>
+    <span>Interest Rate</span>
+    <strong>{{ loan.interest_rate|floatformat:2 }}%</strong>
+  </div>
+  <div>
+    <span>Interest Method</span>
+    <strong>{{ loan.get_interest_method_display|default:loan.interest_method|title }}</strong>
+  </div>
+  <div>
+    <span>Application Date</span>
+    <strong>{{ loan.start_date|date:'M d, Y' }}</strong>
+  </div>
+  <div>
+    <span>Disbursement Date</span>
+    <strong>{{ loan.disbursement_date|date:'M d, Y'|default:'Not disbursed' }}</strong>
+  </div>
+  <div>
+    <span>Final Due Date</span>
+    <strong>{{ final_due_date|date:'M d, Y'|default:'-' }}</strong>
+  </div>
+</div>
+
+<div class="schedule-section-title">Payment Summary</div>
+<div class="schedule-summary-strip">
+  <div>
+    <span>Installments</span>
+    <strong>{{ payment_schedule|length }}</strong>
+  </div>
+  <div>
+    <span>Total Principal</span>
+    <strong>UGX {{ schedule_total_principal|floatformat:2|intcomma }}</strong>
+  </div>
+  <div>
+    <span>Total Interest</span>
+    <strong>UGX {{ schedule_total_interest|floatformat:2|intcomma }}</strong>
+  </div>
+  <div>
+    <span>Total Payable</span>
+    <strong>UGX {{ schedule_total_payment|floatformat:2|intcomma }}</strong>
+  </div>
+</div>
+
+<div class="schedule-report-meta">
+  <div>
+    <span>Outstanding Principal</span>
+    <strong>UGX {{ remaining_principal|floatformat:2|intcomma }}</strong>
+  </div>
+  <div>
+    <span>Outstanding Interest</span>
+    <strong>UGX {{ remaining_interest|floatformat:2|intcomma }}</strong>
+  </div>
+  <div>
+    <span>Total Outstanding</span>
+    <strong>UGX {{ total_outstanding_balance|floatformat:2|intcomma }}</strong>
+  </div>
+</div>
+
+{% if schedule_unavailable_reason %}
+  <div class="alert alert-info mb-0">
+    <strong>Schedule not ready.</strong> {{ schedule_unavailable_reason }}
+  </div>
+{% else %}
+  <div class="schedule-section-title">Installment Breakdown</div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle schedule-table">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Due Date</th>
+          <th class="text-end">Principal</th>
+          <th class="text-end">Interest</th>
+          <th class="text-end">Total Due</th>
+          <th class="text-end">Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for payment in payment_schedule %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ payment.payment_due_date|date:'M d, Y' }}</td>
+            <td class="text-end">UGX {{ payment.principal_payment|floatformat:2|intcomma }}</td>
+            <td class="text-end">UGX {{ payment.interest_payment|floatformat:2|intcomma }}</td>
+            <td class="text-end fw-bold">UGX {{ payment.total_payment|floatformat:2|intcomma }}</td>
+            <td class="text-end">UGX {{ payment.remaining_balance|floatformat:2|intcomma }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="empty-docs">No repayment schedule available.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+
+<div class="schedule-report-note">
+  This report is generated from the client portal and reflects the loan records currently available in the system.
+</div>

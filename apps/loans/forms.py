@@ -5,7 +5,6 @@ from decimal import Decimal
 from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import DecimalField, F, Q, Sum, Value
 from django.db.models.functions import Coalesce
@@ -14,10 +13,10 @@ from django.utils import timezone
 from apps.client.models import Client
 
 from .models import (
+    LOAN_DOCUMENT_ALLOWED_EXTENSIONS,
     ChartOfAccounts,
     Loan,
     LoanApplicationDocument,
-    LOAN_DOCUMENT_ALLOWED_EXTENSIONS,
     LoanDisbursement,
     LoanPenalty,
     LoanRepayment,
@@ -462,12 +461,60 @@ class LoanApplicationDocumentForm(forms.Form):
 # LoanApplicationUpdateForm
 # ─────────────────────────────────────────────────────────────────────────────
 
+class StaffLoanApplicationDocumentForm(forms.ModelForm):
+    file = forms.FileField(
+        label="PDF document",
+        widget=forms.ClearableFileInput(
+            attrs={
+                "accept": ".pdf,application/pdf",
+                "class": "form-control",
+            }
+        ),
+    )
+
+    class Meta:
+        model = LoanApplicationDocument
+        fields = ["document_type", "file", "description"]
+        widgets = {
+            "document_type": forms.Select(attrs={"class": "form-control"}),
+            "description": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Optional note, reference, or source",
+                }
+            ),
+        }
+
+    def clean_file(self):
+        upload = self.cleaned_data.get("file")
+        if not upload:
+            return upload
+
+        extension = os.path.splitext(upload.name)[1].lstrip(".").lower()
+        content_type = getattr(upload, "content_type", "")
+        if extension != "pdf" or content_type not in {"application/pdf", "application/x-pdf", ""}:
+            raise forms.ValidationError("Only PDF documents are allowed.")
+
+        max_size = 10 * 1024 * 1024
+        if upload.size > max_size:
+            raise forms.ValidationError("PDF documents must not be larger than 10 MB.")
+
+        return upload
+
+    def save(self, loan, uploaded_by=None, commit=True):
+        document = super().save(commit=False)
+        document.loan = loan
+        document.uploaded_by = uploaded_by
+        if commit:
+            document.save()
+        return document
+
+
 class LoanApplicationUpdateForm(forms.ModelForm):
     """Used to edit an existing loan application (e.g. correct a mistake)."""
     class Meta:
         model  = Loan
         fields = [
-            "borrower",
             "principal_amount",
             "interest_rate",
             "interest_method",
@@ -476,7 +523,6 @@ class LoanApplicationUpdateForm(forms.ModelForm):
             "reason_for_approval",
         ]
         widgets = {
-            "borrower": forms.Select(attrs={"class": "form-control"}),
             "principal_amount": forms.NumberInput(
                 attrs={"class": "form-control", "placeholder": "Principal amount", "min": 0}
             ),

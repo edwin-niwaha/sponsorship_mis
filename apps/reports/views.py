@@ -6,8 +6,8 @@ from django.db.models import Sum
 from django.shortcuts import render
 
 from apps.child.models import Child
-from apps.finance.services import get_active_sponsors_count, get_departed_sponsors_count
 from apps.finance.models import ChildPayments, StaffPayments
+from apps.finance.services import get_active_sponsors_count, get_departed_sponsors_count
 from apps.sponsor.models import Sponsor
 from apps.sponsorship.models import StaffSponsorship
 from apps.staff.models import Staff

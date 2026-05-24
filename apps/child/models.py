@@ -15,7 +15,6 @@ from django.utils import timezone
 from phonenumber_field.modelfields import PhoneNumberField
 
 
-
 def validate_image_size(value):
     limit = 10 * 1024 * 1024  # 10 MB
     if value.size > limit:

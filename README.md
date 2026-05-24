@@ -33,7 +33,7 @@ cd sponsorship-mis/backend
 python -m venv .smsvenv
 
 # Windows Terminal
-.venv\Scripts\activate
+.\.smsvenv\Scripts\Activate.ps1
 
 ```bash
 source .smsvenv/Scripts/activate

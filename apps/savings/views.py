@@ -1,12 +1,12 @@
-from datetime import date
-from decimal import Decimal, ROUND_HALF_UP
 import logging
+from datetime import date
+from decimal import ROUND_HALF_UP, Decimal
 
 import requests
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.conf import settings
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -487,7 +487,6 @@ def client_savings_deposit_payment(request):
     phone = form.cleaned_data["phone"]
     amount = form.cleaned_data["amount"]
     fee_amount = _mtn_deposit_fee(amount)
-    net_amount = _mtn_deposit_net_amount(amount)
     amount_for_api = int(amount)
     api_phone = "256" + phone[1:]
 

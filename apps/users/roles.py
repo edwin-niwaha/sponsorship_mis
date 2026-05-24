@@ -1,6 +1,5 @@
 from django.urls import reverse
 
-
 STAFF_ROLE_LABELS = {
     "administrator": "Administrator",
     "manager": "Manager",

@@ -3,9 +3,9 @@ from django.contrib import admin
 from .models import (
     ChildPayments,
     DonorPayment,
+    Payment,
     StaffPayments,
     SupportProgram,
-    Payment,
 )
 
 

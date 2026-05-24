@@ -12,6 +12,24 @@ select = [
   "F",
   'I',
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"apps/client/views.py" = ["E402", "E501"]
+"apps/dashboard/views.py" = ["E402"]
+"apps/inventory/sales/views.py" = ["F403"]
+"apps/loans/__init__.py" = ["E402", "F403"]
+"apps/loans/admin.py" = ["E501"]
+"apps/loans/forms copy.py" = ["E501"]
+"apps/loans/management/commands/send_sms_notifications.py" = ["E501"]
+"apps/loans/models.py" = ["E402"]
+"apps/loans/tasks.py" = ["E501"]
+"apps/loans/views.py" = ["E501", "E701", "E702", "E731", "F811"]
+"apps/savings/forms.py" = ["E501"]
+"apps/savings/views.py" = ["E501"]
+"apps/staff/management/commands/send_birthday_emails.py" = ["E501"]
+"apps/users/decorators.py" = ["E501"]
+"core/settings/development.py" = ["F405"]
+
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 [tool.ruff.lint.mccabe]

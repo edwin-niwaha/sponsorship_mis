@@ -87,8 +87,8 @@ def categories_list_view(request):
 
     try:
         page_obj = paginator.get_page(page_number)
-    except:
-        raise Http404("Page not found")
+    except Exception as exc:
+        raise Http404("Page not found") from exc
 
     context = {
         "active_icon": "products_categories",
@@ -258,9 +258,9 @@ def products_list_view(request):
 
     try:
         page_obj = paginator.get_page(page_number)
-    except:
+    except Exception as exc:
         # If the page number is invalid, raise 404 error
-        raise Http404("Page not found")
+        raise Http404("Page not found") from exc
 
     # Calculate totals
     total_price = products.aggregate(total_price=Sum("price"))["total_price"] or 0

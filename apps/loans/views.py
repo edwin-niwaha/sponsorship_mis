@@ -1,13 +1,13 @@
 import logging
 from datetime import date, datetime, timedelta
-from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 
 import pytz
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, EmailMultiAlternatives
@@ -34,13 +34,14 @@ from .forms import (
     ImportCOAForm,
     ImportLoansForm,
     LoanAllDisbursementForm,
-    LoanApplicationForm,
     LoanApplicationDocumentForm,
+    LoanApplicationForm,
     LoanApplicationUpdateForm,
     LoanDisbursementForm,
     LoanPenaltyForm,
-    LoanReportFilterForm,
     LoanRepaymentForm,
+    LoanReportFilterForm,
+    StaffLoanApplicationDocumentForm,
 )
 from .models import (
     ChartOfAccounts,
@@ -710,15 +711,44 @@ def client_loan_application_detail(request, loan_id):
         total_penalty=Sum("penalty_payment"),
     )
     balances = loan.calculate_remaining_balances()
+    total_outstanding_balance = sum(balances.values())
+    payment_schedule = loan.generate_payment_schedule()
+    schedule_total_principal = sum(
+        (item["principal_payment"] for item in payment_schedule), Decimal("0.00")
+    )
+    schedule_total_interest = sum(
+        (item["interest_payment"] for item in payment_schedule), Decimal("0.00")
+    )
+    schedule_total_payment = sum(
+        (item["total_payment"] for item in payment_schedule), Decimal("0.00")
+    )
+    final_due_date = payment_schedule[-1]["payment_due_date"] if payment_schedule else None
+    schedule_unavailable_reason = ""
+
+    if not loan.disbursement_date:
+        schedule_unavailable_reason = (
+            "Your repayment schedule will be available after the loan is disbursed."
+        )
+    elif not loan.loan_period_months or loan.loan_period_months <= 0:
+        schedule_unavailable_reason = (
+            "Your repayment schedule cannot be generated because the loan period is missing."
+        )
 
     return render(request, "loans/client_loan_application_detail.html", {
         "client": current_client,
         "loan": loan,
         "documents": loan.documents.all(),
         "repayments": repayments,
+        "payment_schedule": payment_schedule,
+        "schedule_total_principal": schedule_total_principal,
+        "schedule_total_interest": schedule_total_interest,
+        "schedule_total_payment": schedule_total_payment,
+        "final_due_date": final_due_date,
+        "schedule_unavailable_reason": schedule_unavailable_reason,
         "remaining_principal": balances["principal_balance"],
         "remaining_interest": balances["interest_balance"],
         "remaining_penalty": balances["penalty_balance"],
+        "total_outstanding_balance": total_outstanding_balance,
         "total_principal": totals["total_principal"] or Decimal("0.00"),
         "total_interest": totals["total_interest"] or Decimal("0.00"),
         "total_penalty": totals["total_penalty"] or Decimal("0.00"),
@@ -752,6 +782,16 @@ def update_loan(request, loan_id):
 def repayment_schedule(request, loan_id):
     loan     = get_object_or_404(Loan, id=loan_id)
     schedule = loan.generate_payment_schedule()
+    schedule_unavailable_reason = ""
+
+    if not loan.disbursement_date:
+        schedule_unavailable_reason = (
+            "Repayment schedule will be available after this loan is disbursed."
+        )
+    elif not loan.loan_period_months or loan.loan_period_months <= 0:
+        schedule_unavailable_reason = (
+            "Repayment schedule cannot be generated because the loan period is missing."
+        )
 
     # First payment gives monthly figures (same for all — flat rate)
     first           = schedule[0] if schedule else {}
@@ -767,8 +807,9 @@ def repayment_schedule(request, loan_id):
         "monthly_payment": monthly_payment,
         "total_interest": loan.total_interest,
         "total_cost_of_loan": loan.total_repayable,   # uses model @property
-        "loan_period_years": loan.loan_period_months / 12,
+        "loan_period_years": loan.loan_period_months / 12 if loan.loan_period_months else 0,
         "interest_method": loan.interest_method,
+        "schedule_unavailable_reason": schedule_unavailable_reason,
     })
 
 
@@ -783,7 +824,6 @@ def disbursed_loans_view(request):
         status__in=["disbursed", "overdue", "repaid"]
     )
     # Evaluate once for totals, then paginate
-    all_loans          = qs.iterator()
     total_disbursed    = Decimal("0.00")
     total_interest_all = Decimal("0.00")
     for loan in qs:
@@ -1220,14 +1260,21 @@ def loan_detail_view(request, loan_id):
         total_interest =Sum("interest_payment"),
         total_penalty  =Sum("penalty_payment"),
     )
+    total_remaining_balance = sum(balances.values())
+    documents_page = Paginator(loan.documents.all(), 5).get_page(request.GET.get("documents_page"))
+    repayments_page = Paginator(repayments, 8).get_page(request.GET.get("repayments_page"))
 
     return render(request, "loans/loan_detail.html", {
         "loan": loan,
         "remaining_principal": balances["principal_balance"],
         "remaining_interest":  balances["interest_balance"],
         "remaining_penalty":   balances["penalty_balance"],
-        "documents":           loan.documents.all(),
-        "repayments":          repayments,
+        "total_remaining_balance": total_remaining_balance,
+        "documents":           documents_page,
+        "documents_page":      documents_page,
+        "document_upload_form": StaffLoanApplicationDocumentForm(),
+        "repayments":          repayments_page,
+        "repayments_page":     repayments_page,
         "borrower_name":       loan.borrower.full_name,
         "total_principal":     totals["total_principal"] or 0,
         "total_interest":      totals["total_interest"]  or 0,
@@ -1237,6 +1284,26 @@ def loan_detail_view(request, loan_id):
             f"| Reg No: {loan.borrower.reg_number}"
         ),
     })
+
+
+@login_required
+@admin_or_manager_or_staff_required
+@transaction.atomic
+def upload_loan_application_document(request, loan_id):
+    loan = get_object_or_404(Loan.objects.select_related("borrower"), id=loan_id)
+    if request.method != "POST":
+        return redirect("loans:loan_detail", loan_id=loan.id)
+
+    form = StaffLoanApplicationDocumentForm(request.POST, request.FILES)
+    if form.is_valid():
+        form.save(loan=loan, uploaded_by=request.user)
+        messages.success(request, "Loan application document uploaded successfully.", extra_tags="bg-success")
+    else:
+        for field_errors in form.errors.values():
+            for error in field_errors:
+                messages.error(request, error, extra_tags="bg-danger")
+
+    return redirect("loans:loan_detail", loan_id=loan.id)
 
 
 @login_required

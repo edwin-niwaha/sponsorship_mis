@@ -1,3 +1,4 @@
+from cloudinary import CloudinaryResource
 from django import forms
 
 from .models import Staff, StaffDeparture

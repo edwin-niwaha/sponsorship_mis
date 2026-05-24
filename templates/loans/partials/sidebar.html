@@ -87,6 +87,11 @@
         <ul class="nav flex-column sub-menu">
           <li class="nav-item"><a class="nav-link" href="{% url 'loans:disburse_loan' %}">Disburse Loan</a></li>
           <li class="nav-item"><a class="nav-link" href="{% url 'loans:disbursed_loans' %}">Disbursed Loans</a></li>
+          {% if loan %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'loans:loan_detail' loan.id %}">Current Loan Details</a></li>
+          {% else %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'loans:disbursed_loans' %}">Loan Details</a></li>
+          {% endif %}
           <li class="nav-item"><a class="nav-link" href="{% url 'loans:loan_portfolio_report' %}">Portfolio Report</a></li>
         </ul>
       </div>

@@ -48,6 +48,11 @@
           <h5 class="m-0 font-weight-bold">Repayment Schedule</h5>
         </div>
         <div class="card-body">
+          {% if schedule_unavailable_reason %}
+            <div class="alert alert-info mb-0">
+              <strong>Schedule not ready.</strong> {{ schedule_unavailable_reason }}
+            </div>
+          {% else %}
           <div class="table-responsive">
             <table class="table table-bordered table-striped">
               <thead class="thead-light">
@@ -85,6 +90,7 @@
               </tbody>
             </table>
           </div>
+          {% endif %}
         </div>
       </div>
     </div>

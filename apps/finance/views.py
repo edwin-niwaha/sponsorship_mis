@@ -1,4 +1,5 @@
 from collections import defaultdict
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -8,13 +9,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from apps.child.models import Child
-from apps.sponsor.models import Donor, Sponsor
-from apps.staff.models import Staff
-from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
-from apps.users.decorators import (
-    admin_or_manager_or_staff_required,
-    admin_or_manager_required,
-)
 from apps.finance.services import (
     apply_sponsor_flags_for_program,
     get_child_payment_sponsors,
@@ -22,6 +16,13 @@ from apps.finance.services import (
     sync_child_payment_to_unified,
     sync_donor_payment_to_unified,
     sync_staff_payment_to_unified,
+)
+from apps.sponsor.models import Donor, Sponsor
+from apps.sponsorship.models import ChildSponsorship, StaffSponsorship
+from apps.staff.models import Staff
+from apps.users.decorators import (
+    admin_or_manager_or_staff_required,
+    admin_or_manager_required,
 )
 
 from .forms import (

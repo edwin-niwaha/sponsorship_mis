@@ -9,9 +9,8 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.client.models import Client
-from apps.users.models import Profile
-
 from apps.savings.models import SavingsAccount, SavingsTransaction
+from apps.users.models import Profile
 
 
 class SavingsModuleTests(TestCase):

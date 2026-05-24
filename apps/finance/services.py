@@ -6,7 +6,6 @@ from django.db.models.functions import ExtractYear
 from apps.finance.models import ChildPayments, Payment, StaffPayments, SupportProgram
 from apps.sponsor.models import Sponsor, SponsorshipType
 
-
 REAL_SUPPORT_PROGRAMS = SupportProgram.REAL_SUPPORT_CODES
 PORTAL_PAYMENT_CATEGORIES = (
     {

@@ -4,27 +4,28 @@
 {% block title %}Pendeza MIS | My Savings{% endblock %}
 
 {% block content %}
-  <main class="container py-4">
-    <div class="bg-white border rounded-2 p-3 mb-3 d-flex flex-wrap justify-content-between align-items-start gap-3">
+  <main class="container-fluid client-savings-page py-3">
+    <div class="savings-portal-header">
       <div>
-        <h1 class="h4 fw-bold mb-1">{{ form_name }}</h1>
-        <div class="text-muted small">
+        <span class="savings-eyebrow">Client Portal</span>
+        <h1>{{ form_name }}</h1>
+        <div class="savings-muted">
           {% if client %}{{ client.full_name }}{% else %}Client account not linked{% endif %}
         </div>
       </div>
       {% if account %}
-        <div class="d-flex flex-wrap gap-2">
+        <div class="savings-actions">
           <a href="{% url 'client_savings_statement' %}" class="btn btn-outline-secondary btn-sm">
-            Statement
+            <i class="mdi mdi-file-document-outline"></i> Statement
           </a>
           <button type="button" class="btn btn-outline-dark btn-sm" data-bs-toggle="modal" data-bs-target="#depositRequestModal">
-            Mobile Money Deposit
+            <i class="mdi mdi-cellphone-arrow-down"></i> MoMo Deposit
           </button>
           <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#directDepositModal">
-            Direct Collection Line
+            <i class="mdi mdi-cash-plus"></i> Direct Deposit
           </button>
           <button type="button" class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#withdrawalRequestModal">
-            Withdraw
+            <i class="mdi mdi-cash-minus"></i> Withdraw
           </button>
         </div>
       {% endif %}
@@ -35,47 +36,61 @@
     {% elif not account %}
       <div class="alert alert-info">No savings account has been opened for your client record yet.</div>
     {% else %}
-      <div class="row g-3 mb-3">
-        <div class="col-md-4">
-          <div class="bg-white border rounded-2 p-3">
-            <div class="text-muted small">Account No.</div>
-            <div class="fw-bold">{{ account.account_number }}</div>
+      <section class="savings-summary-strip">
+        <div class="savings-summary-card">
+          <span class="summary-icon"><i class="mdi mdi-bank"></i></span>
+          <div>
+            <span>Account No.</span>
+            <strong>{{ account.account_number }}</strong>
           </div>
         </div>
-        <div class="col-md-4">
-          <div class="bg-white border rounded-2 p-3">
-            <div class="text-muted small">Status</div>
-            <div class="fw-bold">{{ account.get_status_display }}</div>
+        <div class="savings-summary-card">
+          <span class="summary-icon info"><i class="mdi mdi-check-decagram"></i></span>
+          <div>
+            <span>Status</span>
+            <strong>{{ account.get_status_display }}</strong>
           </div>
         </div>
-        <div class="col-md-4">
-          <div class="bg-white border rounded-2 p-3">
-            <div class="text-muted small">Available Balance</div>
-            <div class="fw-bold">{{ account.balance|floatformat:2|intcomma }}</div>
+        <div class="savings-summary-card balance">
+          <span class="summary-icon dark"><i class="mdi mdi-wallet"></i></span>
+          <div>
+            <span>Available Balance</span>
+            <strong>{{ account.balance|floatformat:2|intcomma }}</strong>
           </div>
         </div>
-      </div>
-
-      <section class="statement-overview mb-3">
-        <div class="statement-metric">
-          <span>Total Deposits</span>
-          <strong>{{ statement_summary.credits|floatformat:2|intcomma }}</strong>
+        <div class="savings-summary-card">
+          <span class="summary-icon success"><i class="mdi mdi-arrow-down-bold"></i></span>
+          <div>
+            <span>Total Deposits</span>
+            <strong>{{ statement_summary.credits|floatformat:2|intcomma }}</strong>
+          </div>
         </div>
-        <div class="statement-metric debit">
-          <span>Withdrawals & Fees</span>
-          <strong>{{ statement_summary.debits|floatformat:2|intcomma }}</strong>
+        <div class="savings-summary-card">
+          <span class="summary-icon warning"><i class="mdi mdi-arrow-up-bold"></i></span>
+          <div>
+            <span>Withdrawals & Fees</span>
+            <strong>{{ statement_summary.debits|floatformat:2|intcomma }}</strong>
+          </div>
         </div>
-        <div class="statement-metric balance">
-          <span>Current Balance</span>
-          <strong>{{ statement_summary.balance|floatformat:2|intcomma }}</strong>
+        <div class="savings-summary-card">
+          <span class="summary-icon neutral"><i class="mdi mdi-calendar-clock"></i></span>
+          <div>
+            <span>Recent Activity</span>
+            <strong>{{ transactions|length|intcomma }}</strong>
+          </div>
         </div>
       </section>
 
-      <section class="bg-white border rounded-2 p-3 mb-3">
-        <h2 class="h6 fw-bold text-uppercase mb-3">Pending Requests</h2>
+      <section class="savings-panel">
+        <div class="savings-panel-head">
+          <div>
+            <h2>Pending Requests</h2>
+            <span>Requests waiting for staff review</span>
+          </div>
+        </div>
         <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="table-light"><tr><th>Date</th><th>Type</th><th class="text-end">Amount</th><th>Reference</th></tr></thead>
+          <table class="table table-hover align-middle savings-table mb-0">
+            <thead><tr><th>Date</th><th>Type</th><th class="text-end">Amount</th><th>Reference</th></tr></thead>
             <tbody>
               {% for transaction in pending_requests %}
                 <tr>
@@ -92,14 +107,17 @@
         </div>
       </section>
 
-      <section class="bg-white border rounded-2 p-3 mb-3">
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-          <h2 class="h6 fw-bold text-uppercase mb-0">Recent Statement</h2>
+      <section class="savings-panel">
+        <div class="savings-panel-head">
+          <div>
+            <h2>Recent Statement</h2>
+            <span>Latest deposits, withdrawals, and status updates</span>
+          </div>
           <a href="{% url 'client_savings_statement' %}" class="btn btn-outline-dark btn-sm">View Full Statement</a>
         </div>
         <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="table-light"><tr><th>Date</th><th>Type</th><th class="text-end">Amount</th><th>Status</th><th>Reference</th></tr></thead>
+          <table class="table table-hover align-middle savings-table mb-0">
+            <thead><tr><th>Date</th><th>Type</th><th class="text-end">Amount</th><th>Status</th><th>Reference</th></tr></thead>
             <tbody>
               {% for transaction in transactions %}
                 <tr>
@@ -120,9 +138,12 @@
     {% endif %}
 
     {% if client %}
-      <section class="bg-white border rounded-2 p-3 mt-3">
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-          <h2 class="h6 fw-bold text-uppercase mb-0">My Loan Details</h2>
+      <section class="savings-panel mt-3">
+        <div class="savings-panel-head">
+          <div>
+            <h2>My Loan Details</h2>
+            <span>Loan applications linked to your client profile</span>
+          </div>
           {% if loans %}
             <button class="btn btn-outline-secondary btn-sm" disabled>Loan application locked</button>
           {% else %}
@@ -130,8 +151,8 @@
           {% endif %}
         </div>
         <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+          <table class="table table-hover align-middle savings-table mb-0">
+            <thead>
               <tr>
                 <th>Loan</th>
                 <th>Purpose</th>
@@ -337,6 +358,163 @@
   </script>
 
   <style>
+    .client-savings-page {
+      color: #233142;
+      max-width: 1320px;
+    }
+
+    .savings-portal-header,
+    .savings-panel,
+    .savings-summary-card {
+      background: #fff;
+      border: 1px solid #d8dee6;
+      border-radius: 8px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .05);
+    }
+
+    .savings-portal-header {
+      align-items: center;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding: 16px 18px;
+    }
+
+    .savings-eyebrow {
+      color: #247a6b;
+      display: block;
+      font-size: .74rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .savings-portal-header h1 {
+      color: #1f344d;
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      line-height: 1.2;
+      margin: 0;
+    }
+
+    .savings-muted,
+    .savings-panel-head span {
+      color: #667085;
+      font-size: .88rem;
+    }
+
+    .savings-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .savings-summary-strip {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      margin-bottom: 12px;
+    }
+
+    .savings-summary-card {
+      align-items: center;
+      display: flex;
+      gap: 10px;
+      min-height: 86px;
+      padding: 12px;
+    }
+
+    .savings-summary-card.balance {
+      background: #123d35;
+      border-color: #123d35;
+      color: #fff;
+    }
+
+    .savings-summary-card span:not(.summary-icon) {
+      color: #667085;
+      display: block;
+      font-size: .7rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .savings-summary-card.balance span:not(.summary-icon) {
+      color: rgba(255, 255, 255, .72);
+    }
+
+    .savings-summary-card strong {
+      color: #1f344d;
+      display: block;
+      font-size: .98rem;
+      font-weight: 900;
+      line-height: 1.18;
+      margin-top: 3px;
+      overflow-wrap: anywhere;
+    }
+
+    .savings-summary-card.balance strong {
+      color: #fff;
+      font-size: 1.08rem;
+    }
+
+    .summary-icon {
+      align-items: center;
+      background: #edf7f4;
+      border-radius: 8px;
+      color: #13745d;
+      display: inline-flex;
+      flex: 0 0 36px;
+      font-size: 1.1rem;
+      height: 36px;
+      justify-content: center;
+      width: 36px;
+    }
+
+    .summary-icon.info { background: #eef4ff; color: #315fbb; }
+    .summary-icon.success { background: #eaf7ef; color: #247a43; }
+    .summary-icon.warning { background: #fff4de; color: #946000; }
+    .summary-icon.neutral { background: #f2f4f7; color: #475467; }
+    .summary-icon.dark { background: rgba(255, 255, 255, .14); color: #fff; }
+
+    .savings-panel {
+      margin-bottom: 12px;
+      padding: 14px;
+    }
+
+    .savings-panel-head {
+      align-items: center;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .savings-panel-head h2 {
+      color: #1f344d;
+      font-size: .98rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0;
+    }
+
+    .savings-table thead th {
+      background: #f8fafc;
+      border-top: 0;
+      color: #667085;
+      font-size: .74rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .savings-table tbody td {
+      border-color: #edf0f4;
+      height: 44px;
+      vertical-align: middle;
+    }
+
     .savings-request-modal .modal-content {
       border: 1px solid #d9dee5;
       border-radius: 8px;
@@ -473,54 +651,35 @@
       font-weight: 800;
     }
 
-    .statement-overview {
-      display: grid;
-      gap: 12px;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+    @media (max-width: 1199.98px) {
+      .savings-summary-strip {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
     }
 
-    .statement-metric {
-      background: #f7fbfa;
-      border: 1px solid #d6ece6;
-      border-radius: 8px;
-      padding: 16px;
-    }
+    @media (max-width: 767.98px) {
+      .savings-portal-header,
+      .savings-panel-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
 
-    .statement-metric span {
-      color: #526171;
-      display: block;
-      font-size: .78rem;
-      font-weight: 800;
-      text-transform: uppercase;
-    }
+      .savings-actions {
+        justify-content: flex-start;
+        width: 100%;
+      }
 
-    .statement-metric strong {
-      color: #123d35;
-      display: block;
-      font-size: 1.25rem;
-      margin-top: 6px;
-    }
+      .savings-actions .btn {
+        flex: 1 1 auto;
+      }
 
-    .statement-metric.debit {
-      background: #fff8ed;
-      border-color: #f0dfbd;
-    }
-
-    .statement-metric.debit strong {
-      color: #7a4b00;
-    }
-
-    .statement-metric.balance {
-      background: #f5f7fb;
-      border-color: #dce4ef;
-    }
-
-    .statement-metric.balance strong {
-      color: #1f344d;
+      .savings-summary-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
 
     @media (max-width: 575.98px) {
-      .statement-overview {
+      .savings-summary-strip {
         grid-template-columns: 1fr;
       }
 
