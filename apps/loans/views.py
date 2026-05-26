@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
 from django.db.models import Count, Q, Sum
@@ -62,7 +62,11 @@ from .services.reporting import (
     repayment_rows,
     summarize_amounts,
 )
-from .tasks import send_loan_application_email_task, send_loan_approval_notification_task
+from .tasks import (
+    send_html_email_task,
+    send_loan_application_email_task,
+    send_loan_approval_notification_task,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -369,17 +373,8 @@ def send_loan_application_email(
 
 
 def _send_html_email(subject, html_body, to):
-    email = EmailMessage(
-        subject=subject,
-        body=html_body,
-        from_email=settings.EMAIL_HOST_USER,
-        to=to if isinstance(to, list) else [to],
-    )
-    email.content_subtype = "html"
-    try:
-        email.send()
-    except Exception as e:
-        logger.error("Failed to send email '%s' to %s: %s", subject, to, e)
+    recipients = to if isinstance(to, list) else [to]
+    send_html_email_task.delay(subject, html_body, recipients)
 
 
 def send_email_to_boo(loan: Loan):

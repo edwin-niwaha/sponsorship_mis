@@ -163,6 +163,30 @@ def send_email_task(subject, text_content, html_content, recipients):
 
 
 @shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 3})
+def send_html_email_task(self, subject, html_body, recipients):
+    recipients = _valid_recipients(*recipients)
+    if not recipients:
+        logger.warning("HTML email skipped because no recipients were configured for subject: %s", subject)
+        return False
+
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "") or getattr(settings, "EMAIL_HOST_USER", "")
+    if not from_email:
+        logger.warning("HTML email skipped because DEFAULT_FROM_EMAIL is not configured for subject: %s", subject)
+        return False
+
+    email = EmailMultiAlternatives(
+        subject=subject,
+        body=strip_tags(html_body),
+        from_email=from_email,
+        to=recipients,
+    )
+    email.attach_alternative(html_body, "text/html")
+    sent_count = email.send(fail_silently=False)
+    logger.info("HTML email sent to %s: %s", ", ".join(recipients), subject)
+    return sent_count
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 3})
 def send_loan_approval_notification_task(self, loan_id, new_status, approver_name, base_url):
     from .models import Loan
 
@@ -257,7 +281,7 @@ def send_loan_application_email_task(
         </html>
         """
 
-    from_email = getattr(settings, "EMAIL_HOST_USER", None)
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "") or getattr(settings, "EMAIL_HOST_USER", None)
     to = [recipient_email]
 
     try:

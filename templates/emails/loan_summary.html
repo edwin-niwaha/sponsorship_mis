@@ -1,15 +1,16 @@
 {% extends "emails/base.html" %}
 {% load humanize %}
 
+{% block preheader %}Loan reminder summary for {{ today_str }}: {{ total_sent }} borrower emails prepared or sent.{% endblock %}
+
 {% block content %}
 <p>Dear Team,</p>
 
 <p>
-Loan reminder run completed on <strong>{{ today_str }}</strong>.
-Borrower emails prepared or sent: <strong>{{ total_sent }}</strong>.
+The loan reminder run completed on <strong>{{ today_str }}</strong>. Borrower emails prepared or sent: <strong>{{ total_sent }}</strong>.
 </p>
 
-<table>
+<table role="presentation" class="detail-table" cellpadding="0" cellspacing="0">
   <thead>
     <tr>
       <th>Category</th>
@@ -34,7 +35,7 @@ Borrower emails prepared or sent: <strong>{{ total_sent }}</strong>.
 
 {% if overdue %}
 <h4>Priority overdue follow-up</h4>
-<table>
+<table role="presentation" class="detail-table" cellpadding="0" cellspacing="0">
   <thead>
     <tr>
       <th>Loan</th>
@@ -60,9 +61,9 @@ Borrower emails prepared or sent: <strong>{{ total_sent }}</strong>.
   <a href="{{ report_url }}" class="btn">Open due and overdue report</a>
 </div>
 
-<p style="font-size: 0.95em; color: #6c757d;">
+<p class="muted">
 Please review overdue accounts first, then follow up on due-today and upcoming installments.
 </p>
 
-<p><strong>Pendeza Uganda Loan Management System</strong></p>
+<p class="muted">Pendeza Uganda Loan Management System</p>
 {% endblock %}

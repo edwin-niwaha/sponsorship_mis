@@ -1,12 +1,18 @@
 {% extends "emails/base.html" %}
 {% load humanize %}
 
+{% block preheader %}Upcoming payment for loan #{{ loan.id }}: UGX {{ action_amount|floatformat:"0"|intcomma }} due on {{ payment_due_date|date:"d M Y" }}.{% endblock %}
+
 {% block content %}
 <p>Dear <strong>{{ borrower.full_name }}</strong>,</p>
 
-<p>Your upcoming loan installment is due soon.</p>
+<p>This is a friendly reminder that your next loan payment is coming up soon.</p>
 
-<table>
+<div class="callout">
+  <p style="margin:0;"><strong>Upcoming payment:</strong> <span class="amount">UGX {{ action_amount|floatformat:"0"|intcomma }}</span></p>
+</div>
+
+<table role="presentation" class="detail-table" cellpadding="0" cellspacing="0">
   <tr>
     <th>Loan</th>
     <td>#{{ loan.id }}</td>
@@ -25,7 +31,7 @@
   </tr>
 </table>
 
-<p>Please make payment on or before the due date to keep your account in good standing.</p>
+<p>Please make payment on or before the due date. If you need support, contact the loans team before the due date so they can assist.</p>
 
-<p><strong>Pendeza Uganda</strong></p>
+<p class="muted">Pendeza Uganda Loan Management System</p>
 {% endblock %}

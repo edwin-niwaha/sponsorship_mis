@@ -225,23 +225,33 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "Africa/Nairobi"
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
-EMAIL_BACKEND = os.getenv(
-    "EMAIL_BACKEND",
-    "django.core.mail.backends.smtp.EmailBackend",
-)
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+RESEND_API_URL = os.getenv("RESEND_API_URL", "https://api.resend.com/emails")
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "")
+DEFAULT_FROM_EMAIL = os.getenv(
+    "DEFAULT_FROM_EMAIL",
+    RESEND_FROM_EMAIL or EMAIL_HOST_USER,
+)
+if not RESEND_FROM_EMAIL:
+    RESEND_FROM_EMAIL = DEFAULT_FROM_EMAIL
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "core.email_backends.ResendEmailBackend"
+    if RESEND_API_KEY
+    else "django.core.mail.backends.smtp.EmailBackend",
+)
 
 BOO_EMAIL = os.getenv("BOO_EMAIL", "")
 HOF_EMAIL = os.getenv("HOF_EMAIL", "")
 ED_EMAIL = os.getenv("ED_EMAIL", "")
 ACCOUNTANT_EMAIL = os.getenv("ACCOUNTANT_EMAIL", "")
 PROGS_ADMIN_EMAIL = os.getenv("PROGS_ADMIN_EMAIL", "")
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
 SESSION_COOKIE_AGE = 7200
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True

@@ -1,12 +1,18 @@
 {% extends "emails/base.html" %}
 {% load humanize %}
 
+{% block preheader %}Loan #{{ loan.id }} has a payment due today: UGX {{ action_amount|floatformat:"0"|intcomma }}.{% endblock %}
+
 {% block content %}
 <p>Dear <strong>{{ borrower.full_name }}</strong>,</p>
 
-<p>Your loan payment is due today.</p>
+<p>This is a reminder that your loan payment is due today. Please make the payment by the end of the day to keep your account in good standing.</p>
 
-<table>
+<div class="callout">
+  <p style="margin:0;"><strong>Payment due today:</strong> <span class="amount">UGX {{ action_amount|floatformat:"0"|intcomma }}</span></p>
+</div>
+
+<table role="presentation" class="detail-table" cellpadding="0" cellspacing="0">
   <tr>
     <th>Loan</th>
     <td>#{{ loan.id }}</td>
@@ -25,7 +31,7 @@
   </tr>
 </table>
 
-<p>Please complete payment today to avoid penalties and follow-up action.</p>
+<p>If you have already made this payment, thank you. If not, please complete it today or contact the loans team for support.</p>
 
-<p><strong>Pendeza Uganda SACCO</strong></p>
+<p class="muted">Pendeza Uganda Loan Management System</p>
 {% endblock %}

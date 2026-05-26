@@ -5,6 +5,26 @@ from django.core.checks import Warning, register
 @register()
 def email_configuration_check(app_configs, **kwargs):
     backend = getattr(settings, "EMAIL_BACKEND", "")
+    if "ResendEmailBackend" in backend:
+        warnings = []
+        if not getattr(settings, "RESEND_API_KEY", ""):
+            warnings.append(
+                Warning(
+                    "RESEND_API_KEY is not configured; production API emails will not send.",
+                    hint="Set RESEND_API_KEY in Railway variables for web, worker, and beat services.",
+                    id="users.W004",
+                )
+            )
+        if not getattr(settings, "RESEND_FROM_EMAIL", ""):
+            warnings.append(
+                Warning(
+                    "RESEND_FROM_EMAIL is empty; Resend requires a verified sender address.",
+                    hint="Set RESEND_FROM_EMAIL to a verified sender such as Pendeza Uganda <noreply@yourdomain>.",
+                    id="users.W005",
+                )
+            )
+        return warnings
+
     if "smtp.EmailBackend" not in backend:
         return []
 
