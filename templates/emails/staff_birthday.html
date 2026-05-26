@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birthday Wishes from {{ org }}</title>
+    <style>
+        body {
+            background-color: #f3f5f7;
+            color: #243244;
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+        table {
+            border-collapse: collapse;
+        }
+        p {
+            color: #344054;
+            font-size: 15px;
+            line-height: 1.7;
+            margin: 0 0 16px;
+        }
+        .preheader {
+            color: transparent;
+            display: none;
+            height: 0;
+            max-height: 0;
+            max-width: 0;
+            opacity: 0;
+            overflow: hidden;
+            visibility: hidden;
+            width: 0;
+        }
+        .shell {
+            background-color: #f3f5f7;
+            width: 100%;
+        }
+        .container {
+            margin: 0 auto;
+            max-width: 640px;
+            width: 100%;
+        }
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #d9e2ec;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .header {
+            background-color: #123c69;
+            padding: 30px 28px;
+            text-align: left;
+        }
+        .brand {
+            color: #cfe2ff;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0;
+            line-height: 1.4;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        h1 {
+            color: #ffffff;
+            font-size: 24px;
+            line-height: 1.25;
+            margin: 0;
+        }
+        .content {
+            padding: 30px 28px;
+        }
+        .message-panel {
+            background-color: #f8fafc;
+            border-left: 4px solid #1f7a4d;
+            margin: 22px 0;
+            padding: 18px;
+        }
+        .signature {
+            border-top: 1px solid #e4e7ec;
+            margin-top: 26px;
+            padding-top: 18px;
+        }
+        .footer {
+            color: #667085;
+            font-size: 12px;
+            line-height: 1.55;
+            padding: 18px 28px 26px;
+            text-align: center;
+        }
+        @media only screen and (max-width: 600px) {
+            .header,
+            .content,
+            .footer {
+                padding-left: 18px !important;
+                padding-right: 18px !important;
+            }
+            h1 {
+                font-size: 22px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="preheader">Warm birthday wishes from {{ org }}.</div>
+<table role="presentation" class="shell" width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+        <td style="padding: 24px 12px;">
+            <table role="presentation" class="container" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td class="card">
+                        <div class="header">
+                            <div class="brand">{{ org }}</div>
+                            <h1>Happy Birthday, {{ first_name }}</h1>
+                        </div>
+                        <div class="content">
+                            <p>Dear {{ first_name }},</p>
+
+                            <div class="message-panel">
+                                <p style="margin-bottom: 0;">
+                                    On behalf of {{ org }}, we are pleased to extend our warmest birthday wishes to you.
+                                    Your service, commitment, and contribution as our {{ status }} are sincerely appreciated.
+                                </p>
+                            </div>
+
+                            <p>
+                                As you mark this special day, we wish you good health, renewed strength, and continued
+                                fulfillment in the year ahead.
+                            </p>
+
+                            <p>
+                                Thank you for being part of the wider {{ org }} community. We celebrate you today and
+                                wish you a memorable birthday.
+                            </p>
+
+                            <div class="signature">
+                                <p style="margin-bottom: 4px;">Best regards,</p>
+                                <p style="margin-bottom: 0;"><strong>{{ org }} Team</strong></p>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="footer">
+                        This message was sent by {{ org }} to mark a staff birthday.
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

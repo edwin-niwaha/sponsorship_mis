@@ -3,6 +3,8 @@ import datetime
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.core.management.base import BaseCommand
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
 from ...models import Staff
 
@@ -104,35 +106,23 @@ class Command(BaseCommand):
                 else "esteemed team member"
             )
 
-            subject = f"Happy Birthday, {first_name}!"
-            html_content = f"""
-            <html>
-            <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; background-color: #f9f9fb; padding: 20px;">
-                <div style="max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
-                    <h2 style="color: #1a5d8c; text-align: center; font-size: 24px; margin-bottom: 20px; font-weight: 600;">
-                        Happy Birthday, {first_name}
-                    </h2>
-                    <p style="font-size: 16px; line-height: 1.7; color: #444;">
-                        Dear {first_name},
-                    </p>
-                    <p style="font-size: 15px; line-height: 1.7; color: #444;">
-                        On behalf of the {org} team, we extend our warmest birthday wishes to you. 
-                        Your dedication and contributions as our {status} continue to be deeply appreciated.
-                    </p>
-                    <p style="font-size: 15px; line-height: 1.7; color: #444; margin-bottom: 25px;">
-                        May this new year of life bring you continued success, good health, and fulfillment.
-                    </p>
-                    <p style="color: #666; font-size: 14px; text-align: center; margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px;">
-                        Best regards,<br>
-                        <strong style="color: #1a5d8c;">The {org} Team</strong>
-                    </p>
-                </div>
-            </body>
-            </html>
-            """
+            subject = f"Birthday Wishes from {org}"
+            html_content = render_to_string(
+                "emails/staff_birthday.html",
+                {
+                    "first_name": first_name,
+                    "org": org,
+                    "status": status,
+                },
+            )
+            text_content = strip_tags(html_content)
+            from_email = (
+                getattr(settings, "DEFAULT_FROM_EMAIL", "")
+                or getattr(settings, "EMAIL_HOST_USER", "")
+            )
 
             email = EmailMultiAlternatives(
-                subject, "Happy Birthday!", settings.EMAIL_HOST_USER, [staff.email]
+                subject, text_content, from_email, [staff.email]
             )
             email.attach_alternative(html_content, "text/html")
             try:
