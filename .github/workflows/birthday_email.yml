@@ -17,6 +17,7 @@ env:
   DJANGO_ENV: "production"
   DATABASE_SSL_REQUIRE: "true"
   SECURE_SSL_REDIRECT: "false"
+  REDIS_URL: ${{ secrets.REDIS_URL || 'redis://localhost:6379/0' }}
   PYTHONUNBUFFERED: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -41,12 +42,11 @@ jobs:
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
           EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
           EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
         run: |
           missing=0
-          for name in SECRET_KEY DATABASE_URL REDIS_URL EMAIL_HOST_USER EMAIL_HOST_PASSWORD; do
+          for name in SECRET_KEY DATABASE_URL EMAIL_HOST_USER EMAIL_HOST_PASSWORD; do
             if [ -z "${!name}" ]; then
               echo "::error title=Missing secret::$name is required for birthday emails"
               missing=1
@@ -65,7 +65,6 @@ jobs:
           EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
           EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
         run: |
           mkdir -p logs
           python manage.py check
@@ -76,7 +75,6 @@ jobs:
           EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
           EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
         run: |
           for attempt in 1 2 3; do
             echo "Birthday email attempt ${attempt}/3"

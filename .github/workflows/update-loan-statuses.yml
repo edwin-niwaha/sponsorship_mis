@@ -17,6 +17,7 @@ env:
   DJANGO_ENV: "production"
   DATABASE_SSL_REQUIRE: "true"
   SECURE_SSL_REDIRECT: "false"
+  REDIS_URL: ${{ secrets.REDIS_URL || 'redis://localhost:6379/0' }}
   PYTHONUNBUFFERED: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -41,10 +42,9 @@ jobs:
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
         run: |
           missing=0
-          for name in SECRET_KEY DATABASE_URL REDIS_URL; do
+          for name in SECRET_KEY DATABASE_URL; do
             if [ -z "${!name}" ]; then
               echo "::error title=Missing secret::$name is required for loan status updates"
               missing=1
@@ -61,7 +61,6 @@ jobs:
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
         run: |
           mkdir -p logs
           python manage.py check
@@ -70,7 +69,6 @@ jobs:
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
         run: |
           for attempt in 1 2 3; do
             echo "Loan status update attempt ${attempt}/3"
