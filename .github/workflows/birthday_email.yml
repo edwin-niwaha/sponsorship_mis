@@ -2,7 +2,7 @@ name: Send Birthday Emails
 
 on:
   schedule:
-    - cron: "17 4 * * *" # Runs daily at 4:17 AM UTC, 7:17 AM EAT
+    - cron: "0 4 * * *" # Runs daily at 4:00 AM UTC, 7:00 AM EAT
   workflow_dispatch:
 
 permissions:
@@ -14,9 +14,12 @@ concurrency:
 
 env:
   DEBUG: "False"
+  DJANGO_ENV: "production"
+  DATABASE_SSL_REQUIRE: "true"
+  SECURE_SSL_REDIRECT: "false"
   PYTHONUNBUFFERED: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   send_email:
@@ -64,6 +67,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           REDIS_URL: ${{ secrets.REDIS_URL }}
         run: |
+          mkdir -p logs
           python manage.py check
 
       - name: Run Birthday Email Command
