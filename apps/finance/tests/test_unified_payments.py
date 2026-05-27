@@ -175,7 +175,9 @@ class UnifiedPaymentReportingTests(TestCase):
         self.assertTrue(sponsor.is_family_supporter)
         self.assertFalse(sponsor.is_one_time_donor)
 
-    def test_portal_summary_keeps_legacy_child_payments_when_unified_other_payments_exist(self):
+    def test_portal_summary_keeps_legacy_child_payments_when_unified_other_payments_exist(
+        self,
+    ):
         sponsor = self.make_sponsor(
             "mixed-legacy@example.org",
             sponsorship_type=SponsorshipType.CHILD_FULL_SUPPORT,

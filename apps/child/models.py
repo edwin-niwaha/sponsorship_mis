@@ -19,7 +19,8 @@ def validate_image_size(value):
     limit = 10 * 1024 * 1024  # 10 MB
     if value.size > limit:
         raise ValidationError("Image size should not exceed 10 MB.")
-    
+
+
 # =================================== CHILD MODEL ===================================
 def current_year():
     return timezone.now().year
@@ -315,7 +316,8 @@ class ChildProgress(models.Model):
     )
     name_of_school = models.CharField(max_length=50, verbose_name="Name of the School")
     previous_schools = models.TextField(
-        max_length=200, verbose_name="Previous Schools Attended",
+        max_length=200,
+        verbose_name="Previous Schools Attended",
         null=True,
         blank=True,
     )

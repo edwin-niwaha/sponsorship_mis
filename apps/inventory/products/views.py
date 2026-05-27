@@ -24,7 +24,14 @@ from .forms import (
 )
 
 # Import models and forms
-from .models import Category, Inventory, Product, ProductImage, ProductVariant, StockMovement
+from .models import (
+    Category,
+    Inventory,
+    Product,
+    ProductImage,
+    ProductVariant,
+    StockMovement,
+)
 
 
 def _stock_delta(movement_type, quantity):
@@ -231,13 +238,21 @@ def products_list_view(request):
     # Filter products based on search query
     if search_query:
         # Adjust the filter to handle ForeignKey relationships
-        products = Product.objects.select_related("category", "supplier").prefetch_related("variants").filter(
-            Q(name__icontains=search_query)
-            | Q(category__name__icontains=search_query)  # Filter by category name
-            | Q(supplier__name__icontains=search_query)  # Filter by supplier name
+        products = (
+            Product.objects.select_related("category", "supplier")
+            .prefetch_related("variants")
+            .filter(
+                Q(name__icontains=search_query)
+                | Q(category__name__icontains=search_query)  # Filter by category name
+                | Q(supplier__name__icontains=search_query)  # Filter by supplier name
+            )
         )
     else:
-        products = Product.objects.select_related("category", "supplier").prefetch_related("variants").all()
+        products = (
+            Product.objects.select_related("category", "supplier")
+            .prefetch_related("variants")
+            .all()
+        )
 
     # If no products are found, handle empty case
     if not products.exists():
@@ -411,8 +426,9 @@ def products_delete_view(request, product_id):
 
 def product_detail_view(request, id):
     product = get_object_or_404(
-        Product.objects.select_related("category", "supplier")
-        .prefetch_related("variants", "stock_movements"),
+        Product.objects.select_related("category", "supplier").prefetch_related(
+            "variants", "stock_movements"
+        ),
         id=id,
     )
     images = product.images.all()  # Fetch related product images
@@ -617,9 +633,8 @@ def inventory_report_view(request):
 
     # Calculate total stock from inventory quantities
     total_stock = (
-        (inventories.aggregate(total_stock=Sum("quantity"))["total_stock"] or 0)
-        + (variants.aggregate(total_stock=Sum("quantity"))["total_stock"] or 0)
-    )
+        inventories.aggregate(total_stock=Sum("quantity"))["total_stock"] or 0
+    ) + (variants.aggregate(total_stock=Sum("quantity"))["total_stock"] or 0)
 
     # Prepare context for rendering
     context = {
@@ -841,7 +856,9 @@ def variant_update_view(request, pk):
 def variant_delete_view(request, pk):
     variant = get_object_or_404(ProductVariant, pk=pk)
     variant.delete()
-    messages.info(request, "Product variant deleted successfully.", extra_tags="bg-warning")
+    messages.info(
+        request, "Product variant deleted successfully.", extra_tags="bg-warning"
+    )
     return redirect("products:variants_list")
 
 
@@ -875,7 +892,9 @@ def stock_adjustment_view(request):
                 reference="Manual stock adjustment",
                 notes=notes,
             )
-            messages.success(request, "Stock adjusted successfully.", extra_tags="bg-success")
+            messages.success(
+                request, "Stock adjusted successfully.", extra_tags="bg-success"
+            )
             return redirect("products:inventory_list")
     else:
         form = StockAdjustmentForm()

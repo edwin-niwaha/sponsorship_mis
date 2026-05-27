@@ -41,13 +41,19 @@ class LoanWorkflowTests(TestCase):
             account_name="Loan Receivable", account_type="asset", account_number="1050"
         )
         ChartOfAccounts.objects.create(
-            account_name="Interest Receivable", account_type="asset", account_number="1060"
+            account_name="Interest Receivable",
+            account_type="asset",
+            account_number="1060",
         )
         ChartOfAccounts.objects.create(
-            account_name="Penalty Receivable", account_type="asset", account_number="1071"
+            account_name="Penalty Receivable",
+            account_type="asset",
+            account_number="1071",
         )
         ChartOfAccounts.objects.create(
-            account_name="Interest Income", account_type="revenue", account_number="5030"
+            account_name="Interest Income",
+            account_type="revenue",
+            account_number="5030",
         )
         self.client = Client.objects.create(full_name="Jane Doe", reg_number="C001")
         self.boo = self._user("boo-user", "boo")
@@ -177,7 +183,9 @@ class LoanWorkflowTests(TestCase):
             account=self.cash,
         )
 
-        self.assertEqual(loan.calculate_remaining_balances()["penalty_balance"], Decimal("60.00"))
+        self.assertEqual(
+            loan.calculate_remaining_balances()["penalty_balance"], Decimal("60.00")
+        )
 
     def test_penalty_remaining_amount_cannot_exceed_original_penalty(self):
         loan = self._approved_loan()
@@ -244,7 +252,9 @@ class LoanWorkflowTests(TestCase):
         at_risk.disburse(date(2026, 1, 1))
 
         current = self._loan(
-            borrower=Client.objects.create(full_name="Current Client", reg_number="C004"),
+            borrower=Client.objects.create(
+                full_name="Current Client", reg_number="C004"
+            ),
             principal_amount=Decimal("2000.00"),
         )
         current.approve(self.boo)
@@ -263,13 +273,21 @@ class LoanWorkflowTests(TestCase):
         self.assertEqual(par["total_portfolio"], Decimal("3300.00"))
         self.assertEqual(par_30["outstanding_amount"], Decimal("1100.00"))
         self.assertEqual(par_30["loan_count"], 1)
-        self.assertEqual(par_30["portfolio_percent"].quantize(Decimal("0.01")), Decimal("33.33"))
+        self.assertEqual(
+            par_30["portfolio_percent"].quantize(Decimal("0.01")), Decimal("33.33")
+        )
 
     def test_bucket_grouping_uses_standard_aging_order(self):
         rows = [
-            {"aging_bucket": "61-90 days overdue", "outstanding_amount": Decimal("90.00")},
+            {
+                "aging_bucket": "61-90 days overdue",
+                "outstanding_amount": Decimal("90.00"),
+            },
             {"aging_bucket": "Current", "outstanding_amount": Decimal("10.00")},
-            {"aging_bucket": "1-30 days overdue", "outstanding_amount": Decimal("30.00")},
+            {
+                "aging_bucket": "1-30 days overdue",
+                "outstanding_amount": Decimal("30.00"),
+            },
         ]
 
         grouped = group_rows_by_bucket(rows, "aging_bucket", ["outstanding_amount"])
@@ -292,13 +310,19 @@ class ClientSelfServiceLoanApplicationTests(TestCase):
             account_name="Loan Receivable", account_type="asset", account_number="1050"
         )
         ChartOfAccounts.objects.create(
-            account_name="Interest Receivable", account_type="asset", account_number="1060"
+            account_name="Interest Receivable",
+            account_type="asset",
+            account_number="1060",
         )
         ChartOfAccounts.objects.create(
-            account_name="Penalty Receivable", account_type="asset", account_number="1071"
+            account_name="Penalty Receivable",
+            account_type="asset",
+            account_number="1071",
         )
         ChartOfAccounts.objects.create(
-            account_name="Interest Income", account_type="revenue", account_number="5030"
+            account_name="Interest Income",
+            account_type="revenue",
+            account_number="5030",
         )
         self.borrower = Client.objects.create(
             full_name="Mary Akello",
@@ -322,7 +346,9 @@ class ClientSelfServiceLoanApplicationTests(TestCase):
         return user
 
     def _upload(self, name="document.pdf"):
-        return SimpleUploadedFile(name, b"test file content", content_type="application/pdf")
+        return SimpleUploadedFile(
+            name, b"test file content", content_type="application/pdf"
+        )
 
     def _post_data(self):
         return {
@@ -341,7 +367,9 @@ class ClientSelfServiceLoanApplicationTests(TestCase):
     )
     @patch("cloudinary.models.uploader.upload_resource")
     @patch("apps.loans.views.send_loan_application_email_task.delay")
-    def test_client_can_submit_self_service_application_with_required_documents(self, mock_delay, mock_upload):
+    def test_client_can_submit_self_service_application_with_required_documents(
+        self, mock_delay, mock_upload
+    ):
         mock_upload.return_value = CloudinaryResource(
             public_id="loan-documents/test-file",
             resource_type="auto",
@@ -353,21 +381,29 @@ class ClientSelfServiceLoanApplicationTests(TestCase):
         response = self.web.post(reverse("loans:client_loan_apply"), self._post_data())
 
         loan = Loan.objects.get(borrower=self.borrower)
-        self.assertRedirects(response, reverse("loans:client_loan_application_detail", args=[loan.id]))
+        self.assertRedirects(
+            response, reverse("loans:client_loan_application_detail", args=[loan.id])
+        )
         self.assertEqual(loan.status, "pending")
         self.assertEqual(loan.applied_by, self.user)
         self.assertEqual(loan.applied_by_role, "guest")
         self.assertEqual(loan.interest_rate, Decimal("10.00"))
         self.assertEqual(loan.documents.count(), 2)
         self.assertTrue(
-            loan.documents.filter(document_type=LoanApplicationDocument.DOCUMENT_TYPE_NATIONAL_ID).exists()
+            loan.documents.filter(
+                document_type=LoanApplicationDocument.DOCUMENT_TYPE_NATIONAL_ID
+            ).exists()
         )
         self.assertTrue(
-            loan.documents.filter(document_type=LoanApplicationDocument.DOCUMENT_TYPE_COLLATERAL_SECURITY).exists()
+            loan.documents.filter(
+                document_type=LoanApplicationDocument.DOCUMENT_TYPE_COLLATERAL_SECURITY
+            ).exists()
         )
         self.assertEqual(mock_delay.call_count, 2)
 
-    @override_settings(DEFAULT_FILE_STORAGE="django.core.files.storage.FileSystemStorage")
+    @override_settings(
+        DEFAULT_FILE_STORAGE="django.core.files.storage.FileSystemStorage"
+    )
     def test_missing_required_self_service_documents_is_rejected(self):
         self.web.force_login(self.user)
         data = {
@@ -389,7 +425,9 @@ class ClientSelfServiceLoanApplicationTests(TestCase):
     )
     @patch("cloudinary.models.uploader.upload_resource")
     @patch("apps.loans.views.send_loan_application_email_task.delay")
-    def test_client_cannot_apply_with_pending_or_running_loan(self, mock_delay, mock_upload):
+    def test_client_cannot_apply_with_pending_or_running_loan(
+        self, mock_delay, mock_upload
+    ):
         Loan.objects.create(
             borrower=self.borrower,
             principal_amount=Decimal("1000.00"),
@@ -425,7 +463,93 @@ class ClientSelfServiceLoanApplicationTests(TestCase):
             applied_by=self.other_user,
         )
 
-        response = self.web.get(reverse("loans:client_loan_application_detail", args=[other_loan.id]))
+        response = self.web.get(
+            reverse("loans:client_loan_application_detail", args=[other_loan.id])
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_client_application_list_renders_summary_layout(self):
+        Loan.objects.create(
+            borrower=self.borrower,
+            principal_amount=Decimal("1000.00"),
+            interest_rate=Decimal("10.00"),
+            start_date=date(2026, 1, 10),
+            loan_period_months=6,
+            status="pending",
+            applied_by=self.user,
+        )
+        self.web.force_login(self.user)
+
+        response = self.web.get(reverse("loans:client_loan_applications"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Loan self-service")
+        self.assertContains(response, "Open Reviews")
+        self.assertContains(response, "Application #")
+
+    def test_client_document_open_redirects_to_attached_file(self):
+        loan = Loan.objects.create(
+            borrower=self.borrower,
+            principal_amount=Decimal("1000.00"),
+            interest_rate=Decimal("10.00"),
+            start_date=date(2026, 1, 10),
+            loan_period_months=6,
+            status="pending",
+            applied_by=self.user,
+        )
+        document = LoanApplicationDocument.objects.create(
+            loan=loan,
+            document_type=LoanApplicationDocument.DOCUMENT_TYPE_NATIONAL_ID,
+            file=CloudinaryResource(
+                public_id="loan-documents/national-id",
+                resource_type="auto",
+                type="upload",
+                format="pdf",
+            ),
+            uploaded_by=self.user,
+        )
+        self.web.force_login(self.user)
+
+        response = self.web.get(
+            reverse(
+                "loans:client_loan_application_document_open",
+                args=[loan.id, document.id],
+            )
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("loan-documents/national-id", response["Location"])
+
+    def test_client_document_open_rejects_another_clients_document(self):
+        other_loan = Loan.objects.create(
+            borrower=self.other_client,
+            principal_amount=Decimal("1000.00"),
+            interest_rate=Decimal("10.00"),
+            start_date=date(2026, 1, 10),
+            loan_period_months=6,
+            status="pending",
+            applied_by=self.other_user,
+        )
+        document = LoanApplicationDocument.objects.create(
+            loan=other_loan,
+            document_type=LoanApplicationDocument.DOCUMENT_TYPE_NATIONAL_ID,
+            file=CloudinaryResource(
+                public_id="loan-documents/other-national-id",
+                resource_type="auto",
+                type="upload",
+                format="pdf",
+            ),
+            uploaded_by=self.other_user,
+        )
+        self.web.force_login(self.user)
+
+        response = self.web.get(
+            reverse(
+                "loans:client_loan_application_document_open",
+                args=[other_loan.id, document.id],
+            )
+        )
 
         self.assertEqual(response.status_code, 404)
 
@@ -435,7 +559,9 @@ class ClientSelfServiceLoanApplicationTests(TestCase):
     )
     @patch("cloudinary.models.uploader.upload_resource")
     @patch("apps.loans.views.send_loan_application_email_task.delay")
-    def test_staff_approval_workflow_accepts_self_service_loan(self, mock_delay, mock_upload):
+    def test_staff_approval_workflow_accepts_self_service_loan(
+        self, mock_delay, mock_upload
+    ):
         mock_upload.return_value = CloudinaryResource(
             public_id="loan-documents/test-file",
             resource_type="auto",

@@ -133,7 +133,9 @@ class Profile(models.Model):
             self.account_type = "staff"
 
         if self.account_type == "staff" and not self.staff_role:
-            self.staff_role = self.role if self.role in self.STAFF_LEGACY_ROLES else "staff"
+            self.staff_role = (
+                self.role if self.role in self.STAFF_LEGACY_ROLES else "staff"
+            )
         elif self.account_type != "staff":
             self.staff_role = ""
 

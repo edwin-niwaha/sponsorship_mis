@@ -11,13 +11,21 @@ class StaffForm(forms.ModelForm):
         model = Staff
         exclude = ("is_departed", "is_sponsored")
         widgets = {
-            "first_name": forms.TextInput(attrs={"class": "form-control", "required": True}),
-            "last_name": forms.TextInput(attrs={"class": "form-control", "required": True}),
-            "picture": forms.FileInput(attrs={"class": "form-control-file", "accept": "image/*"}),
+            "first_name": forms.TextInput(
+                attrs={"class": "form-control", "required": True}
+            ),
+            "last_name": forms.TextInput(
+                attrs={"class": "form-control", "required": True}
+            ),
+            "picture": forms.FileInput(
+                attrs={"class": "form-control-file", "accept": "image/*"}
+            ),
             "date_of_birth": forms.DateInput(
                 attrs={"class": "form-control", "type": "date", "required": True}
             ),
-            "email": forms.EmailInput(attrs={"class": "form-control", "required": True}),
+            "email": forms.EmailInput(
+                attrs={"class": "form-control", "required": True}
+            ),
             "home_district": forms.TextInput(attrs={"class": "form-control"}),
             "mobile_telephone": forms.TextInput(attrs={"class": "form-control"}),
             "date_started_work": forms.DateInput(

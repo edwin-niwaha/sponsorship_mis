@@ -118,7 +118,7 @@ class SponsorQuerySet(models.QuerySet):
 
     def departed_real_supporters(self):
         return self.departed().real_supporters()
-    
+
 
 # =================================== SPONSOR MODEL ===================================
 class Sponsor(models.Model):

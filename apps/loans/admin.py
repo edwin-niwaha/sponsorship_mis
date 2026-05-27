@@ -14,7 +14,13 @@ from .models import (
 class LoanRepaymentInline(admin.TabularInline):
     model = LoanRepayment
     extra = 0
-    fields = ("repayment_date", "principal_payment", "interest_payment", "penalty_payment", "account")
+    fields = (
+        "repayment_date",
+        "principal_payment",
+        "interest_payment",
+        "penalty_payment",
+        "account",
+    )
     readonly_fields = fields
     can_delete = False
 
@@ -47,7 +53,13 @@ class LoanAdmin(admin.ModelAdmin):
         "due_date",
         "approved_date",
     )
-    list_filter = ("status", "loan_purpose", "start_date", "disbursement_date", "due_date")
+    list_filter = (
+        "status",
+        "loan_purpose",
+        "start_date",
+        "disbursement_date",
+        "due_date",
+    )
     search_fields = ("id", "borrower__full_name", "borrower__reg_number")
     readonly_fields = (
         "total_interest",
@@ -57,7 +69,11 @@ class LoanAdmin(admin.ModelAdmin):
         "last_reminder_sent",
     )
     date_hierarchy = "start_date"
-    inlines = (LoanApplicationDocumentInline, LoanDisbursementInline, LoanRepaymentInline)
+    inlines = (
+        LoanApplicationDocumentInline,
+        LoanDisbursementInline,
+        LoanRepaymentInline,
+    )
 
 
 @admin.register(LoanApplicationDocument)
@@ -77,22 +93,53 @@ class LoanApplicationDocumentAdmin(admin.ModelAdmin):
 
 @admin.register(LoanRepayment)
 class LoanRepaymentAdmin(admin.ModelAdmin):
-    list_display = ("id", "loan", "repayment_date", "principal_payment", "interest_payment", "penalty_payment", "account")
+    list_display = (
+        "id",
+        "loan",
+        "repayment_date",
+        "principal_payment",
+        "interest_payment",
+        "penalty_payment",
+        "account",
+    )
     list_filter = ("repayment_date", "account")
-    search_fields = ("loan__id", "loan__borrower__full_name", "loan__borrower__reg_number")
+    search_fields = (
+        "loan__id",
+        "loan__borrower__full_name",
+        "loan__borrower__reg_number",
+    )
     date_hierarchy = "repayment_date"
 
 
 @admin.register(LoanDisbursement)
 class LoanDisbursementAdmin(admin.ModelAdmin):
-    list_display = ("id", "loan", "account", "payment_method", "disbursed_amount", "interest_amount")
+    list_display = (
+        "id",
+        "loan",
+        "account",
+        "payment_method",
+        "disbursed_amount",
+        "interest_amount",
+    )
     list_filter = ("payment_method", "account")
-    search_fields = ("loan__id", "loan__borrower__full_name", "loan__borrower__reg_number")
+    search_fields = (
+        "loan__id",
+        "loan__borrower__full_name",
+        "loan__borrower__reg_number",
+    )
 
 
 @admin.register(LoanPenalty)
 class LoanPenaltyAdmin(admin.ModelAdmin):
-    list_display = ("id", "loan", "penalty_date", "penalty_amount", "remaining_amount", "is_paid", "is_deleted")
+    list_display = (
+        "id",
+        "loan",
+        "penalty_date",
+        "penalty_amount",
+        "remaining_amount",
+        "is_paid",
+        "is_deleted",
+    )
     list_filter = ("is_paid", "is_deleted", "penalty_date", "account")
     search_fields = ("loan__id", "loan__borrower__full_name", "reason")
     readonly_fields = ("created_at", "updated_at", "deleted_at")
@@ -108,8 +155,22 @@ class ChartOfAccountsAdmin(admin.ModelAdmin):
 
 @admin.register(TransactionHistory)
 class TransactionHistoryAdmin(admin.ModelAdmin):
-    list_display = ("id", "loan", "transaction_date", "account", "transaction_type", "amount")
+    list_display = (
+        "id",
+        "loan",
+        "transaction_date",
+        "account",
+        "transaction_type",
+        "amount",
+    )
     list_filter = ("transaction_type", "transaction_date", "account")
     search_fields = ("loan__id", "loan__borrower__full_name", "description")
-    readonly_fields = ("loan", "transaction_date", "account", "transaction_type", "amount", "description")
+    readonly_fields = (
+        "loan",
+        "transaction_date",
+        "account",
+        "transaction_type",
+        "amount",
+        "description",
+    )
     date_hierarchy = "transaction_date"

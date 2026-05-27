@@ -49,15 +49,18 @@ class Command(BaseCommand):
         if len(parts) == 2:
             first_name, last_name = parts
 
-        return Sponsor.objects.create(
-            first_name=first_name,
-            last_name=last_name,
-            email=donor.email or "",
-            gender="Male",
-            sponsorship_type="",
-            expected_amt=0,
-            is_one_time_donor=True,
-        ), True
+        return (
+            Sponsor.objects.create(
+                first_name=first_name,
+                last_name=last_name,
+                email=donor.email or "",
+                gender="Male",
+                sponsorship_type="",
+                expected_amt=0,
+                is_one_time_donor=True,
+            ),
+            True,
+        )
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -72,9 +75,11 @@ class Command(BaseCommand):
         donor_created = 0
         sponsor_created = 0
 
-        for old in ChildPayments.objects.filter(is_valid=True).select_related(
-            "sponsor", "child"
-        ).iterator(chunk_size=batch_size):
+        for old in (
+            ChildPayments.objects.filter(is_valid=True)
+            .select_related("sponsor", "child")
+            .iterator(chunk_size=batch_size)
+        ):
             program = self.resolve_child_program(old.sponsor)
 
             _, created = Payment.objects.get_or_create(
@@ -96,9 +101,11 @@ class Command(BaseCommand):
                 old.sponsor.is_child_sponsor = True
                 old.sponsor.save(update_fields=["is_child_sponsor", "updated_at"])
 
-        for old in StaffPayments.objects.filter(is_valid=True).select_related(
-            "sponsor", "staff"
-        ).iterator(chunk_size=batch_size):
+        for old in (
+            StaffPayments.objects.filter(is_valid=True)
+            .select_related("sponsor", "staff")
+            .iterator(chunk_size=batch_size)
+        ):
             _, created = Payment.objects.get_or_create(
                 source_model="StaffPayments",
                 source_id=old.id,
@@ -142,7 +149,9 @@ class Command(BaseCommand):
 
         if dry_run:
             transaction.set_rollback(True)
-            self.stdout.write(self.style.WARNING("Dry run complete; no rows were saved."))
+            self.stdout.write(
+                self.style.WARNING("Dry run complete; no rows were saved.")
+            )
         else:
             self.stdout.write(self.style.SUCCESS("Legacy payment migration complete."))
         self.stdout.write(f"Child payments copied: {child_created}")

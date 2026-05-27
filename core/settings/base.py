@@ -16,7 +16,9 @@ def env_bool(name, default=False):
 
 
 def env_list(name):
-    return [item.strip() for item in os.environ.get(name, "").split(",") if item.strip()]
+    return [
+        item.strip() for item in os.environ.get(name, "").split(",") if item.strip()
+    ]
 
 
 def database_config(ssl_require=False):
@@ -242,9 +244,11 @@ if not RESEND_FROM_EMAIL:
     RESEND_FROM_EMAIL = DEFAULT_FROM_EMAIL
 EMAIL_BACKEND = os.getenv(
     "EMAIL_BACKEND",
-    "core.email_backends.ResendEmailBackend"
-    if RESEND_API_KEY
-    else "django.core.mail.backends.smtp.EmailBackend",
+    (
+        "core.email_backends.ResendEmailBackend"
+        if RESEND_API_KEY
+        else "django.core.mail.backends.smtp.EmailBackend"
+    ),
 )
 
 BOO_EMAIL = os.getenv("BOO_EMAIL", "")

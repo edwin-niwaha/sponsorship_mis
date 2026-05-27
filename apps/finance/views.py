@@ -87,7 +87,9 @@ def child_sponsor_payment(request):
                     payment.child = child_instance
                     payment.save()
                     sponsor_instance.is_child_sponsor = True
-                    sponsor_instance.save(update_fields=["is_child_sponsor", "updated_at"])
+                    sponsor_instance.save(
+                        update_fields=["is_child_sponsor", "updated_at"]
+                    )
 
                 messages.success(
                     request, "Payment submitted successfully!", extra_tags="bg-success"
@@ -315,7 +317,9 @@ def staff_sponsor_payment(request):
                     payment.staff = staff_instance
                     payment.save()
                     sponsor_instance.is_staff_sponsor = True
-                    sponsor_instance.save(update_fields=["is_staff_sponsor", "updated_at"])
+                    sponsor_instance.save(
+                        update_fields=["is_staff_sponsor", "updated_at"]
+                    )
 
                 messages.success(
                     request, "Payment submitted successfully!", extra_tags="bg-success"
@@ -501,9 +505,9 @@ def generate_payments_report(request, report_title, template_name, payment_model
         sponsor_id = request.POST.get("id")
         if sponsor_id:
             selected_sponsor = get_object_or_404(Sponsor, id=sponsor_id)
-            sponsor_payments = payment_model.objects.select_related(
-                "sponsor"
-            ).filter(sponsor_id=sponsor_id)
+            sponsor_payments = payment_model.objects.select_related("sponsor").filter(
+                sponsor_id=sponsor_id
+            )
             related_fields = {
                 field.name
                 for field in payment_model._meta.get_fields()

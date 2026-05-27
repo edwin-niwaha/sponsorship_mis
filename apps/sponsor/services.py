@@ -25,9 +25,13 @@ def send_sponsor_feedback_email(feedback):
     )
 
     if not recipients or not from_email:
-        feedback.email_error = "Sponsor feedback email skipped: recipients or sender missing."
+        feedback.email_error = (
+            "Sponsor feedback email skipped: recipients or sender missing."
+        )
         feedback.save(update_fields=["email_error", "updated_at"])
-        logger.warning("Sponsor feedback %s email skipped; email settings missing.", feedback.id)
+        logger.warning(
+            "Sponsor feedback %s email skipped; email settings missing.", feedback.id
+        )
         return False
 
     sponsor = feedback.sponsor

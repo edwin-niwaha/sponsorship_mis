@@ -52,11 +52,7 @@ def child_list(request):
 
     # Get all children who have not departed and annotate them with their profile picture
     active_children = Child.objects.filter(is_departed=False)
-    queryset = (
-        active_children
-        .annotate(picture=Subquery(latest_picture))
-        .order_by("id")
-    )
+    queryset = active_children.annotate(picture=Subquery(latest_picture)).order_by("id")
 
     # Search functionality
     search_query = request.GET.get("search", "")
@@ -88,9 +84,15 @@ def child_list(request):
             "table_title": "Children List",
             "search_query": search_query,
             "active_children_count": active_children.count(),
-            "sponsored_children_count": active_children.filter(is_sponsored=True).count(),
-            "non_sponsored_children_count": active_children.filter(is_sponsored=False).count(),
-            "in_school_children_count": active_children.filter(is_child_in_school=True).count(),
+            "sponsored_children_count": active_children.filter(
+                is_sponsored=True
+            ).count(),
+            "non_sponsored_children_count": active_children.filter(
+                is_sponsored=False
+            ).count(),
+            "in_school_children_count": active_children.filter(
+                is_child_in_school=True
+            ).count(),
         },
     )
 
@@ -132,9 +134,15 @@ def child_list_detailed(request):
             "table_title": "Detailed Child Master List",
             "search_query": search_query,
             "active_children_count": active_children.count(),
-            "sponsored_children_count": active_children.filter(is_sponsored=True).count(),
-            "non_sponsored_children_count": active_children.filter(is_sponsored=False).count(),
-            "in_school_children_count": active_children.filter(is_child_in_school=True).count(),
+            "sponsored_children_count": active_children.filter(
+                is_sponsored=True
+            ).count(),
+            "non_sponsored_children_count": active_children.filter(
+                is_sponsored=False
+            ).count(),
+            "in_school_children_count": active_children.filter(
+                is_child_in_school=True
+            ).count(),
         },
     )
 
@@ -246,7 +254,9 @@ def update_picture(request):
         if form.is_valid():
             child_id = request.POST.get("id")
             if not child_id:
-                messages.error(request, "Please select a child.", extra_tags="bg-danger")
+                messages.error(
+                    request, "Please select a child.", extra_tags="bg-danger"
+                )
                 return redirect("update_picture")
             try:
                 # Attempt to retrieve the child profile
@@ -307,7 +317,9 @@ def profile_pictures(request):
 
     if child_id:
         selected_child = get_object_or_404(Child, id=child_id)
-        profile_picture = ChildProfilePicture.objects.filter(child_id=child_id).order_by("-uploaded_at", "-id")
+        profile_picture = ChildProfilePicture.objects.filter(
+            child_id=child_id
+        ).order_by("-uploaded_at", "-id")
     elif request.method == "POST":
         messages.error(request, "No child selected.", extra_tags="bg-danger")
 
@@ -346,7 +358,9 @@ def child_progress(request):
         if form.is_valid():
             child_id = request.POST.get("id")
             if not child_id:
-                messages.error(request, "Please select a child.", extra_tags="bg-danger")
+                messages.error(
+                    request, "Please select a child.", extra_tags="bg-danger"
+                )
                 return redirect("child_progress")
             child_instance = get_object_or_404(Child, pk=child_id)
 
@@ -426,6 +440,7 @@ def child_progress(request):
 #         {"table_title": "Progress Report", "children": children},
 #     )
 
+
 @login_required
 @admin_or_manager_or_staff_required
 def child_progress_report(request):
@@ -439,9 +454,9 @@ def child_progress_report(request):
     if selected_child_id:
         selected_child = get_object_or_404(Child, id=selected_child_id)
 
-        progress_qs = ChildProgress.objects.filter(
-            child_id=selected_child_id
-        ).order_by("-year", "-term", "-updated_at", "-id")
+        progress_qs = ChildProgress.objects.filter(child_id=selected_child_id).order_by(
+            "-year", "-term", "-updated_at", "-id"
+        )
 
         paginator = Paginator(progress_qs, 10)  # 10 records per page
         page_number = request.GET.get("page")
@@ -477,7 +492,9 @@ def child_progress_report(request):
 @admin_or_manager_or_staff_required
 @transaction.atomic
 def update_progress(request, pk):
-    progress_record = get_object_or_404(ChildProgress.objects.select_related("child"), pk=pk)
+    progress_record = get_object_or_404(
+        ChildProgress.objects.select_related("child"), pk=pk
+    )
 
     if request.method == "POST":
         form = ChildProgressForm(request.POST, instance=progress_record)
@@ -488,7 +505,9 @@ def update_progress(request, pk):
                 "Child progress updated successfully!",
                 extra_tags="bg-success",
             )
-            return redirect(f"{reverse('child_progress_report')}?id={progress_record.child_id}")
+            return redirect(
+                f"{reverse('child_progress_report')}?id={progress_record.child_id}"
+            )
         messages.error(request, "Form is invalid.", extra_tags="bg-danger")
     else:
         form = ChildProgressForm(instance=progress_record)
@@ -506,6 +525,7 @@ def update_progress(request, pk):
             "editing_progress": True,
         },
     )
+
 
 # =================================== Delete Progress Data ===================================
 
@@ -532,7 +552,9 @@ def child_correspondence(request):
         if form.is_valid():
             child_id = request.POST.get("id")
             if not child_id:
-                messages.error(request, "Please select a child.", extra_tags="bg-danger")
+                messages.error(
+                    request, "Please select a child.", extra_tags="bg-danger"
+                )
                 return redirect("child_correspondence")
             child_instance = get_object_or_404(Child, pk=child_id)
 
@@ -580,7 +602,9 @@ def child_correspondence_report(request):
 
     if child_id:
         selected_child = get_object_or_404(Child, id=child_id)
-        child_correspondence = ChildCorrespondence.objects.filter(child_id=child_id).order_by("-created_at", "-id")
+        child_correspondence = ChildCorrespondence.objects.filter(
+            child_id=child_id
+        ).order_by("-created_at", "-id")
     elif request.method == "POST":
         messages.error(request, "No child selected.", extra_tags="bg-danger")
 
@@ -621,7 +645,9 @@ def child_incident(request):
         if form.is_valid():
             child_id = request.POST.get("id")
             if not child_id:
-                messages.error(request, "Please select a child.", extra_tags="bg-danger")
+                messages.error(
+                    request, "Please select a child.", extra_tags="bg-danger"
+                )
                 return redirect("child_incident")
             child_instance = get_object_or_404(Child, pk=child_id)
 
@@ -668,7 +694,9 @@ def child_incident_report(request):
 
     if child_id:
         selected_child = get_object_or_404(Child, id=child_id)
-        child_incident = ChildIncident.objects.filter(child_id=child_id).order_by("-incident_date", "-id")
+        child_incident = ChildIncident.objects.filter(child_id=child_id).order_by(
+            "-incident_date", "-id"
+        )
     elif request.method == "POST":
         messages.error(request, "No child selected.", extra_tags="bg-danger")
 
@@ -701,6 +729,7 @@ def delete_incident(request, pk):
 
 # =================================== Add Child Depature ===================================
 
+
 @login_required
 @admin_or_manager_required
 @transaction.atomic
@@ -710,7 +739,9 @@ def child_departure(request):
         if form.is_valid():
             child_id = request.POST.get("id")
             if not child_id:
-                messages.error(request, "Please select a child.", extra_tags="bg-danger")
+                messages.error(
+                    request, "Please select a child.", extra_tags="bg-danger"
+                )
                 return redirect("child_departure")
             child_instance = get_object_or_404(Child, pk=child_id)
 
@@ -990,7 +1021,9 @@ def delete_confirmation(request):
 def birthday_list(request):
     # Annotate the queryset with the birth month
     children_with_birthday = (
-        Child.objects.filter(is_sponsored=True, is_departed=False, date_of_birth__isnull=False)
+        Child.objects.filter(
+            is_sponsored=True, is_departed=False, date_of_birth__isnull=False
+        )
         .annotate(
             birth_month=ExtractMonth("date_of_birth"),
             month_name=Concat(

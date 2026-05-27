@@ -259,9 +259,11 @@ def sponsor_payments_child(request):
     """
     Render a paginated list of all sponsor payments for children.
     """
-    queryset = ChildPayments.objects.filter(is_valid=True).select_related(
-        "sponsor", "child"
-    ).order_by("id")
+    queryset = (
+        ChildPayments.objects.filter(is_valid=True)
+        .select_related("sponsor", "child")
+        .order_by("id")
+    )
     search_query = request.GET.get("search")
     queryset = filter_by_search(queryset, search_query, ["sponsor__first_name"])
 
@@ -291,9 +293,11 @@ def sponsor_payments_staff(request):
     """
     Render a paginated list of all sponsor payments for staff.
     """
-    queryset = StaffPayments.objects.filter(is_valid=True).select_related(
-        "sponsor", "staff"
-    ).order_by("id")
+    queryset = (
+        StaffPayments.objects.filter(is_valid=True)
+        .select_related("sponsor", "staff")
+        .order_by("id")
+    )
     search_query = request.GET.get("search")
     queryset = filter_by_search(queryset, search_query, ["sponsor__first_name"])
 

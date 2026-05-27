@@ -162,16 +162,29 @@ def send_email_task(subject, text_content, html_content, recipients):
         return False
 
 
-@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 3})
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_kwargs={"max_retries": 3},
+)
 def send_html_email_task(self, subject, html_body, recipients):
     recipients = _valid_recipients(*recipients)
     if not recipients:
-        logger.warning("HTML email skipped because no recipients were configured for subject: %s", subject)
+        logger.warning(
+            "HTML email skipped because no recipients were configured for subject: %s",
+            subject,
+        )
         return False
 
-    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "") or getattr(settings, "EMAIL_HOST_USER", "")
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "") or getattr(
+        settings, "EMAIL_HOST_USER", ""
+    )
     if not from_email:
-        logger.warning("HTML email skipped because DEFAULT_FROM_EMAIL is not configured for subject: %s", subject)
+        logger.warning(
+            "HTML email skipped because DEFAULT_FROM_EMAIL is not configured for subject: %s",
+            subject,
+        )
         return False
 
     email = EmailMultiAlternatives(
@@ -186,14 +199,25 @@ def send_html_email_task(self, subject, html_body, recipients):
     return sent_count
 
 
-@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 3})
-def send_loan_approval_notification_task(self, loan_id, new_status, approver_name, base_url):
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_kwargs={"max_retries": 3},
+)
+def send_loan_approval_notification_task(
+    self, loan_id, new_status, approver_name, base_url
+):
     from .models import Loan
 
     loan = Loan.objects.select_related("borrower").get(id=loan_id)
     payload = _loan_approval_payload(loan, new_status, approver_name, base_url)
     if not payload:
-        logger.info("No approval notification configured for loan %s status %s.", loan_id, new_status)
+        logger.info(
+            "No approval notification configured for loan %s status %s.",
+            loan_id,
+            new_status,
+        )
         return False
 
     recipients = payload["recipients"]
@@ -205,9 +229,14 @@ def send_loan_approval_notification_task(self, loan_id, new_status, approver_nam
         )
         return False
 
-    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "") or getattr(settings, "EMAIL_HOST_USER", "")
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "") or getattr(
+        settings, "EMAIL_HOST_USER", ""
+    )
     if not from_email:
-        logger.warning("Loan %s approval notification skipped because DEFAULT_FROM_EMAIL is not configured.", loan_id)
+        logger.warning(
+            "Loan %s approval notification skipped because DEFAULT_FROM_EMAIL is not configured.",
+            loan_id,
+        )
         return False
 
     html_body = _approval_email_html(
@@ -281,7 +310,9 @@ def send_loan_application_email_task(
         </html>
         """
 
-    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "") or getattr(settings, "EMAIL_HOST_USER", None)
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "") or getattr(
+        settings, "EMAIL_HOST_USER", None
+    )
     to = [recipient_email]
 
     try:

@@ -30,6 +30,7 @@ MONTH_CHOICES = (
     ("December", "December"),
 )
 
+
 class ChildPayments(models.Model):
     sponsor = models.ForeignKey(
         Sponsor,
@@ -75,7 +76,6 @@ class ChildPayments(models.Model):
 
     def __str__(self):
         return f"{self.sponsor} - {self.child} - {self.month}"
-
 
 
 class SupportProgram(models.Model):
@@ -194,7 +194,8 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"{self.sponsor} - {self.program} - {self.amount}"
-      
+
+
 # =================================== DONOR PAYMENT MODEL ===================================
 
 

@@ -70,7 +70,9 @@ class Migration(migrations.Migration):
     operations = [
         migrations.SeparateDatabaseAndState(
             database_operations=[
-                migrations.RunSQL(CREATE_SAVINGS_TABLES_SQL, reverse_sql=migrations.RunSQL.noop),
+                migrations.RunSQL(
+                    CREATE_SAVINGS_TABLES_SQL, reverse_sql=migrations.RunSQL.noop
+                ),
             ],
             state_operations=[
                 migrations.CreateModel(
@@ -87,7 +89,9 @@ class Migration(migrations.Migration):
                         ),
                         (
                             "account_number",
-                            models.CharField(blank=True, max_length=20, null=True, unique=True),
+                            models.CharField(
+                                blank=True, max_length=20, null=True, unique=True
+                            ),
                         ),
                         ("opening_date", models.DateField(default=datetime.date.today)),
                         (
@@ -155,8 +159,14 @@ class Migration(migrations.Migration):
                                 max_length=25,
                             ),
                         ),
-                        ("amount", models.DecimalField(decimal_places=2, max_digits=15)),
-                        ("transaction_date", models.DateField(default=datetime.date.today)),
+                        (
+                            "amount",
+                            models.DecimalField(decimal_places=2, max_digits=15),
+                        ),
+                        (
+                            "transaction_date",
+                            models.DateField(default=datetime.date.today),
+                        ),
                         (
                             "payment_method",
                             models.CharField(
@@ -244,7 +254,10 @@ class Migration(migrations.Migration):
                 ),
                 migrations.AddIndex(
                     model_name="savingsaccount",
-                    index=models.Index(fields=["status", "opening_date"], name="savings_status_open_idx"),
+                    index=models.Index(
+                        fields=["status", "opening_date"],
+                        name="savings_status_open_idx",
+                    ),
                 ),
             ],
         ),

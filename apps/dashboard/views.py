@@ -31,7 +31,6 @@ def home(request):
     return render(request, "accounts/home.html")
 
 
-
 CACHE_KEY = "loan_dashboard_summary"
 CACHE_TTL = 300  # seconds (5 minutes)
 DASHBOARD_OVERVIEW_CACHE_KEY = "sponsorship_dashboard_overview"
@@ -50,10 +49,8 @@ def get_loan_dashboard_summary(force_refresh=False):
 
     today = timezone.now().date()
 
-    loans = (
-        Loan.objects
-        .filter(status__in=["disbursed", "overdue"])
-        .prefetch_related("repayments", "penalties")
+    loans = Loan.objects.filter(status__in=["disbursed", "overdue"]).prefetch_related(
+        "repayments", "penalties"
     )
 
     due_loans = []
@@ -72,32 +69,36 @@ def get_loan_dashboard_summary(force_refresh=False):
 
         # ---------- OVERDUE (loan maturity passed) ----------
         if loan.due_date and loan.due_date < today:
-            overdue_loans.append({
-                "loan": loan,
-                "total_balance": total_balance,
-                "days_overdue": (today - loan.due_date).days,
-            })
+            overdue_loans.append(
+                {
+                    "loan": loan,
+                    "total_balance": total_balance,
+                    "days_overdue": (today - loan.due_date).days,
+                }
+            )
             continue
 
         # ---------- DUE TODAY ----------
         schedule = loan.generate_payment_schedule()
         due_today = [
-            p for p in schedule
+            p
+            for p in schedule
             if p["payment_due_date"] == today
             and (p["principal_payment"] + p["interest_payment"]) > 0
         ]
 
         if due_today:
             amount_due = min(
-                due_today[0]["principal_payment"]
-                + due_today[0]["interest_payment"],
+                due_today[0]["principal_payment"] + due_today[0]["interest_payment"],
                 total_balance,
             )
-            due_loans.append({
-                "loan": loan,
-                "amount_due": amount_due,
-                "total_balance": total_balance,
-            })
+            due_loans.append(
+                {
+                    "loan": loan,
+                    "amount_due": amount_due,
+                    "total_balance": total_balance,
+                }
+            )
 
     summary = {
         "due_loans": due_loans,
@@ -119,6 +120,7 @@ def get_loan_dashboard_summary(force_refresh=False):
 
 
 # =================================== The dashboard ===================================
+
 
 @login_required
 @admin_or_manager_or_staff_required
@@ -153,6 +155,7 @@ def dashboard(request):
         cache.set(DASHBOARD_OVERVIEW_CACHE_KEY, context, 300)
 
     return render(request, "main/main_dashboard.html", context)
+
 
 # =================================== Child Sponsorship Count ===================================
 def get_top_sponsors():
@@ -240,7 +243,8 @@ def sponsorship_chart(request):
 def get_sponsors_data(request):
     try:
         sponsors_per_year = (
-            Sponsor.objects.real_sponsors_only().annotate(year=ExtractYear("start_date"))
+            Sponsor.objects.real_sponsors_only()
+            .annotate(year=ExtractYear("start_date"))
             .values("year")
             .annotate(count=Count("id"))
             .order_by("year")
@@ -292,7 +296,8 @@ def get_children_data(request):
 def get_combined_data(request):
     try:
         sponsors_per_year = (
-            Sponsor.objects.real_sponsors_only().annotate(year=ExtractYear("start_date"))
+            Sponsor.objects.real_sponsors_only()
+            .annotate(year=ExtractYear("start_date"))
             .values("year")
             .annotate(count=Count("id"))
             .order_by("year")
@@ -717,7 +722,20 @@ def loans_dashboard(request):
         par_30_band["outstanding_amount"] if par_30_band else Decimal("0.00")
     )
 
-    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+    ]
     monthly_disbursements = [0 for _ in range(12)]
     for item in (
         LoanDisbursement.objects.filter(loan__disbursement_date__year=year)
@@ -735,7 +753,9 @@ def loans_dashboard(request):
         .values("month")
         .annotate(
             total=Coalesce(
-                Sum("principal_payment") + Sum("interest_payment") + Sum("penalty_payment"),
+                Sum("principal_payment")
+                + Sum("interest_payment")
+                + Sum("penalty_payment"),
                 Decimal("0.00"),
             )
         )

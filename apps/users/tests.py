@@ -160,7 +160,12 @@ class PublicLandingTests(TestCase):
         )
         Profile.objects.update_or_create(
             user=staff,
-            defaults={"account_type": "staff", "staff_role": "boo", "role": "boo", "bio": ""},
+            defaults={
+                "account_type": "staff",
+                "staff_role": "boo",
+                "role": "boo",
+                "bio": "",
+            },
         )
         Profile.objects.update_or_create(
             user=client_user,
@@ -181,7 +186,9 @@ class PublicLandingTests(TestCase):
             },
         )
 
-        self.assertEqual(login_view.get_success_url_for_user(staff), reverse("main-dashboard"))
+        self.assertEqual(
+            login_view.get_success_url_for_user(staff), reverse("main-dashboard")
+        )
         self.assertEqual(
             login_view.get_success_url_for_user(client_user),
             reverse("client_savings_dashboard"),

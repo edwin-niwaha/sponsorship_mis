@@ -198,7 +198,9 @@ class ViewTests(TestCase):
         response = self.client.get(reverse("momo_transaction_list"))
         self.assertEqual(response.status_code, 302)  # redirect to login
 
-    def test_terminate_child_sponsorship_keeps_child_sponsored_with_other_active_sponsor(self):
+    def test_terminate_child_sponsorship_keeps_child_sponsored_with_other_active_sponsor(
+        self,
+    ):
         child = Child.objects.create(
             full_name="Sponsored Child",
             gender="Female",
@@ -239,7 +241,9 @@ class ViewTests(TestCase):
         self.assertFalse(ending_sponsorship.is_active)
         self.assertTrue(child.is_sponsored)
 
-    def test_terminate_child_sponsorship_marks_child_not_sponsored_without_active_sponsors(self):
+    def test_terminate_child_sponsorship_marks_child_not_sponsored_without_active_sponsors(
+        self,
+    ):
         child = Child.objects.create(
             full_name="Only Sponsored",
             gender="Male",

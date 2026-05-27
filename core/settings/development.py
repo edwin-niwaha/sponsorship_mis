@@ -30,7 +30,9 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 if env_bool("USE_DATABASE_URL_IN_DEV", False):  # noqa: F405
-    DATABASES = database_config(ssl_require=env_bool("DATABASE_SSL_REQUIRE", False))  # noqa: F405
+    DATABASES = database_config(
+        ssl_require=env_bool("DATABASE_SSL_REQUIRE", False)
+    )  # noqa: F405
 else:
     DATABASES = {
         "default": {

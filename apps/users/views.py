@@ -293,16 +293,24 @@ def profile_list(request):
             "search_query": search_query,
             "total_profiles": all_profiles.count(),
             "staff_profiles": sum(
-                1 for profile in all_profiles if profile.resolved_account_type == "staff"
+                1
+                for profile in all_profiles
+                if profile.resolved_account_type == "staff"
             ),
             "client_profiles": sum(
-                1 for profile in all_profiles if profile.resolved_account_type == "client"
+                1
+                for profile in all_profiles
+                if profile.resolved_account_type == "client"
             ),
             "sponsor_profiles": sum(
-                1 for profile in all_profiles if profile.resolved_account_type == "sponsor"
+                1
+                for profile in all_profiles
+                if profile.resolved_account_type == "sponsor"
             ),
             "guest_profiles_count": sum(
-                1 for profile in all_profiles if profile.resolved_account_type == "guest"
+                1
+                for profile in all_profiles
+                if profile.resolved_account_type == "guest"
             ),
         },
     )
@@ -382,13 +390,10 @@ def delete_profile(request, pk):
 @admin_or_manager_or_staff_required
 def policy_list(request):
     read_by_user = PolicyRead.objects.filter(policy=OuterRef("pk"), user=request.user)
-    queryset = (
-        Policy.objects.annotate(
-            read_count=Count("policyread", distinct=True),
-            is_read_by_user=Exists(read_by_user),
-        )
-        .order_by("-created_at", "title")
-    )
+    queryset = Policy.objects.annotate(
+        read_count=Count("policyread", distinct=True),
+        is_read_by_user=Exists(read_by_user),
+    ).order_by("-created_at", "title")
 
     search_query = request.GET.get("search", "").strip()
     if search_query:
@@ -505,12 +510,20 @@ def delete_policy(request, pk):
 def open_policy_document(request, pk):
     policy = get_object_or_404(Policy, pk=pk)
     if not policy.upload:
-        messages.error(request, "This policy does not have an uploaded document.", extra_tags="bg-danger")
+        messages.error(
+            request,
+            "This policy does not have an uploaded document.",
+            extra_tags="bg-danger",
+        )
         return redirect("policy_list")
 
     candidate_url = policy.document_url
     if not candidate_url:
-        messages.error(request, "Could not build a document link for this policy.", extra_tags="bg-danger")
+        messages.error(
+            request,
+            "Could not build a document link for this policy.",
+            extra_tags="bg-danger",
+        )
         return redirect("policy_list")
 
     return redirect(candidate_url)

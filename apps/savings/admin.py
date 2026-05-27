@@ -7,7 +7,12 @@ from .models import SavingsAccount, SavingsTransaction
 class SavingsAccountAdmin(admin.ModelAdmin):
     list_display = ("account_number", "client", "status", "opening_date", "balance")
     list_filter = ("status", "opening_date")
-    search_fields = ("account_number", "client__full_name", "client__reg_number", "client__email")
+    search_fields = (
+        "account_number",
+        "client__full_name",
+        "client__reg_number",
+        "client__email",
+    )
     autocomplete_fields = ("client",)
     readonly_fields = ("created_at", "updated_at")
 

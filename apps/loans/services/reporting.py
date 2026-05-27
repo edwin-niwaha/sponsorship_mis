@@ -101,7 +101,9 @@ def loan_financial_row(loan: Loan, today: date | None = None) -> dict:
     paid_penalties = sum((r.penalty_payment for r in repayments), Decimal("0.00"))
     total_paid = paid_principal + paid_interest + paid_penalties
     total_outstanding = sum(balances.values())
-    arrears = installment_arrears(loan, today, paid_principal + paid_interest, total_outstanding)
+    arrears = installment_arrears(
+        loan, today, paid_principal + paid_interest, total_outstanding
+    )
     last_repayment_date = max((r.repayment_date for r in repayments), default=None)
 
     return {
@@ -136,10 +138,9 @@ def loan_financial_row(loan: Loan, today: date | None = None) -> dict:
 
 
 def repayment_rows(filters) -> list[dict]:
-    qs = (
-        LoanRepayment.objects.select_related("loan", "loan__borrower", "loan__applied_by", "account")
-        .order_by("repayment_date", "id")
-    )
+    qs = LoanRepayment.objects.select_related(
+        "loan", "loan__borrower", "loan__applied_by", "account"
+    ).order_by("repayment_date", "id")
     if filters.get("start_date"):
         qs = qs.filter(repayment_date__gte=filters["start_date"])
     if filters.get("end_date"):
@@ -162,22 +163,26 @@ def repayment_rows(filters) -> list[dict]:
 
     rows = []
     for repayment in qs:
-        rows.append({
-            "loan_id": repayment.loan_id,
-            "client": repayment.loan.borrower.full_name,
-            "repayment_date": repayment.repayment_date,
-            "principal": repayment.principal_payment,
-            "interest": repayment.interest_payment,
-            "fees": Decimal("0.00"),
-            "penalties": repayment.penalty_payment,
-            "paid_amount": repayment.total_payment,
-            "account": repayment.account.account_name,
-            "description": repayment.description or "",
-        })
+        rows.append(
+            {
+                "loan_id": repayment.loan_id,
+                "client": repayment.loan.borrower.full_name,
+                "repayment_date": repayment.repayment_date,
+                "principal": repayment.principal_payment,
+                "interest": repayment.interest_payment,
+                "fees": Decimal("0.00"),
+                "penalties": repayment.penalty_payment,
+                "paid_amount": repayment.total_payment,
+                "account": repayment.account.account_name,
+                "description": repayment.description or "",
+            }
+        )
     return rows
 
 
-def remaining_balances_from_related(loan: Loan, repayments=None, penalties=None) -> dict:
+def remaining_balances_from_related(
+    loan: Loan, repayments=None, penalties=None
+) -> dict:
     repayments = list(repayments if repayments is not None else loan.repayments.all())
     penalties = list(penalties if penalties is not None else loan.penalties.all())
     paid_principal = sum((r.principal_payment for r in repayments), Decimal("0.00"))
@@ -191,8 +196,12 @@ def remaining_balances_from_related(loan: Loan, repayments=None, penalties=None)
         Decimal("0.00"),
     )
     return {
-        "principal_balance": max((loan.principal_amount or Decimal("0.00")) - paid_principal, Decimal("0.00")),
-        "interest_balance": max((loan.total_interest or Decimal("0.00")) - paid_interest, Decimal("0.00")),
+        "principal_balance": max(
+            (loan.principal_amount or Decimal("0.00")) - paid_principal, Decimal("0.00")
+        ),
+        "interest_balance": max(
+            (loan.total_interest or Decimal("0.00")) - paid_interest, Decimal("0.00")
+        ),
         "penalty_balance": max(unpaid_penalties, Decimal("0.00")),
     }
 
@@ -237,7 +246,9 @@ def installment_arrears(
             "installments_due": installments_due,
         }
 
-    first_unpaid_due_date = loan.disbursement_date + relativedelta(months=installments_due)
+    first_unpaid_due_date = loan.disbursement_date + relativedelta(
+        months=installments_due
+    )
     for month in range(1, installments_due + 1):
         if paid_principal_interest < loan.monthly_installment * Decimal(month):
             first_unpaid_due_date = loan.disbursement_date + relativedelta(months=month)
@@ -267,7 +278,9 @@ def summarize_amounts(rows: Iterable[dict], keys: Iterable[str]) -> dict:
     return totals
 
 
-def group_rows_by_bucket(rows: Iterable[dict], bucket_key: str, total_keys: Iterable[str]) -> list[dict]:
+def group_rows_by_bucket(
+    rows: Iterable[dict], bucket_key: str, total_keys: Iterable[str]
+) -> list[dict]:
     groups = {}
     for row in rows:
         bucket = row.get(bucket_key) or "Unclassified"
@@ -285,9 +298,7 @@ def group_rows_by_bucket(rows: Iterable[dict], bucket_key: str, total_keys: Iter
 
 def portfolio_at_risk_summary(rows: Iterable[dict]) -> dict:
     portfolio_rows = [
-        row
-        for row in rows
-        if (row.get("outstanding_amount") or Decimal("0.00")) > 0
+        row for row in rows if (row.get("outstanding_amount") or Decimal("0.00")) > 0
     ]
     total_portfolio = sum(
         (row["outstanding_amount"] for row in portfolio_rows),
@@ -340,7 +351,9 @@ def aging_bucket(days: int) -> str:
 
 
 def _bucket_order(bucket: str):
-    standard_order = {label: index for index, label in enumerate(STANDARD_AGING_BUCKETS)}
+    standard_order = {
+        label: index for index, label in enumerate(STANDARD_AGING_BUCKETS)
+    }
     category_order = {
         "Due today": 0,
         "In arrears": 1,
@@ -355,7 +368,9 @@ def _bucket_order(bucket: str):
     return (2, 0, bucket)
 
 
-def export_rows_csv(filename: str, columns: list[ReportColumn], rows: list[dict]) -> HttpResponse:
+def export_rows_csv(
+    filename: str, columns: list[ReportColumn], rows: list[dict]
+) -> HttpResponse:
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     writer = csv.writer(response)

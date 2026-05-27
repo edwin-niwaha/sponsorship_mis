@@ -12,7 +12,12 @@ from django.template.loader import get_template
 from xhtml2pdf import pisa
 
 from apps.inventory.customers.models import Customer
-from apps.inventory.products.models import Inventory, Product, ProductVariant, StockMovement
+from apps.inventory.products.models import (
+    Inventory,
+    Product,
+    ProductVariant,
+    StockMovement,
+)
 
 # Import custom decorators
 from apps.users.decorators import (
@@ -152,7 +157,9 @@ def sales_add_view(request):
                         variant_obj.quantity -= quantity_requested
                         variant_obj.save(update_fields=["quantity", "updated_at"])
                     else:
-                        product_obj = Product.objects.select_for_update().get(id=item_id)
+                        product_obj = Product.objects.select_for_update().get(
+                            id=item_id
+                        )
                         # Check if the product has inventory and stock is available
                         if (
                             not hasattr(product_obj, "inventory")
@@ -186,7 +193,9 @@ def sales_add_view(request):
                         movement_type=StockMovement.SALE,
                         quantity=-quantity_requested,
                         unit_cost=(
-                            variant_obj.effective_cost if variant_obj else product_obj.cost
+                            variant_obj.effective_cost
+                            if variant_obj
+                            else product_obj.cost
                         ),
                         unit_price=float(product_data["price"]),
                         reference=f"Sale #{new_sale.id}",

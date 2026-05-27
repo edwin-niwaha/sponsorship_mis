@@ -51,7 +51,9 @@ def get_active_report_sponsors():
 
 
 def get_departed_report_sponsors():
-    return Sponsor.objects.departed_real_supporters().with_report_related().order_by("id")
+    return (
+        Sponsor.objects.departed_real_supporters().with_report_related().order_by("id")
+    )
 
 
 def get_active_sponsors_count():
@@ -64,9 +66,7 @@ def get_departed_sponsors_count():
 
 def get_real_support_payments():
     return (
-        Payment.objects.real_support_payments()
-        .with_related()
-        .order_by("-payment_date")
+        Payment.objects.real_support_payments().with_related().order_by("-payment_date")
     )
 
 
@@ -91,7 +91,9 @@ def get_general_payment_sponsors():
 
 
 def get_or_create_program(code):
-    label = dict(SupportProgram.PROGRAM_CHOICES).get(code, code.replace("_", " ").title())
+    label = dict(SupportProgram.PROGRAM_CHOICES).get(
+        code, code.replace("_", " ").title()
+    )
     program, _ = SupportProgram.objects.get_or_create(
         code=code,
         defaults={"name": label, "is_active": True},
@@ -230,7 +232,9 @@ def get_sponsor_portal_payment_summary(sponsor):
 
     return {
         "has_unified_payments": payments.exists(),
-        "total_payment_amount": _sum_amount(payments) + legacy_child_total + legacy_staff_total,
+        "total_payment_amount": _sum_amount(payments)
+        + legacy_child_total
+        + legacy_staff_total,
         "real_support_total": (
             _sum_amount(payments.real_support_payments())
             + legacy_child_total

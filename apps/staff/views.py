@@ -52,7 +52,9 @@ def staff_list(request):
             "table_title": "Staff List",
             "active_staff_count": active_staff.count(),
             "sponsored_staff_count": active_staff.filter(is_sponsored=True).count(),
-            "non_sponsored_staff_count": active_staff.filter(is_sponsored=False).count(),
+            "non_sponsored_staff_count": active_staff.filter(
+                is_sponsored=False
+            ).count(),
             "departed_staff_count": Staff.objects.filter(is_departed=True).count(),
             "search_query": search_query or "",
         },
@@ -175,7 +177,9 @@ def staff_departure(request):
             # Update Staff status to "departed"
             staff_instance.is_departed = True
             staff_instance.is_sponsored = False
-            staff_instance.save(update_fields=["is_departed", "is_sponsored", "updated_at"])
+            staff_instance.save(
+                update_fields=["is_departed", "is_sponsored", "updated_at"]
+            )
 
             messages.success(
                 request, "Staff departed successfully!", extra_tags="bg-success"

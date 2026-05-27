@@ -4,58 +4,457 @@
 {% block title %}Pendeza MIS | My Loan Applications{% endblock %}
 
 {% block content %}
-  <main class="container py-4">
-    <div class="bg-white border rounded-2 p-3 mb-3 d-flex flex-wrap justify-content-between align-items-start gap-3">
-      <div>
-        <h1 class="h4 fw-bold mb-1">{{ form_title }}</h1>
-        <div class="text-muted small">
-          {% if client %}{{ client.full_name }}{% else %}Client account not linked{% endif %}
-        </div>
-      </div>
-      {% if client %}
-        <a href="{% url 'loans:client_loan_apply' %}" class="btn btn-dark btn-sm">
-          <i class="mdi mdi-plus"></i> Apply
-        </a>
-      {% endif %}
-    </div>
+  <style>
+    .applications-page {
+      background: #f6f8fb;
+      color: #243447;
+      min-height: calc(100vh - 120px);
+      padding: 24px 0 42px;
+    }
+    .applications-shell {
+      margin: 0 auto;
+      max-width: 1180px;
+      padding: 0 16px;
+    }
+    .applications-hero,
+    .applications-panel,
+    .application-empty {
+      background: #fff;
+      border: 1px solid #dfe5ec;
+      border-radius: 8px;
+    }
+    .applications-hero {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      margin-bottom: 16px;
+      padding: 18px;
+    }
+    .page-kicker {
+      color: #667085;
+      font-size: .76rem;
+      font-weight: 900;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+    .applications-hero h1 {
+      color: #1f2933;
+      font-size: 1.42rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0 0 5px;
+    }
+    .applications-hero p {
+      color: #667085;
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+    .hero-actions {
+      align-items: flex-start;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .summary-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-bottom: 16px;
+    }
+    .summary-tile {
+      background: #fff;
+      border: 1px solid #dfe5ec;
+      border-radius: 8px;
+      min-height: 92px;
+      padding: 14px;
+    }
+    .summary-tile.primary {
+      background: #102a43;
+      border-color: #102a43;
+      color: #fff;
+    }
+    .summary-label {
+      color: #667085;
+      display: block;
+      font-size: .72rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .summary-tile.primary .summary-label {
+      color: #bcccdc;
+    }
+    .summary-value {
+      color: #1f2933;
+      display: block;
+      font-size: 1.14rem;
+      font-weight: 900;
+      line-height: 1.2;
+      margin-top: 8px;
+      overflow-wrap: anywhere;
+    }
+    .summary-tile.primary .summary-value {
+      color: #fff;
+    }
+    .applications-panel {
+      overflow: hidden;
+    }
+    .panel-head {
+      align-items: center;
+      border-bottom: 1px solid #e8eef5;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      padding: 14px 16px;
+    }
+    .panel-head h2 {
+      color: #26384d;
+      font-size: .96rem;
+      font-weight: 900;
+      margin: 0;
+      text-transform: uppercase;
+    }
+    .panel-head span {
+      color: #8792a2;
+      font-size: .78rem;
+      font-weight: 800;
+      text-align: right;
+    }
+    .applications-table {
+      margin-bottom: 0;
+    }
+    .applications-table thead th {
+      color: #667085;
+      font-size: .72rem;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .applications-table td,
+    .applications-table th {
+      padding: 13px 16px;
+      vertical-align: middle;
+    }
+    .application-id {
+      color: #102a43;
+      font-weight: 900;
+    }
+    .amount-cell {
+      color: #1f2933;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .status-pill {
+      border-radius: 999px;
+      display: inline-flex;
+      font-size: .72rem;
+      font-weight: 900;
+      padding: 5px 9px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .status-pending,
+    .status-boo_approved,
+    .status-hof_approved,
+    .status-approved {
+      background: #ffedd5;
+      color: #9a3412;
+    }
+    .status-disbursed,
+    .status-overdue {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+    .status-repaid,
+    .status-closed {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .status-rejected,
+    .status-ed_rejected,
+    .status-hof_rejected {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .document-count {
+      align-items: center;
+      background: #eef6f2;
+      border-radius: 999px;
+      color: #147a50;
+      display: inline-flex;
+      font-weight: 900;
+      justify-content: center;
+      min-width: 34px;
+      padding: 4px 9px;
+    }
+    .applications-mobile-list {
+      display: none;
+    }
+    .application-card {
+      border-top: 1px solid #e8eef5;
+      padding: 14px 16px;
+    }
+    .application-card:first-child {
+      border-top: 0;
+    }
+    .application-card-head {
+      align-items: flex-start;
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .application-card-title {
+      color: #102a43;
+      font-weight: 900;
+    }
+    .application-card-subtitle {
+      color: #667085;
+      font-size: .84rem;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+    .application-card-grid {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-bottom: 12px;
+    }
+    .application-card-metric {
+      border: 1px solid #edf1f5;
+      border-radius: 8px;
+      padding: 9px 10px;
+    }
+    .application-card-metric span {
+      color: #667085;
+      display: block;
+      font-size: .7rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .application-card-metric strong {
+      color: #1f2933;
+      display: block;
+      font-size: .9rem;
+      font-weight: 900;
+      margin-top: 3px;
+      overflow-wrap: anywhere;
+    }
+    .application-empty {
+      color: #667085;
+      padding: 34px 18px;
+      text-align: center;
+    }
+    .application-empty i {
+      color: #b8c1cc;
+      display: block;
+      font-size: 2.2rem;
+      margin-bottom: 8px;
+    }
+    .pagination-wrap {
+      align-items: center;
+      border-top: 1px solid #e8eef5;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      padding: 12px 16px;
+    }
+    .pagination-wrap span {
+      color: #667085;
+      font-size: .82rem;
+      font-weight: 800;
+    }
+    @media (max-width: 900px) {
+      .summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 640px) {
+      .applications-page {
+        padding-top: 12px;
+      }
+      .applications-shell {
+        padding: 0 10px;
+      }
+      .applications-hero {
+        grid-template-columns: 1fr;
+        padding: 15px;
+      }
+      .hero-actions {
+        justify-content: stretch;
+      }
+      .hero-actions .btn {
+        width: 100%;
+      }
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+      .summary-tile {
+        min-height: auto;
+      }
+      .applications-table-wrap {
+        display: none;
+      }
+      .applications-mobile-list {
+        display: block;
+      }
+      .application-card-grid {
+        grid-template-columns: 1fr;
+      }
+      .application-card .btn {
+        justify-content: center;
+        width: 100%;
+      }
+      .pagination-wrap {
+        align-items: stretch;
+        flex-direction: column;
+      }
+    }
+  </style>
 
-    <div class="bg-white border rounded-2">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>Application</th>
-              <th>Purpose</th>
-              <th class="text-end">Amount</th>
-              <th>Status</th>
-              <th>Submitted</th>
-              <th class="text-center">Documents</th>
-              <th class="text-end">Action</th>
-            </tr>
-          </thead>
-          <tbody>
+  <main class="applications-page">
+    <div class="applications-shell">
+      <section class="applications-hero">
+        <div>
+          <div class="page-kicker">Loan self-service</div>
+          <h1>{{ form_title }}</h1>
+          <p>
+            {% if client %}
+              {{ client.full_name }}{% if client.reg_number %} - {{ client.reg_number }}{% endif %}
+            {% else %}
+              Client account not linked
+            {% endif %}
+          </p>
+        </div>
+        {% if client %}
+          <div class="hero-actions">
+            <a href="{% url 'loans:client_loan_apply' %}" class="btn btn-dark btn-sm">
+              <i class="mdi mdi-plus"></i> New Application
+            </a>
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="summary-grid" aria-label="Loan application summary">
+        <div class="summary-tile primary">
+          <span class="summary-label">Requested</span>
+          <strong class="summary-value">UGX {{ summary.total_requested|floatformat:2|intcomma }}</strong>
+        </div>
+        <div class="summary-tile">
+          <span class="summary-label">Applications</span>
+          <strong class="summary-value">{{ summary.total_applications|intcomma }}</strong>
+        </div>
+        <div class="summary-tile">
+          <span class="summary-label">Open Reviews</span>
+          <strong class="summary-value">{{ summary.open_applications|intcomma }}</strong>
+        </div>
+        <div class="summary-tile">
+          <span class="summary-label">Documents</span>
+          <strong class="summary-value">{{ summary.total_documents|intcomma }}</strong>
+        </div>
+      </section>
+
+      <section class="applications-panel">
+        <div class="panel-head">
+          <h2>Applications</h2>
+          <span>{{ summary.active_loans|intcomma }} active loan{{ summary.active_loans|pluralize }}</span>
+        </div>
+
+        {% if loans %}
+          <div class="table-responsive applications-table-wrap">
+            <table class="table table-hover align-middle applications-table">
+              <thead class="table-light">
+                <tr>
+                  <th>Application</th>
+                  <th>Product</th>
+                  <th class="text-end">Amount</th>
+                  <th>Status</th>
+                  <th>Submitted</th>
+                  <th class="text-center">Docs</th>
+                  <th class="text-end">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for loan in loans %}
+                  <tr>
+                    <td>
+                      <div class="application-id">#{{ loan.id }}</div>
+                      <div class="text-muted small">{{ loan.loan_period_months }} month{{ loan.loan_period_months|pluralize }}</div>
+                    </td>
+                    <td>{{ loan.get_loan_purpose_display }}</td>
+                    <td class="text-end amount-cell">UGX {{ loan.principal_amount|floatformat:2|intcomma }}</td>
+                    <td>
+                      <span class="status-pill status-{{ loan.status }}">{{ loan.get_status_display }}</span>
+                    </td>
+                    <td>{{ loan.created_at|date:'M d, Y' }}</td>
+                    <td class="text-center"><span class="document-count">{{ loan.document_count }}</span></td>
+                    <td class="text-end">
+                      <a href="{% url 'loans:client_loan_application_detail' loan.id %}" class="btn btn-outline-primary btn-sm">
+                        <i class="mdi mdi-eye-outline"></i> View
+                      </a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="applications-mobile-list">
             {% for loan in loans %}
-              <tr>
-                <td class="fw-semibold">#{{ loan.id }}</td>
-                <td>{{ loan.get_loan_purpose_display }}</td>
-                <td class="text-end">{{ loan.principal_amount|floatformat:2|intcomma }}</td>
-                <td><span class="badge bg-secondary">{{ loan.get_status_display }}</span></td>
-                <td>{{ loan.created_at|date:'M d, Y' }}</td>
-                <td class="text-center">{{ loan.document_count }}</td>
-                <td class="text-end">
-                  <a href="{% url 'loans:client_loan_application_detail' loan.id %}" class="btn btn-outline-primary btn-sm">
-                    <i class="mdi mdi-calendar-text"></i> View Schedule
-                  </a>
-                </td>
-              </tr>
-            {% empty %}
-              <tr>
-                <td colspan="7" class="text-center text-muted py-4">No loan applications found.</td>
-              </tr>
+              <article class="application-card">
+                <div class="application-card-head">
+                  <div>
+                    <div class="application-card-title">Application #{{ loan.id }}</div>
+                    <div class="application-card-subtitle">{{ loan.get_loan_purpose_display }}</div>
+                  </div>
+                  <span class="status-pill status-{{ loan.status }}">{{ loan.get_status_display }}</span>
+                </div>
+                <div class="application-card-grid">
+                  <div class="application-card-metric">
+                    <span>Amount</span>
+                    <strong>UGX {{ loan.principal_amount|floatformat:2|intcomma }}</strong>
+                  </div>
+                  <div class="application-card-metric">
+                    <span>Submitted</span>
+                    <strong>{{ loan.created_at|date:'M d, Y' }}</strong>
+                  </div>
+                  <div class="application-card-metric">
+                    <span>Period</span>
+                    <strong>{{ loan.loan_period_months }} month{{ loan.loan_period_months|pluralize }}</strong>
+                  </div>
+                  <div class="application-card-metric">
+                    <span>Documents</span>
+                    <strong>{{ loan.document_count|intcomma }}</strong>
+                  </div>
+                </div>
+                <a href="{% url 'loans:client_loan_application_detail' loan.id %}" class="btn btn-outline-primary btn-sm">
+                  <i class="mdi mdi-eye-outline"></i> View Application
+                </a>
+              </article>
             {% endfor %}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        {% else %}
+          <div class="application-empty">
+            <i class="mdi mdi-file-document-outline"></i>
+            <strong>No loan applications found.</strong>
+            {% if client %}
+              <div class="mt-1">Start a new application when you are ready.</div>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        {% if page_obj.paginator.num_pages > 1 %}
+          <nav class="pagination-wrap" aria-label="Loan applications pagination">
+            <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            <ul class="pagination pagination-sm mb-0">
+              {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+              {% endif %}
+              <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+              {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endif %}
+      </section>
     </div>
   </main>
 {% endblock %}

@@ -117,7 +117,10 @@ class Product(models.Model):
     def stock_status(self):
         if self.stock_on_hand <= 0:
             return "Out of stock"
-        if hasattr(self, "inventory") and self.stock_on_hand <= self.inventory.low_stock_threshold:
+        if (
+            hasattr(self, "inventory")
+            and self.stock_on_hand <= self.inventory.low_stock_threshold
+        ):
             return "Low stock"
         return "In stock"
 

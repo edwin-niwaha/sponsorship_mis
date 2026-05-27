@@ -116,9 +116,8 @@ class Command(BaseCommand):
                 },
             )
             text_content = strip_tags(html_content)
-            from_email = (
-                getattr(settings, "DEFAULT_FROM_EMAIL", "")
-                or getattr(settings, "EMAIL_HOST_USER", "")
+            from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "") or getattr(
+                settings, "EMAIL_HOST_USER", ""
             )
 
             email = EmailMultiAlternatives(

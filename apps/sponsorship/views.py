@@ -19,9 +19,17 @@ from django.views.decorators.csrf import csrf_exempt
 from apps.child.models import Child
 from apps.sponsor.models import Sponsor
 from apps.staff.models import Staff
-from apps.users.decorators import admin_or_manager_or_staff_required, admin_or_manager_required
+from apps.users.decorators import (
+    admin_or_manager_or_staff_required,
+    admin_or_manager_required,
+)
 
-from .forms import ChildSponsorshipEditForm, ChildSponsorshipForm, StaffSponsorshipEditForm, StaffSponsorshipForm
+from .forms import (
+    ChildSponsorshipEditForm,
+    ChildSponsorshipForm,
+    StaffSponsorshipEditForm,
+    StaffSponsorshipForm,
+)
 from .models import ChildSponsorship, MoMoTransaction, StaffSponsorship
 from .momo_prod import create_access_token, generate_uuid, request_to_pay
 
@@ -84,9 +92,13 @@ def child_sponsorship(request):
 
                         # Update sponsor status to "departed"
                         child_instance.is_sponsored = True
-                        child_instance.save(update_fields=["is_sponsored", "updated_at"])
+                        child_instance.save(
+                            update_fields=["is_sponsored", "updated_at"]
+                        )
                         sponsor_instance.is_child_sponsor = True
-                        sponsor_instance.save(update_fields=["is_child_sponsor", "updated_at"])
+                        sponsor_instance.save(
+                            update_fields=["is_child_sponsor", "updated_at"]
+                        )
 
                     messages.success(
                         request, "Assigned successfully!", extra_tags="bg-success"
@@ -330,9 +342,13 @@ def staff_sponsorship_create(request):
 
                         # Update sponsorship status
                         staff_instance.is_sponsored = True
-                        staff_instance.save(update_fields=["is_sponsored", "updated_at"])
+                        staff_instance.save(
+                            update_fields=["is_sponsored", "updated_at"]
+                        )
                         sponsor_instance.is_staff_sponsor = True
-                        sponsor_instance.save(update_fields=["is_staff_sponsor", "updated_at"])
+                        sponsor_instance.save(
+                            update_fields=["is_staff_sponsor", "updated_at"]
+                        )
 
                     messages.success(
                         request, "Assigned successfully!", extra_tags="bg-success"

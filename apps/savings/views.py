@@ -19,7 +19,11 @@ from django.utils.http import urlencode
 
 from apps.client.models import Client
 from apps.loans.models import Loan
-from apps.sponsorship.momo_prod import create_access_token, generate_uuid, request_to_pay
+from apps.sponsorship.momo_prod import (
+    create_access_token,
+    generate_uuid,
+    request_to_pay,
+)
 from apps.users.decorators import admin_or_manager_or_staff_required
 
 from .forms import (
@@ -42,27 +46,34 @@ def _client_for_user(user):
     email = (getattr(user, "email", "") or "").strip()
     if not email:
         return None
-    return Client.objects.filter(email__iexact=email).exclude(email="no-email@example.com").first()
+    return (
+        Client.objects.filter(email__iexact=email)
+        .exclude(email="no-email@example.com")
+        .first()
+    )
 
 
 def _pending_withdrawal_total(account):
-    return (
-        account.transactions.filter(status="pending", transaction_type="withdrawal").aggregate(total=Sum("amount"))[
-            "total"
-        ]
-        or Decimal("0.00")
-    )
+    return account.transactions.filter(
+        status="pending", transaction_type="withdrawal"
+    ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
 
 
 def _savings_totals(queryset):
     return queryset.filter(status="approved").aggregate(
-        credits=Sum("amount", filter=Q(transaction_type__in=SavingsTransaction.CREDIT_TYPES)),
-        debits=Sum("amount", filter=Q(transaction_type__in=SavingsTransaction.DEBIT_TYPES)),
+        credits=Sum(
+            "amount", filter=Q(transaction_type__in=SavingsTransaction.CREDIT_TYPES)
+        ),
+        debits=Sum(
+            "amount", filter=Q(transaction_type__in=SavingsTransaction.DEBIT_TYPES)
+        ),
     )
 
 
 def _mtn_deposit_fee(amount):
-    return (Decimal(amount) * MTN_DEPOSIT_FEE_RATE).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return (Decimal(amount) * MTN_DEPOSIT_FEE_RATE).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
 
 
 def _mtn_deposit_net_amount(amount):
@@ -77,7 +88,9 @@ def _pending_deposit_session(request):
     return request.session.setdefault(MOBILE_MONEY_DEPOSIT_SESSION_KEY, {})
 
 
-def _store_pending_deposit(request, reference, *, account, amount, fee_amount, phone, notes):
+def _store_pending_deposit(
+    request, reference, *, account, amount, fee_amount, phone, notes
+):
     pending_deposits = _pending_deposit_session(request)
     pending_deposits[reference] = {
         "account_id": account.pk,
@@ -163,11 +176,15 @@ def _format_client_phone(phone):
 
 
 def _client_statement_context(account, request):
-    transactions = account.transactions.select_related("recorded_by", "approved_by", "requested_by")
+    transactions = account.transactions.select_related(
+        "recorded_by", "approved_by", "requested_by"
+    )
     totals = _savings_totals(transactions)
     running_balance = Decimal("0.00")
     statement_rows = []
-    chronological_transactions = transactions.order_by("transaction_date", "created_at", "id")
+    chronological_transactions = transactions.order_by(
+        "transaction_date", "created_at", "id"
+    )
     for savings_transaction in chronological_transactions:
         if savings_transaction.status == "approved":
             if savings_transaction.is_credit:
@@ -191,7 +208,9 @@ def _client_statement_context(account, request):
 
 
 def _finance_notification_recipients():
-    profiles = Q(profile__staff_role__in=["hof", "accountant"]) | Q(profile__role__in=["hof", "accountant"])
+    profiles = Q(profile__staff_role__in=["hof", "accountant"]) | Q(
+        profile__role__in=["hof", "accountant"]
+    )
     return list(
         User.objects.filter(profiles)
         .exclude(email="")
@@ -213,7 +232,9 @@ def _notify_withdrawal_request(savings_transaction):
         f"Reference: {savings_transaction.reference or '-'}\n"
         "Please review it in Manage Savings."
     )
-    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None) or getattr(settings, "EMAIL_HOST_USER", None)
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None) or getattr(
+        settings, "EMAIL_HOST_USER", None
+    )
     try:
         send_mail(
             subject,
@@ -224,7 +245,10 @@ def _notify_withdrawal_request(savings_transaction):
         )
         logger.info("Withdrawal request email sent to %s", ", ".join(recipients))
     except Exception:
-        logger.exception("Withdrawal request email failed for transaction #%s", savings_transaction.pk)
+        logger.exception(
+            "Withdrawal request email failed for transaction #%s",
+            savings_transaction.pk,
+        )
 
 
 @login_required
@@ -237,24 +261,24 @@ def financial_services_dashboard(request):
 @admin_or_manager_or_staff_required
 def savings_account_list(request):
     search_query = request.GET.get("search", "").strip()
-    base_accounts = SavingsAccount.objects.select_related("client").order_by("client__full_name")
-    transactions = SavingsTransaction.objects.select_related("account", "account__client")
-    pending_withdrawals = transactions.filter(status="pending", transaction_type="withdrawal")
+    base_accounts = SavingsAccount.objects.select_related("client").order_by(
+        "client__full_name"
+    )
+    transactions = SavingsTransaction.objects.select_related(
+        "account", "account__client"
+    )
+    pending_withdrawals = transactions.filter(
+        status="pending", transaction_type="withdrawal"
+    )
     pending_deposits = transactions.filter(status="pending", transaction_type="deposit")
     approved_transactions = transactions.filter(status="approved")
     totals = _savings_totals(transactions)
-    deposits_total = (
-        approved_transactions.filter(transaction_type__in=SavingsTransaction.CREDIT_TYPES).aggregate(total=Sum("amount"))[
-            "total"
-        ]
-        or Decimal("0.00")
-    )
-    withdrawals_total = (
-        approved_transactions.filter(transaction_type__in=SavingsTransaction.DEBIT_TYPES).aggregate(total=Sum("amount"))[
-            "total"
-        ]
-        or Decimal("0.00")
-    )
+    deposits_total = approved_transactions.filter(
+        transaction_type__in=SavingsTransaction.CREDIT_TYPES
+    ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+    withdrawals_total = approved_transactions.filter(
+        transaction_type__in=SavingsTransaction.DEBIT_TYPES
+    ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
     accounts = base_accounts
     if search_query:
         accounts = accounts.filter(
@@ -281,13 +305,16 @@ def savings_account_list(request):
             "linked_clients": base_accounts.values("client_id").distinct().count(),
             "pending_withdrawals_count": pending_withdrawals.count(),
             "pending_deposits_count": pending_deposits.count(),
-            "pending_requests_count": pending_withdrawals.count() + pending_deposits.count(),
+            "pending_requests_count": pending_withdrawals.count()
+            + pending_deposits.count(),
             "credits": totals["credits"] or Decimal("0.00"),
             "debits": totals["debits"] or Decimal("0.00"),
             "net_savings": deposits_total - withdrawals_total,
             "deposits_total": deposits_total,
             "withdrawals_total": withdrawals_total,
-            "recent_transactions": transactions.order_by("-transaction_date", "-created_at")[:8],
+            "recent_transactions": transactions.order_by(
+                "-transaction_date", "-created_at"
+            )[:8],
             "pending_withdrawals": pending_withdrawals[:5],
         },
     )
@@ -303,9 +330,13 @@ def savings_account_create(request):
             account = form.save(commit=False)
             account.created_by = request.user
             account.save()
-            messages.success(request, "Savings account saved successfully.", extra_tags="bg-success")
+            messages.success(
+                request, "Savings account saved successfully.", extra_tags="bg-success"
+            )
             return redirect("savings_account_detail", account_id=account.id)
-        messages.error(request, "Please correct the errors below.", extra_tags="bg-danger")
+        messages.error(
+            request, "Please correct the errors below.", extra_tags="bg-danger"
+        )
     else:
         form = SavingsAccountForm()
 
@@ -319,8 +350,12 @@ def savings_account_create(request):
 @login_required
 @admin_or_manager_or_staff_required
 def savings_account_detail(request, account_id):
-    account = get_object_or_404(SavingsAccount.objects.select_related("client"), id=account_id)
-    transactions = account.transactions.select_related("recorded_by", "approved_by", "requested_by")
+    account = get_object_or_404(
+        SavingsAccount.objects.select_related("client"), id=account_id
+    )
+    transactions = account.transactions.select_related(
+        "recorded_by", "approved_by", "requested_by"
+    )
     paginator = Paginator(transactions, 50)
     transactions_page = paginator.get_page(request.GET.get("page"))
     totals = _savings_totals(account.transactions.all())
@@ -360,9 +395,17 @@ def savings_transaction_create(request, account_id=None):
 
                 savings_transaction.approved_at = timezone.now()
             savings_transaction.save()
-            messages.success(request, "Savings transaction saved successfully.", extra_tags="bg-success")
-            return redirect("savings_account_detail", account_id=savings_transaction.account_id)
-        messages.error(request, "Please correct the errors below.", extra_tags="bg-danger")
+            messages.success(
+                request,
+                "Savings transaction saved successfully.",
+                extra_tags="bg-success",
+            )
+            return redirect(
+                "savings_account_detail", account_id=savings_transaction.account_id
+            )
+        messages.error(
+            request, "Please correct the errors below.", extra_tags="bg-danger"
+        )
     else:
         form = SavingsTransactionForm(account=account)
 
@@ -381,11 +424,15 @@ def savings_transaction_create(request, account_id=None):
 @admin_or_manager_or_staff_required
 @transaction.atomic
 def savings_transaction_approve(request, transaction_id):
-    savings_transaction = get_object_or_404(SavingsTransaction, id=transaction_id, status="pending")
+    savings_transaction = get_object_or_404(
+        SavingsTransaction, id=transaction_id, status="pending"
+    )
     if request.method == "POST":
         try:
             savings_transaction.approve(request.user)
-            messages.success(request, "Savings request approved.", extra_tags="bg-success")
+            messages.success(
+                request, "Savings request approved.", extra_tags="bg-success"
+            )
         except Exception as exc:
             messages.error(request, str(exc), extra_tags="bg-danger")
     return redirect("savings_account_detail", account_id=savings_transaction.account_id)
@@ -395,7 +442,9 @@ def savings_transaction_approve(request, transaction_id):
 @admin_or_manager_or_staff_required
 @transaction.atomic
 def savings_transaction_reject(request, transaction_id):
-    savings_transaction = get_object_or_404(SavingsTransaction, id=transaction_id, status="pending")
+    savings_transaction = get_object_or_404(
+        SavingsTransaction, id=transaction_id, status="pending"
+    )
     if request.method == "POST":
         savings_transaction.reject(request.user)
         messages.info(request, "Savings request rejected.", extra_tags="bg-warning")
@@ -425,7 +474,9 @@ def client_savings_dashboard(request):
             deposit_form = ClientMobileMoneyDepositForm(
                 initial={"phone": _format_client_phone(client.mobile_telephone)}
             )
-        loans = Loan.objects.filter(borrower=client).order_by("-start_date", "-created_at")[:10]
+        loans = Loan.objects.filter(borrower=client).order_by(
+            "-start_date", "-created_at"
+        )[:10]
 
     return render(
         request,
@@ -465,7 +516,11 @@ def client_savings_statement(request):
 @transaction.atomic
 def client_savings_deposit_payment(request):
     client = _client_for_user(request.user)
-    account = SavingsAccount.objects.filter(client=client, status="active").first() if client else None
+    account = (
+        SavingsAccount.objects.filter(client=client, status="active").first()
+        if client
+        else None
+    )
     if account is None:
         messages.error(
             request,
@@ -496,15 +551,25 @@ def client_savings_deposit_payment(request):
         settings.SUBSCRIPTION_KEY,
     )
     if not token:
-        messages.error(request, "Mobile money service is temporarily unavailable.", extra_tags="bg-danger")
+        messages.error(
+            request,
+            "Mobile money service is temporarily unavailable.",
+            extra_tags="bg-danger",
+        )
         return redirect("client_savings_dashboard")
 
     ref = generate_uuid()
-    status_code, response_text = request_to_pay(token, settings.SUBSCRIPTION_KEY, api_phone, amount_for_api, ref)
+    status_code, response_text = request_to_pay(
+        token, settings.SUBSCRIPTION_KEY, api_phone, amount_for_api, ref
+    )
     logger.info("Savings deposit request-to-pay %s: %s", status_code, response_text)
 
     if status_code != 202:
-        messages.error(request, "Mobile money deposit could not be initiated. Please try again.", extra_tags="bg-danger")
+        messages.error(
+            request,
+            "Mobile money deposit could not be initiated. Please try again.",
+            extra_tags="bg-danger",
+        )
         return redirect("client_savings_dashboard")
 
     notes = form.cleaned_data.get("notes") or ""
@@ -527,14 +592,20 @@ def client_savings_deposit_waiting(request):
     client = _client_for_user(request.user)
     ref = request.GET.get("ref", "").strip()
     pending_deposit = _get_pending_deposit(request, ref)
-    savings_transaction = SavingsTransaction.objects.select_related("account", "account__client").filter(
-        reference=ref,
-        account__client=client,
-        transaction_type="deposit",
-        payment_method="mobile_money",
-    ).first()
+    savings_transaction = (
+        SavingsTransaction.objects.select_related("account", "account__client")
+        .filter(
+            reference=ref,
+            account__client=client,
+            transaction_type="deposit",
+            payment_method="mobile_money",
+        )
+        .first()
+    )
     if pending_deposit:
-        account = get_object_or_404(SavingsAccount, pk=pending_deposit["account_id"], client=client)
+        account = get_object_or_404(
+            SavingsAccount, pk=pending_deposit["account_id"], client=client
+        )
         amount = Decimal(pending_deposit["amount"])
         fee_amount = Decimal(pending_deposit["fee_amount"])
         status_display = "Awaiting MTN approval"
@@ -544,7 +615,11 @@ def client_savings_deposit_waiting(request):
         fee_amount = _mtn_deposit_fee(amount)
         status_display = savings_transaction.get_status_display()
     else:
-        messages.error(request, "Deposit request was not found. Please start again.", extra_tags="bg-danger")
+        messages.error(
+            request,
+            "Deposit request was not found. Please start again.",
+            extra_tags="bg-danger",
+        )
         return redirect("client_savings_dashboard")
 
     return render(
@@ -567,23 +642,38 @@ def client_savings_deposit_waiting(request):
 @transaction.atomic
 def client_savings_deposit_status(request, reference):
     client = _client_for_user(request.user)
-    savings_transaction = SavingsTransaction.objects.select_for_update().select_related("account", "account__client").filter(
-        reference=reference,
-        account__client=client,
-        transaction_type="deposit",
-        payment_method="mobile_money",
-    ).first()
+    savings_transaction = (
+        SavingsTransaction.objects.select_for_update()
+        .select_related("account", "account__client")
+        .filter(
+            reference=reference,
+            account__client=client,
+            transaction_type="deposit",
+            payment_method="mobile_money",
+        )
+        .first()
+    )
     pending_deposit = _get_pending_deposit(request, reference)
 
     if savings_transaction is None and pending_deposit is None:
-        return JsonResponse({"status": "FAILED", "reason": "Deposit request was not found."}, status=404)
+        return JsonResponse(
+            {"status": "FAILED", "reason": "Deposit request was not found."}, status=404
+        )
 
-    fee_transaction = SavingsTransaction.objects.select_for_update().filter(
-        account=savings_transaction.account if savings_transaction else pending_deposit["account_id"],
-        transaction_type="charge",
-        payment_method="mobile_money",
-        reference=_mtn_fee_reference(reference),
-    ).first()
+    fee_transaction = (
+        SavingsTransaction.objects.select_for_update()
+        .filter(
+            account=(
+                savings_transaction.account
+                if savings_transaction
+                else pending_deposit["account_id"]
+            ),
+            transaction_type="charge",
+            payment_method="mobile_money",
+            reference=_mtn_fee_reference(reference),
+        )
+        .first()
+    )
 
     if savings_transaction and savings_transaction.status == "approved":
         if fee_transaction and fee_transaction.status == "pending":
@@ -601,7 +691,9 @@ def client_savings_deposit_status(request, reference):
             fee_transaction.status = "rejected"
             fee_transaction.approved_at = timezone.now()
             fee_transaction.save(update_fields=["status", "approved_at", "updated_at"])
-        return JsonResponse({"status": "FAILED", "reason": "The deposit was not completed."})
+        return JsonResponse(
+            {"status": "FAILED", "reason": "The deposit was not completed."}
+        )
 
     token = create_access_token(
         settings.MOMO_API_USER,
@@ -629,16 +721,22 @@ def client_savings_deposit_status(request, reference):
     momo_status = data.get("status", "PENDING")
     if momo_status == "SUCCESSFUL":
         if pending_deposit:
-            savings_transaction = _create_successful_mobile_money_deposit(request, reference, pending_deposit)
+            savings_transaction = _create_successful_mobile_money_deposit(
+                request, reference, pending_deposit
+            )
             _clear_pending_deposit(request, reference)
         elif savings_transaction and savings_transaction.status != "approved":
             savings_transaction.status = "approved"
             savings_transaction.approved_at = timezone.now()
-            savings_transaction.save(update_fields=["status", "approved_at", "updated_at"])
+            savings_transaction.save(
+                update_fields=["status", "approved_at", "updated_at"]
+            )
             if fee_transaction and fee_transaction.status == "pending":
                 fee_transaction.status = "approved"
                 fee_transaction.approved_at = timezone.now()
-                fee_transaction.save(update_fields=["status", "approved_at", "updated_at"])
+                fee_transaction.save(
+                    update_fields=["status", "approved_at", "updated_at"]
+                )
         return JsonResponse(
             {
                 "status": "SUCCESSFUL",
@@ -649,7 +747,9 @@ def client_savings_deposit_status(request, reference):
         if savings_transaction:
             savings_transaction.status = "rejected"
             savings_transaction.approved_at = timezone.now()
-            savings_transaction.save(update_fields=["status", "approved_at", "updated_at"])
+            savings_transaction.save(
+                update_fields=["status", "approved_at", "updated_at"]
+            )
         if fee_transaction and fee_transaction.status == "pending":
             fee_transaction.status = "rejected"
             fee_transaction.approved_at = timezone.now()
@@ -669,18 +769,28 @@ def client_savings_request(request):
 @login_required
 @transaction.atomic
 def client_savings_deposit_request(request):
-    return _client_savings_request(request, transaction_type="deposit", form_name="Submit Deposit Request")
+    return _client_savings_request(
+        request, transaction_type="deposit", form_name="Submit Deposit Request"
+    )
 
 
 @login_required
 @transaction.atomic
 def client_savings_withdrawal_request(request):
-    return _client_savings_request(request, transaction_type="withdrawal", form_name="Submit Withdrawal Request")
+    return _client_savings_request(
+        request, transaction_type="withdrawal", form_name="Submit Withdrawal Request"
+    )
 
 
-def _client_savings_request(request, transaction_type=None, form_name="Submit Savings Request"):
+def _client_savings_request(
+    request, transaction_type=None, form_name="Submit Savings Request"
+):
     client = _client_for_user(request.user)
-    account = SavingsAccount.objects.filter(client=client, status="active").first() if client else None
+    account = (
+        SavingsAccount.objects.filter(client=client, status="active").first()
+        if client
+        else None
+    )
     if account is None:
         messages.error(
             request,
@@ -711,9 +821,15 @@ def _client_savings_request(request, transaction_type=None, form_name="Submit Sa
             request_txn.save()
             if request_txn.transaction_type == "withdrawal":
                 _notify_withdrawal_request(request_txn)
-            messages.success(request, "Savings request submitted for review.", extra_tags="bg-success")
+            messages.success(
+                request,
+                "Savings request submitted for review.",
+                extra_tags="bg-success",
+            )
             return redirect("client_savings_dashboard")
-        messages.error(request, "Please correct the errors below.", extra_tags="bg-danger")
+        messages.error(
+            request, "Please correct the errors below.", extra_tags="bg-danger"
+        )
     else:
         form = ClientSavingsRequestForm(transaction_type=transaction_type)
 

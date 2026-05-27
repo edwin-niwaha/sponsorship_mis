@@ -180,7 +180,9 @@ def mark_sponsor_feedback_reviewed(request, feedback_id):
     if request.method == "POST":
         feedback.status = SponsorFeedback.Status.REVIEWED
         feedback.save(update_fields=["status", "updated_at"])
-        messages.success(request, "Sponsor feedback marked as reviewed.", extra_tags="bg-success")
+        messages.success(
+            request, "Sponsor feedback marked as reviewed.", extra_tags="bg-success"
+        )
         return redirect("sponsor_feedback_report")
 
     return HttpResponseBadRequest("Invalid request")
@@ -202,9 +204,11 @@ def _sponsor_payment_report_context(sponsor, payment_model, beneficiary_type):
         total_amount = payments.aggregate(total=Sum("amount"))["total"] or 0
         payment_count = payments.count()
         latest_payment = payments.first()
-        yearly_totals = payments.values("payment_year").annotate(
-            total=Sum("amount")
-        ).order_by("-payment_year")
+        yearly_totals = (
+            payments.values("payment_year")
+            .annotate(total=Sum("amount"))
+            .order_by("-payment_year")
+        )
 
     return {
         "sponsor": sponsor,
@@ -291,9 +295,15 @@ def sponsor_list(request):
             "table_title": "Sponsors List",
             "search_query": search_query,
             "total_sponsors": Sponsor.objects.active_real_supporters().count(),
-            "child_sponsors": Sponsor.objects.active_real_supporters().filter(is_child_sponsor=True).count(),
-            "staff_sponsors": Sponsor.objects.active_real_supporters().filter(is_staff_sponsor=True).count(),
-            "family_supporters": Sponsor.objects.active_real_supporters().filter(is_family_supporter=True).count(),
+            "child_sponsors": Sponsor.objects.active_real_supporters()
+            .filter(is_child_sponsor=True)
+            .count(),
+            "staff_sponsors": Sponsor.objects.active_real_supporters()
+            .filter(is_staff_sponsor=True)
+            .count(),
+            "family_supporters": Sponsor.objects.active_real_supporters()
+            .filter(is_family_supporter=True)
+            .count(),
         },
     )
 
@@ -476,7 +486,9 @@ def sponsor_departure(request):
         if form.is_valid():
             sponsor_id = request.POST.get("id")
             if not sponsor_id:
-                messages.error(request, "Please select a sponsor.", extra_tags="bg-danger")
+                messages.error(
+                    request, "Please select a sponsor.", extra_tags="bg-danger"
+                )
                 return redirect("sponsor_departure")
             sponsor_instance = get_object_or_404(Sponsor, pk=sponsor_id)
 
@@ -499,7 +511,9 @@ def sponsor_departure(request):
     else:
         form = SponsorDepartForm()
 
-    sponsors = Sponsor.objects.active_real_supporters().order_by("first_name", "last_name", "id")
+    sponsors = Sponsor.objects.active_real_supporters().order_by(
+        "first_name", "last_name", "id"
+    )
     return render(
         request,
         "sponsor/sponsor_depature.html",

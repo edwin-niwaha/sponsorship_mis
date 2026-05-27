@@ -69,7 +69,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("Running in DRY-RUN mode"))
 
         if weekday not in self.notification_weekdays and not options["force"]:
-            scheduled = ", ".join(str(day) for day in sorted(self.notification_weekdays))
+            scheduled = ", ".join(
+                str(day) for day in sorted(self.notification_weekdays)
+            )
             self.stdout.write(
                 self.style.WARNING(
                     f"Skipping loan reminders. Today is weekday {weekday}; "
@@ -101,7 +103,9 @@ class Command(BaseCommand):
                 if loan.last_reminder_sent:
                     delta = timezone.now() - loan.last_reminder_sent
                     if delta < timedelta(days=self.cooldown_days):
-                        logger.debug("Loan #%s skipped; reminder cooldown active.", loan.id)
+                        logger.debug(
+                            "Loan #%s skipped; reminder cooldown active.", loan.id
+                        )
                         continue
 
                 service = LoanReminderService(
@@ -144,11 +148,15 @@ class Command(BaseCommand):
                 if value.strip() != ""
             }
         except ValueError as exc:
-            raise CommandError("--notification-weekdays must contain only integers.") from exc
+            raise CommandError(
+                "--notification-weekdays must contain only integers."
+            ) from exc
 
         invalid = [day for day in weekdays if day < 0 or day > 6]
         if invalid:
-            raise CommandError("--notification-weekdays values must be between 0 and 6.")
+            raise CommandError(
+                "--notification-weekdays values must be between 0 and 6."
+            )
         if not weekdays:
             raise CommandError("--notification-weekdays must include at least one day.")
 

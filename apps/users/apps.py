@@ -7,4 +7,5 @@ class UsersConfig(AppConfig):
 
     def ready(self):
         import apps.users.checks  # noqa
+
         # import apps.users.signals  # noqa

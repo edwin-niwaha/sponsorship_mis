@@ -291,6 +291,31 @@
     .documents-table {
       margin-bottom: 0;
     }
+    .documents-mobile-list {
+      display: none;
+    }
+    .document-mobile-item {
+      border-top: 1px solid #e8eef5;
+      padding: 14px 16px;
+    }
+    .document-mobile-item:first-child {
+      border-top: 0;
+    }
+    .document-mobile-title {
+      color: #1f2933;
+      font-weight: 900;
+      margin-bottom: 4px;
+    }
+    .document-mobile-meta {
+      color: #667085;
+      font-size: .82rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      overflow-wrap: anywhere;
+    }
+    .document-open-btn {
+      min-height: 38px;
+    }
     .documents-table thead th,
     .schedule-table thead th {
       color: #667085;
@@ -468,6 +493,16 @@
       }
       .schedule-report-stamp {
         text-align: left;
+      }
+      .documents-table-wrap {
+        display: none;
+      }
+      .documents-mobile-list {
+        display: block;
+      }
+      .document-open-btn {
+        justify-content: center;
+        width: 100%;
       }
     }
     @media print {
@@ -684,7 +719,7 @@
               <h2>Uploaded Documents</h2>
               <span>{{ documents|length }} file{{ documents|length|pluralize }}</span>
             </div>
-            <div class="table-responsive">
+            <div class="table-responsive documents-table-wrap">
               <table class="table table-hover align-middle documents-table">
                 <thead class="table-light">
                   <tr>
@@ -702,7 +737,7 @@
                       <td>{{ document.created_at|date:'M d, Y' }}</td>
                       <td class="text-end">
                         {% if document.file %}
-                          <a href="{{ document.file.url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
+                          <a href="{% url 'loans:client_loan_application_document_open' loan.id document.id %}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm document-open-btn">
                             <i class="mdi mdi-open-in-new"></i> Open
                           </a>
                         {% else %}
@@ -717,6 +752,25 @@
                   {% endfor %}
                 </tbody>
               </table>
+            </div>
+            <div class="documents-mobile-list">
+              {% for document in documents %}
+                <div class="document-mobile-item">
+                  <div class="document-mobile-title">{{ document.get_document_type_display }}</div>
+                  <div class="document-mobile-meta">
+                    {{ document.description|default:'No description' }} | Uploaded {{ document.created_at|date:'M d, Y' }}
+                  </div>
+                  {% if document.file %}
+                    <a href="{% url 'loans:client_loan_application_document_open' loan.id document.id %}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm document-open-btn">
+                      <i class="mdi mdi-open-in-new"></i> Open Document
+                    </a>
+                  {% else %}
+                    <span class="text-muted">No file attached</span>
+                  {% endif %}
+                </div>
+              {% empty %}
+                <div class="empty-docs">No documents uploaded.</div>
+              {% endfor %}
             </div>
           </section>
         </div>
@@ -734,7 +788,7 @@
                     <i class="mdi {% if loan.approved_by_boo %}mdi-check-bold{% else %}mdi-clock-outline{% endif %}"></i>
                   </div>
                   <div class="approval-card">
-                    <strong>BOO review</strong>
+                    <strong>Business Operations Officer review</strong>
                     <span>Business Operations Officer assessment</span>
                     <span class="approval-state">{% if loan.approved_by_boo %}Complete{% else %}Pending{% endif %}</span>
                   </div>
@@ -744,7 +798,7 @@
                     <i class="mdi {% if loan.approved_by_hof %}mdi-check-bold{% else %}mdi-clock-outline{% endif %}"></i>
                   </div>
                   <div class="approval-card">
-                    <strong>HOF review</strong>
+                    <strong>Head of Finance review</strong>
                     <span>Head of Finance verification</span>
                     <span class="approval-state">{% if loan.approved_by_hof %}Complete{% else %}Pending{% endif %}</span>
                   </div>
@@ -754,7 +808,7 @@
                     <i class="mdi {% if loan.approved_by_ed %}mdi-check-bold{% else %}mdi-clock-outline{% endif %}"></i>
                   </div>
                   <div class="approval-card">
-                    <strong>ED review</strong>
+                    <strong>Executive Director review</strong>
                     <span>Executive Director final approval</span>
                     <span class="approval-state">{% if loan.approved_by_ed %}Complete{% else %}Pending{% endif %}</span>
                   </div>

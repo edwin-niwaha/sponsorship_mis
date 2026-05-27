@@ -1,6 +1,13 @@
 from django import forms
 
-from .models import Category, Inventory, Product, ProductImage, ProductVariant, StockMovement
+from .models import (
+    Category,
+    Inventory,
+    Product,
+    ProductImage,
+    ProductVariant,
+    StockMovement,
+)
 
 
 # =================================== category form ===================================
@@ -92,7 +99,10 @@ class ProductVariantForm(forms.ModelForm):
                 attrs={"class": "form-control", "placeholder": "Optional barcode"}
             ),
             "option_value": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Size, color, pack, etc."}
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Size, color, pack, etc.",
+                }
             ),
             "cost": forms.NumberInput(
                 attrs={"class": "form-control", "step": "0.01", "min": "0"}
@@ -100,9 +110,7 @@ class ProductVariantForm(forms.ModelForm):
             "price": forms.NumberInput(
                 attrs={"class": "form-control", "step": "0.01", "min": "0"}
             ),
-            "quantity": forms.NumberInput(
-                attrs={"class": "form-control", "min": "0"}
-            ),
+            "quantity": forms.NumberInput(attrs={"class": "form-control", "min": "0"}),
             "low_stock_threshold": forms.NumberInput(
                 attrs={"class": "form-control", "min": "0"}
             ),
@@ -173,9 +181,9 @@ class StockAdjustmentForm(forms.Form):
         label="Base Product",
     )
     variant = forms.ModelChoiceField(
-        queryset=ProductVariant.objects.select_related("product").all().order_by(
-            "product__name", "name"
-        ),
+        queryset=ProductVariant.objects.select_related("product")
+        .all()
+        .order_by("product__name", "name"),
         required=False,
         widget=forms.Select(attrs={"class": "form-control"}),
         label="Product Variant",
