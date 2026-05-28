@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import Dict, Optional
 
 from apps.loans.models import Loan
+from apps.loans.services.aging import compute_installment_based_days_overdue
 
 
 class LoanReminderService:
@@ -78,22 +79,18 @@ class LoanReminderService:
         ]
 
         if missed:
-            earliest = min(payment["payment_due_date"] for payment in missed)
-            expected_overdue = sum(payment["total_payment"] for payment in missed)
+            aging = compute_installment_based_days_overdue(self.loan, self.today)
+            first_unpaid_due_date = aging["first_unpaid_due_date"]
+            amount_overdue = aging["shortfall"]
 
-            amount_overdue = self.loan.calculate_total_amount_due_balance(
-                self.today,
-                expected_overdue,
-            )
-
-            if amount_overdue > 0:
+            if first_unpaid_due_date and amount_overdue > 0:
                 return {
                     "category": "overdue",
                     "notice_title": "Overdue loan payment",
                     "action_label": "Overdue amount",
                     "action_amount": min(amount_overdue, total_outstanding),
-                    "days_overdue": (self.today - earliest).days,
-                    "payment_due_date": earliest,
+                    "days_overdue": aging["days_overdue"],
+                    "payment_due_date": first_unpaid_due_date,
                     **balances,
                 }
 

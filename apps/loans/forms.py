@@ -677,6 +677,11 @@ class LoanDisbursementForm(forms.ModelForm):
             "payment_method": forms.Select(attrs={"class": "form-control"}),
         }
 
+    def _post_clean(self):
+        # The view marks the loan disbursed immediately before saving this model.
+        # Running LoanDisbursement.clean() here would reject the approved loan too early.
+        return
+
     def clean(self):
         cleaned_data = super().clean()
         loan = cleaned_data.get("loan")
@@ -694,6 +699,16 @@ class LoanDisbursementForm(forms.ModelForm):
                     "Disbursement date cannot be in the future."
                 )
         return cleaned_data
+
+    def save(self, commit=True):
+        disbursement = LoanDisbursement(
+            loan=self.cleaned_data["loan"],
+            account=self.cleaned_data["account"],
+            payment_method=self.cleaned_data["payment_method"],
+        )
+        if commit:
+            disbursement.save()
+        return disbursement
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -63,10 +63,12 @@ from .services.reporting import (
     repayment_rows,
     summarize_amounts,
 )
+from .services.aging import compute_installment_based_days_overdue
 from .tasks import (
     send_html_email_task,
     send_loan_application_email_task,
     send_loan_approval_notification_task,
+    send_loan_stage_notification_task,
 )
 
 logger = logging.getLogger(__name__)
@@ -564,6 +566,8 @@ def loan_apply(request):
 
             borrower = application.borrower
             client_name = borrower.get_full_name()
+            base_url = request.build_absolute_uri("/")
+            submitter_name = user.get_full_name() or user.username
 
             try:
                 send_loan_application_email_task.delay(
@@ -573,12 +577,11 @@ def loan_apply(request):
                     client_name=client_name,
                     is_applicant=True,
                 )
-                send_loan_application_email_task.delay(
-                    recipient_name="Loan Officer",
-                    recipient_email=settings.BOO_EMAIL,
-                    application_id=application.id,
-                    client_name=client_name,
-                    is_applicant=False,
+                send_loan_stage_notification_task.delay(
+                    loan_id=application.id,
+                    stage_status="pending",
+                    actor_name=submitter_name,
+                    base_url=base_url,
                 )
             except Exception:
                 logger.exception(
@@ -591,11 +594,6 @@ def loan_apply(request):
             )
             if resp:
                 return resp
-            messages.success(
-                request,
-                "Loan application submitted successfully.",
-                extra_tags="bg-success",
-            )
             return redirect("loans:loan_applications")
 
         except ValidationError as e:
@@ -619,10 +617,6 @@ def loan_apply(request):
         )
         if resp:
             return resp
-        if not form.is_valid():
-            messages.error(
-                request, "Please correct the errors below.", extra_tags="bg-danger"
-            )
 
     open_applications = Loan.objects.filter(
         status__in=["pending", "boo_approved", "hof_approved"]
@@ -696,20 +690,22 @@ def client_loan_apply(request):
                     document_form.save(application, uploaded_by=request.user)
 
                 try:
+                    base_url = request.build_absolute_uri("/")
+                    submitter_name = (
+                        request.user.get_full_name() or request.user.username
+                    )
                     send_loan_application_email_task.delay(
-                        recipient_name=request.user.get_full_name()
-                        or request.user.username,
+                        recipient_name=submitter_name,
                         recipient_email=request.user.email,
                         application_id=application.id,
                         client_name=current_client.get_full_name(),
                         is_applicant=True,
                     )
-                    send_loan_application_email_task.delay(
-                        recipient_name="Loan Officer",
-                        recipient_email=settings.BOO_EMAIL,
-                        application_id=application.id,
-                        client_name=current_client.get_full_name(),
-                        is_applicant=False,
+                    send_loan_stage_notification_task.delay(
+                        loan_id=application.id,
+                        stage_status="pending",
+                        actor_name=submitter_name,
+                        base_url=base_url,
                     )
                 except Exception:
                     logger.exception(
@@ -1164,6 +1160,22 @@ _APPROVAL_TRANSITIONS = {
 }
 
 
+def _queue_loan_approval_notification(loan_id, new_status, approver_name, base_url):
+    try:
+        send_loan_approval_notification_task.delay(
+            loan_id,
+            new_status,
+            approver_name,
+            base_url,
+        )
+    except Exception:
+        logger.exception(
+            "Loan %s was approved as %s, but approval notification queuing failed.",
+            loan_id,
+            new_status,
+        )
+
+
 @login_required
 def approve_loan(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
@@ -1183,24 +1195,19 @@ def approve_loan(request, loan_id):
     approver_name = user.get_full_name() or user.username
 
     def queue_approval_notification():
-        try:
-            send_loan_approval_notification_task.delay(
-                loan.id,
-                new_status,
-                approver_name,
-                base_url,
-            )
-        except Exception:
-            logger.exception(
-                "Loan %s was approved as %s, but approval notification queuing failed.",
-                loan.id,
-                new_status,
-            )
+        _queue_loan_approval_notification(
+            loan.id,
+            new_status,
+            approver_name,
+            base_url,
+        )
 
     transaction.on_commit(queue_approval_notification)
 
     messages.success(
-        request, f"Loan {loan.id} approved ({new_status}).", extra_tags="bg-success"
+        request,
+        f"Loan {loan.id} approved ({new_status}). Approval notification queued.",
+        extra_tags="bg-success",
     )
     return redirect("loans:loan_applications")
 
@@ -1232,11 +1239,29 @@ def approve_all_loans(request):
         )
         return redirect("loans:loan_applications")
 
+    base_url = request.build_absolute_uri("/")
+    approver_name = user.get_full_name() or user.username
+    approved_loans = []
+
     for loan in pending_loans:
-        loan.approve(user)
+        new_status = loan.approve(user)
+        approved_loans.append((loan.id, new_status))
+
+    def queue_approval_notifications():
+        for loan_id, new_status in approved_loans:
+            _queue_loan_approval_notification(
+                loan_id,
+                new_status,
+                approver_name,
+                base_url,
+            )
+
+    transaction.on_commit(queue_approval_notifications)
 
     messages.success(
-        request, f"All {pending_status} loans approved.", extra_tags="bg-success"
+        request,
+        f"All {pending_status} loans approved. Approval notifications queued.",
+        extra_tags="bg-success",
     )
     return redirect("loans:loan_applications")
 

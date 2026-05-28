@@ -288,6 +288,11 @@ LOGGING = {
             "level": os.environ.get("DJANGO_LOG_LEVEL", "DEBUG"),
             "propagate": True,
         },
+        "celery.utils.functional": {
+            "handlers": ["console", "file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
     },
 }
 

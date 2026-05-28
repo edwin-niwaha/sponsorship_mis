@@ -3,6 +3,7 @@ import logging
 from celery import shared_task
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.db.models import Q
 from django.utils.html import strip_tags
 
 logger = logging.getLogger(__name__)
@@ -10,63 +11,115 @@ logger = logging.getLogger(__name__)
 
 def _valid_recipients(*recipients):
     invalid_values = {"", "none", "null", "false"}
-    return [
-        email.strip()
-        for email in recipients
-        if email and email.strip().lower() not in invalid_values
+    valid = []
+    seen = set()
+    for email in recipients:
+        if not email:
+            continue
+
+        normalized_email = email.strip()
+        if normalized_email.lower() in invalid_values:
+            continue
+
+        email_key = normalized_email.lower()
+        if email_key in seen:
+            continue
+
+        valid.append(normalized_email)
+        seen.add(email_key)
+
+    return valid
+
+
+def _role_email_recipients(*roles):
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
+    return _valid_recipients(
+        *User.objects.filter(
+            is_active=True,
+        )
+        .filter(Q(profile__role__in=roles) | Q(profile__staff_role__in=roles))
+        .values_list("email", flat=True)
+    )
+
+
+def _approval_recipients(*setting_names, roles=()):
+    configured_recipients = [
+        getattr(settings, setting_name, "") for setting_name in setting_names
     ]
+    return _valid_recipients(
+        *configured_recipients,
+        *_role_email_recipients(*roles),
+    )
 
 
-def _loan_approval_payload(loan, new_status, approver_name, base_url):
+def _loan_stage_payload(loan, stage_status, actor_name, base_url):
     borrower_name = getattr(loan.borrower, "full_name", str(loan.borrower))
     amount = f"UGX {loan.principal_amount:,.2f}"
     applications_url = f"{base_url.rstrip('/')}/loans/applications/"
     disburse_url = f"{base_url.rstrip('/')}/loans/disburse/"
 
-    if new_status == "boo_approved":
+    if stage_status == "pending":
+        return {
+            "subject": f"New Loan Application {loan.id} Requires BOO Review",
+            "recipients": _approval_recipients("BOO_EMAIL", roles=("boo",)),
+            "heading": "BOO approval required",
+            "message": (
+                f"Loan #{loan.id} for {borrower_name} ({amount}) was submitted by "
+                f"{actor_name}. Please review it for BOO approval."
+            ),
+            "action_label": "Review Loan",
+            "action_url": applications_url,
+        }
+
+    if stage_status == "boo_approved":
         return {
             "subject": f"Loan {loan.id} Approved by BOO",
-            "recipients": _valid_recipients(getattr(settings, "HOF_EMAIL", "")),
+            "recipients": _approval_recipients("HOF_EMAIL", roles=("hof",)),
             "heading": "HOF approval required",
             "message": (
                 f"Loan #{loan.id} for {borrower_name} ({amount}) was approved by "
-                f"{approver_name}. Please review it for HOF approval."
+                f"{actor_name}. Please review it for HOF approval."
             ),
             "action_label": "Review Loan",
             "action_url": applications_url,
         }
 
-    if new_status == "hof_approved":
+    if stage_status == "hof_approved":
         return {
             "subject": f"Loan {loan.id} Approved by HOF",
-            "recipients": _valid_recipients(getattr(settings, "ED_EMAIL", "")),
+            "recipients": _approval_recipients("ED_EMAIL", roles=("ed",)),
             "heading": "ED approval required",
             "message": (
                 f"Loan #{loan.id} for {borrower_name} ({amount}) was approved by "
-                f"{approver_name}. Please review it for ED approval."
+                f"{actor_name}. Please review it for ED approval."
             ),
             "action_label": "Review Loan",
             "action_url": applications_url,
         }
 
-    if new_status == "approved":
+    if stage_status == "approved":
         return {
             "subject": f"Loan {loan.id} Fully Approved",
-            "recipients": _valid_recipients(
-                getattr(settings, "BOO_EMAIL", ""),
-                getattr(settings, "HOF_EMAIL", ""),
-                getattr(settings, "ACCOUNTANT_EMAIL", ""),
+            "recipients": _approval_recipients(
+                "ACCOUNTANT_EMAIL",
+                roles=("accountant",),
             ),
             "heading": "Loan ready for disbursement",
             "message": (
                 f"Loan #{loan.id} for {borrower_name} ({amount}) was fully approved by "
-                f"{approver_name}. Please proceed with disbursement."
+                f"{actor_name}. Please proceed with disbursement."
             ),
             "action_label": "Disburse Loan",
             "action_url": disburse_url,
         }
 
     return None
+
+
+def _loan_approval_payload(loan, new_status, approver_name, base_url):
+    return _loan_stage_payload(loan, new_status, approver_name, base_url)
 
 
 def _approval_email_html(heading, message, action_label, action_url):
@@ -199,33 +252,25 @@ def send_html_email_task(self, subject, html_body, recipients):
     return sent_count
 
 
-@shared_task(
-    bind=True,
-    autoretry_for=(Exception,),
-    retry_backoff=True,
-    retry_kwargs={"max_retries": 3},
-)
-def send_loan_approval_notification_task(
-    self, loan_id, new_status, approver_name, base_url
-):
+def _send_loan_stage_notification(loan_id, stage_status, actor_name, base_url):
     from .models import Loan
 
     loan = Loan.objects.select_related("borrower").get(id=loan_id)
-    payload = _loan_approval_payload(loan, new_status, approver_name, base_url)
+    payload = _loan_stage_payload(loan, stage_status, actor_name, base_url)
     if not payload:
         logger.info(
-            "No approval notification configured for loan %s status %s.",
+            "No stage notification configured for loan %s status %s.",
             loan_id,
-            new_status,
+            stage_status,
         )
         return False
 
     recipients = payload["recipients"]
     if not recipients:
         logger.warning(
-            "Loan %s approval notification skipped for status %s because no recipients are configured.",
+            "Loan %s stage notification skipped for status %s because no recipients are configured.",
             loan_id,
-            new_status,
+            stage_status,
         )
         return False
 
@@ -234,7 +279,7 @@ def send_loan_approval_notification_task(
     )
     if not from_email:
         logger.warning(
-            "Loan %s approval notification skipped because DEFAULT_FROM_EMAIL is not configured.",
+            "Loan %s stage notification skipped because DEFAULT_FROM_EMAIL is not configured.",
             loan_id,
         )
         return False
@@ -254,12 +299,39 @@ def send_loan_approval_notification_task(
     email.attach_alternative(html_body, "text/html")
     sent_count = email.send(fail_silently=False)
     logger.info(
-        "Loan %s approval notification sent to %s for status %s.",
+        "Loan %s stage notification sent to %s for status %s.",
         loan_id,
         ", ".join(recipients),
-        new_status,
+        stage_status,
     )
     return sent_count
+
+
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_kwargs={"max_retries": 3},
+)
+def send_loan_stage_notification_task(self, loan_id, stage_status, actor_name, base_url):
+    return _send_loan_stage_notification(loan_id, stage_status, actor_name, base_url)
+
+
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_kwargs={"max_retries": 3},
+)
+def send_loan_approval_notification_task(
+    self, loan_id, new_status, approver_name, base_url
+):
+    return _send_loan_stage_notification(
+        loan_id,
+        new_status,
+        approver_name,
+        base_url,
+    )
 
 
 # Task to send loan application email

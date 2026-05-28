@@ -1,12 +1,15 @@
 from datetime import date
 from decimal import Decimal
+from io import StringIO
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from cloudinary import CloudinaryResource
 from django.contrib.auth.models import User
+from django.contrib.messages import get_messages
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.test import Client as DjangoTestClient
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -29,6 +32,8 @@ from .services.reporting import (
     loan_financial_row,
     portfolio_at_risk_summary,
 )
+from .services.loan_reminder_service import LoanReminderService
+from .tasks import _loan_approval_payload
 from .views import compute_installment_based_days_overdue
 
 
@@ -59,6 +64,8 @@ class LoanWorkflowTests(TestCase):
         self.boo = self._user("boo-user", "boo")
         self.hof = self._user("hof-user", "hof")
         self.ed = self._user("ed-user", "ed")
+        self.accountant = self._user("accountant-user", "accountant")
+        self.web = DjangoTestClient()
 
     def _user(self, username, role):
         user = User.objects.create_user(username=username, password="pass")
@@ -96,6 +103,166 @@ class LoanWorkflowTests(TestCase):
         self.assertEqual(loan.approved_by_ed, self.ed)
         self.assertEqual(loan.approved_date, timezone.localdate())
 
+    @override_settings(BOO_EMAIL="", HOF_EMAIL="", ED_EMAIL="", ACCOUNTANT_EMAIL="")
+    def test_stage_notifications_use_role_user_emails_when_settings_empty(self):
+        self.boo.email = "boo@example.com"
+        self.boo.save(update_fields=["email"])
+        self.boo.profile.role = "staff"
+        self.boo.profile.staff_role = "boo"
+        self.boo.profile.save(update_fields=["role", "staff_role"])
+        self.hof.email = "hof@example.com"
+        self.hof.save(update_fields=["email"])
+        self.hof.profile.role = "staff"
+        self.hof.profile.staff_role = "hof"
+        self.hof.profile.save(update_fields=["role", "staff_role"])
+        self.ed.email = "ed@example.com"
+        self.ed.save(update_fields=["email"])
+        self.ed.profile.role = "staff"
+        self.ed.profile.staff_role = "ed"
+        self.ed.profile.save(update_fields=["role", "staff_role"])
+        self.accountant.email = "accountant@example.com"
+        self.accountant.save(update_fields=["email"])
+        self.accountant.profile.role = "staff"
+        self.accountant.profile.staff_role = "accountant"
+        self.accountant.profile.save(update_fields=["role", "staff_role"])
+        loan = self._loan()
+
+        pending_payload = _loan_approval_payload(
+            loan, "pending", "Loan Applicant", "https://example.test/"
+        )
+        boo_payload = _loan_approval_payload(
+            loan, "boo_approved", "Business Officer", "https://example.test/"
+        )
+        hof_payload = _loan_approval_payload(
+            loan, "hof_approved", "Head of Finance", "https://example.test/"
+        )
+        final_payload = _loan_approval_payload(
+            loan, "approved", "Executive Director", "https://example.test/"
+        )
+
+        self.assertEqual(pending_payload["recipients"], ["boo@example.com"])
+        self.assertEqual(boo_payload["recipients"], ["hof@example.com"])
+        self.assertEqual(hof_payload["recipients"], ["ed@example.com"])
+        self.assertEqual(final_payload["recipients"], ["accountant@example.com"])
+
+    @override_settings(
+        BOO_EMAIL="boo@example.com",
+        HOF_EMAIL="hof@example.com",
+        ED_EMAIL="ed@example.com",
+        ACCOUNTANT_EMAIL="accountant@example.com",
+    )
+    def test_stage_notifications_deduplicate_configured_and_role_emails(self):
+        self.boo.email = "BOO@example.com"
+        self.boo.save(update_fields=["email"])
+        self.hof.email = "hof@example.com"
+        self.hof.save(update_fields=["email"])
+        self.ed.email = "ed@example.com"
+        self.ed.save(update_fields=["email"])
+        self.accountant.email = "ACCOUNTANT@example.com"
+        self.accountant.save(update_fields=["email"])
+        loan = self._loan()
+
+        pending_payload = _loan_approval_payload(
+            loan, "pending", "Loan Applicant", "https://example.test/"
+        )
+        final_payload = _loan_approval_payload(
+            loan, "approved", "Executive Director", "https://example.test/"
+        )
+
+        self.assertEqual(pending_payload["recipients"], ["boo@example.com"])
+        self.assertEqual(final_payload["recipients"], ["accountant@example.com"])
+
+    @patch("apps.loans.views.send_loan_approval_notification_task.delay")
+    def test_approve_loan_returns_success_notification_and_queues_email(
+        self, mock_delay
+    ):
+        loan = self._loan()
+        self.web.force_login(self.boo)
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.web.get(reverse("loans:approve_loan", args=[loan.id]))
+        loan.refresh_from_db()
+        response_messages = [
+            str(message) for message in get_messages(response.wsgi_request)
+        ]
+
+        self.assertRedirects(
+            response,
+            reverse("loans:loan_applications"),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(loan.status, "boo_approved")
+        self.assertTrue(
+            any(
+                "Approval notification queued." in message
+                for message in response_messages
+            )
+        )
+        mock_delay.assert_called_once()
+
+    @patch("apps.loans.views.send_loan_stage_notification_task.delay")
+    @patch("apps.loans.views.send_loan_application_email_task.delay")
+    def test_staff_loan_application_adds_one_success_message(
+        self, mock_applicant_delay, mock_stage_delay
+    ):
+        self.web.force_login(self.boo)
+
+        response = self.web.post(
+            reverse("loans:apply_for_loan"),
+            {
+                "client": self.client.id,
+                "principal_amount": "1000.00",
+                "interest_rate": "10.00",
+                "loan_period_months": "6",
+                "loan_purpose": "business",
+                "start_date": "2026-01-01",
+                "reason_for_approval": "Working capital",
+            },
+        )
+        response_messages = [
+            str(message) for message in get_messages(response.wsgi_request)
+        ]
+
+        self.assertRedirects(
+            response,
+            reverse("loans:loan_applications"),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(
+            response_messages.count("Loan application submitted successfully."),
+            1,
+        )
+        mock_applicant_delay.assert_called_once()
+        mock_stage_delay.assert_called_once()
+
+    @patch("apps.loans.views.send_loan_approval_notification_task.delay")
+    def test_approve_all_loans_queues_notifications_for_each_approved_loan(
+        self, mock_delay
+    ):
+        self._loan()
+        self._loan(principal_amount=Decimal("2000.00"))
+        self.web.force_login(self.boo)
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.web.get(reverse("loans:approve_all_loans"))
+        response_messages = [
+            str(message) for message in get_messages(response.wsgi_request)
+        ]
+
+        self.assertRedirects(
+            response,
+            reverse("loans:loan_applications"),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(Loan.objects.filter(status="boo_approved").count(), 2)
+        self.assertTrue(
+            any(
+                "Approval notifications queued." in message
+                for message in response_messages
+            )
+        )
+        self.assertEqual(mock_delay.call_count, 2)
+
     def test_disbursement_requires_approval(self):
         loan = self._loan()
 
@@ -113,6 +280,31 @@ class LoanWorkflowTests(TestCase):
 
         disbursement.description = "Updated note"
         disbursement.save()
+        self.assertEqual(loan.transactions.count(), 4)
+
+    def test_disbursement_view_marks_loan_before_creating_disbursement(self):
+        loan = self._approved_loan()
+        self.web.force_login(self.hof)
+
+        response = self.web.post(
+            reverse("loans:disburse_loan"),
+            {
+                "loan": loan.id,
+                "account": self.cash.id,
+                "payment_method": "Cash",
+                "disbursement_date": "2026-01-02",
+            },
+        )
+        loan.refresh_from_db()
+
+        self.assertRedirects(
+            response,
+            reverse("loans:disburse_loan"),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(loan.status, "disbursed")
+        self.assertEqual(loan.disbursement_date, date(2026, 1, 2))
+        self.assertEqual(loan.disbursements.count(), 1)
         self.assertEqual(loan.transactions.count(), 4)
 
     def test_duplicate_disbursement_is_rejected(self):
@@ -247,6 +439,52 @@ class LoanWorkflowTests(TestCase):
         self.assertGreater(aging["days_overdue"], 0)
         self.assertGreater(aging["shortfall"], Decimal("0.00"))
 
+    def test_loan_reminder_overdue_days_match_aging_report(self):
+        loan = self._approved_loan()
+        loan.disburse(date(2026, 1, 1))
+        LoanDisbursement.objects.create(loan=loan, account=self.cash)
+        LoanRepayment.objects.create(
+            loan=loan,
+            repayment_date=date(2026, 2, 1),
+            principal_payment=loan.monthly_installment,
+            account=self.cash,
+        )
+        today = date(2026, 3, 2)
+
+        aging = compute_installment_based_days_overdue(loan, today)
+        reminder_info = LoanReminderService(loan=loan, today=today).get_info()
+
+        self.assertEqual(aging["days_overdue"], 1)
+        self.assertEqual(reminder_info["category"], "overdue")
+        self.assertEqual(reminder_info["days_overdue"], aging["days_overdue"])
+        self.assertEqual(
+            reminder_info["payment_due_date"],
+            aging["first_unpaid_due_date"],
+        )
+
+    def test_loan_notification_command_sends_one_day_arrears_despite_cooldown(self):
+        self.client.email = "borrower@example.com"
+        self.client.save(update_fields=["email"])
+        loan = self._approved_loan()
+        loan.disburse(date(2026, 1, 1))
+        LoanDisbursement.objects.create(loan=loan, account=self.cash)
+        LoanRepayment.objects.create(
+            loan=loan,
+            repayment_date=date(2026, 2, 1),
+            principal_payment=loan.monthly_installment,
+            account=self.cash,
+        )
+        loan.last_reminder_sent = timezone.now()
+        loan.save(update_fields=["last_reminder_sent"])
+        out = StringIO()
+
+        with patch("django.utils.timezone.localdate", return_value=date(2026, 3, 2)):
+            call_command("send_loan_notifications", "--dry-run", "--force", stdout=out)
+
+        output = out.getvalue()
+        self.assertIn("Emails sent: 1", output)
+        self.assertIn("Overdue: 1", output)
+
     def test_portfolio_at_risk_uses_outstanding_value_not_loan_count(self):
         at_risk = self._approved_loan()
         at_risk.disburse(date(2026, 1, 1))
@@ -366,9 +604,10 @@ class ClientSelfServiceLoanApplicationTests(TestCase):
         SELF_SERVICE_LOAN_INTEREST_RATE=Decimal("10.00"),
     )
     @patch("cloudinary.models.uploader.upload_resource")
+    @patch("apps.loans.views.send_loan_stage_notification_task.delay")
     @patch("apps.loans.views.send_loan_application_email_task.delay")
     def test_client_can_submit_self_service_application_with_required_documents(
-        self, mock_delay, mock_upload
+        self, mock_applicant_delay, mock_stage_delay, mock_upload
     ):
         mock_upload.return_value = CloudinaryResource(
             public_id="loan-documents/test-file",
@@ -399,7 +638,13 @@ class ClientSelfServiceLoanApplicationTests(TestCase):
                 document_type=LoanApplicationDocument.DOCUMENT_TYPE_COLLATERAL_SECURITY
             ).exists()
         )
-        self.assertEqual(mock_delay.call_count, 2)
+        mock_applicant_delay.assert_called_once()
+        mock_stage_delay.assert_called_once_with(
+            loan_id=loan.id,
+            stage_status="pending",
+            actor_name=self.user.username,
+            base_url="http://testserver/",
+        )
 
     @override_settings(
         DEFAULT_FILE_STORAGE="django.core.files.storage.FileSystemStorage"
@@ -424,9 +669,10 @@ class ClientSelfServiceLoanApplicationTests(TestCase):
         SELF_SERVICE_LOAN_INTEREST_RATE=Decimal("10.00"),
     )
     @patch("cloudinary.models.uploader.upload_resource")
+    @patch("apps.loans.views.send_loan_stage_notification_task.delay")
     @patch("apps.loans.views.send_loan_application_email_task.delay")
     def test_client_cannot_apply_with_pending_or_running_loan(
-        self, mock_delay, mock_upload
+        self, mock_applicant_delay, mock_stage_delay, mock_upload
     ):
         Loan.objects.create(
             borrower=self.borrower,
@@ -449,7 +695,8 @@ class ClientSelfServiceLoanApplicationTests(TestCase):
 
         self.assertRedirects(response, reverse("loans:client_loan_applications"))
         self.assertEqual(Loan.objects.filter(borrower=self.borrower).count(), 1)
-        mock_delay.assert_not_called()
+        mock_applicant_delay.assert_not_called()
+        mock_stage_delay.assert_not_called()
 
     def test_client_cannot_view_another_clients_application(self):
         self.web.force_login(self.user)
@@ -558,9 +805,10 @@ class ClientSelfServiceLoanApplicationTests(TestCase):
         SELF_SERVICE_LOAN_INTEREST_RATE=Decimal("10.00"),
     )
     @patch("cloudinary.models.uploader.upload_resource")
+    @patch("apps.loans.views.send_loan_stage_notification_task.delay")
     @patch("apps.loans.views.send_loan_application_email_task.delay")
     def test_staff_approval_workflow_accepts_self_service_loan(
-        self, mock_delay, mock_upload
+        self, mock_applicant_delay, mock_stage_delay, mock_upload
     ):
         mock_upload.return_value = CloudinaryResource(
             public_id="loan-documents/test-file",

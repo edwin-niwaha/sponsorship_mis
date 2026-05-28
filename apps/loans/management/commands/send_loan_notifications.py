@@ -100,14 +100,6 @@ class Command(BaseCommand):
             try:
                 total_processed += 1
 
-                if loan.last_reminder_sent:
-                    delta = timezone.now() - loan.last_reminder_sent
-                    if delta < timedelta(days=self.cooldown_days):
-                        logger.debug(
-                            "Loan #%s skipped; reminder cooldown active.", loan.id
-                        )
-                        continue
-
                 service = LoanReminderService(
                     loan=loan,
                     today=today,
@@ -116,6 +108,14 @@ class Command(BaseCommand):
                 info = service.get_info()
                 if not info:
                     continue
+
+                if loan.last_reminder_sent and info["category"] != "overdue":
+                    delta = timezone.now() - loan.last_reminder_sent
+                    if delta < timedelta(days=self.cooldown_days):
+                        logger.debug(
+                            "Loan #%s skipped; reminder cooldown active.", loan.id
+                        )
+                        continue
 
                 sent = self.send_email(loan, info, today)
                 if sent:
