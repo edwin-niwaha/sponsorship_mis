@@ -213,13 +213,20 @@ SOCIAL_AUTH_PIPELINE = (
     "apps.users.pipeline.require_google_login_token",
 )
 
+# Redis / Celery
+# Prefer explicit Celery variables when set, otherwise fall back to REDIS_URL.
+# This makes Railway deployments easier because web and worker services can use
+# either REDIS_URL, CELERY_BROKER_URL, or CELERY_RESULT_BACKEND.
 REDIS_URL = os.environ.get("REDIS_URL")
 
-if not REDIS_URL:
-    raise Exception("REDIS_URL is not set!")
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL") or REDIS_URL
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND") or REDIS_URL
 
-CELERY_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = REDIS_URL
+if not CELERY_BROKER_URL:
+    raise Exception("CELERY_BROKER_URL or REDIS_URL is not set!")
+
+if not CELERY_RESULT_BACKEND:
+    raise Exception("CELERY_RESULT_BACKEND or REDIS_URL is not set!")
 
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
