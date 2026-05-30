@@ -98,7 +98,21 @@
           <a class="nav-link" href="https://pendeza.org/" target="_blank" rel="noopener">About Us</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link nav-cta" href="{% url 'initiate_payment' %}">Donate</a>
+            <a class="nav-link nav-cta me-2"
+              href="{% url 'initiate_payment' %}?currency=UGX">
+              Donate UGX
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a
+                class="nav-link nav-cta"
+                href="https://app.betterunite.com/usapendeza-childsponsorship"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Donate $
+            </a>
         </li>
         {% if user.is_authenticated and user.profile.resolved_account_type == 'client' %}
           <li class="nav-item">
