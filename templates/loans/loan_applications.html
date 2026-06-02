@@ -37,6 +37,9 @@
     .status-pending { background: #fff4db; color: #8a5a00; }
     .status-boo_approved { background: #e8f5fb; color: #187795; }
     .status-hof_approved { background: #edf7ee; color: #27633a; }
+    .doc-badge { border-radius: 999px; display: inline-flex; font-size: .7rem; font-weight: 800; padding: 4px 8px; white-space: nowrap; }
+    .doc-complete { background: #eaf7ef; color: #247a43; }
+    .doc-missing { background: #fff7ed; color: #9a3412; }
     .action-group { display: inline-flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; min-width: 172px; }
     .action-group .btn { align-items: center; display: inline-flex; height: 31px; justify-content: center; min-width: 33px; padding: 4px 8px; }
     .amount { text-align: right; white-space: nowrap; }
@@ -158,6 +161,7 @@
                 <th>Rate</th>
                 <th>Applied By</th>
                 <th>Applied On</th>
+                <th>Documents</th>
                 <th>Stage</th>
                 <th class="text-end no-print">Actions</th>
               </tr>
@@ -181,19 +185,37 @@
                   <td>{{ loan.applied_by|default:'-' }}</td>
                   <td>{{ loan.start_date|date:'d M Y' }}</td>
                   <td>
+                    {% if loan.has_required_documents %}
+                      <span class="doc-badge doc-complete">Complete</span>
+                    {% else %}
+                      <span class="doc-badge doc-missing" title="Missing required documents">
+                        Missing {{ loan.missing_required_documents|length }}
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td>
                     <span class="status-badge status-{{ loan.status }}">{{ loan.get_status_display }}</span>
                   </td>
                   <td class="text-end no-print">
                     <div class="action-group">
-                      <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#notesModal{{ loan.id }}" title="Assessment notes">
+                      <a href="{% url 'loans:loan_detail' loan.id %}" class="btn btn-outline-primary btn-sm" title="Open detail and documents">
                         <i class="mdi mdi-eye"></i>
+                      </a>
+                      <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#notesModal{{ loan.id }}" title="Assessment notes">
+                        <i class="mdi mdi-note-text"></i>
                       </button>
                       {% with role=user.profile.role %}
                         {% if loan.status != 'approved' and loan.status != 'disbursed' %}
                           {% if role == 'administrator' or role == 'boo' or role == 'hof' or role == 'ed' %}
-                            <a href="{% url 'loans:approve_loan' loan.id %}" class="btn btn-outline-success btn-sm" title="Approve" onclick="return confirm('Approve loan #{{ loan.id }}?');">
-                              <i class="mdi mdi-check-circle"></i>
-                            </a>
+                            {% if loan.has_required_documents %}
+                              <a href="{% url 'loans:approve_loan' loan.id %}" class="btn btn-outline-success btn-sm" title="Approve" onclick="return confirm('Approve loan #{{ loan.id }}?');">
+                                <i class="mdi mdi-check-circle"></i>
+                              </a>
+                            {% else %}
+                              <button type="button" class="btn btn-outline-success btn-sm" title="Required documents are missing" disabled>
+                                <i class="mdi mdi-check-circle"></i>
+                              </button>
+                            {% endif %}
                           {% endif %}
                           {% if role == 'administrator' or role == 'hof' or role == 'ed' %}
                             <a href="{% url 'loans:reject_loan' loan.id %}" class="btn btn-outline-danger btn-sm" title="Reject" onclick="return confirm('Reject loan #{{ loan.id }}?');">

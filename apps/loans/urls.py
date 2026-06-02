@@ -57,6 +57,16 @@ urlpatterns = [
         views.upload_loan_application_document,
         name="upload_loan_application_document",
     ),
+    path(
+        "<int:loan_id>/documents/<int:document_id>/open/",
+        views.loan_application_document_open,
+        name="loan_application_document_open",
+    ),
+    path(
+        "<int:loan_id>/documents/<int:document_id>/download/",
+        views.loan_application_document_download,
+        name="loan_application_document_download",
+    ),
     path("<int:loan_id>/", views.loan_detail_view, name="loan_detail"),
     path(
         "repayment/delete/<int:repayment_id>/",

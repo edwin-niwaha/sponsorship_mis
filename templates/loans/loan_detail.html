@@ -305,6 +305,38 @@
       color: #fff;
     }
 
+    .loan-warning {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: 8px;
+      color: #9a3412;
+      font-weight: 800;
+      margin-bottom: 12px;
+      padding: 12px 14px;
+    }
+
+    .loan-document-status {
+      border-radius: 999px;
+      display: inline-flex;
+      font-size: .72rem;
+      font-weight: 900;
+      padding: 4px 9px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .loan-document-status.attached {
+      background: #eaf7ef;
+      color: #247a43;
+    }
+
+    .loan-document-actions {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
     @media print {
       .print-hide {
         display: none !important;
@@ -387,6 +419,132 @@
         </div>
       </section>
 
+      <section class="loan-detail-panel">
+        <div class="loan-panel-head">
+          <div>
+            <h5>Attached Documents</h5>
+            <span>Supporting files available for BOO, HOF, and ED review</span>
+          </div>
+        </div>
+        <div class="loan-panel-body">
+          {% if missing_required_documents %}
+            <div class="loan-warning">
+              Required documents missing:
+              {% for item in missing_required_documents %}
+                {{ item.label }}{% if not forloop.last %}, {% endif %}
+              {% endfor %}.
+              Approval and review actions are blocked until these documents are attached.
+            </div>
+          {% endif %}
+
+          <form method="post" action="{% url 'loans:upload_loan_application_document' loan.id %}" enctype="multipart/form-data" class="loan-upload-form print-hide">
+            {% csrf_token %}
+            <div class="row g-3 align-items-end">
+              <div class="col-md-3">
+                <label class="form-label" for="{{ document_upload_form.document_type.id_for_label }}">Document type</label>
+                {{ document_upload_form.document_type }}
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="{{ document_upload_form.file.id_for_label }}">File</label>
+                {{ document_upload_form.file }}
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" for="{{ document_upload_form.description.id_for_label }}">Note</label>
+                {{ document_upload_form.description }}
+              </div>
+              <div class="col-md-2">
+                <button type="submit" class="btn btn-dark w-100"><i class="mdi mdi-upload"></i> Upload</button>
+              </div>
+            </div>
+            <div class="loan-muted mt-2">Accepted file types: PDF, JPG, JPEG, PNG, DOC, and DOCX.</div>
+          </form>
+
+          <div class="loan-table-scroll">
+            <table class="table table-hover align-middle loan-table">
+              <thead>
+                <tr>
+                  <th>Document Name / Type</th>
+                  <th>File Name</th>
+                  <th>Uploaded By</th>
+                  <th>Upload Date</th>
+                  <th>Status</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for document in documents %}
+                  <tr>
+                    <td>
+                      <strong>{{ document.get_document_type_display }}</strong>
+                      {% if document.description %}<div class="loan-muted">{{ document.description }}</div>{% endif %}
+                    </td>
+                    <td>{{ document.file.name|default:'Attached file' }}</td>
+                    <td>{{ document.uploaded_by|default:'-' }}</td>
+                    <td>{{ document.created_at|date:'M d, Y H:i' }}</td>
+                    <td><span class="loan-document-status attached">Attached</span></td>
+                    <td class="text-end">
+                      {% if document.file %}
+                        <span class="loan-document-actions">
+                          <a href="{% url 'loans:loan_application_document_open' loan.id document.id %}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm"><i class="mdi mdi-eye"></i> View</a>
+                          <a href="{% url 'loans:loan_application_document_download' loan.id document.id %}" class="btn btn-outline-secondary btn-sm"><i class="mdi mdi-download"></i> Download</a>
+                        </span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="6" class="text-center text-muted py-3">
+                      No supporting documents have been attached to this loan application.
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if documents_page.paginator.count %}
+            <nav class="loan-pagination print-hide" aria-label="Loan documents pagination">
+              <span class="loan-pagination-note">
+                Showing {{ documents_page.start_index }}-{{ documents_page.end_index }} of {{ documents_page.paginator.count }}
+              </span>
+              <ul class="pagination pagination-sm">
+                {% if documents_page.has_previous %}
+                  <li class="page-item"><a class="page-link" href="?documents_page={{ documents_page.previous_page_number }}{% if repayments_page.number %}&repayments_page={{ repayments_page.number }}{% endif %}">Previous</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ documents_page.number }} of {{ documents_page.paginator.num_pages }}</span></li>
+                {% if documents_page.has_next %}
+                  <li class="page-item"><a class="page-link" href="?documents_page={{ documents_page.next_page_number }}{% if repayments_page.number %}&repayments_page={{ repayments_page.number }}{% endif %}">Next</a></li>
+                {% endif %}
+              </ul>
+            </nav>
+          {% endif %}
+        </div>
+      </section>
+
+      {% if loan.status == 'pending' or loan.status == 'boo_approved' or loan.status == 'hof_approved' %}
+        <section class="loan-detail-panel print-hide">
+          <div class="loan-panel-head">
+            <div>
+              <h5>Review Actions</h5>
+              <span>Complete document review before approving this application</span>
+            </div>
+            <div class="loan-actions">
+              {% with role=user.profile.role %}
+                {% if role == 'boo' or role == 'hof' or role == 'ed' %}
+                  {% if has_required_documents %}
+                    <a href="{% url 'loans:approve_loan' loan.id %}" class="btn btn-success btn-sm" onclick="return confirm('Approve loan #{{ loan.id }}?');"><i class="mdi mdi-check-circle"></i> Approve</a>
+                  {% else %}
+                    <button type="button" class="btn btn-success btn-sm" disabled><i class="mdi mdi-check-circle"></i> Approve</button>
+                  {% endif %}
+                {% endif %}
+                {% if role == 'hof' or role == 'ed' %}
+                  <a href="{% url 'loans:reject_loan' loan.id %}" class="btn btn-outline-danger btn-sm" onclick="return confirm('Reject loan #{{ loan.id }}?');"><i class="mdi mdi-close-circle"></i> Reject</a>
+                {% endif %}
+              {% endwith %}
+            </div>
+          </div>
+        </section>
+      {% endif %}
+
       <div class="loan-detail-grid">
         <div>
           <section class="loan-detail-panel">
@@ -405,85 +563,6 @@
                 <div class="loan-info-tile"><span>Penalty balance</span><strong>UGX {{ remaining_penalty|floatformat:'2'|intcomma }}</strong></div>
                 <div class="loan-info-tile"><span>Account</span><strong>{{ loan.account|default:'Not assigned' }}</strong></div>
               </div>
-            </div>
-          </section>
-
-          <section class="loan-detail-panel">
-            <div class="loan-panel-head">
-              <div>
-                <h5>Application Documents</h5>
-                <span>PDF uploads linked to this client loan</span>
-              </div>
-            </div>
-            <div class="loan-panel-body">
-              <form method="post" action="{% url 'loans:upload_loan_application_document' loan.id %}" enctype="multipart/form-data" class="loan-upload-form print-hide">
-                {% csrf_token %}
-                <div class="row g-3 align-items-end">
-                  <div class="col-md-3">
-                    <label class="form-label" for="{{ document_upload_form.document_type.id_for_label }}">Document type</label>
-                    {{ document_upload_form.document_type }}
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label" for="{{ document_upload_form.file.id_for_label }}">PDF file</label>
-                    {{ document_upload_form.file }}
-                  </div>
-                  <div class="col-md-3">
-                    <label class="form-label" for="{{ document_upload_form.description.id_for_label }}">Note</label>
-                    {{ document_upload_form.description }}
-                  </div>
-                  <div class="col-md-2">
-                    <button type="submit" class="btn btn-dark w-100"><i class="mdi mdi-upload"></i> Upload</button>
-                  </div>
-                </div>
-                <div class="loan-muted mt-2">Only PDF documents up to 10 MB are accepted.</div>
-              </form>
-
-              <div class="loan-table-scroll">
-                <table class="table table-hover align-middle loan-table">
-                  <thead>
-                    <tr>
-                      <th>Document</th>
-                      <th>Description</th>
-                      <th>Uploaded By</th>
-                      <th>Uploaded</th>
-                      <th class="text-end">File</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for document in documents %}
-                      <tr>
-                        <td>{{ document.get_document_type_display }}</td>
-                        <td>{{ document.description|default:'-' }}</td>
-                        <td>{{ document.uploaded_by|default:'-' }}</td>
-                        <td>{{ document.created_at|date:'M d, Y' }}</td>
-                        <td class="text-end">
-                          {% if document.file %}
-                            <a href="{{ document.file.url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">Open</a>
-                          {% endif %}
-                        </td>
-                      </tr>
-                    {% empty %}
-                      <tr><td colspan="5" class="text-center text-muted py-3">No application documents uploaded.</td></tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-              {% if documents_page.paginator.count %}
-                <nav class="loan-pagination print-hide" aria-label="Loan documents pagination">
-                  <span class="loan-pagination-note">
-                    Showing {{ documents_page.start_index }}-{{ documents_page.end_index }} of {{ documents_page.paginator.count }}
-                  </span>
-                  <ul class="pagination pagination-sm">
-                    {% if documents_page.has_previous %}
-                      <li class="page-item"><a class="page-link" href="?documents_page={{ documents_page.previous_page_number }}{% if repayments_page.number %}&repayments_page={{ repayments_page.number }}{% endif %}">Previous</a></li>
-                    {% endif %}
-                    <li class="page-item active"><span class="page-link">{{ documents_page.number }} of {{ documents_page.paginator.num_pages }}</span></li>
-                    {% if documents_page.has_next %}
-                      <li class="page-item"><a class="page-link" href="?documents_page={{ documents_page.next_page_number }}{% if repayments_page.number %}&repayments_page={{ repayments_page.number }}{% endif %}">Next</a></li>
-                    {% endif %}
-                  </ul>
-                </nav>
-              {% endif %}
             </div>
           </section>
         </div>

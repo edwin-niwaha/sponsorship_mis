@@ -128,6 +128,28 @@ def _json_or_message(request, success, message, status=200, redirect_url=None):
     return None  # caller should redirect
 
 
+def _missing_required_documents_message(loan):
+    missing = ", ".join(item["label"] for item in loan.missing_required_documents)
+    return (
+        "This loan application cannot be reviewed or approved until the "
+        f"following required supporting documents are attached: {missing}."
+    )
+
+
+def _document_file_url(document, *, download=False):
+    if not document.file:
+        raise Http404("Document file not found.")
+    if download and hasattr(document.file, "build_url"):
+        try:
+            return document.file.build_url(flags="attachment")
+        except Exception:
+            logger.exception(
+                "Could not build attachment URL for loan document %s.",
+                document.id,
+            )
+    return document.file.url
+
+
 def _reverse_penalty_balance(penalty, user):
     """Reverse the unpaid part of a penalty and keep the original audit trail."""
     amount = penalty.remaining_amount or Decimal("0.00")
@@ -447,8 +469,10 @@ def loan_applications_view(request):
     sort_by = request.GET.get("sort", "-created_at").strip()
     allowed_statuses = ["pending", "boo_approved", "hof_approved"]
 
-    qs = Loan.objects.select_related("borrower", "applied_by").filter(
-        status__in=allowed_statuses
+    qs = (
+        Loan.objects.select_related("borrower", "applied_by")
+        .prefetch_related("documents")
+        .filter(status__in=allowed_statuses)
     )
 
     if search_query:
@@ -1178,15 +1202,25 @@ def _queue_loan_approval_notification(loan_id, new_status, approver_name, base_u
 
 @login_required
 def approve_loan(request, loan_id):
-    loan = get_object_or_404(Loan, id=loan_id)
+    loan = get_object_or_404(Loan.objects.prefetch_related("documents"), id=loan_id)
     user = request.user
+
+    if not loan.has_required_documents:
+        messages.error(
+            request,
+            _missing_required_documents_message(loan),
+            extra_tags="bg-danger",
+        )
+        return redirect("loans:loan_detail", loan_id=loan.id)
 
     try:
         new_status = loan.approve(user)
-    except ValidationError:
+    except ValidationError as exc:
         messages.error(
             request,
-            "You are not authorized to approve this loan at this stage.",
+            exc.messages[0]
+            if getattr(exc, "messages", None)
+            else "You are not authorized to approve this loan at this stage.",
             extra_tags="bg-danger",
         )
         return redirect("loans:loan_applications")
@@ -1229,7 +1263,9 @@ def approve_all_loans(request):
         return redirect("loans:loan_applications")
 
     pending_status = stage_map[role]
-    pending_loans = Loan.objects.filter(status=pending_status)
+    pending_loans = Loan.objects.filter(status=pending_status).prefetch_related(
+        "documents"
+    )
 
     if not pending_loans.exists():
         messages.info(
@@ -1243,9 +1279,27 @@ def approve_all_loans(request):
     approver_name = user.get_full_name() or user.username
     approved_loans = []
 
+    blocked_loans = []
     for loan in pending_loans:
+        if not loan.has_required_documents:
+            blocked_loans.append(loan)
+            continue
         new_status = loan.approve(user)
         approved_loans.append((loan.id, new_status))
+
+    if blocked_loans:
+        blocked_labels = ", ".join(f"#{loan.id}" for loan in blocked_loans[:10])
+        messages.warning(
+            request,
+            (
+                f"{len(blocked_loans)} loan application(s) were not approved "
+                f"because required documents are missing: {blocked_labels}."
+            ),
+            extra_tags="bg-warning",
+        )
+
+    if not approved_loans:
+        return redirect("loans:loan_applications")
 
     def queue_approval_notifications():
         for loan_id, new_status in approved_loans:
@@ -1260,7 +1314,7 @@ def approve_all_loans(request):
 
     messages.success(
         request,
-        f"All {pending_status} loans approved. Approval notifications queued.",
+        f"{len(approved_loans)} {pending_status} loan(s) approved. Approval notifications queued.",
         extra_tags="bg-success",
     )
     return redirect("loans:loan_applications")
@@ -1478,7 +1532,8 @@ def loan_detail_view(request, loan_id):
         total_penalty=Sum("penalty_payment"),
     )
     total_remaining_balance = sum(balances.values())
-    documents_page = Paginator(loan.documents.all(), 5).get_page(
+    missing_required_documents = loan.missing_required_documents
+    documents_page = Paginator(loan.attached_documents, 5).get_page(
         request.GET.get("documents_page")
     )
     repayments_page = Paginator(repayments, 8).get_page(
@@ -1496,6 +1551,8 @@ def loan_detail_view(request, loan_id):
             "total_remaining_balance": total_remaining_balance,
             "documents": documents_page,
             "documents_page": documents_page,
+            "missing_required_documents": missing_required_documents,
+            "has_required_documents": not missing_required_documents,
             "document_upload_form": StaffLoanApplicationDocumentForm(),
             "repayments": repayments_page,
             "repayments_page": repayments_page,
@@ -1509,6 +1566,34 @@ def loan_detail_view(request, loan_id):
             ),
         },
     )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def loan_application_document_open(request, loan_id, document_id):
+    loan = get_object_or_404(
+        Loan.objects.prefetch_related("documents"),
+        id=loan_id,
+    )
+    document = get_object_or_404(
+        LoanApplicationDocument.objects.filter(loan=loan),
+        id=document_id,
+    )
+    return redirect(_document_file_url(document))
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def loan_application_document_download(request, loan_id, document_id):
+    loan = get_object_or_404(
+        Loan.objects.prefetch_related("documents"),
+        id=loan_id,
+    )
+    document = get_object_or_404(
+        LoanApplicationDocument.objects.filter(loan=loan),
+        id=document_id,
+    )
+    return redirect(_document_file_url(document, download=True))
 
 
 @login_required
@@ -1527,10 +1612,7 @@ def client_loan_application_document_open(request, loan_id, document_id):
         LoanApplicationDocument.objects.filter(loan=loan),
         id=document_id,
     )
-    if not document.file:
-        raise Http404("Document file not found.")
-
-    return redirect(document.file.url)
+    return redirect(_document_file_url(document))
 
 
 @login_required

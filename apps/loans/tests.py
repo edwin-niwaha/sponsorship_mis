@@ -84,8 +84,23 @@ class LoanWorkflowTests(TestCase):
         data.update(overrides)
         return Loan.objects.create(**data)
 
+    def _attach_required_documents(self, loan, uploaded_by=None):
+        for document_type in Loan.REQUIRED_DOCUMENT_TYPES:
+            LoanApplicationDocument.objects.create(
+                loan=loan,
+                document_type=document_type,
+                file=CloudinaryResource(
+                    public_id=f"loan-documents/{loan.id}-{document_type}",
+                    resource_type="auto",
+                    type="upload",
+                    format="pdf",
+                ),
+                uploaded_by=uploaded_by or self.boo,
+            )
+
     def _approved_loan(self):
         loan = self._loan()
+        self._attach_required_documents(loan)
         loan.approve(self.boo)
         loan.approve(self.hof)
         loan.approve(self.ed)
@@ -94,6 +109,7 @@ class LoanWorkflowTests(TestCase):
 
     def test_loan_approval_chain_sets_audit_fields(self):
         loan = self._loan()
+        self._attach_required_documents(loan)
 
         self.assertEqual(loan.approve(self.boo), "boo_approved")
         self.assertEqual(loan.approved_by_boo, self.boo)
@@ -177,6 +193,7 @@ class LoanWorkflowTests(TestCase):
         self, mock_delay
     ):
         loan = self._loan()
+        self._attach_required_documents(loan)
         self.web.force_login(self.boo)
 
         with self.captureOnCommitCallbacks(execute=True):
@@ -199,6 +216,88 @@ class LoanWorkflowTests(TestCase):
             )
         )
         mock_delay.assert_called_once()
+
+    @patch("apps.loans.views.send_loan_approval_notification_task.delay")
+    def test_approve_loan_blocks_when_required_documents_missing(self, mock_delay):
+        loan = self._loan()
+        self.web.force_login(self.boo)
+
+        response = self.web.get(reverse("loans:approve_loan", args=[loan.id]))
+        loan.refresh_from_db()
+        response_messages = [
+            str(message) for message in get_messages(response.wsgi_request)
+        ]
+
+        self.assertRedirects(
+            response,
+            reverse("loans:loan_detail", args=[loan.id]),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(loan.status, "pending")
+        self.assertTrue(
+            any(
+                "required supporting documents" in message
+                for message in response_messages
+            )
+        )
+        mock_delay.assert_not_called()
+
+    def test_loan_detail_shows_attached_documents_before_review(self):
+        loan = self._loan()
+        self._attach_required_documents(loan, uploaded_by=self.boo)
+        self.web.force_login(self.boo)
+
+        response = self.web.get(reverse("loans:loan_detail", args=[loan.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Attached Documents")
+        self.assertContains(response, "National ID")
+        self.assertContains(response, "Collateral / Security")
+        self.assertContains(response, "View")
+        self.assertContains(response, "Download")
+        self.assertNotContains(
+            response,
+            "No supporting documents have been attached to this loan application.",
+        )
+
+    def test_loan_detail_shows_missing_required_documents_warning(self):
+        loan = self._loan()
+        self.web.force_login(self.boo)
+
+        response = self.web.get(reverse("loans:loan_detail", args=[loan.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Attached Documents")
+        self.assertContains(
+            response,
+            "No supporting documents have been attached to this loan application.",
+        )
+        self.assertContains(response, "Required documents missing")
+        self.assertContains(response, "Approval and review actions are blocked")
+
+    def test_staff_document_open_is_scoped_to_selected_loan(self):
+        loan = self._loan()
+        self._attach_required_documents(loan, uploaded_by=self.boo)
+        document = loan.documents.first()
+        other_loan = self._loan(principal_amount=Decimal("2500.00"))
+        self.web.force_login(self.boo)
+
+        response = self.web.get(
+            reverse(
+                "loans:loan_application_document_open",
+                args=[loan.id, document.id],
+            )
+        )
+        blocked = self.web.get(
+            reverse(
+                "loans:loan_application_document_open",
+                args=[other_loan.id, document.id],
+            )
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(document.file.public_id, response["Location"])
+        self.assertEqual(blocked.status_code, 404)
 
     @patch("apps.loans.views.send_loan_stage_notification_task.delay")
     @patch("apps.loans.views.send_loan_application_email_task.delay")
@@ -239,8 +338,10 @@ class LoanWorkflowTests(TestCase):
     def test_approve_all_loans_queues_notifications_for_each_approved_loan(
         self, mock_delay
     ):
-        self._loan()
-        self._loan(principal_amount=Decimal("2000.00"))
+        first = self._loan()
+        second = self._loan(principal_amount=Decimal("2000.00"))
+        self._attach_required_documents(first)
+        self._attach_required_documents(second)
         self.web.force_login(self.boo)
 
         with self.captureOnCommitCallbacks(execute=True):
@@ -495,6 +596,7 @@ class LoanWorkflowTests(TestCase):
             ),
             principal_amount=Decimal("2000.00"),
         )
+        self._attach_required_documents(current)
         current.approve(self.boo)
         current.approve(self.hof)
         current.approve(self.ed)

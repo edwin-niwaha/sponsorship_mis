@@ -154,6 +154,10 @@ class Loan(models.Model):
         ("boo_approved", "hof"): ("hof_approved", "approved_by_hof"),
         ("hof_approved", "ed"): ("approved", "approved_by_ed"),
     }
+    REQUIRED_DOCUMENT_TYPES = (
+        "national_id",
+        "collateral_security",
+    )
 
     # ── Fields — identical names/types to production ──────────────────────────
 
@@ -493,12 +497,50 @@ class Loan(models.Model):
             self.status in self.ACTIVE_STATUSES and self.disbursement_date is not None
         )
 
+    @property
+    def attached_documents(self):
+        return self.documents.all()
+
+    @property
+    def missing_required_documents(self):
+        attached_types = set(
+            self.documents.filter(
+                document_type__in=self.REQUIRED_DOCUMENT_TYPES,
+                file__isnull=False,
+            )
+            .exclude(file="")
+            .values_list("document_type", flat=True)
+        )
+        labels = dict(LoanApplicationDocument.DOCUMENT_TYPE_CHOICES)
+        return [
+            {
+                "type": document_type,
+                "label": labels.get(
+                    document_type,
+                    document_type.replace("_", " ").title(),
+                ),
+            }
+            for document_type in self.REQUIRED_DOCUMENT_TYPES
+            if document_type not in attached_types
+        ]
+
+    @property
+    def has_required_documents(self):
+        return not self.missing_required_documents
+
     def approve(self, user):
         role = getattr(getattr(user, "profile", None), "role", None)
         key = (self.status, role)
         if key not in self.APPROVAL_TRANSITIONS:
             raise ValidationError(
                 "You are not authorized to approve this loan at this stage."
+            )
+        if not self.has_required_documents:
+            missing = ", ".join(
+                item["label"] for item in self.missing_required_documents
+            )
+            raise ValidationError(
+                f"Required supporting documents are missing: {missing}."
             )
         new_status, approved_by_field = self.APPROVAL_TRANSITIONS[key]
         self.status = new_status
