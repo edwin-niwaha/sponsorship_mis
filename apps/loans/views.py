@@ -42,6 +42,7 @@ from .forms import (
     LoanRepaymentForm,
     LoanReportFilterForm,
     StaffLoanApplicationDocumentForm,
+    active_loans_with_balance_queryset,
 )
 from .models import (
     ChartOfAccounts,
@@ -1389,36 +1390,15 @@ def delete_loan(request, loan_id):
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def _loans_with_balance(status_list):
-    """
-    Returns loans in the given statuses that still have an outstanding balance,
-    with remaining_* attributes attached. Used by repayment and penalty views.
-    """
-    result = []
-    for loan in (
-        Loan.objects.filter(status__in=status_list)
-        .select_related("borrower")
-        .prefetch_related("repayments", "penalties")
-    ):
-        if not getattr(loan, "borrower", None):
-            continue
-        b = loan.calculate_remaining_balances()
-        if any(v > 0 for v in b.values()):
-            loan.remaining_principal = b["principal_balance"]
-            loan.remaining_interest = b["interest_balance"]
-            loan.remaining_penalty = b["penalty_balance"]
-            result.append(loan)
-    return result
-
-
+#######
 @login_required
 @admin_or_manager_or_staff_required
 @transaction.atomic
 def loan_repayment_create_view(request):
-    loans = _loans_with_balance(["disbursed", "overdue"])
+    loans = active_loans_with_balance_queryset()
 
     if request.method == "POST":
-        form = LoanRepaymentForm(request.POST)
+        form = LoanRepaymentForm(request.POST, loan_queryset=loans)
         if form.is_valid():
             repayment = form.save(commit=False)
             repayment.loan = form.cleaned_data["loan"]
@@ -1452,7 +1432,7 @@ def loan_repayment_create_view(request):
             request, "Please correct the errors below.", extra_tags="bg-danger"
         )
     else:
-        form = LoanRepaymentForm()
+        form = LoanRepaymentForm(loan_queryset=loans)
 
     return render(
         request,
@@ -1469,10 +1449,10 @@ def loan_repayment_create_view(request):
 @admin_or_manager_or_staff_required
 @transaction.atomic
 def loan_penalty_create_view(request):
-    loans = _loans_with_balance(["disbursed", "overdue"])
+    loans = active_loans_with_balance_queryset()
 
     if request.method == "POST":
-        form = LoanPenaltyForm(request.POST, user=request.user)
+        form = LoanPenaltyForm(request.POST, user=request.user, loan_queryset=loans)
         if form.is_valid():
             penalty = form.save(commit=False)
             penalty.created_by = request.user
@@ -1502,7 +1482,7 @@ def loan_penalty_create_view(request):
                 request, "Please correct the errors below.", extra_tags="bg-danger"
             )
     else:
-        form = LoanPenaltyForm(user=request.user)
+        form = LoanPenaltyForm(user=request.user, loan_queryset=loans)
 
     return render(
         request,

@@ -773,7 +773,7 @@ class LoanAllDisbursementForm(forms.ModelForm):
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def _active_loans_with_balance():
+def active_loans_with_balance_queryset():
     """
     Returns loans with status disbursed/overdue that still have an
     outstanding balance, annotated for dropdown display.
@@ -812,7 +812,12 @@ def _active_loans_with_balance():
         )
         .distinct()
         .select_related("borrower")
+        .order_by("borrower__full_name", "id")
     )
+
+
+def _active_loans_with_balance():
+    return active_loans_with_balance_queryset()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -889,8 +894,13 @@ class LoanRepaymentForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        loan_queryset = kwargs.pop("loan_queryset", None)
         super().__init__(*args, **kwargs)
-        self.fields["loan"].queryset = _active_loans_with_balance()
+        self.fields["loan"].queryset = (
+            loan_queryset
+            if loan_queryset is not None
+            else active_loans_with_balance_queryset()
+        )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -995,10 +1005,15 @@ class LoanPenaltyForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user", None)
+        loan_queryset = kwargs.pop("loan_queryset", None)
         super().__init__(*args, **kwargs)
 
         # Loan dropdown — loans with outstanding balances
-        self.fields["loan"].queryset = _active_loans_with_balance()
+        self.fields["loan"].queryset = (
+            loan_queryset
+            if loan_queryset is not None
+            else active_loans_with_balance_queryset()
+        )
 
         # Pre-select the penalty receivable account (1071) if it exists
         try:

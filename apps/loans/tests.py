@@ -18,6 +18,7 @@ from django.utils import timezone
 from apps.client.models import Client
 from apps.users.models import Profile
 
+from .forms import LoanPenaltyForm, LoanRepaymentForm
 from .models import (
     ChartOfAccounts,
     Loan,
@@ -106,6 +107,35 @@ class LoanWorkflowTests(TestCase):
         loan.approve(self.ed)
         loan.refresh_from_db()
         return loan
+
+    def test_repayment_and_penalty_forms_include_only_active_loans_with_balance(self):
+        disbursement_date = date(2026, 1, 2)
+        disbursed = self._loan(
+            status="disbursed", disbursement_date=disbursement_date
+        )
+        overdue = self._loan(status="overdue", disbursement_date=disbursement_date)
+        repaid = self._loan(status="repaid")
+        closed = self._loan(status="closed")
+        rejected = self._loan(status="rejected")
+
+        repayment_ids = set(
+            LoanRepaymentForm().fields["loan"].queryset.values_list("id", flat=True)
+        )
+        penalty_ids = set(
+            LoanPenaltyForm().fields["loan"].queryset.values_list("id", flat=True)
+        )
+
+        self.assertIn(disbursed.id, repayment_ids)
+        self.assertIn(overdue.id, repayment_ids)
+        self.assertNotIn(repaid.id, repayment_ids)
+        self.assertNotIn(closed.id, repayment_ids)
+        self.assertNotIn(rejected.id, repayment_ids)
+
+        self.assertIn(disbursed.id, penalty_ids)
+        self.assertIn(overdue.id, penalty_ids)
+        self.assertNotIn(repaid.id, penalty_ids)
+        self.assertNotIn(closed.id, penalty_ids)
+        self.assertNotIn(rejected.id, penalty_ids)
 
     def test_loan_approval_chain_sets_audit_fields(self):
         loan = self._loan()
