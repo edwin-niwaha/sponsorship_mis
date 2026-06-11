@@ -198,6 +198,86 @@ def _reverse_penalty_balance(penalty, user):
     return amount
 
 
+def _repayment_journal_transaction_ids(repayment):
+    transactions = TransactionHistory.objects.filter(
+        loan=repayment.loan,
+        transaction_date=repayment.repayment_date,
+    )
+    expected_entries = [
+        {
+            "account": repayment.account,
+            "transaction_type": "debit",
+            "amount": repayment.total_payment,
+            "description": repayment.description or "Loan repayment",
+        },
+        {
+            "account": repayment.loan.account,
+            "transaction_type": "credit",
+            "amount": repayment.principal_payment + repayment.interest_payment,
+            "description": repayment.description or "Loan repayment",
+        },
+    ]
+    if repayment.interest_payment > 0:
+        expected_entries.append(
+            {
+                "account": ChartOfAccounts.objects.get(account_number="1060"),
+                "transaction_type": "credit",
+                "amount": repayment.interest_payment,
+                "description": f"Interest received for Loan {repayment.loan_id}",
+            }
+        )
+    if repayment.penalty_payment > 0:
+        expected_entries.append(
+            {
+                "account": ChartOfAccounts.objects.get(account_number="1071"),
+                "transaction_type": "credit",
+                "amount": repayment.penalty_payment,
+                "description": f"Penalty payment for Loan {repayment.loan_id}",
+            }
+        )
+
+    transaction_ids = []
+    for entry in expected_entries:
+        candidates = transactions.filter(
+            account=entry["account"],
+            transaction_type=entry["transaction_type"],
+            amount=entry["amount"],
+        )
+        match = candidates.filter(description__icontains=entry["description"]).first()
+        if not match:
+            match = candidates.exclude(id__in=transaction_ids).order_by("-id").first()
+        if match:
+            transaction_ids.append(match.id)
+    return transaction_ids
+
+
+def _restore_penalties_paid_by_repayment(repayment):
+    remaining = repayment.penalty_payment or Decimal("0.00")
+    if remaining <= 0:
+        return Decimal("0.00")
+
+    restored = Decimal("0.00")
+    penalties = repayment.loan.penalties.filter(is_deleted=False).order_by(
+        "penalty_date", "id"
+    )
+    for penalty in penalties:
+        if remaining <= 0:
+            break
+        current_remaining = penalty.remaining_amount or Decimal("0.00")
+        capacity = penalty.penalty_amount - current_remaining
+        if capacity <= 0:
+            continue
+        amount = min(remaining, capacity)
+        new_remaining = current_remaining + amount
+        LoanPenalty.objects.filter(pk=penalty.pk).update(
+            is_paid=False,
+            remaining_amount=new_remaining,
+        )
+        remaining -= amount
+        restored += amount
+    return restored
+
+
 def _get_self_service_client(user):
     profile = getattr(user, "profile", None)
     if profile and profile.client_id:
@@ -1621,30 +1701,21 @@ def upload_loan_application_document(request, loan_id):
 
 @login_required
 @admin_or_manager_required
+@transaction.atomic
 def delete_repayment(request, repayment_id):
     repayment = get_object_or_404(LoanRepayment, id=repayment_id)
     if request.method == "POST":
-        linked_transactions = TransactionHistory.objects.filter(
-            loan=repayment.loan,
-            transaction_date=repayment.repayment_date,
-        ).filter(
-            Q(description__icontains=f"Loan {repayment.loan_id}")
-            | Q(description__icontains="Loan repayment")
-            | Q(description__icontains="Interest received")
-            | Q(description__icontains="Penalty payment")
+        loan = repayment.loan
+        linked_transaction_ids = _repayment_journal_transaction_ids(repayment)
+        TransactionHistory.objects.filter(id__in=linked_transaction_ids).delete()
+        _restore_penalties_paid_by_repayment(repayment)
+        repayment.delete()
+        loan.update_status()
+        messages.success(
+            request,
+            "Repayment and its posted journal entries deleted successfully.",
+            extra_tags="bg-success",
         )
-        if linked_transactions.exists():
-            messages.error(
-                request,
-                "This repayment has posted journal entries and cannot be deleted. Post a correcting entry instead.",
-                extra_tags="bg-danger",
-            )
-        else:
-            repayment.delete()
-            repayment.loan.update_status()
-            messages.success(
-                request, "Repayment deleted successfully.", extra_tags="bg-success"
-            )
     return redirect(request.META.get("HTTP_REFERER", "loans:loan_list"))
 
 

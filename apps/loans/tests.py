@@ -599,6 +599,118 @@ class LoanWorkflowTests(TestCase):
             2,
         )
 
+    def test_delete_repayment_removes_posted_journal_entries(self):
+        loan = self._approved_loan()
+        loan.disburse(date(2026, 1, 2))
+        LoanDisbursement.objects.create(loan=loan, account=self.cash)
+        repayment = LoanRepayment.objects.create(
+            loan=loan,
+            repayment_date=date(2026, 2, 2),
+            principal_payment=Decimal("100.00"),
+            interest_payment=Decimal("10.00"),
+            account=self.cash,
+        )
+        web = DjangoTestClient()
+        web.login(username="ed-user", password="pass")
+
+        response = web.post(
+            reverse("loans:delete_repayment", args=[repayment.id]),
+            HTTP_REFERER=reverse("loans:loan_detail", args=[loan.id]),
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("loans:loan_detail", args=[loan.id]),
+            fetch_redirect_response=False,
+        )
+        self.assertFalse(LoanRepayment.objects.filter(id=repayment.id).exists())
+        self.assertFalse(
+            TransactionHistory.objects.filter(
+                loan=loan,
+                transaction_date=repayment.repayment_date,
+                description__icontains=f"Loan {loan.id}",
+                amount__in=[Decimal("110.00"), Decimal("100.00"), Decimal("10.00")],
+            ).exists()
+        )
+
+    def test_delete_repayment_removes_legacy_journal_entries_with_custom_descriptions(
+        self,
+    ):
+        loan = self._approved_loan()
+        loan.disburse(date(2026, 1, 2))
+        LoanDisbursement.objects.create(loan=loan, account=self.cash)
+        repayment = LoanRepayment.objects.create(
+            loan=loan,
+            repayment_date=date(2026, 2, 2),
+            principal_payment=Decimal("100.00"),
+            interest_payment=Decimal("10.00"),
+            account=self.cash,
+        )
+        TransactionHistory.objects.filter(
+            loan=loan,
+            transaction_date=repayment.repayment_date,
+            amount__in=[Decimal("110.00"), Decimal("100.00"), Decimal("10.00")],
+        ).update(description="Imported multijournal transaction")
+        web = DjangoTestClient()
+        web.login(username="ed-user", password="pass")
+
+        response = web.post(
+            reverse("loans:delete_repayment", args=[repayment.id]),
+            HTTP_REFERER=reverse("loans:loan_detail", args=[loan.id]),
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("loans:loan_detail", args=[loan.id]),
+            fetch_redirect_response=False,
+        )
+        self.assertFalse(LoanRepayment.objects.filter(id=repayment.id).exists())
+        self.assertFalse(
+            TransactionHistory.objects.filter(
+                loan=loan,
+                transaction_date=repayment.repayment_date,
+                description="Imported multijournal transaction",
+            ).exists()
+        )
+
+    def test_delete_repayment_restores_penalty_balance(self):
+        loan = self._approved_loan()
+        loan.disburse(date(2026, 1, 2))
+        LoanDisbursement.objects.create(loan=loan, account=self.cash)
+        penalty = LoanPenalty.objects.create(
+            loan=loan,
+            penalty_date=date(2026, 2, 1),
+            penalty_amount=Decimal("50.00"),
+            reason="Late installment",
+            account=ChartOfAccounts.objects.get(account_number="1071"),
+        )
+        repayment = LoanRepayment.objects.create(
+            loan=loan,
+            repayment_date=date(2026, 2, 2),
+            penalty_payment=Decimal("50.00"),
+            account=self.cash,
+        )
+        penalty.refresh_from_db()
+        self.assertTrue(penalty.is_paid)
+        self.assertEqual(penalty.remaining_amount, Decimal("0.00"))
+        web = DjangoTestClient()
+        web.login(username="ed-user", password="pass")
+
+        response = web.post(
+            reverse("loans:delete_repayment", args=[repayment.id]),
+            HTTP_REFERER=reverse("loans:loan_detail", args=[loan.id]),
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("loans:loan_detail", args=[loan.id]),
+            fetch_redirect_response=False,
+        )
+        penalty.refresh_from_db()
+        self.assertFalse(LoanRepayment.objects.filter(id=repayment.id).exists())
+        self.assertFalse(penalty.is_paid)
+        self.assertEqual(penalty.remaining_amount, Decimal("50.00"))
+
     def test_standard_aging_bucket_inputs(self):
         loan = self._approved_loan()
         loan.disburse(date(2026, 1, 1))

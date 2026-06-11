@@ -584,73 +584,73 @@
               </div>
             </div>
           </section>
-
-          <section class="loan-detail-panel">
-            <div class="loan-panel-head">
-              <div>
-                <h5>Repayment History</h5>
-                <span>{{ repayments|length }} repayment{{ repayments|length|pluralize }}</span>
-              </div>
-            </div>
-            <div class="loan-table-scroll">
-              <table class="table table-hover align-middle loan-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th class="text-end">Principal</th>
-                    <th class="text-end">Interest</th>
-                    <th class="text-end">Penalty</th>
-                    <th class="text-end print-hide">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for repayment in repayments %}
-                    <tr>
-                      <td>{{ repayment.repayment_date }}</td>
-                      <td class="text-end">{{ repayment.principal_payment|floatformat:'2'|intcomma }}</td>
-                      <td class="text-end">{{ repayment.interest_payment|floatformat:'2'|intcomma }}</td>
-                      <td class="text-end">{{ repayment.penalty_payment|floatformat:'2'|intcomma }}</td>
-                      <td class="text-end print-hide">
-                        <form method="POST" action="{% url 'loans:delete_repayment' repayment.id %}" class="d-inline" onsubmit="return confirm('Are you sure you want to DELETE this repayment of {{ repayment.total_payment|floatformat:2|intcomma }} UGX?\n\nThis action CANNOT be undone.');">
-                          {% csrf_token %}
-                          <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete"><i class="mdi mdi-trash-can"></i></button>
-                        </form>
-                      </td>
-                    </tr>
-                  {% empty %}
-                    <tr><td colspan="5" class="text-center text-muted py-3">No repayments recorded.</td></tr>
-                  {% endfor %}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <th>Total</th>
-                    <th class="text-end">{{ total_principal|floatformat:'2'|intcomma }}</th>
-                    <th class="text-end">{{ total_interest|floatformat:'2'|intcomma }}</th>
-                    <th class="text-end">{{ total_penalty|floatformat:'2'|intcomma }}</th>
-                    <th class="print-hide"></th>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-            {% if repayments_page.paginator.count %}
-              <nav class="loan-pagination print-hide px-3 pb-3" aria-label="Loan repayments pagination">
-                <span class="loan-pagination-note">
-                  Showing {{ repayments_page.start_index }}-{{ repayments_page.end_index }} of {{ repayments_page.paginator.count }}
-                </span>
-                <ul class="pagination pagination-sm">
-                  {% if repayments_page.has_previous %}
-                    <li class="page-item"><a class="page-link" href="?repayments_page={{ repayments_page.previous_page_number }}{% if documents_page.number %}&documents_page={{ documents_page.number }}{% endif %}">Previous</a></li>
-                  {% endif %}
-                  <li class="page-item active"><span class="page-link">{{ repayments_page.number }} of {{ repayments_page.paginator.num_pages }}</span></li>
-                  {% if repayments_page.has_next %}
-                    <li class="page-item"><a class="page-link" href="?repayments_page={{ repayments_page.next_page_number }}{% if documents_page.number %}&documents_page={{ documents_page.number }}{% endif %}">Next</a></li>
-                  {% endif %}
-                </ul>
-              </nav>
-            {% endif %}
-          </section>
         </aside>
       </div>
+
+      <section class="loan-detail-panel">
+        <div class="loan-panel-head">
+          <div>
+            <h5>Repayment History</h5>
+            <span>{{ repayments|length }} repayment{{ repayments|length|pluralize }}</span>
+          </div>
+        </div>
+        <div class="loan-table-scroll">
+          <table class="table table-hover align-middle loan-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th class="text-end">Principal</th>
+                <th class="text-end">Interest</th>
+                <th class="text-end">Penalty</th>
+                <th class="text-end print-hide">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for repayment in repayments %}
+                <tr>
+                  <td>{{ repayment.repayment_date }}</td>
+                  <td class="text-end">{{ repayment.principal_payment|floatformat:'2'|intcomma }}</td>
+                  <td class="text-end">{{ repayment.interest_payment|floatformat:'2'|intcomma }}</td>
+                  <td class="text-end">{{ repayment.penalty_payment|floatformat:'2'|intcomma }}</td>
+                  <td class="text-end print-hide">
+                    <form method="POST" action="{% url 'loans:delete_repayment' repayment.id %}" class="d-inline" onsubmit="return confirm('Are you sure you want to DELETE this repayment of {{ repayment.total_payment|floatformat:2|intcomma }} UGX?\n\nThis action CANNOT be undone.');">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete"><i class="mdi mdi-trash-can"></i></button>
+                    </form>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-3">No repayments recorded.</td></tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr>
+                <th>Total</th>
+                <th class="text-end">{{ total_principal|floatformat:'2'|intcomma }}</th>
+                <th class="text-end">{{ total_interest|floatformat:'2'|intcomma }}</th>
+                <th class="text-end">{{ total_penalty|floatformat:'2'|intcomma }}</th>
+                <th class="print-hide"></th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        {% if repayments_page.paginator.count %}
+          <nav class="loan-pagination print-hide px-3 pb-3" aria-label="Loan repayments pagination">
+            <span class="loan-pagination-note">
+              Showing {{ repayments_page.start_index }}-{{ repayments_page.end_index }} of {{ repayments_page.paginator.count }}
+            </span>
+            <ul class="pagination pagination-sm">
+              {% if repayments_page.has_previous %}
+                <li class="page-item"><a class="page-link" href="?repayments_page={{ repayments_page.previous_page_number }}{% if documents_page.number %}&documents_page={{ documents_page.number }}{% endif %}">Previous</a></li>
+              {% endif %}
+              <li class="page-item active"><span class="page-link">{{ repayments_page.number }} of {{ repayments_page.paginator.num_pages }}</span></li>
+              {% if repayments_page.has_next %}
+                <li class="page-item"><a class="page-link" href="?repayments_page={{ repayments_page.next_page_number }}{% if documents_page.number %}&documents_page={{ documents_page.number }}{% endif %}">Next</a></li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endif %}
+      </section>
     </div>
   </div>
 
