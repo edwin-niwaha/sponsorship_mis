@@ -137,6 +137,45 @@ class LoanWorkflowTests(TestCase):
         self.assertNotIn(closed.id, penalty_ids)
         self.assertNotIn(rejected.id, penalty_ids)
 
+    def test_forms_include_overdue_loans_with_paid_penalty_history(self):
+        loan = self._loan(
+            status="overdue",
+            disbursement_date=date(2026, 1, 2),
+            interest_rate=Decimal("0.00"),
+        )
+        LoanRepayment.objects.create(
+            loan=loan,
+            repayment_date=date(2026, 1, 3),
+            principal_payment=Decimal("600.00"),
+            interest_payment=Decimal("0.00"),
+            penalty_payment=Decimal("0.00"),
+            account=self.cash,
+        )
+        for penalty_date in (date(2026, 1, 4), date(2026, 1, 5)):
+            LoanPenalty.objects.create(
+                loan=loan,
+                penalty_date=penalty_date,
+                penalty_amount=Decimal("5.00"),
+                remaining_amount=Decimal("5.00"),
+                reason="Late payment",
+                account=self.loan_account,
+            )
+        LoanPenalty.objects.filter(loan=loan).update(
+            is_paid=True,
+            remaining_amount=Decimal("0.00"),
+        )
+        loan.refresh_from_db()
+
+        repayment_ids = set(
+            LoanRepaymentForm().fields["loan"].queryset.values_list("id", flat=True)
+        )
+        penalty_ids = set(
+            LoanPenaltyForm().fields["loan"].queryset.values_list("id", flat=True)
+        )
+
+        self.assertIn(loan.id, repayment_ids)
+        self.assertIn(loan.id, penalty_ids)
+
     def test_loan_approval_chain_sets_audit_fields(self):
         loan = self._loan()
         self._attach_required_documents(loan)

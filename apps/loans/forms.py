@@ -6,7 +6,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import DecimalField, F, Q, Sum, Value
+from django.db.models import DecimalField, F, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -778,31 +778,43 @@ def active_loans_with_balance_queryset():
     Returns loans with status disbursed/overdue that still have an
     outstanding balance, annotated for dropdown display.
 
-    Uses DB-level annotation so the queryset is a single query.
-    The penalty annotation uses distinct=True to prevent fan-out
-    when a loan has both repayments and penalties.
+    Uses isolated subqueries for each related balance so repayment rows are not
+    multiplied by penalty rows when a loan has penalty history.
     """
+    money_field = DecimalField(max_digits=15, decimal_places=2)
+    zero = Value(Decimal("0.00"), output_field=money_field)
+    principal_paid = (
+        LoanRepayment.objects.filter(loan=OuterRef("pk"))
+        .values("loan")
+        .annotate(total=Sum("principal_payment"))
+        .values("total")[:1]
+    )
+    interest_paid = (
+        LoanRepayment.objects.filter(loan=OuterRef("pk"))
+        .values("loan")
+        .annotate(total=Sum("interest_payment"))
+        .values("total")[:1]
+    )
+    unpaid_penalties = (
+        LoanPenalty.objects.filter(
+            loan=OuterRef("pk"),
+            is_paid=False,
+            is_deleted=False,
+        )
+        .values("loan")
+        .annotate(total=Sum("remaining_amount"))
+        .values("total")[:1]
+    )
+
     return (
         Loan.objects.annotate(
-            remaining_principal=F("principal_amount")
-            - Coalesce(
-                Sum("repayments__principal_payment"),
-                Value(0, output_field=DecimalField()),
-            ),
-            remaining_interest=F("total_interest")
-            - Coalesce(
-                Sum("repayments__interest_payment"),
-                Value(0, output_field=DecimalField()),
-            ),
-            # distinct=True prevents duplicate rows from the penalties join
-            remaining_penalty=Coalesce(
-                Sum(
-                    "penalties__penalty_amount",
-                    filter=Q(penalties__is_paid=False),
-                    distinct=True,
-                ),
-                Value(0, output_field=DecimalField()),
-            ),
+            paid_principal=Coalesce(Subquery(principal_paid), zero),
+            paid_interest=Coalesce(Subquery(interest_paid), zero),
+            remaining_penalty=Coalesce(Subquery(unpaid_penalties), zero),
+        )
+        .annotate(
+            remaining_principal=F("principal_amount") - F("paid_principal"),
+            remaining_interest=Coalesce(F("total_interest"), zero) - F("paid_interest"),
         )
         .filter(
             Q(remaining_principal__gt=0)
