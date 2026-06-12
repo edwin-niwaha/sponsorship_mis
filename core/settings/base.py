@@ -15,6 +15,13 @@ def env_bool(name, default=False):
     return os.environ.get(name, str(default)).lower() == "true"
 
 
+def env_float(name, default):
+    try:
+        return float(os.environ.get(name, default))
+    except (TypeError, ValueError):
+        return float(default)
+
+
 def env_list(name):
     return [
         item.strip() for item in os.environ.get(name, "").split(",") if item.strip()
@@ -200,6 +207,7 @@ SOCIAL_AUTH_GITHUB_KEY = str(os.getenv("GITHUB_KEY"))
 SOCIAL_AUTH_GITHUB_SECRET = str(os.getenv("GITHUB_SECRET"))
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = str(os.getenv("GOOGLE_KEY"))
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = str(os.getenv("GOOGLE_SECRET"))
+SOCIAL_AUTH_REQUESTS_TIMEOUT = env_float("SOCIAL_AUTH_REQUESTS_TIMEOUT", 10)
 SOCIAL_AUTH_PIPELINE = (
     "social_core.pipeline.social_auth.social_details",
     "social_core.pipeline.social_auth.social_uid",
