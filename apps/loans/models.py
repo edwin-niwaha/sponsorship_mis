@@ -156,7 +156,7 @@ class Loan(models.Model):
     }
     REQUIRED_DOCUMENT_TYPES = (
         "national_id",
-        "collateral_security",
+        "bank_statement",
     )
 
     # ── Fields — identical names/types to production ──────────────────────────
