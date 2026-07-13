@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from cloudinary import CloudinaryResource
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.messages import get_messages
 from django.core.exceptions import ValidationError
@@ -34,7 +35,15 @@ from .services.reporting import (
     portfolio_at_risk_summary,
 )
 from .services.loan_reminder_service import LoanReminderService
-from .tasks import _loan_approval_payload
+from .management.commands.send_loan_notifications import Command as LoanReminderCommand
+from .tasks import (
+    _loan_approval_payload,
+    send_email_task,
+    send_html_email_task,
+    send_loan_application_email_task,
+    send_loan_approval_notification_task,
+    send_loan_stage_notification_task,
+)
 from .views import compute_installment_based_days_overdue
 
 
@@ -188,6 +197,42 @@ class LoanWorkflowTests(TestCase):
         self.assertEqual(loan.approved_by_ed, self.ed)
         self.assertEqual(loan.approved_date, timezone.localdate())
 
+    def test_celery_memory_defaults_and_fire_and_forget_task_results(self):
+        self.assertEqual(settings.CELERY_WORKER_CONCURRENCY, 1)
+        self.assertEqual(settings.CELERY_WORKER_PREFETCH_MULTIPLIER, 1)
+        self.assertEqual(settings.CELERY_WORKER_MAX_TASKS_PER_CHILD, 50)
+        self.assertEqual(settings.CELERY_WORKER_MAX_MEMORY_PER_CHILD, 300000)
+        self.assertEqual(settings.CELERY_TASK_SOFT_TIME_LIMIT, 300)
+        self.assertEqual(settings.CELERY_TASK_TIME_LIMIT, 360)
+        self.assertEqual(settings.CELERY_RESULT_EXPIRES, 3600)
+
+        for task in [
+            send_email_task,
+            send_html_email_task,
+            send_loan_stage_notification_task,
+            send_loan_approval_notification_task,
+            send_loan_application_email_task,
+        ]:
+            self.assertTrue(task.ignore_result)
+
+    def test_loan_reminder_summary_item_does_not_retain_model_instance(self):
+        loan = self._loan()
+        info = {
+            "category": "overdue",
+            "notice_title": "Overdue loan payment",
+            "action_label": "Overdue amount",
+            "action_amount": Decimal("100.00"),
+            "payment_due_date": date(2026, 1, 1),
+            "total_outstanding": Decimal("100.00"),
+            "days_overdue": 5,
+        }
+
+        item = LoanReminderCommand.summary_item(loan, info)
+
+        self.assertEqual(item["loan"], {"id": loan.id})
+        self.assertEqual(item["loan_id"], loan.id)
+        self.assertEqual(item["borrower_name"], loan.borrower.full_name)
+        self.assertNotIsInstance(item["loan"], Loan)
     @override_settings(BOO_EMAIL="", HOF_EMAIL="", ED_EMAIL="", ACCOUNTANT_EMAIL="")
     def test_stage_notifications_use_role_user_emails_when_settings_empty(self):
         self.boo.email = "boo@example.com"

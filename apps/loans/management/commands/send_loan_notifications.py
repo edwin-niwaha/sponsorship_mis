@@ -1,6 +1,6 @@
 import logging
 from datetime import timedelta
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -11,6 +11,7 @@ from django.utils.html import strip_tags
 
 from apps.loans.models import Loan
 from apps.loans.services.loan_reminder_service import LoanReminderService
+from core.memory import log_process_memory
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,7 @@ class Command(BaseCommand):
             return
 
         logger.info("Loan reminder job started.")
+        log_process_memory("send_loan_notifications.start")
 
         loans = (
             Loan.objects.filter(status__in=Loan.ACTIVE_STATUSES)
@@ -88,7 +90,7 @@ class Command(BaseCommand):
             .prefetch_related("repayments", "penalties")
         )
 
-        summary: Dict[str, List[Tuple[Loan, Dict]]] = {
+        summary: Dict[str, List[Dict]] = {
             "pre_due": [],
             "due_today": [],
             "overdue": [],
@@ -96,7 +98,7 @@ class Command(BaseCommand):
         total_processed = 0
         total_sent = 0
 
-        for loan in loans.iterator():
+        for loan in loans.iterator(chunk_size=200):
             try:
                 total_processed += 1
 
@@ -120,7 +122,7 @@ class Command(BaseCommand):
                 sent = self.send_email(loan, info, today)
                 if sent:
                     total_sent += 1
-                    summary[info["category"]].append((loan, info))
+                    summary[info["category"]].append(self.summary_item(loan, info))
                     loan.last_reminder_sent = timezone.now()
                     loan.save(update_fields=["last_reminder_sent"])
 
@@ -129,6 +131,7 @@ class Command(BaseCommand):
 
         self.send_summary(today, summary)
         logger.info("Loan reminder job completed.")
+        log_process_memory("send_loan_notifications.finish")
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -213,6 +216,22 @@ class Command(BaseCommand):
             logger.exception("Email failed for Loan #%s", loan.id)
             return False
 
+    @staticmethod
+    def summary_item(loan: Loan, info: Dict) -> Dict:
+        return {
+            "loan": {"id": loan.id},
+            "loan_id": loan.id,
+            "borrower_name": loan.borrower.full_name,
+            "category": info["category"],
+            "notice_title": info["notice_title"],
+            "action_label": info["action_label"],
+            "action_amount": info["action_amount"],
+            "payment_due_date": info["payment_due_date"],
+            "total_outstanding": info["total_outstanding"],
+            "days_until": info.get("days_until"),
+            "days_overdue": info.get("days_overdue"),
+        }
+
     def send_summary(self, today, summary):
         recipients = [
             email
@@ -230,18 +249,9 @@ class Command(BaseCommand):
         context = {
             "title": "Loan reminders summary",
             "today_str": today.strftime("%d %b %Y"),
-            "pre_due": [
-                {"loan": loan, "borrower_name": loan.borrower.full_name, **info}
-                for loan, info in summary["pre_due"]
-            ],
-            "due_today": [
-                {"loan": loan, "borrower_name": loan.borrower.full_name, **info}
-                for loan, info in summary["due_today"]
-            ],
-            "overdue": [
-                {"loan": loan, "borrower_name": loan.borrower.full_name, **info}
-                for loan, info in summary["overdue"]
-            ],
+            "pre_due": summary["pre_due"],
+            "due_today": summary["due_today"],
+            "overdue": summary["overdue"],
             "total_sent": sum(len(items) for items in summary.values()),
             "report_url": "https://sponsorwithpendeza.org/loans/due-overdue-report/",
         }

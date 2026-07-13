@@ -194,7 +194,7 @@ def build_html_template(content: str, title: str) -> str:
     """
 
 
-@shared_task
+@shared_task(ignore_result=True)
 def send_email_task(subject, text_content, html_content, recipients):
     """
     Celery task to send an email asynchronously.
@@ -217,6 +217,7 @@ def send_email_task(subject, text_content, html_content, recipients):
 
 @shared_task(
     bind=True,
+    ignore_result=True,
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_kwargs={"max_retries": 3},
@@ -309,6 +310,7 @@ def _send_loan_stage_notification(loan_id, stage_status, actor_name, base_url):
 
 @shared_task(
     bind=True,
+    ignore_result=True,
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_kwargs={"max_retries": 3},
@@ -319,6 +321,7 @@ def send_loan_stage_notification_task(self, loan_id, stage_status, actor_name, b
 
 @shared_task(
     bind=True,
+    ignore_result=True,
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_kwargs={"max_retries": 3},
@@ -335,7 +338,7 @@ def send_loan_approval_notification_task(
 
 
 # Task to send loan application email
-@shared_task
+@shared_task(ignore_result=True)
 def send_loan_application_email_task(
     recipient_name, client_name, recipient_email, application_id, is_applicant=True
 ):

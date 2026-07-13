@@ -53,5 +53,4 @@ class Command(BaseCommand):
         Save only the status field for a batch of loans.
         Each loan may have a different final status (overdue or repaid).
         """
-        for loan in loans:
-            loan.save(update_fields=["status"])
+        Loan.objects.bulk_update(loans, ["status"], batch_size=1000)

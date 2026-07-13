@@ -5,10 +5,9 @@ import pytz
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from twilio.base.exceptions import TwilioRestException
-from twilio.rest import Client
 
 from apps.loans.models import Loan
+from core.memory import log_process_memory
 
 logger = logging.getLogger(__name__)
 
@@ -23,21 +22,27 @@ class Command(BaseCommand):
             timezone.activate(pytz.UTC)
 
         today = timezone.now().date()
-        disbursed_loans = Loan.objects.filter(status="disbursed")
+        disbursed_loans = Loan.objects.filter(status="disbursed").select_related(
+            "borrower"
+        )
         sent_sms = failed_sms = 0
 
         # Initialize Twilio client
         try:
+            from twilio.rest import Client
+
             twilio_client = Client(
                 settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN
             )
-        except AttributeError:
-            logger.error("Twilio credentials not configured in settings")
-            self.stdout.write(self.style.ERROR("Twilio credentials not configured"))
+        except (AttributeError, ImportError):
+            logger.error("Twilio is unavailable or credentials are not configured in settings")
+            self.stdout.write(self.style.ERROR("Twilio unavailable or credentials not configured"))
             return
 
+        log_process_memory("send_sms_notifications.start")
+
         # Process individual borrower SMS
-        for loan in disbursed_loans:
+        for loan in disbursed_loans.iterator(chunk_size=200):
             try:
                 balances = loan.calculate_remaining_balances()
                 total_balance = (
@@ -106,7 +111,7 @@ class Command(BaseCommand):
                             f"Due loan SMS sent to {borrower_phone_str} for Loan {loan.id}"
                         )
                         sent_sms += 1
-                    except TwilioRestException as e:
+                    except Exception as e:
                         logger.error(
                             f"Failed to send due loan SMS to {borrower_phone_str} for Loan {loan.id}: {e}"
                         )
@@ -147,7 +152,7 @@ class Command(BaseCommand):
                             f"Overdue loan SMS sent to {borrower_phone_str} for Loan {loan.id}"
                         )
                         sent_sms += 1
-                    except TwilioRestException as e:
+                    except Exception as e:
                         logger.error(
                             f"Failed to send overdue loan SMS to {borrower_phone_str} for Loan {loan.id}: {e}"
                         )
@@ -188,7 +193,7 @@ class Command(BaseCommand):
                                 f"Overdue loan SMS sent to {borrower_phone_str} for Loan {loan.id}"
                             )
                             sent_sms += 1
-                        except TwilioRestException as e:
+                        except Exception as e:
                             logger.error(
                                 f"Failed to send overdue loan SMS to {borrower_phone_str} for Loan {loan.id}: {e}"
                             )
@@ -206,3 +211,4 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(f"SMS sent: {sent_sms}, Failed: {failed_sms}")
         )
+        log_process_memory("send_sms_notifications.finish")

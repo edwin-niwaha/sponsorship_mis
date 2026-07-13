@@ -146,18 +146,20 @@ class Profile(models.Model):
 
         if isinstance(self.avatar, InMemoryUploadedFile):
             # If a new file is being uploaded
-            img = Image.open(self.avatar)
+            with Image.open(self.avatar) as img:
+                # Resize if necessary
+                if img.height > 100 or img.width > 100:
+                    output = BytesIO()
+                    try:
+                        img.thumbnail((100, 100))
+                        img.save(output, format=img.format)
+                        output.seek(0)
 
-            # Resize if necessary
-            if img.height > 100 or img.width > 100:
-                output = BytesIO()
-                img.thumbnail((100, 100))
-                img.save(output, format=img.format)
-                output.seek(0)
-
-                # Upload resized image to Cloudinary
-                upload_result = upload(output, folder="profile_images")
-                self.avatar = upload_result["public_id"]
+                        # Upload resized image to Cloudinary
+                        upload_result = upload(output, folder="profile_images")
+                        self.avatar = upload_result["public_id"]
+                    finally:
+                        output.close()
 
         super().save(*args, **kwargs)
 
