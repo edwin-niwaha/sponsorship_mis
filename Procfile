@@ -1,5 +1,7 @@
 release: python manage.py migrate
 
-web: gunicorn core.wsgi --timeout 120 --workers 2 --threads 4 --log-level debug
-worker: celery -A core worker -l info
-beat: celery -A core beat -l info
+web: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --timeout 120 --workers 1 --threads 4 --max-requests 1000 --max-requests-jitter 100 --log-level info --access-logfile - --error-logfile -
+
+worker: celery -A core worker --loglevel=INFO --concurrency=1 --prefetch-multiplier=1 --max-tasks-per-child=50 --max-memory-per-child=300000 --without-gossip --without-mingle
+
+beat: celery -A core beat --loglevel=INFO
