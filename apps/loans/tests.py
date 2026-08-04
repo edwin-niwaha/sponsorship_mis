@@ -522,6 +522,32 @@ class LoanWorkflowTests(TestCase):
         self.assertEqual(loan.disbursements.count(), 1)
         self.assertEqual(loan.transactions.count(), 4)
 
+    def test_disbursement_view_handles_approved_loan_without_receivable_account(self):
+        loan = self._approved_loan()
+        Loan.objects.filter(pk=loan.pk).update(account=None)
+        self.web.force_login(self.hof)
+
+        response = self.web.post(
+            reverse("loans:disburse_loan"),
+            {
+                "loan": loan.id,
+                "account": self.cash.id,
+                "payment_method": "Cash",
+                "disbursement_date": "2026-01-02",
+            },
+        )
+        loan.refresh_from_db()
+
+        self.assertRedirects(
+            response,
+            reverse("loans:disburse_loan"),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(loan.status, "disbursed")
+        self.assertEqual(loan.account.account_number, "1050")
+        self.assertEqual(loan.disbursements.count(), 1)
+        self.assertEqual(loan.transactions.count(), 4)
+
     def test_duplicate_disbursement_is_rejected(self):
         loan = self._approved_loan()
         loan.disburse(date(2026, 1, 2))

@@ -580,7 +580,24 @@ class Loan(models.Model):
             )
         self.disbursement_date = disbursement_date
         self.status = "disbursed"
-        self.save()
+        if not self.account:
+            try:
+                self.account = ChartOfAccounts.objects.get(account_number="1050")
+            except ChartOfAccounts.DoesNotExist:
+                raise ValidationError(
+                    "Default loan account missing. Please contact support."
+                )
+        self.calculate_due_date()
+        self.calculate_interest()
+        self.full_clean(exclude=["applied_by"])
+        Loan.objects.filter(pk=self.pk).update(
+            account=self.account,
+            disbursement_date=self.disbursement_date,
+            due_date=self.due_date,
+            status=self.status,
+            total_interest=self.total_interest,
+            updated_at=timezone.now(),
+        )
         return self
 
     def update_status(self):
@@ -766,7 +783,10 @@ class LoanDisbursement(models.Model):
         is_new = self.pk is None
         if not self.loan.account:
             self.loan.account = ChartOfAccounts.objects.get(account_number="1050")
-            self.loan.save()
+            Loan.objects.filter(pk=self.loan_id).update(
+                account=self.loan.account,
+                updated_at=timezone.now(),
+            )
         with transaction.atomic():
             self.full_clean()
             super().save(*args, **kwargs)
