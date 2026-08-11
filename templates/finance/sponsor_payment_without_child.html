@@ -118,7 +118,10 @@
         <h3 class="mb-1">{{ form_name }}</h3>
         <p class="text-muted mb-0">Capture sponsor-level gifts that are separate from child and staff payments.</p>
       </div>
-      <div class="d-flex">
+      <div class="d-flex flex-wrap" style="gap: 0.5rem;">
+        <a class="btn btn-sm btn-outline-success" href="{% url 'sponsor_payment_without_child_report' %}">
+          <i class="mdi mdi-file-chart"></i> View report
+        </a>
         <a class="btn btn-sm btn-outline-primary" href="{% url 'sponsor_payment_without_child' %}">
           <i class="mdi mdi-refresh btn-icon-prepend"></i> New entry
         </a>

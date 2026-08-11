@@ -36,6 +36,7 @@ from .forms import (
 from .models import (
     ChildPayments,
     DonorPayment,
+    Payment,
     StaffPayments,
 )
 
@@ -493,6 +494,13 @@ def calculate_subtotals(payments_by_year):
     }
 
 
+def group_sponsor_level_payments_by_year(payments):
+    payments_by_year = defaultdict(list)
+    for payment in payments:
+        payments_by_year[payment.payment_date.year].append(payment)
+    return payments_by_year
+
+
 def generate_payments_report(request, report_title, template_name, payment_model):
     sponsors = Sponsor.objects.real_sponsors_only().order_by("id")
     context = {
@@ -574,3 +582,98 @@ def staff_sponsor_payments_report(request):
         "finance/staff_sponsor_payments_rpt.html",
         StaffPayments,
     )
+
+
+@login_required
+@admin_or_manager_or_staff_required
+def sponsor_payment_without_child_report(request):
+    sponsors = Sponsor.objects.active().order_by("id")
+    context = {
+        "table_title": "Other Sponsor Payments Report",
+        "sponsors": sponsors,
+        "has_selected_sponsor": False,
+    }
+
+    if request.method == "POST":
+        sponsor_id = request.POST.get("id")
+        if sponsor_id:
+            selected_sponsor = get_object_or_404(Sponsor, id=sponsor_id)
+            sponsor_payments = (
+                Payment.objects.with_related()
+                .filter(
+                    sponsor_id=sponsor_id,
+                    child__isnull=True,
+                    staff__isnull=True,
+                    program__code__in=SponsorLevelPaymentForm.ALLOWED_PROGRAMS,
+                )
+                .order_by("-payment_date", "-id")
+            )
+            payments_by_year = group_sponsor_level_payments_by_year(sponsor_payments)
+            subtotals = calculate_subtotals(payments_by_year)
+
+            context.update(
+                {
+                    "has_selected_sponsor": True,
+                    "selected_sponsor": selected_sponsor,
+                    "sponsor_payments": sponsor_payments,
+                    "total_amount": sum(subtotals.values()),
+                    "payments_by_year": payments_by_year,
+                    "subtotals": subtotals,
+                    "payment_count": sponsor_payments.count(),
+                }
+            )
+        else:
+            messages.error(request, "No Sponsor selected.", extra_tags="bg-danger")
+
+    return render(
+        request,
+        "finance/sponsor_payment_without_child_rpt.html",
+        context,
+    )
+
+@login_required
+@admin_or_manager_or_staff_required
+@transaction.atomic
+def edit_sponsor_payment_without_child(request, payment_id):
+    sponsor_payment = get_object_or_404(
+        Payment.objects.with_related(),
+        id=payment_id,
+        child__isnull=True,
+        staff__isnull=True,
+        program__code__in=SponsorLevelPaymentForm.ALLOWED_PROGRAMS,
+    )
+
+    if request.method == "POST":
+        form = SponsorLevelPaymentForm(request.POST, instance=sponsor_payment)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Updated successfully!", extra_tags="bg-success")
+            return redirect("sponsor_payment_without_child_report")
+    else:
+        form = SponsorLevelPaymentForm(instance=sponsor_payment)
+
+    return render(
+        request,
+        "finance/sponsor_payment_without_child_edit.html",
+        {
+            "form_name": "Sponsor Payment Update",
+            "form": form,
+            "sponsor_payment": sponsor_payment,
+        },
+    )
+
+
+@login_required
+@admin_or_manager_required
+@transaction.atomic
+def delete_sponsor_payment_without_child(request, pk):
+    record = get_object_or_404(
+        Payment,
+        id=pk,
+        child__isnull=True,
+        staff__isnull=True,
+        program__code__in=SponsorLevelPaymentForm.ALLOWED_PROGRAMS,
+    )
+    record.delete()
+    messages.info(request, "Record deleted successfully!", extra_tags="bg-danger")
+    return HttpResponseRedirect(reverse("sponsor_payment_without_child_report"))

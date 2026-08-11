@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+  <div class="container">
+    <div class="page-header flex-wrap">
+      <div>
+        <h3 class="mb-0">{{ form_name|upper }}</h3>
+        <p class="text-muted mb-0">
+          {{ sponsor_payment.sponsor.first_name }} {{ sponsor_payment.sponsor.last_name }} &rarr; {{ sponsor_payment.sponsor.prefixed_id }}
+        </p>
+      </div>
+      <div class="d-flex flex-wrap" style="gap: 0.5rem;">
+        <a class="btn btn-sm btn-success" href="{% url 'sponsor_payment_without_child' %}">
+          <i class="mdi mdi-folder-plus btn-icon-prepend"></i> Add payment
+        </a>
+        <a title="View Report" class="btn btn-sm btn-outline-success" href="{% url 'sponsor_payment_without_child_report' %}">
+          <i class="mdi mdi-chart-line btn-icon-prepend"></i> Report
+        </a>
+      </div>
+    </div>
+    <hr>
+
+    <div class="form-content my-3 p-3">
+      <div class="row justify-content-center">
+        <div class="col-lg-12">
+          <div class="card shadow-lg border-0 rounded-lg mt-0 mb-5">
+            <div class="card-body">
+              <form method="post">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <div class="form-group mt-4 mb-0">
+                  <button type="submit" class="col-md-12 btn btn-dark" onclick="return confirm('Are you sure you want to update this payment?')">
+                    UPDATE
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

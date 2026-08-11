@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+{% load humanize static %}
+
+{% block content %}
+  <style>
+    .sponsor-level-report-page { color: #111827; }
+    .report-header,
+    .selector-panel,
+    .report-shell,
+    .empty-state {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+    .report-header {
+      align-items: center;
+      display: flex;
+      gap: 14px;
+      justify-content: space-between;
+      padding: 16px 18px;
+    }
+    .report-header h3 {
+      color: #1f344d;
+      font-size: 1.28rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin: 0 0 3px;
+      text-transform: none;
+    }
+    .report-muted { color: #64748b; margin: 0; }
+    .report-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .selector-panel { margin: 12px 0; padding: 14px; }
+    .selector-form {
+      align-items: end;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(260px, 1fr) auto;
+    }
+    .selector-panel .chzn-container,
+    .selector-panel .chzn-select { width: 100% !important; }
+    .field-label {
+      color: #374151;
+      display: block;
+      font-size: .8rem;
+      font-weight: 900;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+    .report-shell { overflow: hidden; }
+    .statement-hero {
+      background: linear-gradient(135deg, #f8fbff 0%, #f2f7ee 100%);
+      border-bottom: 1px solid #dfe8ef;
+      display: grid;
+      gap: 14px;
+      grid-template-columns: minmax(0, 1fr) minmax(250px, auto);
+      padding: 18px;
+    }
+    .statement-hero h4 {
+      color: #1f344d;
+      font-size: 1.26rem;
+      font-weight: 900;
+      margin: 0 0 5px;
+    }
+    .sponsor-box {
+      background: #fff;
+      border: 1px solid #dce8d5;
+      border-radius: 8px;
+      display: grid;
+      gap: 5px;
+      padding: 12px;
+    }
+    .sponsor-box span,
+    .stat-card span,
+    .year-card span {
+      color: #64748b;
+      font-size: .76rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .sponsor-box strong,
+    .stat-card strong,
+    .year-card strong { color: #1f344d; font-weight: 900; }
+    .stats-grid,
+    .year-grid { display: grid; gap: 12px; padding: 14px 18px; }
+    .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .year-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); padding-top: 0; }
+    .stat-card,
+    .year-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      display: grid;
+      gap: 7px;
+      padding: 12px;
+    }
+    .stat-card i {
+      align-items: center;
+      background: #f2f7ee;
+      border: 1px solid #dce8d5;
+      border-radius: 8px;
+      color: #4b7b2b;
+      display: inline-flex;
+      height: 36px;
+      justify-content: center;
+      width: 36px;
+    }
+    .report-section { border-top: 1px solid #edf1f5; padding: 16px 18px; }
+    .section-head {
+      align-items: baseline;
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .section-head h5 { color: #1f344d; font-size: 1rem; font-weight: 900; margin: 0; }
+    .table-wrap { border: 1px solid #e2e8f0; border-radius: 8px; overflow-x: auto; }
+    .smart-report-table { border-collapse: collapse; margin: 0; min-width: 980px; width: 100%; }
+    .smart-report-table th,
+    .smart-report-table td {
+      border-bottom: 1px solid #edf1f5;
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .smart-report-table th {
+      background: #f8fafc;
+      color: #334155;
+      font-size: .74rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .smart-report-table tr:last-child td { border-bottom: 0; }
+    .amount-cell,
+    .total-cell { color: #1f344d; font-weight: 900; text-align: right !important; }
+    .action-row { display: flex; gap: 6px; }
+    .empty-state { color: #64748b; margin-top: 12px; padding: 18px; text-align: center; }
+    @media (max-width: 991.98px) {
+      .report-header,
+      .statement-hero { align-items: stretch; grid-template-columns: 1fr; }
+      .report-header { flex-direction: column; }
+      .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 575.98px) {
+      .selector-form,
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+    @media print {
+      .navbar,
+      .sidebar,
+      .report-actions,
+      .selector-panel,
+      .print-hide,
+      footer { display: none !important; }
+      .report-shell { border: 0; box-shadow: none; }
+    }
+  </style>
+
+  <div class="container sponsor-level-report-page">
+    <div class="report-header">
+      <div>
+        <h3>{{ table_title }}</h3>
+        <p class="report-muted">Select a sponsor to review family, general support, and one-time sponsor-level contributions.</p>
+      </div>
+      <div class="report-actions">
+        <button title="Print" type="button" class="btn btn-sm btn-outline-success" onclick="printDiv('printMe')">
+          <i class="mdi mdi-printer"></i> Print
+        </button>
+        <button title="Export To Excel" type="button" class="btn btn-sm btn-outline-success" onclick="ExportToExcel('xlsx')">
+          <i class="mdi mdi-file-excel"></i> Excel
+        </button>
+        <button title="Export To Word" type="button" class="btn btn-sm btn-outline-success" onclick="Export2Doc('printMe')">
+          <i class="mdi mdi-file-word"></i> Word
+        </button>
+        <a class="btn btn-sm btn-success" href="{% url 'sponsor_payment_without_child' %}">
+          <i class="mdi mdi-folder-plus"></i> Add payment
+        </a>
+      </div>
+    </div>
+
+    <section class="selector-panel">
+      <form class="selector-form" method="POST" action="{% url 'sponsor_payment_without_child_report' %}">
+        {% csrf_token %}
+        <div>
+          <label for="sp_dropdown" class="field-label">Sponsor</label>
+          <select name="id" id="sp_dropdown" class="chzn-select" required>
+            <option value="" selected disabled>Search sponsor...</option>
+            {% for sponsor in sponsors %}
+              <option value="{{ sponsor.id }}" {% if selected_sponsor and sponsor.id == selected_sponsor.id %}selected{% endif %}>
+                {{ sponsor.first_name }} {{ sponsor.last_name }} &rarr; {{ sponsor.prefixed_id }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <button title="View Sponsor Payments Report" type="submit" class="btn btn-primary">
+          <i class="mdi mdi-view-list"></i> View report
+        </button>
+      </form>
+    </section>
+
+    {% if has_selected_sponsor and sponsor_payments %}
+      <article id="printMe" class="report-shell">
+        <section class="statement-hero">
+          <div>
+            <h4>{{ selected_sponsor.first_name }} {{ selected_sponsor.last_name }} Payment Report</h4>
+            <p class="report-muted">Sponsor-level contributions recorded for this sponsor account.</p>
+          </div>
+          <div class="sponsor-box">
+            <span>Sponsor Account</span>
+            <strong>{{ selected_sponsor.prefixed_id }}</strong>
+            <p class="report-muted">{{ selected_sponsor.email|default:"Email not recorded" }}</p>
+            <p class="report-muted">{{ selected_sponsor.sponsorship_type|default:"Sponsorship type not recorded" }}</p>
+          </div>
+        </section>
+
+        <section class="stats-grid">
+          <div class="stat-card">
+            <i class="mdi mdi-cash-multiple"></i>
+            <span>Total Amount</span>
+            <strong>UGX {{ total_amount|default:0|floatformat:0|intcomma }}</strong>
+          </div>
+          <div class="stat-card">
+            <i class="mdi mdi-receipt"></i>
+            <span>Records</span>
+            <strong>{{ payment_count|default:0|intcomma }}</strong>
+          </div>
+          <div class="stat-card">
+            <i class="mdi mdi-calendar-range"></i>
+            <span>Years</span>
+            <strong>{{ subtotals|length|default:0|intcomma }}</strong>
+          </div>
+        </section>
+
+        {% if subtotals %}
+          <section class="report-section">
+            <div class="section-head">
+              <h5>Yearly Summary</h5>
+              <span class="report-muted">{{ subtotals|length }} year{{ subtotals|length|pluralize }}</span>
+            </div>
+            <div class="year-grid">
+              {% for year, subtotal in subtotals.items %}
+                <div class="year-card">
+                  <span>{{ year }}</span>
+                  <strong>UGX {{ subtotal|floatformat:0|intcomma }}</strong>
+                </div>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        <section class="report-section">
+          <div class="section-head">
+            <h5>Payment Ledger</h5>
+            <span class="report-muted">Detailed sponsor-level contributions</span>
+          </div>
+          <div class="table-wrap">
+            <table class="smart-report-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Category</th>
+                  <th>Payment Date</th>
+                  <th>Reference</th>
+                  <th>Notes</th>
+                  <th class="amount-cell">Amount</th>
+                  <th class="print-hide">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for payment in sponsor_payments %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ payment.program }}</strong></td>
+                    <td>{{ payment.payment_date|date:"d/m/Y" }}</td>
+                    <td>{{ payment.reference|default:"Not recorded" }}</td>
+                    <td>{{ payment.notes|default:"No notes" }}</td>
+                    <td class="amount-cell">UGX {{ payment.amount|floatformat:0|intcomma }}</td>
+                    <td class="print-hide">
+                      <div class="action-row">
+                        {% if user.profile.role == 'administrator' or user.profile.role == 'manager' %}
+                          <a class="btn btn-outline-primary btn-sm" title="Edit" href="{% url 'edit_sponsor_payment_without_child' payment.id %}" onclick="return confirm('Are you sure you want to edit this record?');">
+                            <i class="bi bi-pencil"></i>
+                          </a>
+                          <a class="btn btn-outline-danger btn-sm" title="Erase" href="{% url 'delete_sponsor_payment_without_child' payment.id %}" onclick="return confirm('Are you sure you want to delete this record?');">
+                            <i class="bi bi-trash"></i>
+                          </a>
+                        {% else %}
+                          <button class="btn btn-outline-primary btn-sm" onclick="showNoPermissionMessage('edit')">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          <button class="btn btn-outline-danger btn-sm" onclick="showNoPermissionMessage('delete')">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="5" class="total-cell">Total</td>
+                  <td class="amount-cell">UGX {{ total_amount|floatformat:0|intcomma }}</td>
+                  <td class="print-hide"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
+      </article>
+    {% elif has_selected_sponsor %}
+      <div class="empty-state">
+        No sponsor-level payments were found for {{ selected_sponsor.first_name }} {{ selected_sponsor.last_name }}.
+      </div>
+    {% else %}
+      <div class="empty-state">
+        Select a sponsor above to generate an Other Sponsor Payments report.
+      </div>
+    {% endif %}
+  </div>
+{% endblock content %}
