@@ -11,6 +11,7 @@ from django.utils.html import strip_tags
 
 from apps.loans.models import Loan
 from apps.loans.services.loan_reminder_service import LoanReminderService
+from apps.loans.tasks import is_blocked_borrower_email
 from core.memory import log_process_memory
 
 logger = logging.getLogger(__name__)
@@ -170,6 +171,14 @@ class Command(BaseCommand):
 
         if not borrower.email:
             logger.warning("Loan #%s skipped; borrower has no email.", loan.id)
+            return False
+
+        if is_blocked_borrower_email(borrower.email):
+            logger.info(
+                "Loan #%s reminder skipped for blocked borrower email: %s",
+                loan.id,
+                borrower.email,
+            )
             return False
 
         template_by_category = {

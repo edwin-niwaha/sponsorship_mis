@@ -233,6 +233,20 @@ class LoanWorkflowTests(TestCase):
         self.assertEqual(item["loan_id"], loan.id)
         self.assertEqual(item["borrower_name"], loan.borrower.full_name)
         self.assertNotIsInstance(item["loan"], Loan)
+
+    @patch("apps.loans.tasks.EmailMultiAlternatives")
+    def test_loan_application_email_skips_blocked_borrower_address(self, mock_email):
+        sent = send_loan_application_email_task.run(
+            recipient_name="Jane Doe",
+            client_name="Jane Doe",
+            recipient_email="pendezaug@gmail.com",
+            application_id=123,
+            is_applicant=True,
+        )
+
+        self.assertFalse(sent)
+        mock_email.assert_not_called()
+
     @override_settings(BOO_EMAIL="", HOF_EMAIL="", ED_EMAIL="", ACCOUNTANT_EMAIL="")
     def test_stage_notifications_use_role_user_emails_when_settings_empty(self):
         self.boo.email = "boo@example.com"
@@ -837,6 +851,27 @@ class LoanWorkflowTests(TestCase):
         output = out.getvalue()
         self.assertIn("Emails sent: 1", output)
         self.assertIn("Overdue: 1", output)
+
+    def test_loan_notification_command_skips_blocked_borrower_address(self):
+        self.client.email = "pendezaug@gmail.com"
+        self.client.save(update_fields=["email"])
+        loan = self._approved_loan()
+        loan.disburse(date(2026, 1, 1))
+        LoanDisbursement.objects.create(loan=loan, account=self.cash)
+        LoanRepayment.objects.create(
+            loan=loan,
+            repayment_date=date(2026, 2, 1),
+            principal_payment=loan.monthly_installment,
+            account=self.cash,
+        )
+        out = StringIO()
+
+        with patch("django.utils.timezone.localdate", return_value=date(2026, 3, 2)):
+            call_command("send_loan_notifications", "--dry-run", "--force", stdout=out)
+
+        output = out.getvalue()
+        self.assertIn("Emails sent: 0", output)
+        self.assertIn("Overdue: 0", output)
 
     def test_portfolio_at_risk_uses_outstanding_value_not_loan_count(self):
         at_risk = self._approved_loan()

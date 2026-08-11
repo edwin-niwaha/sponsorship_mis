@@ -66,6 +66,7 @@ from .services.reporting import (
 )
 from .services.aging import compute_installment_based_days_overdue
 from .tasks import (
+    is_blocked_borrower_email,
     send_html_email_task,
     send_loan_application_email_task,
     send_loan_approval_notification_task,
@@ -487,6 +488,13 @@ def send_loan_application_email(
             <p style="color:#888;">- Pendeza Uganda - Finance Department</p>
         </div></body></html>
         """
+
+    if is_blocked_borrower_email(recipient_email):
+        logger.info(
+            "Loan application email skipped for blocked borrower email: %s",
+            recipient_email,
+        )
+        return False
 
     try:
         email = EmailMultiAlternatives(

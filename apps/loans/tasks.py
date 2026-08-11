@@ -8,6 +8,12 @@ from django.utils.html import strip_tags
 
 logger = logging.getLogger(__name__)
 
+BLOCKED_BORROWER_EMAILS = {"pendezaug@gmail.com"}
+
+
+def is_blocked_borrower_email(email):
+    return (email or "").strip().lower() in BLOCKED_BORROWER_EMAILS
+
 
 def _valid_recipients(*recipients):
     invalid_values = {"", "none", "null", "false"}
@@ -22,6 +28,13 @@ def _valid_recipients(*recipients):
             continue
 
         email_key = normalized_email.lower()
+        if is_blocked_borrower_email(email_key):
+            logger.info(
+                "Loan email recipient skipped because it is blocked: %s",
+                email_key,
+            )
+            continue
+
         if email_key in seen:
             continue
 
@@ -199,6 +212,13 @@ def send_email_task(subject, text_content, html_content, recipients):
     """
     Celery task to send an email asynchronously.
     """
+    recipients = _valid_recipients(*recipients)
+    if not recipients:
+        logger.info(
+            "Email skipped because all recipients were invalid or blocked for subject: %s",
+            subject,
+        )
+        return False
     email = EmailMultiAlternatives(
         subject=subject,
         body=text_content,
@@ -384,6 +404,13 @@ def send_loan_application_email_task(
         </body>
         </html>
         """
+
+    if is_blocked_borrower_email(recipient_email):
+        logger.info(
+            "Loan application email skipped for blocked borrower email: %s",
+            recipient_email,
+        )
+        return False
 
     from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "") or getattr(
         settings, "EMAIL_HOST_USER", None
