@@ -1,0 +1,22 @@
+import logging
+
+from celery import shared_task
+
+from apps.users.notifications import send_user_notification
+
+logger = logging.getLogger(__name__)
+
+
+@shared_task(autoretry_for=(Exception,), retry_backoff=True, retry_jitter=True, max_retries=3)
+def send_user_notification_task(user_ids, event, record_id=None):
+    return send_user_notification(user_ids, event, record_id)
+
+
+def queue_user_notification(user_ids, event, record_id=None):
+    ids = list(dict.fromkeys(int(user_id) for user_id in user_ids if user_id))
+    if not ids:
+        return
+    try:
+        send_user_notification_task.delay(ids, event, record_id)
+    except Exception:
+        logger.exception("Could not queue Firebase notification event=%s", event)

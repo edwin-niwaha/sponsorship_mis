@@ -180,6 +180,44 @@ class Contact(models.Model):
         return f"Feedback from {self.name} ({self.email})"
 
 
+class DeviceInstallation(models.Model):
+    PLATFORM_ANDROID = "android"
+    PLATFORM_IOS = "ios"
+    PLATFORM_CHOICES = (
+        (PLATFORM_ANDROID, "Android"),
+        (PLATFORM_IOS, "iOS"),
+    )
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="device_installations",
+    )
+    installation_id = models.UUIDField()
+    push_token = models.CharField(max_length=512)
+    platform = models.CharField(max_length=10, choices=PLATFORM_CHOICES)
+    app_version = models.CharField(max_length=32, blank=True)
+    notifications_enabled = models.BooleanField(default=True)
+    active = models.BooleanField(default=True)
+    last_seen_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("user", "installation_id"),
+                name="unique_user_device_installation",
+            )
+        ]
+        indexes = [
+            models.Index(fields=("user", "active"), name="users_devic_user_id_eeac14_idx"),
+            models.Index(fields=("push_token",), name="users_devic_push_to_f8b98d_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.user_id}:{self.platform}:{self.installation_id}"
+
+
 # =================================== Policy Model  ===================================
 class Policy(models.Model):
     title = models.CharField(max_length=50)

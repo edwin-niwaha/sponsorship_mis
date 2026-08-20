@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="680" viewBox="0 0 1120 680" role="img" aria-label="Pendeza Connect sponsorship preview">
+  <rect width="1120" height="680" rx="20" fill="#e5e7eb"/>
+  <rect x="28" y="28" width="1064" height="624" rx="16" fill="#ffffff"/>
+  <rect x="70" y="70" width="980" height="120" rx="14" fill="#0f766e"/>
+  <text x="110" y="122" font-family="Arial, sans-serif" font-size="30" font-weight="800" fill="#ffffff">Sponsorship management</text>
+  <text x="110" y="154" font-family="Arial, sans-serif" font-size="16" fill="#ccfbf1">Track sponsors, children, donor records, and support activity.</text>
+  <rect x="70" y="230" width="300" height="330" rx="14" fill="#f8fafc" stroke="#dbe4ea"/>
+  <text x="104" y="278" font-family="Arial, sans-serif" font-size="20" font-weight="800" fill="#0f172a">Children</text>
+  <rect x="104" y="312" width="232" height="34" rx="8" fill="#ffffff" stroke="#dbe4ea"/>
+  <rect x="104" y="364" width="232" height="34" rx="8" fill="#ffffff" stroke="#dbe4ea"/>
+  <rect x="104" y="416" width="232" height="34" rx="8" fill="#ffffff" stroke="#dbe4ea"/>
+  <rect x="104" y="486" width="140" height="42" rx="8" fill="#0f766e"/>
+  <text x="174" y="513" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">View records</text>
+  <rect x="410" y="230" width="300" height="330" rx="14" fill="#f8fafc" stroke="#dbe4ea"/>
+  <text x="444" y="278" font-family="Arial, sans-serif" font-size="20" font-weight="800" fill="#0f172a">Sponsors</text>
+  <circle cx="476" cy="338" r="26" fill="#fce7f3"/>
+  <circle cx="556" cy="338" r="26" fill="#dcfce7"/>
+  <circle cx="636" cy="338" r="26" fill="#fffbeb"/>
+  <text x="444" y="416" font-family="Arial, sans-serif" font-size="14" fill="#64748b">Payment history, donor profiles, and child assignments.</text>
+  <rect x="444" y="486" width="140" height="42" rx="8" fill="#db2777"/>
+  <text x="514" y="513" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Manage</text>
+  <rect x="750" y="230" width="300" height="330" rx="14" fill="#f8fafc" stroke="#dbe4ea"/>
+  <text x="784" y="278" font-family="Arial, sans-serif" font-size="20" font-weight="800" fill="#0f172a">Reports</text>
+  <rect x="784" y="318" width="214" height="16" rx="8" fill="#0f766e"/>
+  <rect x="784" y="356" width="176" height="16" rx="8" fill="#f2b84b"/>
+  <rect x="784" y="394" width="240" height="16" rx="8" fill="#db2777"/>
+  <text x="784" y="462" font-family="Arial, sans-serif" font-size="14" fill="#64748b">Operational summaries for accountability and planning.</text>
+  <rect x="784" y="486" width="140" height="42" rx="8" fill="#0f172a"/>
+  <text x="854" y="513" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Export</text>
+</svg>

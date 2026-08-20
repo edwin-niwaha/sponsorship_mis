@@ -27,6 +27,9 @@ CSRF_TRUSTED_ORIGINS = [  # noqa: F405
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
+    "http://localhost:8081",
+    "http://127.0.0.1:8081",
+    *env_list("CORS_ALLOWED_ORIGINS"),  # noqa: F405
 ]
 
 if env_bool("USE_DATABASE_URL_IN_DEV", False):  # noqa: F405

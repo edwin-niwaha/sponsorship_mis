@@ -72,7 +72,7 @@ if RAILWAY_PUBLIC_DOMAIN:
     CSRF_TRUSTED_ORIGINS.append(f"https://{RAILWAY_PUBLIC_DOMAIN}")
 CSRF_TRUSTED_ORIGINS.extend(env_list("CSRF_TRUSTED_ORIGINS"))
 
-CORS_ALLOWED_ORIGINS = [SITE_URL]
+CORS_ALLOWED_ORIGINS = [SITE_URL, *env_list("CORS_ALLOWED_ORIGINS")]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -90,6 +90,7 @@ INSTALLED_APPS = [
     "django_select2",
     "cloudinary",
     "rest_framework",
+    "corsheaders",
     "apps.users",
     "apps.child",
     "apps.staff",
@@ -110,6 +111,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -207,12 +209,21 @@ SOCIAL_AUTH_GITHUB_KEY = str(os.getenv("GITHUB_KEY"))
 SOCIAL_AUTH_GITHUB_SECRET = str(os.getenv("GITHUB_SECRET"))
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = str(os.getenv("GOOGLE_KEY"))
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = str(os.getenv("GOOGLE_SECRET"))
+MOBILE_GOOGLE_CLIENT_IDS = env_list("MOBILE_GOOGLE_CLIENT_IDS")
+for google_client_id in (
+    os.getenv("GOOGLE_CLIENT_ID"),
+    os.getenv("GOOGLE_KEY"),
+    os.getenv("EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID"),
+):
+    if google_client_id and google_client_id not in MOBILE_GOOGLE_CLIENT_IDS:
+        MOBILE_GOOGLE_CLIENT_IDS.append(google_client_id)
 SOCIAL_AUTH_REQUESTS_TIMEOUT = env_float("SOCIAL_AUTH_REQUESTS_TIMEOUT", 10)
 SOCIAL_AUTH_PIPELINE = (
     "social_core.pipeline.social_auth.social_details",
     "social_core.pipeline.social_auth.social_uid",
     "social_core.pipeline.social_auth.auth_allowed",
     "social_core.pipeline.social_auth.social_user",
+    "apps.users.pipeline.associate_verified_google_email",
     "social_core.pipeline.user.get_username",
     "social_core.pipeline.user.create_user",
     "social_core.pipeline.social_auth.associate_user",
@@ -240,6 +251,12 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "Africa/Nairobi"
+CELERY_TASK_DEFAULT_QUEUE = os.environ.get(
+    "CELERY_TASK_DEFAULT_QUEUE",
+    "pendeza_connect",
+)
+CELERY_TASK_DEFAULT_EXCHANGE = CELERY_TASK_DEFAULT_QUEUE
+CELERY_TASK_DEFAULT_ROUTING_KEY = CELERY_TASK_DEFAULT_QUEUE
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_WORKER_CONCURRENCY = int(os.environ.get("CELERY_WORKER_CONCURRENCY", "1"))
 CELERY_WORKER_PREFETCH_MULTIPLIER = int(
@@ -289,6 +306,18 @@ SESSION_COOKIE_AGE = 7200
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticated",
+    ),
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+}
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"

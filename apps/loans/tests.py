@@ -986,6 +986,7 @@ class ClientSelfServiceLoanApplicationTests(TestCase):
             "application_notes": "Stock for my shop",
             "national_id": self._upload("national-id.pdf"),
             "collateral_security": self._upload("collateral.pdf"),
+            "bank_statement": self._upload("bank-statement.pdf"),
         }
 
     @override_settings(
@@ -1016,7 +1017,7 @@ class ClientSelfServiceLoanApplicationTests(TestCase):
         self.assertEqual(loan.applied_by, self.user)
         self.assertEqual(loan.applied_by_role, "guest")
         self.assertEqual(loan.interest_rate, Decimal("10.00"))
-        self.assertEqual(loan.documents.count(), 2)
+        self.assertEqual(loan.documents.count(), 3)
         self.assertTrue(
             loan.documents.filter(
                 document_type=LoanApplicationDocument.DOCUMENT_TYPE_NATIONAL_ID
@@ -1026,6 +1027,9 @@ class ClientSelfServiceLoanApplicationTests(TestCase):
             loan.documents.filter(
                 document_type=LoanApplicationDocument.DOCUMENT_TYPE_COLLATERAL_SECURITY
             ).exists()
+        )
+        self.assertTrue(
+            loan.documents.filter(document_type="bank_statement").exists()
         )
         mock_applicant_delay.assert_called_once()
         mock_stage_delay.assert_called_once_with(
@@ -1215,4 +1219,4 @@ class ClientSelfServiceLoanApplicationTests(TestCase):
 
         loan.refresh_from_db()
         self.assertEqual(loan.status, "approved")
-        self.assertEqual(loan.documents.count(), 2)
+        self.assertEqual(loan.documents.count(), 3)

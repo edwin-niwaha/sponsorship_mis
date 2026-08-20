@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="680" viewBox="0 0 1120 680" role="img" aria-label="Pendeza Connect finance preview">
+  <rect width="1120" height="680" rx="20" fill="#e5e7eb"/>
+  <rect x="28" y="28" width="1064" height="624" rx="16" fill="#f8fafc"/>
+  <text x="70" y="92" font-family="Arial, sans-serif" font-size="30" font-weight="800" fill="#0f172a">Finance and lending</text>
+  <text x="70" y="124" font-family="Arial, sans-serif" font-size="16" fill="#64748b">Mobile money, savings accounts, loan portfolios, and payment reports.</text>
+  <rect x="70" y="166" width="460" height="410" rx="14" fill="#ffffff" stroke="#dbe4ea"/>
+  <text x="104" y="218" font-family="Arial, sans-serif" font-size="20" font-weight="800" fill="#0f172a">Loan portfolio</text>
+  <polyline points="104,492 172,424 240,448 308,348 376,376 496,286" fill="none" stroke="#f59e0b" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="496" cy="286" r="10" fill="#f59e0b"/>
+  <rect x="104" y="254" width="132" height="74" rx="12" fill="#fffbeb"/>
+  <text x="126" y="286" font-family="Arial, sans-serif" font-size="24" font-weight="800" fill="#f59e0b">31</text>
+  <text x="126" y="310" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#92400e">ACTIVE</text>
+  <rect x="570" y="166" width="480" height="186" rx="14" fill="#ffffff" stroke="#dbe4ea"/>
+  <text x="604" y="218" font-family="Arial, sans-serif" font-size="20" font-weight="800" fill="#0f172a">Payments</text>
+  <rect x="604" y="252" width="380" height="18" rx="9" fill="#dcfce7"/>
+  <rect x="604" y="292" width="306" height="18" rx="9" fill="#ccfbf1"/>
+  <rect x="604" y="332" width="220" height="18" rx="9" fill="#fce7f3"/>
+  <rect x="570" y="390" width="480" height="186" rx="14" fill="#ffffff" stroke="#dbe4ea"/>
+  <text x="604" y="442" font-family="Arial, sans-serif" font-size="20" font-weight="800" fill="#0f172a">Savings</text>
+  <text x="604" y="496" font-family="Arial, sans-serif" font-size="38" font-weight="800" fill="#16a34a">UGX 42.8M</text>
+  <text x="604" y="530" font-family="Arial, sans-serif" font-size="14" fill="#64748b">Account balances and recent transaction activity.</text>
+</svg>

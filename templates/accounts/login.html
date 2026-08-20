@@ -1,5 +1,5 @@
 {% extends "accounts/base.html" %}
-{% block title %}Pendeza MIS | Sign In{% endblock %}
+{% block title %}Pendeza Connect | Sign In{% endblock %}
 {% block content %}
   <style>
     .login-shell { max-width: 1080px; margin: 24px auto; }
@@ -65,6 +65,124 @@
       .login-copy, .login-form-area { padding: 22px; }
       .login-copy h1 { font-size: 1.45rem; }
     }
+    /* Refined sign-in experience */
+    .public-content-shell { padding-left: 0; padding-right: 0; }
+    .login-shell {
+      background:
+        radial-gradient(circle at 10% 15%, rgba(242, 184, 75, .15), transparent 26rem),
+        linear-gradient(145deg, #f1f6f4, #f8fafc 55%, #edf2f6);
+      margin: 0;
+      max-width: none;
+      min-height: calc(100vh - 76px);
+      padding: 64px 24px;
+    }
+    .login-panel {
+      border: 1px solid rgba(207, 217, 226, .9);
+      border-radius: 22px;
+      box-shadow: 0 28px 70px rgba(20, 51, 45, .13) !important;
+      margin: 0 auto;
+      max-width: 1120px;
+    }
+    .login-copy {
+      background: linear-gradient(145deg, #0d302a 0%, #155847 100%);
+      min-height: 590px;
+      padding: 54px 46px;
+      position: relative;
+    }
+    .login-copy::after {
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 50%;
+      content: "";
+      height: 280px;
+      position: absolute;
+      right: -170px;
+      top: -110px;
+      width: 280px;
+    }
+    .login-copy h1 {
+      font-size: 2.55rem;
+      font-weight: 900;
+      letter-spacing: -.035em;
+      line-height: 1.08;
+      margin-bottom: 18px;
+    }
+    .login-copy > p { font-size: 1rem; line-height: 1.65; }
+    .login-audience-grid { gap: 14px; margin-top: 42px; }
+    .login-audience {
+      align-items: center;
+      backdrop-filter: blur(5px);
+      border-radius: 12px;
+      display: grid;
+      min-height: 78px;
+      padding: 15px 17px;
+    }
+    .login-audience div { color: #fff; font-size: .95rem; }
+    .login-form-area { padding: 54px 60px; }
+    .login-title {
+      color: #173b34;
+      font-size: 1.85rem;
+      font-weight: 900;
+      letter-spacing: -.02em;
+      margin-bottom: 6px;
+    }
+    .login-route-note {
+      background: #f2f8f6;
+      border: 1px solid #d7e9e3;
+      border-left: 4px solid #168068;
+      border-radius: 9px;
+      line-height: 1.5;
+      padding: 13px 15px;
+    }
+    .google-btn {
+      border-radius: 10px;
+      font-weight: 800;
+      min-height: 52px;
+      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+    .google-btn:hover {
+      border-color: #aebdc9;
+      box-shadow: 0 9px 22px rgba(31, 41, 51, .09);
+      color: #173b34;
+      transform: translateY(-1px);
+    }
+    .google-btn .fa-google { color: #4285f4; }
+    .login-form-area label { color: #344a46; font-size: .84rem; font-weight: 800; }
+    .login-form-area .form-control {
+      border: 1px solid #cfdae2;
+      border-radius: 9px;
+      color: #243447;
+      height: 50px;
+      padding: 12px 14px;
+    }
+    .login-form-area .form-control:focus {
+      border-color: #178068;
+      box-shadow: 0 0 0 3px rgba(23, 128, 104, .12);
+    }
+    .login-form-area a { color: #0f705a; font-weight: 700; }
+    #login {
+      background: #173b34;
+      border: 0;
+      border-radius: 9px;
+      box-shadow: 0 10px 22px rgba(23, 59, 52, .18);
+      font-weight: 800;
+      min-height: 50px;
+    }
+    #login:hover, #login:focus { background: #0f705a; }
+    @media (max-width: 991.98px) {
+      .login-shell { padding: 38px 20px; }
+      .login-copy { min-height: auto; padding: 38px; }
+      .login-copy h1 { font-size: 2.15rem; }
+      .login-audience-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 28px; }
+      .login-form-area { padding: 44px; }
+    }
+    @media (max-width: 575.98px) {
+      .login-shell { padding: 18px 12px 34px; }
+      .login-panel { border-radius: 15px; }
+      .login-copy, .login-form-area { padding: 30px 22px; }
+      .login-copy h1 { font-size: 1.85rem; }
+      .login-audience-grid { grid-template-columns: 1fr; }
+      .login-title { font-size: 1.55rem; }
+    }
   </style>
 
   <main class="login-shell">
@@ -72,8 +190,8 @@
       <div class="row no-gutters">
         <div class="col-lg-5">
           <section class="login-copy">
-            <h1>One secure portal</h1>
-            <p class="mb-0">Sign in once. We will take you to the right workspace.</p>
+            <h1>One secure place to create lasting impact.</h1>
+            <p class="mb-0">Access the tools and information designed for your role.</p>
 
             <div class="login-audience-grid">
               <div class="login-audience">
@@ -95,11 +213,11 @@
           <section class="login-form-area">
             <div class="mb-4">
               <div class="login-title">Sign in</div>
-              <div class="text-muted small">Use your email, username, or Google account, then verify with a code.</div>
+              <div class="text-muted small">Welcome back. Use Google or enter your account credentials.</div>
             </div>
 
             <div class="login-route-note mb-3">
-              Your role controls where you land after verification. Google sign-in also requires the emailed code.
+              <i class="fas fa-shield-alt mr-1"></i> Secure sign-in with email verification for added protection.
             </div>
 
             {% if form.errors %}
@@ -130,11 +248,11 @@
                 <label class="mb-0 small">{{ form.remember_me }} Remember me</label>
                 <a href="{% url 'password_reset' %}" class="small">Forgot password?</a>
               </div>
-              <button name="login" class="btn btn-dark btn-block" id="login">Sign in</button>
+              <button name="login" class="btn btn-dark btn-block" id="login">Sign in securely</button>
             </form>
 
             <div class="border-top mt-4 pt-3 small text-center">
-              <a href="{% url 'users-register' %}">Create an account</a>
+              New to Pendeza Connect? <a href="{% url 'users-register' %}">Create an account</a>
             </div>
           </section>
         </div>

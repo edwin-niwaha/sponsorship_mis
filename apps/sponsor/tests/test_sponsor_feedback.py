@@ -49,5 +49,9 @@ class SponsorFeedbackTests(TestCase):
         self.assertEqual(feedback.status, SponsorFeedback.Status.NEW)
         self.assertEqual(feedback.email_error, "")
         self.assertIsNotNone(feedback.email_sent_at)
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn("Payment question", mail.outbox[0].subject)
+        self.assertEqual(len(mail.outbox), 2)
+        internal_email, sponsor_confirmation = mail.outbox
+        self.assertIn("Payment question", internal_email.subject)
+        self.assertEqual(internal_email.to, ["programs@example.org"])
+        self.assertEqual(sponsor_confirmation.subject, "We Have Received Your Feedback")
+        self.assertEqual(sponsor_confirmation.to, ["sponsor@example.org"])

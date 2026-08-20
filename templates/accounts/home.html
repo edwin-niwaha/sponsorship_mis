@@ -153,7 +153,11 @@
   .service-grid {
     display: grid;
     gap: 16px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .service-grid.is-expanded {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .service-card {
@@ -163,9 +167,14 @@
     display: flex;
     gap: 14px;
     min-height: 148px;
+    min-width: 0;
     padding: 18px;
     text-decoration: none;
     transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+  }
+
+  .service-card[hidden] {
+    display: none;
   }
 
   .service-card:hover {
@@ -200,6 +209,37 @@
     font-size: .92rem;
     line-height: 1.55;
     margin: 0;
+  }
+
+  .service-toggle-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 18px;
+  }
+
+  .service-toggle {
+    align-items: center;
+    background: transparent;
+    border: 1px solid #13745d;
+    border-radius: 7px;
+    color: #13745d;
+    display: inline-flex;
+    font-weight: 800;
+    gap: 7px;
+    justify-content: center;
+    min-height: 42px;
+    padding: 8px 16px;
+  }
+
+  .service-toggle:hover,
+  .service-toggle:focus {
+    background: #edf7f4;
+    color: #0f5f4d;
+  }
+
+  .service-toggle-symbol {
+    font-size: 1.2rem;
+    line-height: 1;
   }
 
   .portal-band {
@@ -252,8 +292,10 @@
       max-width: calc(100% - 56px);
     }
 
-    .service-grid {
-      grid-template-columns: 1fr;
+    .service-grid,
+    .service-grid.is-expanded {
+      gap: 14px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .portal-row {
@@ -285,6 +327,58 @@
       max-width: calc(100% - 28px);
       padding: 12px 13px;
       right: 14px;
+    }
+
+    .section-band {
+      padding: 40px 0;
+    }
+
+    .section-heading {
+      margin-bottom: 18px;
+    }
+
+    .service-grid {
+      gap: 14px;
+      grid-template-columns: 1fr;
+    }
+
+    .service-card {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 158px;
+      padding: 13px;
+    }
+
+    .service-icon {
+      flex-basis: 38px;
+      font-size: 1.05rem;
+      height: 38px;
+      width: 38px;
+    }
+
+    .service-card h3 {
+      font-size: .9rem;
+      line-height: 1.25;
+      margin-bottom: 5px;
+      overflow-wrap: anywhere;
+    }
+
+    .service-card p {
+      font-size: .8rem;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  @media (max-width: 359.98px) {
+    .landing-inner {
+      padding: 0 12px;
+    }
+
+    .service-card {
+      min-height: 164px;
+      padding: 11px;
     }
   }
 </style>
@@ -378,7 +472,7 @@
         <p>Give, save, apply, or serve from one simple place.</p>
       </div>
 
-      <div class="service-grid">
+      <div class="service-grid" id="additionalServices">
         <a href="{% url 'initiate_payment' %}" class="service-card">
           <span class="service-icon"><i class="fas fa-hand-holding-heart"></i></span>
           <div>
@@ -402,6 +496,27 @@
             <p>Request support through a clear application flow.</p>
           </div>
         </a>
+
+        <a href="{% if user.is_authenticated and user.profile.resolved_account_type == 'staff' %}{% url 'inventory-dashboard' %}{% else %}{% url 'login' %}{% endif %}" class="service-card">
+          <span class="service-icon"><i class="fas fa-warehouse"></i></span>
+          <div>
+            <h3>Inventory</h3>
+            <p>Manage products, stock, sales, and inventory activity.</p>
+          </div>
+        </a>
+      </div>
+
+      <div class="service-toggle-wrap" hidden>
+        <button
+          type="button"
+          class="service-toggle"
+          id="serviceToggle"
+          aria-expanded="false"
+          aria-controls="additionalServices"
+        >
+          <span class="service-toggle-symbol" aria-hidden="true">+</span>
+          <span class="service-toggle-label">Expand</span>
+        </button>
       </div>
     </div>
   </section>
@@ -423,4 +538,26 @@
     </div>
   </section>
 </main>
+<script>
+  (function () {
+    var toggle = document.getElementById("serviceToggle");
+    var grid = document.getElementById("additionalServices");
+    var additionalServices = document.querySelectorAll(".service-card-extra");
+
+    if (!toggle || !grid || !additionalServices.length) return;
+
+    toggle.addEventListener("click", function () {
+      var isExpanded = toggle.getAttribute("aria-expanded") === "true";
+      var nextExpanded = !isExpanded;
+
+      additionalServices.forEach(function (card) {
+        card.hidden = !nextExpanded;
+      });
+      grid.classList.toggle("is-expanded", nextExpanded);
+      toggle.setAttribute("aria-expanded", String(nextExpanded));
+      toggle.querySelector(".service-toggle-symbol").textContent = nextExpanded ? "−" : "+";
+      toggle.querySelector(".service-toggle-label").textContent = nextExpanded ? "Collapse" : "Expand";
+    });
+  }());
+</script>
 {% endblock %}

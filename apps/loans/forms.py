@@ -414,7 +414,7 @@ class LoanApplicationDocumentForm(forms.Form):
     )
     bank_statement = forms.FileField(
         label="Bank statement",
-        required=False,
+        required=True,
         widget=forms.ClearableFileInput(
             attrs={"class": "form-control", "accept": ".pdf,.jpg,.jpeg,.png,.doc,.docx"}
         ),

@@ -51,6 +51,7 @@ urlpatterns = [
     ),
     path("password-change/", ChangePasswordView.as_view(), name="password_change"),
     re_path(r"^oauth/", include("social_django.urls", namespace="social")),
+    path("api/v1/", include("api.v1.urls")),
     path("child/", include("apps.child.urls")),
     path("sponsor/", include("apps.sponsor.urls")),
     path("sponsorship/", include("apps.sponsorship.urls")),
