@@ -1,0 +1,3 @@
+{% extends 'drf-yasg/redoc.html' %}{% load static %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'css/api-docs.css' %}">{% endblock %}
+{% block extra_body %}{% include 'api/includes/docs_nav.html' with current='redoc' %}{% endblock %}

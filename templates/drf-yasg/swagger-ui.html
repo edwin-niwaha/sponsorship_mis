@@ -1,0 +1,4 @@
+{% extends 'drf-yasg/swagger-ui.html' %}{% load static %}
+{% block extra_head %}<meta name="viewport" content="width=device-width,initial-scale=1">{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'css/api-docs.css' %}">{% endblock %}
+{% block extra_body %}{% include 'api/includes/docs_nav.html' with current='swagger' %}{% endblock %}

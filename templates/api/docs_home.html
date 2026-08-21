@@ -1,0 +1,24 @@
+{% load static %}
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Pendeza Connect API documentation."><title>Pendeza Connect API</title>
+<link rel="stylesheet" href="{% static 'css/api-docs.css' %}"></head><body>
+<a class="skip-link" href="#main">Skip to content</a>{% include 'api/includes/docs_nav.html' with current='home' %}
+<main id="main"><section class="hero"><div class="shell hero-grid"><div>
+<span class="eyebrow">Developer platform � Version 1</span>
+<h1>Build meaningful connections with our API.</h1>
+<p class="hero-copy">A secure REST API for sponsorships, clients, children, loans, payments, staff, feedback, and mobile services.</p>
+<div class="actions"><a class="button primary" href="{% url 'api-docs-swagger' %}">Explore in Swagger</a><a class="button secondary" href="{% url 'api-docs-redoc' %}">Read the reference</a></div>
+</div><aside class="quickstart" aria-label="API quick start"><div class="code-head"><span>Authenticated request</span><span>HTTPS</span></div>
+<pre><code>GET /api/v1/dashboard/
+Host: {{ request.get_host }}
+Authorization: Bearer &lt;access_token&gt;
+Accept: application/json</code></pre></aside></div></section>
+<section class="shell overview"><span class="eyebrow dark">Start here</span><h2>Everything you need to integrate</h2>
+<div class="cards"><article><b>01</b><h3>Authenticate</h3><p>Sign in at <code>POST /api/v1/auth/login/</code> and copy the access token.</p></article>
+<article><b>02</b><h3>Authorize</h3><p>Send <code>Authorization: Bearer &lt;access_token&gt;</code> with protected requests.</p></article>
+<article><b>03</b><h3>Build</h3><p>Browse operations by resource, inspect payloads, and try requests in Swagger UI.</p></article></div></section>
+<section class="resources"><div class="shell resources-grid"><div><span class="eyebrow dark">API surface</span><h2>Organized around your workflow</h2><p>Both references group endpoints by the existing feature routes.</p></div>
+<ul><li>Authentication</li><li>Dashboard</li><li>Children</li><li>Sponsors</li><li>Clients</li><li>Staff</li><li>Loans</li><li>Payments</li><li>Device installations</li><li>Feedback</li></ul></div></section></main>
+<footer><div class="shell footer"><span>Pendeza Connect API � v1</span><a href="{% url 'api-docs-schema' %}" download>Download schema JSON</a></div></footer>
+</body></html>

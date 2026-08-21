@@ -10,6 +10,8 @@ class DeviceInstallationViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return DeviceInstallation.objects.none()
         return DeviceInstallation.objects.filter(user=self.request.user, active=True).order_by("-last_seen_at")
 
     def perform_destroy(self, instance):

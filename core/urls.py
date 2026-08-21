@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path, re_path
 
+from api.docs import documentation_home, schema_view
 from apps.users.forms import LoginForm
 from apps.users.views import (
     ChangePasswordView,
@@ -52,6 +53,10 @@ urlpatterns = [
     path("password-change/", ChangePasswordView.as_view(), name="password_change"),
     re_path(r"^oauth/", include("social_django.urls", namespace="social")),
     path("api/v1/", include("api.v1.urls")),
+    path("api/docs/", documentation_home, name="api-docs-home"),
+    path("api/docs/swagger/", schema_view.with_ui("swagger", cache_timeout=0), name="api-docs-swagger"),
+    path("api/docs/redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="api-docs-redoc"),
+    path("api/docs/schema.json", schema_view.without_ui(cache_timeout=0), name="api-docs-schema"),
     path("child/", include("apps.child.urls")),
     path("sponsor/", include("apps.sponsor.urls")),
     path("sponsorship/", include("apps.sponsorship.urls")),

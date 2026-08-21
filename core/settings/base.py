@@ -90,6 +90,7 @@ INSTALLED_APPS = [
     "django_select2",
     "cloudinary",
     "rest_framework",
+    "drf_yasg",
     "corsheaders",
     "apps.users",
     "apps.child",
@@ -317,6 +318,27 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+}
+
+SWAGGER_SETTINGS = {
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "JWT access token. Enter: Bearer <access_token>",
+        }
+    },
+    "USE_SESSION_AUTH": False,
+    "PERSIST_AUTH": True,
+    "DOC_EXPANSION": "none",
+    "OPERATIONS_SORTER": "alpha",
+    "TAGS_SORTER": "alpha",
+}
+
+REDOC_SETTINGS = {
+    "LAZY_RENDERING": True,
+    "EXPAND_RESPONSES": "200,201",
 }
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"

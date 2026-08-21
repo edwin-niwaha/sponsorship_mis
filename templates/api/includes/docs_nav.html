@@ -1,0 +1,12 @@
+<header class="docs-header">
+  <nav class="shell nav" aria-label="API documentation">
+    <a class="brand" href="{% url 'api-docs-home' %}"><span class="brand-mark">P</span><span>Pendeza <b>Connect</b><small>API documentation</small></span></a>
+    <div class="nav-links">
+      <a {% if current == 'home' %}aria-current="page"{% endif %} href="{% url 'api-docs-home' %}">Overview</a>
+      <a {% if current == 'swagger' %}aria-current="page"{% endif %} href="{% url 'api-docs-swagger' %}">Swagger</a>
+      <a {% if current == 'redoc' %}aria-current="page"{% endif %} href="{% url 'api-docs-redoc' %}">ReDoc</a>
+      <a href="{% url 'api-docs-schema' %}">JSON</a>
+      <a class="app-link" href="{% url 'users-home' %}">Application home</a>
+    </div>
+  </nav>
+</header>
